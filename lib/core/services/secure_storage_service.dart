@@ -1,19 +1,14 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 
 class SecureStorageService {
-  static const _kPin = 'pin';
+  SecureStorageService({FlutterSecureStorage? storage}) : _storage = storage ?? const FlutterSecureStorage();
 
-  final FlutterSecureStorage _storage = const FlutterSecureStorage();
+  final FlutterSecureStorage _storage;
 
-  Future<void> savePin(String pin) async {
-    await _storage.write(key: _kPin, value: pin);
-  }
+  Future<void> write({required String key, required String value}) =>
+      _storage.write(key: key, value: value);
 
-  Future<String?> readPin() async{
-    return _storage.read(key: _kPin);
-  }
+  Future<String?> read(String key) => _storage.read(key: key);
 
-  Future<void> deletePin() async{
-    await _storage.delete(key: _kPin);
-  }
+  Future<void> delete(String key) => _storage.delete(key: key);
 }

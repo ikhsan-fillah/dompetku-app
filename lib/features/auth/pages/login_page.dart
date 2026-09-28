@@ -18,7 +18,7 @@ class LoginPage extends StatelessWidget {
           onPressed: () async {
             await auth.markRegistered();
             auth.lock();
-            Get.offAllNamed(AppRoutes.home);
+            Get.offAllNamed(AppRoutes.biometricSetup);
           }, 
         child: const Text('simulasi login sukses'),)
       )
