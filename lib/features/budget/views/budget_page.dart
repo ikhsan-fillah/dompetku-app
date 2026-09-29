@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../app/routes/app_routes.dart';
 import '../../../core/state/resource_state.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
@@ -9,7 +10,7 @@ class BudgetPage extends GetView<BudgetController> {
   const BudgetPage({super.key});
 
   String _money(int value) {
-    final digits = value.toString();
+    final digits = value.abs().toString();
     final buffer = StringBuffer();
     for (var i = 0; i < digits.length; i++) {
       if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
@@ -18,11 +19,16 @@ class BudgetPage extends GetView<BudgetController> {
     return 'Rp$buffer';
   }
 
+  Future<void> _openForm([BudgetViewModel? item]) async {
+    await Get.toNamed(AppRoutes.budgetForm, arguments: item?.budget);
+    await controller.load(silent: true);
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('Anggaran')),
         floatingActionButton: FloatingActionButton.extended(
-          onPressed: () {},
+          onPressed: _openForm,
           icon: const Icon(Icons.add),
           label: const Text('Tambah'),
         ),
@@ -42,10 +48,15 @@ class BudgetPage extends GetView<BudgetController> {
                   padding: const EdgeInsets.all(16),
                   itemCount: current.data!.length,
                   separatorBuilder: (_, __) => const SizedBox(height: 12),
-                  itemBuilder: (_, index) => _BudgetCard(
-                    item: current.data![index],
-                    money: _money,
-                  ),
+                  itemBuilder: (_, index) {
+                    final item = current.data![index];
+                    return _BudgetCard(
+                      item: item,
+                      money: _money,
+                      onEdit: () => _openForm(item),
+                      onArchive: () => controller.archive(item.budget.id!),
+                    );
+                  },
                 ),
               ),
           };
@@ -54,14 +65,23 @@ class BudgetPage extends GetView<BudgetController> {
 }
 
 class _BudgetCard extends StatelessWidget {
-  const _BudgetCard({required this.item, required this.money});
+  const _BudgetCard({
+    required this.item,
+    required this.money,
+    required this.onEdit,
+    required this.onArchive,
+  });
   final BudgetViewModel item;
   final String Function(int) money;
+  final VoidCallback onEdit;
+  final VoidCallback onArchive;
 
   @override
   Widget build(BuildContext context) {
-    final over = item.isOverBudget;
-    final warning = !over && item.percent >= 80;
+    final limit = item.budget.amountLimit;
+    final ratio = limit > 0 ? item.used / limit : 0.0;
+    final over = item.remaining < 0;
+    final warning = !over && ratio >= 0.8;
     final color = over
         ? Theme.of(context).colorScheme.error
         : warning
@@ -76,25 +96,31 @@ class _BudgetCard extends StatelessWidget {
               child: Text(item.budget.name,
                   style: Theme.of(context).textTheme.titleMedium),
             ),
-            Icon(Icons.more_vert, color: Theme.of(context).colorScheme.outline),
+            PopupMenuButton<String>(
+              onSelected: (value) => value == 'edit' ? onEdit() : onArchive(),
+              itemBuilder: (_) => const [
+                PopupMenuItem(value: 'edit', child: Text('Edit')),
+                PopupMenuItem(value: 'archive', child: Text('Arsipkan')),
+              ],
+            ),
           ]),
           const SizedBox(height: 12),
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
-              value: (item.percent.clamp(0, 100) as num) / 100,
+              value: ratio.clamp(0.0, 1.0).toDouble(),
               minHeight: 10,
               color: color,
               backgroundColor: color.withValues(alpha: .15),
             ),
           ),
           const SizedBox(height: 10),
-          Text('${money(item.used)} dari ${money(item.budget.amountLimit)}'),
+          Text('${money(item.used)} dari ${money(limit)}'),
           const SizedBox(height: 4),
           Text(
             over
-                ? 'Melebihi batas ${money(item.used - item.budget.amountLimit)}'
-                : 'Sisa ${money(item.remaining)} • ${item.percent.toStringAsFixed(0)}%',
+                ? 'Melebihi batas ${money(item.remaining)}'
+                : 'Sisa ${money(item.remaining)} • ${(ratio * 100).toStringAsFixed(0)}%',
             style: TextStyle(color: color),
           ),
         ]),
