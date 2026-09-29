@@ -27,11 +27,18 @@ class BudgetPage extends GetView<BudgetController> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Anggaran')),
+        backgroundColor: const Color(0xFFF6FAF9),
+        appBar: AppBar(
+          title: const Text('Anggaran'),
+          backgroundColor: const Color(0xFFF6FAF9),
+          surfaceTintColor: Colors.transparent,
+        ),
         floatingActionButton: Padding(
           padding: const EdgeInsets.only(bottom: 84),
           child: FloatingActionButton.extended(
             onPressed: _openForm,
+            backgroundColor: const Color(0xFF0F766E),
+            foregroundColor: Colors.white,
             icon: const Icon(Icons.add),
             label: const Text('Tambah'),
           ),
@@ -47,11 +54,12 @@ class BudgetPage extends GetView<BudgetController> {
                 onRetry: controller.load,
               ),
             ResourceStatus.success => RefreshIndicator(
+                color: const Color(0xFF0F766E),
                 onRefresh: controller.load,
                 child: ListView.separated(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                   itemCount: current.data!.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 12),
+                  separatorBuilder: (_, _) => const SizedBox(height: 14),
                   itemBuilder: (_, index) {
                     final item = current.data![index];
                     return _BudgetCard(
@@ -75,6 +83,7 @@ class _BudgetCard extends StatelessWidget {
     required this.onEdit,
     required this.onArchive,
   });
+
   final BudgetViewModel item;
   final String Function(int) money;
   final VoidCallback onEdit;
@@ -82,33 +91,50 @@ class _BudgetCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final limit = item.budget.amountLimit;
-    final level = item.level;
-    final color = switch (level) {
-      BudgetLevel.safe => Theme.of(context).colorScheme.primary,
-      BudgetLevel.warning => const Color(0xFFD97706),
-      BudgetLevel.critical => const Color(0xFFEA580C),
-      BudgetLevel.exceeded => const Color(0xFFBE123C),
-    };
+    final visual = _BudgetVisual.forLevel(item.level);
     final percentText = item.percent.toStringAsFixed(0);
-    final status = switch (level) {
-      BudgetLevel.safe => 'Sisa ${money(item.remaining)} \u2022 $percentText%',
-      BudgetLevel.warning =>
-        'Mendekati batas \u2022 Sisa ${money(item.remaining)} \u2022 $percentText%',
-      BudgetLevel.critical =>
-        'Hampir habis \u2022 Sisa ${money(item.remaining)} \u2022 $percentText%',
-      BudgetLevel.exceeded => 'Melebihi batas ${money(item.remaining)}',
+    final status = switch (item.level) {
+      BudgetLevel.safe => 'Sisa ${money(item.remaining)}',
+      BudgetLevel.warning => 'Mendekati batas • Sisa ${money(item.remaining)}',
+      BudgetLevel.critical => 'Hampir habis • Sisa ${money(item.remaining)}',
+      BudgetLevel.exceeded => 'Melebihi batas ${money(-item.remaining)}',
     };
-    return Card(
+
+    return Container(
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        boxShadow: const [
+          BoxShadow(
+            color: Color(0x170F766E),
+            blurRadius: 22,
+            offset: Offset(0, 6),
+          ),
+        ],
+      ),
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
+          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
             Expanded(
-              child: Text(item.budget.name,
-                  style: Theme.of(context).textTheme.titleMedium),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    item.budget.name,
+                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                          fontWeight: FontWeight.w600,
+                          color: const Color(0xFF1F2937),
+                        ),
+                  ),
+                  const SizedBox(height: 7),
+                  _StatusChip(visual: visual),
+                ],
+              ),
             ),
             PopupMenuButton<String>(
+              icon: const Icon(Icons.more_horiz_rounded),
+              color: Colors.white,
               onSelected: (value) => value == 'edit' ? onEdit() : onArchive(),
               itemBuilder: (_) => const [
                 PopupMenuItem(value: 'edit', child: Text('Edit')),
@@ -116,33 +142,143 @@ class _BudgetCard extends StatelessWidget {
               ],
             ),
           ]),
-          const SizedBox(height: 12),
+          const SizedBox(height: 16),
           ClipRRect(
-            borderRadius: BorderRadius.circular(6),
-            child: LinearProgressIndicator(
-              value: (item.percent / 100).clamp(0.0, 1.0).toDouble(),
-              minHeight: 10,
-              color: color,
-              backgroundColor: color.withValues(alpha: .15),
+            borderRadius: BorderRadius.circular(9),
+            child: SizedBox(
+              height: 9,
+              child: Stack(children: [
+                const Positioned.fill(
+                  child: ColoredBox(color: Color(0xFFEEF2F5)),
+                ),
+                FractionallySizedBox(
+                  widthFactor: (item.percent / 100).clamp(0.0, 1.0).toDouble(),
+                  child: DecoratedBox(
+                    decoration: BoxDecoration(gradient: visual.gradient),
+                  ),
+                ),
+              ]),
             ),
           ),
-          const SizedBox(height: 10),
-          Text('${money(item.used)} dari ${money(limit)}'),
-          const SizedBox(height: 4),
-          Text(status, style: TextStyle(color: color)),
+          const SizedBox(height: 11),
+          Row(children: [
+            Expanded(
+              child: Text(
+                '${money(item.used)} dari ${money(item.budget.amountLimit)}',
+                style: const TextStyle(
+                  color: Color(0xFF1F2937),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Text(
+              '$percentText%',
+              style: TextStyle(
+                color: visual.foreground,
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ]),
+          const SizedBox(height: 5),
+          Text(
+            status,
+            style: TextStyle(
+              color: visual.foreground,
+              fontSize: 11.5,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
         ]),
       ),
     );
   }
 }
 
+class _StatusChip extends StatelessWidget {
+  const _StatusChip({required this.visual});
+  final _BudgetVisual visual;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+        decoration: BoxDecoration(
+          color: visual.background,
+          borderRadius: BorderRadius.circular(99),
+        ),
+        child: Text(
+          visual.label,
+          style: TextStyle(
+            color: visual.foreground,
+            fontSize: 10,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      );
+}
+
+class _BudgetVisual {
+  const _BudgetVisual({
+    required this.label,
+    required this.background,
+    required this.foreground,
+    required this.gradient,
+  });
+
+  final String label;
+  final Color background;
+  final Color foreground;
+  final LinearGradient gradient;
+
+  factory _BudgetVisual.forLevel(BudgetLevel level) => switch (level) {
+        BudgetLevel.safe => const _BudgetVisual(
+            label: 'Aman < 75%',
+            background: Color(0xFFCCFBF1),
+            foreground: Color(0xFF0F766E),
+            gradient: LinearGradient(
+              colors: [Color(0xFF14B8A6), Color(0xFF10B981)],
+            ),
+          ),
+        BudgetLevel.warning => const _BudgetVisual(
+            label: 'Waspada 75%',
+            background: Color(0xFFFEF3C7),
+            foreground: Color(0xFFB45309),
+            gradient: LinearGradient(
+              colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
+            ),
+          ),
+        BudgetLevel.critical => const _BudgetVisual(
+            label: 'Kritis 90%',
+            background: Color(0xFFFFEDD5),
+            foreground: Color(0xFFC2410C),
+            gradient: LinearGradient(
+              colors: [Color(0xFFFB923C), Color(0xFFEA580C)],
+            ),
+          ),
+        BudgetLevel.exceeded => const _BudgetVisual(
+            label: 'Habis 100%',
+            background: Color(0xFFFFE4E9),
+            foreground: Color(0xFFF43F5E),
+            gradient: LinearGradient(
+              colors: [Color(0xFFFB7185), Color(0xFFF43F5E)],
+            ),
+          ),
+      };
+}
+
 class _Empty extends StatelessWidget {
   const _Empty({required this.onReload});
   final Future<void> Function({bool silent}) onReload;
+
   @override
   Widget build(BuildContext context) => Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(Icons.account_balance_wallet_outlined, size: 56),
+          const Icon(
+            Icons.account_balance_wallet_outlined,
+            size: 56,
+            color: Color(0xFF0F766E),
+          ),
           const SizedBox(height: 12),
           const Text('Belum ada anggaran'),
           TextButton(onPressed: onReload, child: const Text('Muat ulang')),
@@ -154,6 +290,7 @@ class _Error extends StatelessWidget {
   const _Error({required this.message, required this.onRetry});
   final String message;
   final Future<void> Function({bool silent}) onRetry;
+
   @override
   Widget build(BuildContext context) => Center(
         child: Column(mainAxisSize: MainAxisSize.min, children: [
