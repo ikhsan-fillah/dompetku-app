@@ -1,26 +1,27 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+
 import '../../../core/widgets/app_bottom_nav.dart';
+import '../../budget/views/budget_page.dart';
 import '../../home/pages/home_page.dart';
 import '../../profile/pages/profile_page.dart';
 import '../../transaction/pages/transaction_list_page.dart';
 import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../controllers/main_shell_controller.dart';
-import '../widgets/coming_soon_tab.dart';
+
 
 class MainShellPage extends GetView<MainShellController> {
   const MainShellPage({super.key});
 
+
   Widget _tab(int index) => switch (index) {
         0 => const HomePage(),
         1 => const TransactionListPage(),
-        2 => const ComingSoonTab(
-            title: 'Anggaran',
-            icon: Icons.pie_chart_rounded,
-          ),
+        2 => const BudgetPage(),
         _ => const ProfilePage(),
       };
+
 
   @override
   Widget build(BuildContext context) {

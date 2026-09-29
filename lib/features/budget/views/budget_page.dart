@@ -27,10 +27,13 @@ class BudgetPage extends GetView<BudgetController> {
   @override
   Widget build(BuildContext context) => Scaffold(
         appBar: AppBar(title: const Text('Anggaran')),
-        floatingActionButton: FloatingActionButton.extended(
-          onPressed: _openForm,
-          icon: const Icon(Icons.add),
-          label: const Text('Tambah'),
+        floatingActionButton: Padding(
+          padding: const EdgeInsets.only(bottom: 84),
+          child: FloatingActionButton.extended(
+            onPressed: _openForm,
+            icon: const Icon(Icons.add),
+            label: const Text('Tambah'),
+          ),
         ),
         body: Obx(() {
           final current = controller.state.value;
@@ -45,7 +48,7 @@ class BudgetPage extends GetView<BudgetController> {
             ResourceStatus.success => RefreshIndicator(
                 onRefresh: controller.load,
                 child: ListView.separated(
-                  padding: const EdgeInsets.all(16),
+                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
                   itemCount: current.data!.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (_, index) {
