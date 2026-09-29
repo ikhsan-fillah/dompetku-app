@@ -33,19 +33,22 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (!Get.isRegistered<AppLockService>() || !Get.isRegistered<AuthController>()) {
+    if (!Get.isRegistered<AppLockService>() ||
+        !Get.isRegistered<AuthController>()) {
       return;
     }
     final lockService = Get.find<AppLockService>();
     final auth = Get.find<AuthController>();
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused) {
       lockService.onBackgrounded(DateTime.now());
-    } else if (state == AppLifecycleState.resumed && auth.isUnlocked.value) {
-      if (lockService.shouldLock(DateTime.now())) {
+    } else if (state == AppLifecycleState.resumed) {
+      final shouldLock =
+          auth.isUnlocked.value && lockService.shouldLock(DateTime.now());
+      lockService.onForegrounded();
+      if (shouldLock) {
         auth.lock();
         Get.offAllNamed(AppRoutes.biometricUnlock);
       }
-      lockService.onForegrounded();
     }
   }
 
@@ -62,4 +65,3 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     );
   }
 }
-
