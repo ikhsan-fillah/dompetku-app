@@ -20,6 +20,17 @@ abstract final class DateLabel {
   static String day(DateTime date) =>
       '${date.day} ${_months[date.month - 1]} ${date.year}';
 
+  /// 'Hari ini', 'Kemarin', atau tanggal lengkap untuk hari lainnya.
+  static String relativeDay(DateTime date, {DateTime? now}) {
+    final current = now ?? DateTime.now();
+    final today = DateTime.utc(current.year, current.month, current.day);
+    final target = DateTime.utc(date.year, date.month, date.day);
+    final diff = today.difference(target).inDays;
+    if (diff == 0) return 'Hari ini';
+    if (diff == 1) return 'Kemarin';
+    return day(date);
+  }
+
   static String range(DateRange range) {
     final start = range.start;
     final end = range.end;
