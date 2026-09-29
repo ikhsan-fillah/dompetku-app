@@ -1,6 +1,7 @@
 import 'package:get/get.dart';
 
 import '../../../core/services/shared_prefs_service.dart';
+import '../../../core/utils/display_name.dart';
 
 class ProfileController extends GetxController {
   ProfileController(this._preferences);
@@ -8,6 +9,10 @@ class ProfileController extends GetxController {
   final SharedPrefsService _preferences;
   final biometricEnabled = false.obs;
   final themeMode = 'system'.obs;
+  final displayName = ''.obs;
+
+  String get greetingName => DisplayName.greeting(displayName.value);
+  String get initial => DisplayName.initial(displayName.value);
 
   @override
   void onInit() {
@@ -18,10 +23,17 @@ class ProfileController extends GetxController {
   Future<void> load() async {
     biometricEnabled.value = await _preferences.getBiometricEnabled();
     themeMode.value = await _preferences.getThemeMode();
+    displayName.value = await _preferences.getDisplayName();
   }
 
   Future<void> setThemeMode(String value) async {
     themeMode.value = value;
     await _preferences.setThemeMode(value);
+  }
+
+  Future<void> setDisplayName(String value) async {
+    final normalized = DisplayName.normalize(value);
+    displayName.value = normalized;
+    await _preferences.setDisplayName(normalized);
   }
 }
