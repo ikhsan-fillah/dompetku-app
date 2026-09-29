@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../core/state/resource_state.dart';
+import '../../../core/utils/budget_status.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
 
@@ -82,14 +83,22 @@ class _BudgetCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final limit = item.budget.amountLimit;
-    final ratio = limit > 0 ? item.used / limit : 0.0;
-    final over = item.remaining < 0;
-    final warning = !over && ratio >= 0.8;
-    final color = over
-        ? Theme.of(context).colorScheme.error
-        : warning
-            ? Colors.orange
-            : Theme.of(context).colorScheme.primary;
+    final level = item.level;
+    final color = switch (level) {
+      BudgetLevel.safe => Theme.of(context).colorScheme.primary,
+      BudgetLevel.warning => const Color(0xFFD97706),
+      BudgetLevel.critical => const Color(0xFFEA580C),
+      BudgetLevel.exceeded => const Color(0xFFBE123C),
+    };
+    final percentText = item.percent.toStringAsFixed(0);
+    final status = switch (level) {
+      BudgetLevel.safe => 'Sisa ${money(item.remaining)} \u2022 $percentText%',
+      BudgetLevel.warning =>
+        'Mendekati batas \u2022 Sisa ${money(item.remaining)} \u2022 $percentText%',
+      BudgetLevel.critical =>
+        'Hampir habis \u2022 Sisa ${money(item.remaining)} \u2022 $percentText%',
+      BudgetLevel.exceeded => 'Melebihi batas ${money(item.remaining)}',
+    };
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -111,7 +120,7 @@ class _BudgetCard extends StatelessWidget {
           ClipRRect(
             borderRadius: BorderRadius.circular(6),
             child: LinearProgressIndicator(
-              value: ratio.clamp(0.0, 1.0).toDouble(),
+              value: (item.percent / 100).clamp(0.0, 1.0).toDouble(),
               minHeight: 10,
               color: color,
               backgroundColor: color.withValues(alpha: .15),
@@ -120,12 +129,7 @@ class _BudgetCard extends StatelessWidget {
           const SizedBox(height: 10),
           Text('${money(item.used)} dari ${money(limit)}'),
           const SizedBox(height: 4),
-          Text(
-            over
-                ? 'Melebihi batas ${money(item.remaining)}'
-                : 'Sisa ${money(item.remaining)} • ${(ratio * 100).toStringAsFixed(0)}%',
-            style: TextStyle(color: color),
-          ),
+          Text(status, style: TextStyle(color: color)),
         ]),
       ),
     );
