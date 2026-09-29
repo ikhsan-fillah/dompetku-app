@@ -5,21 +5,126 @@ import '../../../app/routes/app_routes.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/utils/date_range.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_progress_bar.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
-import '../../dashboard/models/spending_trend_point.dart';
 import '../../dashboard/widgets/expense_donut.dart';
+import '../../dashboard/widgets/spending_bars.dart';
+import '../../shell/controllers/main_shell_controller.dart';
+import '../widgets/budget_summary_cards.dart';
+import '../widgets/category_cards_grid.dart';
 import '../widgets/home_app_bar.dart';
+import '../widgets/insight_banner.dart';
+import '../widgets/period_chips.dart';
+import '../widgets/recent_transactions_card.dart';
 
 /// Isi tab Beranda. Data dimuat ulang otomatis; tidak ada tombol refresh.
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
+
+  void _openTab(int index) {
+    if (Get.isRegistered<MainShellController>()) {
+      Get.find<MainShellController>().select(index);
+    }
+  }
+
+  Future<void> _pickCustomRange(
+    BuildContext context,
+    DashboardController controller,
+  ) async {
+    final current = controller.range.value;
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime(1970),
+      lastDate: DateTime.now(),
+      initialDateRange: DateTimeRange(start: current.start, end: current.end),
+    );
+    if (picked != null) {
+      await controller.setRange(
+        DateRange(start: picked.start, end: picked.end),
+      );
+    }
+  }
+
+  List<Widget> _content(
+    ResourceState<DashboardData> state,
+    DashboardData? data,
+    DashboardController controller,
+  ) {
+    switch (state.status) {
+      case ResourceStatus.idle:
+      case ResourceStatus.loading:
+        return const [
+          Padding(
+            padding: EdgeInsets.symmetric(vertical: 60),
+            child: Center(child: CircularProgressIndicator()),
+          ),
+        ];
+      case ResourceStatus.error:
+        return [
+          AppErrorView(
+            message: state.message ?? 'Gagal memuat dashboard.',
+            onRetry: () => controller.refreshDashboard(),
+          ),
+        ];
+      case ResourceStatus.empty:
+        return const [
+          AppEmptyView(
+            icon: Icons.receipt_long_outlined,
+            title: 'Belum ada transaksi',
+            message:
+                'Tidak ada transaksi pada periode yang dipilih. Coba pilih periode lain.',
+          ),
+        ];
+      case ResourceStatus.success:
+        if (data == null) return const [];
+        return [
+          BudgetSummaryCards(
+            budget: data.budget,
+            topCategory: data.expenses.isEmpty ? null : data.expenses.first,
+            onSetupBudget: () => _openTab(2),
+          ),
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SectionHeader(title: 'Pengeluaran per kategori'),
+                ExpenseDonut(slices: data.expenses),
+                const SizedBox(height: 8),
+                const Text(
+                  'Urut dari terbesar ke terkecil · ketuk untuk detail',
+                  style: TextStyle(fontSize: 10.5, color: AppColors.muted),
+                ),
+              ],
+            ),
+          ),
+          AppCard(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const SectionHeader(title: 'Tren pengeluaran'),
+                SpendingBars(buckets: data.trendBuckets),
+              ],
+            ),
+          ),
+          if (data.favorites.isNotEmpty) ...[
+            const SectionHeader(title: 'Kategori favorit'),
+            CategoryCardsGrid(items: data.favorites),
+          ],
+          if (data.recent.isNotEmpty)
+            RecentTransactionsCard(
+              items: data.recent,
+              onSeeAll: () => _openTab(1),
+            ),
+          if (data.insight != null) InsightBanner(message: data.insight!.message),
+        ];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -42,16 +147,7 @@ class HomePage extends StatelessWidget {
           Expanded(
             child: Obx(() {
               final state = controller.state.value;
-              if (state.status == ResourceStatus.idle ||
-                  state.status == ResourceStatus.loading) {
-                return const AppLoadingView();
-              }
-              if (state.status == ResourceStatus.error) {
-                return AppErrorView(
-                  message: state.message ?? 'Gagal memuat dashboard.',
-                  onRetry: () => controller.refreshDashboard(),
-                );
-              }
+              final data = state.data;
               return ListView(
                 padding: const EdgeInsets.fromLTRB(
                   AppSpacing.page,
@@ -60,33 +156,20 @@ class HomePage extends StatelessWidget {
                   130,
                 ),
                 children: [
-                  if (state.status == ResourceStatus.empty)
-                    const AppEmptyView(
-                      icon: Icons.receipt_long_outlined,
-                      title: 'Belum ada transaksi',
-                      message: 'Tidak ada transaksi pada periode yang dipilih.',
-                    )
-                  else if (state.data != null) ...[
-                    _BalanceCard(data: state.data!),
-                    AppCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SectionHeader(title: 'Pengeluaran per kategori'),
-                          ExpenseDonut(slices: state.data!.expenses),
-                        ],
-                      ),
-                    ),
-                    AppCard(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const SectionHeader(title: 'Tren pengeluaran'),
-                          _TrendBars(points: state.data!.trend),
-                        ],
-                      ),
-                    ),
-                  ],
+                  if (state.status == ResourceStatus.success && data != null)
+                    _BalanceCard(data: data),
+                  PeriodChips(
+                    selected: controller.preset.value,
+                    onSelect: (preset) {
+                      if (preset == DateRangePreset.custom) {
+                        _pickCustomRange(context, controller);
+                      } else {
+                        controller.setPreset(preset);
+                      }
+                    },
+                  ),
+                  const _AutoRefreshHint(),
+                  ..._content(state, data, controller),
                 ],
               );
             }),
@@ -94,6 +177,36 @@ class HomePage extends StatelessWidget {
         ],
       );
     });
+  }
+}
+
+class _AutoRefreshHint extends StatelessWidget {
+  const _AutoRefreshHint();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Padding(
+      padding: EdgeInsets.only(bottom: 12, left: 2),
+      child: Row(
+        children: [
+          SizedBox(
+            width: 7,
+            height: 7,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: AppColors.emerald,
+                shape: BoxShape.circle,
+              ),
+            ),
+          ),
+          SizedBox(width: 6),
+          Text(
+            'Diperbarui otomatis',
+            style: TextStyle(fontSize: 10.5, color: AppColors.muted),
+          ),
+        ],
+      ),
+    );
   }
 }
 
@@ -211,66 +324,6 @@ class _MiniPill extends StatelessWidget {
           ),
         ],
       ),
-    );
-  }
-}
-
-class _TrendBars extends StatelessWidget {
-  const _TrendBars({required this.points});
-
-  final List<SpendingTrendPoint> points;
-
-  @override
-  Widget build(BuildContext context) {
-    if (points.isEmpty) {
-      return const Text('Belum ada pengeluaran pada periode ini.');
-    }
-    final visible =
-        points.length > 10 ? points.sublist(points.length - 10) : points;
-    final maxAmount =
-        visible.fold<int>(0, (m, p) => p.amount > m ? p.amount : m);
-    return Column(
-      children: [
-        for (final point in visible)
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  children: [
-                    SizedBox(
-                      width: 46,
-                      child: Text(
-                        '${point.date.day}/${point.date.month}',
-                        style: const TextStyle(
-                          fontSize: 11,
-                          color: AppColors.muted,
-                        ),
-                      ),
-                    ),
-                    Expanded(
-                      child: AppProgressBar(
-                        value: maxAmount == 0 ? 0 : point.amount / maxAmount,
-                        height: 12,
-                        gradient: const LinearGradient(
-                          colors: [AppColors.amber, AppColors.coral],
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-                Padding(
-                  padding: const EdgeInsets.only(left: 46, top: 3),
-                  child: Text(
-                    formatIdr(point.amount),
-                    style: const TextStyle(fontSize: 11),
-                  ),
-                ),
-              ],
-            ),
-          ),
-      ],
     );
   }
 }
