@@ -4,6 +4,62 @@ This document contains the development workflow for DompetKu. The product decisi
 
 The implementation order is intentional: stabilize the project, prepare the core logic and database, implement services and controllers, test the behavior, and only then build the UI.
 
+## Implementation Status
+
+Last updated: 29 September 2026.
+
+Current quality gate: `flutter analyze` reports no issues and `flutter test` passes.
+
+| Phase | Scope | Status |
+|---|---|---|
+| 0 | Baseline and cleanup | Done |
+| 1 | Core contracts and utilities | Done |
+| 2 | Database and migrations | Done |
+| 3 | Models and domain logic | Done |
+| 4 | Platform services | Done |
+| 5 | Authentication and security logic | Implemented (auth controller, route guard, biometric pages); to be confirmed against exit criteria |
+| 6 | Controllers and state flow | In progress: transaction, budget, and shell controllers exist; report and profile controllers to be confirmed |
+| 7 | Minimal UI shell | Implemented (splash, login, biometric pages, main shell); to be confirmed |
+| 8 | Transaction feature UI | Implemented (history and form sheet); to be confirmed |
+| 9 | Dashboard UI | Implemented (home page); to be verified against calculation tests |
+| 10 | Budgets, reports, and profile UI | In progress: budgets done (Stage 5A); threshold warnings, reports, and profile settings pending |
+| 11 | OCR | Not started |
+| 12 | Quality and release preparation | Not started |
+
+Statuses marked "to be confirmed" were inferred from the code present in the repository and must be checked against each phase's exit criteria before being marked Done.
+
+### Stage 5A: Budgets (completed)
+
+| Step | Content | Commit |
+|---|---|---|
+| 5A-1 | Budget model, repository contract, and local data source | Present before 5A-2 |
+| 5A-2 | `BudgetController`: progress from expense transactions, archive, silent refresh, with tests | f76282a |
+| 5A-3 | `BudgetFormController`: create and edit, validation, active expense categories | 77a1983 |
+| 5A-4a | `BudgetBinding` with lazy, fenix registration | 6ae6d44 |
+| 5A-4b | `BudgetPage`: progress cards, loading, empty, and error states | 15d1128 |
+| 5A-4c | `BudgetFormPage`: create and edit form | 65c3614 |
+| 5A-4d | `/budget-form` route, binding on the home route, Edit and Archive menu | 765791a |
+| 5A-4e | Lint fixes (`initialValue`, `(_, _)`) | 3975ca9 |
+| 5A-5 | Budget tab in the main shell now shows `BudgetPage` | 9a8c2b8 |
+| 5A-6 | `BudgetFormController` tests | d00a735 |
+
+Implemented budget rules:
+
+- A budget is either overall (no category) or tied to one active expense category.
+- Usage is the sum of expense transactions inside the budget's inclusive date range.
+- Archiving a budget never deletes transaction history.
+- Changing a budget or a transaction triggers a refresh through `DataRefreshService`.
+
+### Next Steps
+
+1. Align budget warnings with the 75%, 90%, and 100% thresholds from the README, using `BudgetStatus` levels instead of the fixed 80% used by the first budget card.
+2. Show a budget summary and warnings on the dashboard.
+3. Add an archived-budgets screen with restore.
+4. Build report filters and visualizations (Phase 10).
+5. Complete profile and settings (theme, biometric preference, auto-lock, safe data deletion).
+6. Implement OCR with mandatory review (Phase 11).
+7. Run the full quality checklist and prepare release notes (Phase 12).
+
 ## 1. Development Rules
 
 - Keep financial data local to the device.
@@ -87,10 +143,12 @@ lib/
       models/
       repositories/
     budget/
+      bindings/
       controllers/
       data/
       models/
       repositories/
+      views/
     dashboard/
       controllers/
       models/
@@ -380,6 +438,8 @@ Only after the previous logic layers are ready:
 
 ## 14. Phase 10: Budgets, Reports, and Profile UI
 
+Progress: item 1 is done (Stage 5A). The warning thresholds in item 2 are pending: the first budget card uses a fixed 80% warning and must move to the 75%, 90%, and 100% levels.
+
 1. Build budget creation and progress UI.
 2. Add 75%, 90%, and 100% threshold warnings.
 3. Build report filters and visualizations.
@@ -444,6 +504,7 @@ The initial OCR implementation should prefer a privacy-preserving and offline-ca
 - Loading, empty, success, and error states.
 - Transaction validation and save flow.
 - Dashboard refresh after a transaction changes.
+- Budget progress, archive, and form validation (covered in Stage 5A).
 
 ### Widget and Integration Tests
 
