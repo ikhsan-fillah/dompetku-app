@@ -1,8 +1,8 @@
 import 'package:get/get.dart';
-import 'package:dompetku_app/core/constant/domain_enums.dart';
-import 'package:dompetku_app/core/services/biometric_service.dart';
-import 'package:dompetku_app/core/utils/biometric_lockout.dart';
-import 'package:dompetku_app/features/auth/repositories/session_repository.dart';
+import '../../../core/constant/domain_enums.dart';
+import '../../../core/services/biometric_service.dart';
+import '../../../core/utils/biometric_lockout.dart';
+import '../repositories/session_repository.dart';
 
 class AuthController extends GetxController {
   AuthController(this._sessionRepository, this._biometricService);
@@ -41,26 +41,35 @@ class AuthController extends GetxController {
   }
 
   Future<void> markRegistered() async {
-    isRegistered.value = true;
     await _sessionRepository.setRegistered(true);
+    isRegistered.value = true;
   }
 
   void lock() => isUnlocked.value = false;
   void unlock() => isUnlocked.value = true;
 
   bool get isLockedOut => BiometricLockout.isLockedOut(
-    biometricLockedUntil.value,
-    now: DateTime.now(),
-  );
+        biometricLockedUntil.value, now: DateTime.now());
 
   Future<bool> biometricAvailable() => _biometricService.isAvailable();
 
   Future<void> setBiometricEnabled(bool value) async {
-    biometricEnabled.value = value;
     await _sessionRepository.setBiometricEnabled(value);
+    biometricEnabled.value = value;
   }
 
-  Future<bool> unlockWithBiometric() async {
+  Future<bool> setupBiometric() async {
+    lock();
+    return _authenticate(enableAfterSuccess: true);
+  }
+
+  Future<bool> unlockWithBiometric() => _authenticate(enableAfterSuccess: false);
+
+  Future<bool> _authenticate({required bool enableAfterSuccess}) async {
+    if (!isRegistered.value || (!enableAfterSuccess && !biometricEnabled.value)) {
+      lock();
+      return false;
+    }
     final previousLockout = biometricLockedUntil.value;
     if (previousLockout != null && !isLockedOut) {
       biometricFailureCount.value = 0;
@@ -75,32 +84,26 @@ class AuthController extends GetxController {
       biometricStatus.value = BiometricStatus.unavailable;
       return false;
     }
-
     biometricStatus.value = BiometricStatus.authenticating;
     final authenticated = await _biometricService.authenticate();
     if (authenticated) {
+      if (enableAfterSuccess) {
+        await _sessionRepository.setBiometricEnabled(true);
+        biometricEnabled.value = true;
+      }
+      await _sessionRepository.saveBiometricFailureState(count: 0);
       biometricFailureCount.value = 0;
       biometricLockedUntil.value = null;
-      await _sessionRepository.saveBiometricFailureState(count: 0);
       biometricStatus.value = BiometricStatus.authenticated;
       unlock();
       return true;
     }
-
     final count = biometricFailureCount.value + 1;
-    final until = BiometricLockout.lockedUntil(
-      failureCount: count,
-      now: DateTime.now(),
-    );
+    final until = BiometricLockout.lockedUntil(failureCount: count, now: DateTime.now());
+    await _sessionRepository.saveBiometricFailureState(count: count, lockedUntil: until);
     biometricFailureCount.value = count;
     biometricLockedUntil.value = until;
-    await _sessionRepository.saveBiometricFailureState(
-      count: count,
-      lockedUntil: until,
-    );
-    biometricStatus.value = until == null
-        ? BiometricStatus.failed
-        : BiometricStatus.lockedOut;
+    biometricStatus.value = until == null ? BiometricStatus.failed : BiometricStatus.lockedOut;
     return false;
   }
 }

@@ -1,43 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
 import '../../../app/routes/app_routes.dart';
+import '../../../core/constant/domain_enums.dart';
+import '../../../core/widgets/auth_scaffold.dart';
 import '../controllers/auth_controller.dart';
 
-class BiometricSetupPage extends StatefulWidget {
+class BiometricSetupPage extends StatelessWidget {
   const BiometricSetupPage({super.key});
 
   @override
-  State<BiometricSetupPage> createState() => _BiometricSetupPageState();
-}
-
-class _BiometricSetupPageState extends State<BiometricSetupPage> {
-  final AuthController _auth = Get.find();
-  bool _loading = false;
-  String? _message;
-
-  Future<void> _enable() async {
-    setState(() => _loading = true);
-    final available = await _auth.biometricAvailable();
-    if (!available) {
-      if (mounted) setState(() { _loading = false; _message = 'Biometrik tidak tersedia pada perangkat ini.'; });
-      return;
-    }
-    await _auth.setBiometricEnabled(true);
-    if (mounted) Get.offAllNamed(AppRoutes.biometricUnlock);
+  Widget build(BuildContext context) {
+    final auth = Get.find<AuthController>();
+    return AuthScaffold(
+      icon: Icons.fingerprint_rounded,
+      title: 'Lindungi dompetmu',
+      description: 'Aktifkan biometrik agar catatan keuangan hanya terlihat setelah kamu mengizinkannya.',
+      child: Obx(() {
+        final status = auth.biometricStatus.value;
+        final until = auth.biometricLockedUntil.value;
+        final locked = auth.isLockedOut;
+        final busy = status == BiometricStatus.authenticating;
+        final message = locked
+            ? 'Terlalu banyak percobaan. Coba lagi setelah ${until == null ? '-' : TimeOfDay.fromDateTime(until.toLocal()).format(context)}.'
+            : status == BiometricStatus.unavailable
+                ? 'Biometrik tidak tersedia. Daftarkan biometrik di pengaturan perangkat, lalu coba lagi.'
+                : status == BiometricStatus.failed
+                    ? 'Verifikasi gagal. Coba lagi.'
+                    : 'Verifikasi biometrik sekali untuk menyelesaikan pengaturan.';
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(message),
+            const SizedBox(height: 24),
+            FilledButton.icon(
+              onPressed: busy || locked
+                  ? null
+                  : () async {
+                      if (await auth.setupBiometric() && context.mounted) {
+                        Get.offAllNamed(AppRoutes.home);
+                      }
+                    },
+              icon: const Icon(Icons.verified_user_outlined),
+              label: Text(busy ? 'Memverifikasi…' : 'Verifikasi biometrik'),
+            ),
+          ],
+        );
+      }),
+    );
   }
-
-  @override
-  Widget build(BuildContext context) => Scaffold(
-        appBar: AppBar(title: const Text('Aktifkan biometrik')),
-        body: Center(child: Padding(
-          padding: const EdgeInsets.all(24),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            const Text('Biometrik diperlukan untuk melindungi data finansial Anda.', textAlign: TextAlign.center),
-            if (_message != null) Padding(padding: const EdgeInsets.only(top: 16), child: Text(_message!)),
-            const SizedBox(height: 16),
-            FilledButton(onPressed: _loading ? null : _enable, child: Text(_loading ? 'Memeriksa…' : 'Aktifkan biometrik')),
-          ]),
-        )),
-      );
 }

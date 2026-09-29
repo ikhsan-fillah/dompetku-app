@@ -1,27 +1,47 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:dompetku_app/app/routes/app_routes.dart';
-import 'package:dompetku_app/features/auth/controllers/auth_controller.dart';
+import '../../../app/routes/app_routes.dart';
+import '../../../core/widgets/auth_scaffold.dart';
+import '../controllers/auth_controller.dart';
 
-class LoginPage extends StatelessWidget {
+class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    final auth = Get.find<AuthController>();
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Login Page'),
-      ),
-      body: Center(
-        child: ElevatedButton(
-          onPressed: () async {
-            await auth.markRegistered();
-            auth.lock();
-            Get.offAllNamed(AppRoutes.biometricSetup);
-          }, 
-        child: const Text('simulasi login sukses'),)
-      )
-    );
+  State<LoginPage> createState() => _LoginPageState();
+}
+
+class _LoginPageState extends State<LoginPage> {
+  bool busy = false;
+  String? error;
+
+  Future<void> start() async {
+    setState(() { busy = true; error = null; });
+    try {
+      final auth = Get.find<AuthController>();
+      await auth.markRegistered();
+      auth.lock();
+      if (mounted) Get.offAllNamed(AppRoutes.biometricSetup);
+    } catch (_) {
+      if (mounted) setState(() { busy = false; error = 'Gagal menyiapkan aplikasi. Coba lagi.'; });
+    }
   }
+
+  @override
+  Widget build(BuildContext context) => AuthScaffold(
+        icon: Icons.account_balance_wallet_outlined,
+        title: 'Mulai kelola uangmu',
+        description: 'DompetKu mencatat pemasukan dan pengeluaran secara pribadi di perangkat ini. Tidak perlu akun atau koneksi internet.',
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            if (error != null) ...[Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)), const SizedBox(height: 16)],
+            FilledButton.icon(
+              onPressed: busy ? null : start,
+              icon: const Icon(Icons.arrow_forward_rounded),
+              label: Text(busy ? 'Menyiapkan…' : 'Mulai dan atur biometrik'),
+            ),
+          ],
+        ),
+      );
 }
