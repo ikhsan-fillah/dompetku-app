@@ -181,6 +181,17 @@ The first budget version supports monthly category budgets and an overall monthl
 
 Each budget shows its limit, used amount, remaining amount, usage percentage, progress state, and warnings at 75%, 90%, and 100%. Budgets can be edited or archived without deleting transaction history.
 
+Implemented behavior (Stage 5A):
+
+- The Budget tab lists budgets as progress cards with loading, empty, and error states, and pull-to-refresh.
+- A budget can be overall or tied to one active expense category, with a name, an IDR limit, and a start and end date. The default period is the current calendar month.
+- Usage is the sum of expense transactions inside the budget period, filtered by category when the budget has one.
+- Budgets can be edited or archived from the card menu. Archiving keeps all transaction history.
+- The list refreshes automatically when a budget or transaction changes.
+- Still pending: the 75%, 90%, and 100% warning levels (the first card version uses a fixed 80% warning), a dashboard budget summary, and an archived-budgets screen.
+
+Feature folder: `lib/features/budget/` with `bindings`, `controllers`, `data`, `models`, `repositories`, and `views`.
+
 ### 4.5 Reports
 
 Reports may provide category breakdowns, income versus expense comparison, monthly trends, top merchants, highest spending days, average daily spending, and comparison with the previous equivalent period.
@@ -226,3 +237,21 @@ The product direction is considered complete when the specification is clear abo
 - Reviewed OCR-assisted receipt entry.
 - Budgets, reports, and profile settings as part of the product direction.
 - A consistent Material 3 and Poppins visual identity.
+
+## 7. Implementation Status
+
+Last updated: 29 September 2026. The detailed phase tracker and commit log are in [DEV_PLAN.md](DEV_PLAN.md).
+
+| Area | Status |
+|---|---|
+| Local database, models, repositories | Done |
+| Login, biometric unlock, app route guard | Implemented |
+| Transactions (history and form) | Implemented |
+| Dashboard / home | Implemented |
+| Budgets (list, create, edit, archive) | Done |
+| Budget warning levels 75% / 90% / 100% | Pending |
+| Reports | Not started or to be confirmed |
+| Profile and settings | Partial, to be confirmed |
+| OCR receipt scan | Not started |
+
+Quality gate: `flutter analyze` reports no issues and `flutter test` passes.
