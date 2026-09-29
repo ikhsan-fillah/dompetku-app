@@ -69,10 +69,11 @@ void main() {
     test('anggaran kategori hanya menghitung kategori itu', () {
       final progress = _service.budgetProgress(
         [_tx(400000, categoryId: 1), _tx(600000, categoryId: 2)],
-        _budget(limit: 1000000, categoryId: 2),
+        _budget(limit: 800000, categoryId: 2),
         now: _now,
       );
       expect(progress.used, 600000);
+      expect(progress.percent, 75);
       expect(progress.level, BudgetLevel.warning);
     });
 
