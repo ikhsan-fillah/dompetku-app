@@ -1,60 +1,98 @@
 import 'package:get/get.dart';
 
+import '../../../core/services/data_refresh_service.dart';
 import '../../../core/state/resource_state.dart';
-import '../../../core/utils/validator.dart';
+import '../../../core/utils/date_range.dart';
+import '../../transaction/models/transaction_model.dart';
+import '../../transaction/repositories/transaction_repository.dart';
 import '../models/budget_model.dart';
+import '../models/budget_view_model.dart';
 import '../repositories/budget_repository.dart';
 
 class BudgetController extends GetxController {
-  BudgetController(this._repository);
+  BudgetController(this._repository, {TransactionRepository? transactions})
+      : _transactions = transactions;
 
   final BudgetRepository _repository;
-  final state = const ResourceState<List<BudgetModel>>.idle().obs;
+  final TransactionRepository? _transactions;
+  final state = const ResourceState<List<BudgetViewModel>>.idle().obs;
+
+  Worker? _refreshWorker;
+  int _requestId = 0;
+
+  TransactionRepository? get _transactionRepository =>
+      _transactions ??
+      (Get.isRegistered<TransactionRepository>()
+          ? Get.find<TransactionRepository>()
+          : null);
 
   @override
   void onInit() {
     super.onInit();
+    if (Get.isRegistered<DataRefreshService>()) {
+      _refreshWorker = ever<int>(
+        Get.find<DataRefreshService>().version,
+        (_) => load(silent: true),
+      );
+    }
     load();
   }
 
-  Future<void> load() async {
-    state.value = const ResourceState.loading();
+  @override
+  void onClose() {
+    _refreshWorker?.dispose();
+    super.onClose();
+  }
+
+  Future<void> load({bool silent = false}) async {
+    final requestId = ++_requestId;
+    if (!silent || state.value.status != ResourceStatus.success) {
+      state.value = const ResourceState.loading();
+    }
     try {
       final budgets = await _repository.getAll();
-      state.value = budgets.isEmpty ? const ResourceState.empty() : ResourceState.success(budgets);
+      final transactionRepository = _transactionRepository;
+      final transactions = transactionRepository == null
+          ? const <TransactionModel>[]
+          : await transactionRepository.getAll();
+      if (requestId != _requestId) return;
+      final items = [
+        for (final budget in budgets)
+          BudgetViewModel(budget: budget, used: _usedFor(budget, transactions)),
+      ];
+      state.value = items.isEmpty
+          ? const ResourceState.empty()
+          : ResourceState.success(items);
     } catch (_) {
+      if (requestId != _requestId) return;
       state.value = const ResourceState.error('Gagal memuat anggaran.');
     }
   }
 
-  Future<bool> save(BudgetModel budget) async {
-    final nameError = requiredText(budget.name, fieldName: 'Nama anggaran');
-    final amountError = positiveAmount(budget.amountLimit);
-    if (nameError != null || amountError != null || budget.startDate.isAfter(budget.endDate)) {
-      state.value = ResourceState.error(
-        nameError ?? amountError ?? 'Tanggal mulai tidak boleh setelah tanggal selesai.',
-      );
-      return false;
-    }
-    try {
-      if (budget.id == null) {
-        await _repository.insert(budget);
-      } else {
-        await _repository.update(budget);
+  int _usedFor(BudgetModel budget, List<TransactionModel> transactions) {
+    final range = DateRange(start: budget.startDate, end: budget.endDate);
+    var total = 0;
+    for (final transaction in transactions) {
+      if (transaction.type.name != 'expense') continue;
+      if (!range.contains(transaction.transactionDate)) continue;
+      if (budget.categoryId != null &&
+          transaction.categoryId != budget.categoryId) {
+        continue;
       }
-      await load();
-      return state.value.status != ResourceStatus.error;
-    } catch (_) {
-      state.value = const ResourceState.error('Gagal menyimpan anggaran.');
-      return false;
+      total += transaction.amount;
     }
+    return total;
   }
 
   Future<bool> archive(int id) async {
     try {
       await _repository.archive(id);
-      await load();
-      return state.value.status != ResourceStatus.error;
+      if (Get.isRegistered<DataRefreshService>()) {
+        Get.find<DataRefreshService>().bump();
+      } else {
+        await load(silent: true);
+      }
+      return true;
     } catch (_) {
       state.value = const ResourceState.error('Gagal mengarsipkan anggaran.');
       return false;
