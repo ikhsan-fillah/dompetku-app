@@ -8,6 +8,7 @@ import '../../features/auth/pages/login_page.dart';
 import '../../features/shell/controllers/main_shell_controller.dart';
 import '../../features/shell/pages/main_shell_page.dart';
 import '../../features/splash/pages/splash_page.dart';
+import '../../features/transaction/controllers/transaction_form_controller.dart';
 import 'app_routes.dart';
 
 class AppPages {
@@ -23,6 +24,10 @@ class AppPages {
           Get.put(DataRefreshService(), permanent: true);
         }
         Get.put(MainShellController());
+        Get.lazyPut(
+          () => TransactionFormController(Get.find(), Get.find()),
+          fenix: true,
+        );
       }),
     ),
     GetPage(
