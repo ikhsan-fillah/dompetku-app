@@ -111,9 +111,9 @@ Future<_Transactions> _open(
   return repository;
 }
 
-Finder _titleInsideTile(String title) => find.descendant(
-      of: find.byType(TransactionTile),
-      matching: find.text(title),
+Finder _incomeTile() => find.ancestor(
+      of: find.text('+ Rp 5.000.000'),
+      matching: find.byType(TransactionTile),
     );
 
 void main() {
@@ -123,7 +123,11 @@ void main() {
     await _open(tester);
     expect(find.text('Kopi'), findsOneWidget);
     expect(find.text('Bensin'), findsOneWidget);
-    expect(_titleInsideTile('Gaji'), findsOneWidget);
+    expect(_incomeTile(), findsOneWidget);
+    expect(
+      find.descendant(of: _incomeTile(), matching: find.text('Gaji')),
+      findsAtLeastNWidgets(1),
+    );
     expect(find.textContaining('Hari ini'), findsOneWidget);
     expect(find.textContaining('Kemarin'), findsOneWidget);
     expect(find.text('Rp 5.000.000'), findsOneWidget);
@@ -134,7 +138,7 @@ void main() {
     await _open(tester);
     await tester.tap(find.widgetWithText(AppChip, 'Pengeluaran'));
     await tester.pumpAndSettle();
-    expect(_titleInsideTile('Gaji'), findsNothing);
+    expect(_incomeTile(), findsNothing);
     expect(find.text('Kopi'), findsOneWidget);
   });
 
