@@ -32,30 +32,19 @@ class InitialBinding extends Bindings {
     Get.put<BiometricService>(LocalAuthBiometricService(), permanent: true);
     Get.put(AppLockService(), permanent: true);
     Get.put(AppDatabase(), permanent: true);
-
     Get.put(CategoryLocalDataSource(Get.find()), permanent: true);
     Get.put(TransactionLocalDataSource(Get.find()), permanent: true);
     Get.put(BudgetLocalDataSource(Get.find()), permanent: true);
-
-    Get.put<CategoryRepository>(
-      CategoryRepositoryImpl(Get.find()),
-      permanent: true,
-    );
-    Get.put<TransactionRepository>(
-      TransactionRepositoryImpl(Get.find()),
-      permanent: true,
-    );
-    Get.put<BudgetRepository>(
-      BudgetRepositoryImpl(Get.find()),
-      permanent: true,
-    );
+    Get.put<CategoryRepository>(CategoryRepositoryImpl(Get.find()), permanent: true);
+    Get.put<TransactionRepository>(TransactionRepositoryImpl(Get.find()), permanent: true);
+    Get.put<BudgetRepository>(BudgetRepositoryImpl(Get.find()), permanent: true);
     Get.put<SessionRepository>(SessionRepositoryImpl(Get.find()), permanent: true);
     Get.put(const FinancialCalculationService(), permanent: true);
     Get.put(AuthController(Get.find(), Get.find()), permanent: true);
     Get.lazyPut(() => CategoryController(Get.find()), fenix: true);
     Get.lazyPut(() => TransactionController(Get.find()), fenix: true);
     Get.lazyPut(() => BudgetController(Get.find()), fenix: true);
-    Get.lazyPut(() => DashboardController(Get.find(), Get.find()), fenix: true);
+    Get.lazyPut(() => DashboardController(Get.find(), Get.find(), Get.find()), fenix: true);
     Get.lazyPut(() => ReportController(Get.find(), Get.find()), fenix: true);
     Get.lazyPut(() => ProfileController(Get.find()), fenix: true);
   }

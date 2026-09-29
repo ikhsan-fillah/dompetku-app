@@ -1,162 +1,185 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-
+import '../../../app/routes/app_routes.dart';
 import '../../../core/state/resource_state.dart';
+import '../../../core/utils/date_range.dart';
 import '../../../core/utils/formatter.dart';
+import '../../../core/widgets/app_state_view.dart';
+import '../../auth/controllers/auth_controller.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
+import '../../dashboard/widgets/expense_donut.dart';
 
-class HomePage extends GetView<DashboardController> {
+class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('DompetKu'),
-        actions: [
-          IconButton(
+    final auth = Get.find<AuthController>();
+    return Obx(() {
+      if (!auth.isUnlocked.value) {
+        return Scaffold(
+          body: Center(child: FilledButton(
+            onPressed: () => Get.offAllNamed(AppRoutes.biometricUnlock),
+            child: const Text('Buka dengan biometrik'),
+          )),
+        );
+      }
+      final controller = Get.find<DashboardController>();
+      return Scaffold(
+        appBar: AppBar(
+          title: const Text('DompetKu'),
+          actions: [IconButton(
+            tooltip: 'Segarkan dashboard',
             onPressed: controller.refreshDashboard,
-            tooltip: 'Refresh dashboard',
-            icon: const Icon(Icons.refresh),
-          ),
-        ],
-      ),
-      body: Obx(() {
-        final state = controller.state.value;
-        return switch (state.status) {
-          ResourceStatus.idle || ResourceStatus.loading => const Center(
-            child: CircularProgressIndicator(),
-          ),
-          ResourceStatus.empty => const _DashboardEmptyState(),
-          ResourceStatus.error => _DashboardErrorState(
-            message: state.message ?? 'Unable to load dashboard.',
-            onRetry: controller.refreshDashboard,
-          ),
-          ResourceStatus.success => _DashboardContent(data: state.data!),
-        };
-      }),
-    );
+            icon: const Icon(Icons.refresh_rounded),
+          )],
+        ),
+        body: Obx(() {
+          final state = controller.state.value;
+          if (state.status == ResourceStatus.loading || state.status == ResourceStatus.idle) {
+            return const AppLoadingView();
+          }
+          if (state.status == ResourceStatus.error) {
+            return AppErrorView(message: state.message ?? 'Gagal memuat dashboard.', onRetry: controller.refreshDashboard);
+          }
+          return RefreshIndicator(
+            onRefresh: controller.refreshDashboard,
+            child: ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.fromLTRB(16, 12, 16, 32),
+              children: [
+                _PeriodPicker(controller: controller),
+                const SizedBox(height: 20),
+                if (state.status == ResourceStatus.empty)
+                  const AppEmptyView(message: 'Belum ada transaksi pada periode ini.')
+                else if (state.data != null) ...[
+                  _BalanceCard(data: state.data!),
+                  const SizedBox(height: 16),
+                  LayoutBuilder(builder: (context, constraints) {
+                    final width = constraints.maxWidth;
+                    final cardWidth = width >= 540 ? (width - 12) / 2 : width;
+                    return Wrap(spacing: 12, runSpacing: 12, children: [
+                      _MetricCard(label: 'Pemasukan', amount: state.data!.summary.income, icon: Icons.south_west_rounded, accent: Theme.of(context).brightness == Brightness.dark ? const Color(0xFF7DD9A6) : const Color(0xFF15803D), width: cardWidth),
+                      _MetricCard(label: 'Pengeluaran', amount: state.data!.summary.expense, icon: Icons.north_east_rounded, accent: Theme.of(context).colorScheme.error, width: cardWidth),
+                    ]);
+                  }),
+                  const SizedBox(height: 20),
+                  Text('Pengeluaran per kategori', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  Card(child: Padding(padding: const EdgeInsets.all(20), child: ExpenseDonut(slices: state.data!.expenses))),
+                  const SizedBox(height: 20),
+                  Text('Tren pengeluaran', style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  Card(child: Padding(padding: const EdgeInsets.all(20), child: _TrendBars(points: state.data!.trend))),
+                ],
+              ],
+            ),
+          );
+        }),
+      );
+    });
   }
 }
 
-class _DashboardContent extends StatelessWidget {
-  const _DashboardContent({required this.data});
+class _PeriodPicker extends StatelessWidget {
+  const _PeriodPicker({required this.controller});
+  final DashboardController controller;
 
+  @override
+  Widget build(BuildContext context) => Obx(() {
+    final range = controller.range.value;
+    final label = '${range.start.day}/${range.start.month}/${range.start.year} – ${range.end.day}/${range.end.month}/${range.end.year}';
+    return Semantics(
+      button: true, label: 'Pilih periode, $label',
+      child: OutlinedButton.icon(
+        onPressed: () async {
+          final selected = await showDateRangePicker(
+            context: context,
+            firstDate: DateTime(1970),
+            lastDate: DateTime.now(),
+            initialDateRange: DateTimeRange(start: range.start, end: range.end),
+          );
+          if (selected != null) {
+            await controller.setRange(DateRange(start: selected.start, end: selected.end));
+          }
+        },
+        icon: const Icon(Icons.calendar_month_outlined),
+        label: Text(label),
+      ),
+    );
+  });
+}
+
+class _BalanceCard extends StatelessWidget {
+  const _BalanceCard({required this.data});
   final DashboardData data;
 
   @override
   Widget build(BuildContext context) {
-    final summary = data.summary;
-    return ListView(
-      padding: const EdgeInsets.all(16),
-      children: [
-        Text('Current balance', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 4),
-        Text(
-          formatIdr(summary.balance),
-          style: Theme.of(context).textTheme.headlineMedium,
-        ),
-        const SizedBox(height: 20),
-        Row(
-          children: [
-            Expanded(
-              child: _SummaryCard(
-                label: 'Income',
-                value: formatIdr(summary.income),
-                color: Colors.green,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _SummaryCard(
-                label: 'Expenses',
-                value: formatIdr(summary.expense),
-                color: Colors.red,
-              ),
-            ),
-          ],
-        ),
-        const SizedBox(height: 20),
-        Text('Spending trend', style: Theme.of(context).textTheme.titleMedium),
-        const SizedBox(height: 8),
-        Text('${data.trend.length} days with recorded activity'),
-      ],
-    );
-  }
-}
-
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
-    required this.label,
-    required this.value,
-    required this.color,
-  });
-
-  final String label;
-  final String value;
-  final Color color;
-
-  @override
-  Widget build(BuildContext context) {
+    final scheme = Theme.of(context).colorScheme;
     return Card(
+      color: scheme.primary,
       child: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Icon(Icons.circle, size: 12, color: color),
-            const SizedBox(height: 8),
-            Text(label),
-            const SizedBox(height: 4),
-            FittedBox(
-              alignment: Alignment.centerLeft,
-              fit: BoxFit.scaleDown,
-              child: Text(
-                value,
-                style: Theme.of(context).textTheme.titleMedium,
-              ),
-            ),
-          ],
-        ),
+        padding: const EdgeInsets.all(22),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Text('Saldo periode terpilih', style: Theme.of(context).textTheme.titleMedium?.copyWith(color: scheme.onPrimary)),
+          const SizedBox(height: 12),
+          FittedBox(alignment: Alignment.centerLeft, fit: BoxFit.scaleDown, child: Text(formatIdr(data.summary.balance), style: Theme.of(context).textTheme.headlineMedium?.copyWith(color: scheme.onPrimary))),
+          const SizedBox(height: 12),
+          Text('Pemasukan − pengeluaran pada periode ini', style: TextStyle(color: scheme.onPrimary)),
+        ]),
       ),
     );
   }
 }
 
-class _DashboardEmptyState extends StatelessWidget {
-  const _DashboardEmptyState();
+class _MetricCard extends StatelessWidget {
+  const _MetricCard({required this.label, required this.amount, required this.icon, required this.accent, required this.width});
+  final String label;
+  final int amount;
+  final IconData icon;
+  final Color accent;
+  final double width;
 
   @override
-  Widget build(BuildContext context) {
-    return const Center(
-      child: Padding(
-        padding: EdgeInsets.all(24),
-        child: Text('No transactions in the selected period.'),
-      ),
-    );
-  }
+  Widget build(BuildContext context) => SizedBox(
+    width: width,
+    child: Card(child: Padding(
+      padding: const EdgeInsets.all(18),
+      child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Icon(icon, color: accent),
+        const SizedBox(height: 10),
+        Text(label, style: Theme.of(context).textTheme.bodyMedium),
+        const SizedBox(height: 4),
+        FittedBox(alignment: Alignment.centerLeft, fit: BoxFit.scaleDown, child: Text(formatIdr(amount), style: Theme.of(context).textTheme.titleLarge)),
+      ]),
+    )),
+  );
 }
 
-class _DashboardErrorState extends StatelessWidget {
-  const _DashboardErrorState({required this.message, required this.onRetry});
-
-  final String message;
-  final Future<void> Function() onRetry;
+class _TrendBars extends StatelessWidget {
+  const _TrendBars({required this.points});
+  final List<dynamic> points;
 
   @override
   Widget build(BuildContext context) {
-    return Center(
-      child: Padding(
-        padding: const EdgeInsets.all(24),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(message, textAlign: TextAlign.center),
-            const SizedBox(height: 12),
-            OutlinedButton(onPressed: onRetry, child: const Text('Try again')),
-          ],
-        ),
+    if (points.isEmpty) return const Text('Belum ada pengeluaran pada periode ini.');
+    final maxAmount = points.fold<int>(0, (maxValue, point) => point.amount > maxValue ? point.amount as int : maxValue);
+    return Column(children: [
+      for (final point in points) Padding(
+        padding: const EdgeInsets.symmetric(vertical: 6),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            SizedBox(width: 46, child: Text('${point.date.day}/${point.date.month}')),
+            Expanded(child: LinearProgressIndicator(
+              minHeight: 12,
+              borderRadius: BorderRadius.circular(10),
+              value: maxAmount == 0 ? 0 : point.amount / maxAmount,
+            )),
+          ]),
+          Padding(padding: const EdgeInsets.only(left: 46, top: 3), child: Text(formatIdr(point.amount))),
+        ]),
       ),
-    );
+    ]);
   }
 }
