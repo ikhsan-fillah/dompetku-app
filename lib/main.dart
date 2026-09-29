@@ -57,8 +57,7 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      darkTheme: AppTheme.dark,
-      themeMode: ThemeMode.system,
+      themeMode: ThemeMode.light,
       initialBinding: InitialBinding(),
       initialRoute: AppRoutes.splash,
       getPages: AppPages.pages,
