@@ -47,7 +47,7 @@ class BudgetPage extends GetView<BudgetController> {
                 child: ListView.separated(
                   padding: const EdgeInsets.all(16),
                   itemCount: current.data!.length,
-                  separatorBuilder: (_, __) => const SizedBox(height: 12),
+                  separatorBuilder: (_, _) => const SizedBox(height: 12),
                   itemBuilder: (_, index) {
                     final item = current.data![index];
                     return _BudgetCard(
