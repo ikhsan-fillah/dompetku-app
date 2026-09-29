@@ -1,9 +1,12 @@
 import 'package:get/get.dart';
+
+import '../../core/services/data_refresh_service.dart';
 import '../../features/auth/controllers/auth_controller.dart';
 import '../../features/auth/pages/biometric_setup_page.dart';
 import '../../features/auth/pages/biometric_unlock_page.dart';
 import '../../features/auth/pages/login_page.dart';
-import '../../features/home/pages/home_page.dart';
+import '../../features/shell/controllers/main_shell_controller.dart';
+import '../../features/shell/pages/main_shell_page.dart';
 import '../../features/splash/pages/splash_page.dart';
 import 'app_routes.dart';
 
@@ -13,11 +16,23 @@ class AppPages {
     GetPage(name: AppRoutes.login, page: () => const LoginPage()),
     GetPage(
       name: AppRoutes.home,
-      page: () => const HomePage(),
+      page: () => const MainShellPage(),
       middlewares: [FinancialRouteGuard()],
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<DataRefreshService>()) {
+          Get.put(DataRefreshService(), permanent: true);
+        }
+        Get.put(MainShellController());
+      }),
     ),
-    GetPage(name: AppRoutes.biometricSetup, page: () => const BiometricSetupPage()),
-    GetPage(name: AppRoutes.biometricUnlock, page: () => const BiometricUnlockPage()),
+    GetPage(
+      name: AppRoutes.biometricSetup,
+      page: () => const BiometricSetupPage(),
+    ),
+    GetPage(
+      name: AppRoutes.biometricUnlock,
+      page: () => const BiometricUnlockPage(),
+    ),
   ];
 }
 
