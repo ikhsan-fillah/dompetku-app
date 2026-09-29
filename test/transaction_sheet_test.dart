@@ -58,7 +58,7 @@ CategoryModel _cat(int id, String name, TransactionType type) {
 }
 
 Future<_Transactions> _openSheet(WidgetTester tester) async {
-  await tester.binding.setSurfaceSize(const Size(500, 1800));
+  await tester.binding.setSurfaceSize(const Size(500, 900));
   addTearDown(() => tester.binding.setSurfaceSize(null));
   final repository = _Transactions();
   Get.put(TransactionFormController(repository, _Categories()));
@@ -82,6 +82,11 @@ Future<_Transactions> _openSheet(WidgetTester tester) async {
   return repository;
 }
 
+Future<void> _reveal(WidgetTester tester, Finder finder) async {
+  await tester.ensureVisible(finder);
+  await tester.pumpAndSettle();
+}
+
 void main() {
   tearDown(Get.reset);
 
@@ -98,13 +103,19 @@ void main() {
   testWidgets('keypad mengisi nominal lalu simpan menutup sheet',
       (tester) async {
     final repository = await _openSheet(tester);
+    final five = find.text('5');
+    final thousand = find.text('000');
+    final save = find.text('Simpan transaksi');
 
-    await tester.tap(find.text('5'));
-    await tester.tap(find.text('000'));
+    await _reveal(tester, five);
+    await tester.tap(five);
+    await _reveal(tester, thousand);
+    await tester.tap(thousand);
     await tester.pump();
     expect(find.text('Rp 5.000'), findsOneWidget);
 
-    await tester.tap(find.text('Simpan transaksi'));
+    await _reveal(tester, save);
+    await tester.tap(save);
     await tester.pumpAndSettle();
 
     expect(repository.inserted.single.amount, 5000);
@@ -116,8 +127,10 @@ void main() {
   testWidgets('simpan tanpa nominal menampilkan pesan dan sheet tetap terbuka',
       (tester) async {
     final repository = await _openSheet(tester);
+    final save = find.text('Simpan transaksi');
 
-    await tester.tap(find.text('Simpan transaksi'));
+    await _reveal(tester, save);
+    await tester.tap(save);
     await tester.pumpAndSettle();
 
     expect(find.text('Nominal harus lebih dari nol.'), findsOneWidget);

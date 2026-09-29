@@ -8,6 +8,7 @@ import 'package:dompetku_app/features/transaction/controllers/transaction_contro
 import 'package:dompetku_app/features/transaction/models/transaction_model.dart';
 import 'package:dompetku_app/features/transaction/pages/transaction_list_page.dart';
 import 'package:dompetku_app/features/transaction/repositories/transaction_repository.dart';
+import 'package:dompetku_app/features/transaction/widgets/transaction_tile.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -110,6 +111,11 @@ Future<_Transactions> _open(
   return repository;
 }
 
+Finder _titleInsideTile(String title) => find.descendant(
+      of: find.byType(TransactionTile),
+      matching: find.text(title),
+    );
+
 void main() {
   tearDown(Get.reset);
 
@@ -117,7 +123,7 @@ void main() {
     await _open(tester);
     expect(find.text('Kopi'), findsOneWidget);
     expect(find.text('Bensin'), findsOneWidget);
-    expect(find.text('Gaji'), findsOneWidget);
+    expect(_titleInsideTile('Gaji'), findsOneWidget);
     expect(find.textContaining('Hari ini'), findsOneWidget);
     expect(find.textContaining('Kemarin'), findsOneWidget);
     expect(find.text('Rp 5.000.000'), findsOneWidget);
@@ -128,7 +134,7 @@ void main() {
     await _open(tester);
     await tester.tap(find.widgetWithText(AppChip, 'Pengeluaran'));
     await tester.pumpAndSettle();
-    expect(find.text('Gaji'), findsNothing);
+    expect(_titleInsideTile('Gaji'), findsNothing);
     expect(find.text('Kopi'), findsOneWidget);
   });
 
