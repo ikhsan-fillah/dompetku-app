@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/widgets/app_bottom_nav.dart';
 import '../../home/pages/home_page.dart';
 import '../../profile/pages/profile_page.dart';
+import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../controllers/main_shell_controller.dart';
 import '../widgets/coming_soon_tab.dart';
 
@@ -22,14 +23,6 @@ class MainShellPage extends GetView<MainShellController> {
           ),
         _ => const ProfilePage(),
       };
-
-  void _onAdd(BuildContext context) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Form tambah transaksi hadir di tahap berikutnya.'),
-      ),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -52,7 +45,7 @@ class MainShellPage extends GetView<MainShellController> {
                   () => AppBottomNav(
                     currentIndex: controller.tabIndex.value,
                     onSelect: controller.select,
-                    onAdd: () => _onAdd(context),
+                    onAdd: () => showTransactionSheet(context),
                   ),
                 ),
               ),
