@@ -4,6 +4,7 @@ import 'app/bindings/initial_binding.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
 import 'core/services/app_lock_service.dart';
+import 'core/services/data_refresh_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/controllers/auth_controller.dart';
 
@@ -48,6 +49,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       if (shouldLock) {
         auth.lock();
         Get.offAllNamed(AppRoutes.biometricUnlock);
+      } else if (auth.isUnlocked.value &&
+          Get.isRegistered<DataRefreshService>()) {
+        Get.find<DataRefreshService>().bump();
       }
     }
   }

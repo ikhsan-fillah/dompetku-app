@@ -6,13 +6,14 @@ class SharedPrefsService {
   static const _kBiometricFailureCount = 'biometricFailureCount';
   static const _kBiometricLockedUntil = 'biometricLockedUntil';
   static const _kThemeMode = 'themeMode';
+  static const _kDisplayName = 'displayName';
 
   Future<bool> getIsRegistered() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_kIsRegistered) ?? false;
   }
 
-  Future<void> setIsRegistered(bool value) async{
+  Future<void> setIsRegistered(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kIsRegistered, value);
   }
@@ -48,7 +49,10 @@ class SharedPrefsService {
     if (value == null) {
       await prefs.remove(_kBiometricLockedUntil);
     } else {
-      await prefs.setString(_kBiometricLockedUntil, value.toUtc().toIso8601String());
+      await prefs.setString(
+        _kBiometricLockedUntil,
+        value.toUtc().toIso8601String(),
+      );
     }
   }
 
@@ -60,5 +64,15 @@ class SharedPrefsService {
   Future<void> setThemeMode(String value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kThemeMode, value);
+  }
+
+  Future<String> getDisplayName() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kDisplayName) ?? '';
+  }
+
+  Future<void> setDisplayName(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kDisplayName, value);
   }
 }
