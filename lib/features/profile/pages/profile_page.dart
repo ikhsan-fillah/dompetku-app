@@ -47,9 +47,9 @@ class _ProfilePageState extends State<ProfilePage> {
     await _controller.setDisplayName(_nameField.text);
     if (!mounted) return;
     FocusScope.of(context).unfocus();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Nama tersimpan.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Nama tersimpan.')));
   }
 
   Future<void> _setBiometric(bool value) async {
@@ -84,9 +84,9 @@ class _ProfilePageState extends State<ProfilePage> {
     final message = exported
         ? _controller.exportSuccess.value ?? 'Data berhasil diekspor.'
         : _controller.exportError.value ?? 'Gagal mengekspor data. Coba lagi.';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _confirmReset() async {
@@ -304,26 +304,29 @@ class _ProfilePageState extends State<ProfilePage> {
                           child: Text(_autoLockLabel(seconds)),
                         ),
                     ],
-                    onChanged:
-                        _controller.savingAutoLock.value ? null : _setAutoLock,
+                    onChanged: _controller.savingAutoLock.value
+                        ? null
+                        : _setAutoLock,
                   ),
                 ),
               ),
               const Divider(height: 1, color: Color(0xFFE2E8F0)),
               const SizedBox(height: 12),
-              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Icon(
-                  Icons.lock_outline_rounded,
-                  color: AppColors.teal,
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Data keuangan tersimpan lokal di perangkat ini. DompetKu tidak menggunakan akun atau cloud.',
-                    style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.lock_outline_rounded, color: AppColors.teal),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Text(
+                      'Data keuangan tersimpan lokal di perangkat ini. DompetKu tidak menggunakan akun atau cloud.',
+                      style: textTheme.bodySmall?.copyWith(
+                        color: AppColors.muted,
+                      ),
+                    ),
                   ),
-                ),
-              ]),
+                ],
+              ),
             ],
           ),
         ),
@@ -333,7 +336,7 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               const SectionHeader(title: 'Ekspor data'),
               Text(
-                'Salin kategori, transaksi, dan anggaran sebagai JSON sebelum menghapus data. Data tidak dikirim ke layanan eksternal.',
+                'Simpan dan bagikan kategori, transaksi, serta anggaran sebagai berkas JSON sebelum menghapus data. Ekspor tetap lokal dan tidak dikirim ke layanan eksternal.',
                 style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
               ),
               const SizedBox(height: 14),
@@ -362,7 +365,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     label: Text(
                       _controller.exportingData.value
                           ? 'Menyiapkan ekspor...'
-                          : 'Salin data sebagai JSON',
+                          : 'Simpan dan bagikan ekspor',
                     ),
                   ),
                 ),

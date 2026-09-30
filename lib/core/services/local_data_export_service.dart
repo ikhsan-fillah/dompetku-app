@@ -4,8 +4,8 @@ import '../../features/budget/repositories/budget_repository.dart';
 import '../../features/category/repositories/category_repository.dart';
 import '../../features/transaction/repositories/transaction_repository.dart';
 
-/// Membangun ekspor JSON lokal (kategori, transaksi, anggaran).
-/// Tidak ada akses jaringan; hasil hanya berupa teks di memori.
+/// Membangun payload ekspor JSON lokal (kategori, transaksi, anggaran).
+/// Layanan ini tidak mengakses UI, clipboard, atau jaringan.
 class LocalDataExportService {
   LocalDataExportService(
     this._categories,
@@ -21,7 +21,7 @@ class LocalDataExportService {
   final BudgetRepository _budgets;
   final DateTime Function() _clock;
 
-  Future<Map<String, Object?>> buildPayload() async {
+  Future<Map<String, Object?>> buildPayload({DateTime? exportedAt}) async {
     final categories = await _categories.getAll(includeArchived: true);
     final transactions = await _transactions.getAll();
     final budgets = await _budgets.getAll(includeArchived: true);
@@ -29,7 +29,7 @@ class LocalDataExportService {
     return {
       'app': 'DompetKu',
       'schemaVersion': schemaVersion,
-      'exportedAt': _clock().toUtc().toIso8601String(),
+      'exportedAt': (exportedAt ?? _clock().toUtc()).toIso8601String(),
       'counts': {
         'categories': categories.length,
         'transactions': transactions.length,
@@ -45,4 +45,20 @@ class LocalDataExportService {
     final payload = await buildPayload();
     return const JsonEncoder.withIndent('  ').convert(payload);
   }
+
+  Future<LocalDataExport> createExport() async {
+    final exportedAt = _clock().toUtc();
+    final payload = await buildPayload(exportedAt: exportedAt);
+    return LocalDataExport(
+      json: const JsonEncoder.withIndent('  ').convert(payload),
+      exportedAt: exportedAt,
+    );
+  }
+}
+
+class LocalDataExport {
+  const LocalDataExport({required this.json, required this.exportedAt});
+
+  final String json;
+  final DateTime exportedAt;
 }
