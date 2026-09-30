@@ -9,7 +9,7 @@ import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/section_header.dart';
 import '../controllers/profile_controller.dart';
 
-/// Versi awal halaman Profil: mengatur nama tampilan untuk sapaan Beranda.
+/// Halaman Profil dan pengaturan perangkat DompetKu.
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
 
@@ -44,6 +44,18 @@ class _ProfilePageState extends State<ProfilePage> {
     FocusScope.of(context).unfocus();
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(content: Text('Nama tersimpan.')),
+    );
+  }
+
+  Future<void> _setBiometric(bool value) async {
+    final saved = await _controller.setBiometricEnabled(value);
+    if (!mounted || saved) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _controller.error.value ?? 'Gagal menyimpan pengaturan biometrik.',
+        ),
+      ),
     );
   }
 
@@ -140,17 +152,45 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
         AppCard(
-          color: AppColors.mintSoft,
-          child: Row(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Icon(Icons.lock_outline_rounded, color: AppColors.teal),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Text(
-                  'Masuk hanya dengan sidik jari atau wajah. Tanpa akun dan tanpa cloud.',
-                  style: textTheme.bodySmall,
+              const SectionHeader(title: 'Keamanan'),
+              Obx(
+                () => SwitchListTile.adaptive(
+                  contentPadding: EdgeInsets.zero,
+                  value: _controller.biometricEnabled.value,
+                  onChanged: _controller.savingBiometric.value
+                      ? null
+                      : _setBiometric,
+                  activeThumbColor: AppColors.teal,
+                  secondary: const Icon(
+                    Icons.fingerprint_rounded,
+                    color: AppColors.teal,
+                  ),
+                  title: const Text('Kunci biometrik'),
+                  subtitle: Text(
+                    _controller.biometricEnabled.value
+                        ? 'Aktif saat membuka aplikasi.'
+                        : 'Tidak aktif untuk saat ini.',
+                  ),
                 ),
               ),
+              const Divider(height: 1, color: AppColors.divider),
+              const SizedBox(height: 12),
+              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                const Icon(
+                  Icons.lock_outline_rounded,
+                  color: AppColors.teal,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Data keuangan tersimpan lokal di perangkat ini. DompetKu tidak menggunakan akun atau cloud.',
+                    style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                  ),
+                ),
+              ]),
             ],
           ),
         ),
