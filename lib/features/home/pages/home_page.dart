@@ -156,8 +156,20 @@ class HomePage extends StatelessWidget {
                   130,
                 ),
                 children: [
-                  if (state.status == ResourceStatus.success && data != null)
+                  if (state.status == ResourceStatus.success && data != null) ...[
                     _BalanceCard(data: data),
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () => Get.toNamed(AppRoutes.report),
+                        icon: const Icon(Icons.bar_chart_rounded, size: 18),
+                        label: const Text('Lihat laporan'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.teal,
+                        ),
+                      ),
+                    ),
+                  ],
                   PeriodChips(
                     selected: controller.preset.value,
                     onSelect: (preset) {
