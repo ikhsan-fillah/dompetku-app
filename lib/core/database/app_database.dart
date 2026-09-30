@@ -29,4 +29,11 @@ class AppDatabase {
     await _database?.close();
     _database = null;
   }
+
+  Future<void> deleteDatabaseFile() async {
+    await close();
+    final databasesPath = await getDatabasesPath();
+    final databasePath = path.join(databasesPath, AppConstants.databaseName);
+    await deleteDatabase(databasePath);
+  }
 }

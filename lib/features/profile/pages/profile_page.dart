@@ -59,6 +59,83 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _confirmReset() async {
+    final confirmationController = TextEditingController();
+    var canDelete = false;
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
+          title: const Text('Hapus semua data?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Tindakan ini menghapus seluruh data keuangan, pengaturan, dan kunci aman dari perangkat ini. Tindakan tidak dapat dibatalkan.',
+              ),
+              const SizedBox(height: 16),
+              TextField(
+                controller: confirmationController,
+                autofocus: true,
+                decoration: const InputDecoration(
+                  labelText: 'Ketik HAPUS untuk melanjutkan',
+                  border: OutlineInputBorder(),
+                ),
+                onChanged: (value) {
+                  setDialogState(() => canDelete = value == 'HAPUS');
+                },
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Batal'),
+            ),
+            FilledButton(
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFFF43F5E),
+                disabledBackgroundColor: const Color(0xFFE2E8F0),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
+              ),
+              onPressed: canDelete
+                  ? () => Navigator.of(dialogContext).pop(true)
+                  : null,
+              child: const Text('Hapus semua data'),
+            ),
+          ],
+        ),
+      ),
+    );
+    confirmationController.dispose();
+
+    if (confirmed != true) return;
+
+    final reset = await _controller.resetAllData();
+    if (!mounted) return;
+
+    if (reset) {
+      Get.offAllNamed('/login');
+      return;
+    }
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _controller.error.value ?? 'Gagal menghapus semua data. Coba lagi.',
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
@@ -191,6 +268,49 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ]),
+            ],
+          ),
+        ),
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SectionHeader(title: 'Zona bahaya'),
+              Text(
+                'Hapus database, seluruh pengaturan, dan data aman dari perangkat ini. Setelahnya Anda perlu daftar ulang.',
+                style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              ),
+              const SizedBox(height: 14),
+              Obx(
+                () => SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: const Color(0xFFF43F5E),
+                      side: const BorderSide(color: Color(0xFFF43F5E)),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    onPressed: _controller.resettingData.value
+                        ? null
+                        : _confirmReset,
+                    icon: _controller.resettingData.value
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.delete_forever_rounded),
+                    label: Text(
+                      _controller.resettingData.value
+                          ? 'Menghapus data...'
+                          : 'Hapus semua data',
+                    ),
+                  ),
+                ),
+              ),
             ],
           ),
         ),

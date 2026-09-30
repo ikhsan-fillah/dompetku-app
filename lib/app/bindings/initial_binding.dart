@@ -1,6 +1,7 @@
 import 'package:dompetku_app/core/database/app_database.dart';
 import 'package:dompetku_app/core/services/app_lock_service.dart';
 import 'package:dompetku_app/core/services/biometric_service.dart';
+import 'package:dompetku_app/core/services/local_data_reset_service.dart';
 import 'package:dompetku_app/core/services/secure_storage_service.dart';
 import 'package:dompetku_app/core/services/shared_prefs_service.dart';
 import 'package:dompetku_app/features/auth/controllers/auth_controller.dart';
@@ -32,6 +33,10 @@ class InitialBinding extends Bindings {
     Get.put<BiometricService>(LocalAuthBiometricService(), permanent: true);
     Get.put(AppLockService(), permanent: true);
     Get.put(AppDatabase(), permanent: true);
+    Get.put(
+      LocalDataResetService(Get.find(), Get.find(), Get.find()),
+      permanent: true,
+    );
     Get.put(CategoryLocalDataSource(Get.find()), permanent: true);
     Get.put(TransactionLocalDataSource(Get.find()), permanent: true);
     Get.put(BudgetLocalDataSource(Get.find()), permanent: true);
@@ -55,6 +60,9 @@ class InitialBinding extends Bindings {
       () => ReportController(Get.find(), Get.find(), Get.find()),
       fenix: true,
     );
-    Get.lazyPut(() => ProfileController(Get.find()), fenix: true);
+    Get.lazyPut(
+      () => ProfileController(Get.find(), resetService: Get.find()),
+      fenix: true,
+    );
   }
 }
