@@ -77,6 +77,18 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _exportData() async {
+    final exported = await _controller.exportData();
+    if (!mounted) return;
+
+    final message = exported
+        ? _controller.exportSuccess.value ?? 'Data berhasil diekspor.'
+        : _controller.exportError.value ?? 'Gagal mengekspor data. Coba lagi.';
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
   Future<void> _confirmReset() async {
     final confirmationController = TextEditingController();
     var canDelete = false;
@@ -312,6 +324,80 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ]),
+            ],
+          ),
+        ),
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SectionHeader(title: 'Ekspor data'),
+              Text(
+                'Salin kategori, transaksi, dan anggaran sebagai JSON sebelum menghapus data. Data tidak dikirim ke layanan eksternal.',
+                style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
+              ),
+              const SizedBox(height: 14),
+              Obx(
+                () => SizedBox(
+                  width: double.infinity,
+                  child: OutlinedButton.icon(
+                    style: OutlinedButton.styleFrom(
+                      foregroundColor: AppColors.teal,
+                      side: const BorderSide(color: AppColors.teal),
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                    ),
+                    onPressed: _controller.exportingData.value
+                        ? null
+                        : _exportData,
+                    icon: _controller.exportingData.value
+                        ? const SizedBox(
+                            width: 18,
+                            height: 18,
+                            child: CircularProgressIndicator(strokeWidth: 2),
+                          )
+                        : const Icon(Icons.file_download_outlined),
+                    label: Text(
+                      _controller.exportingData.value
+                          ? 'Menyiapkan ekspor...'
+                          : 'Salin data sebagai JSON',
+                    ),
+                  ),
+                ),
+              ),
+              Obx(() {
+                final success = _controller.exportSuccess.value;
+                final exportError = _controller.exportError.value;
+                if (success == null && exportError == null) {
+                  return const SizedBox.shrink();
+                }
+                final isSuccess = success != null;
+                return Padding(
+                  padding: const EdgeInsets.only(top: 12),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Icon(
+                        isSuccess
+                            ? Icons.check_circle_outline_rounded
+                            : Icons.error_outline_rounded,
+                        color: isSuccess ? AppColors.emerald : AppColors.coral,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          success ?? exportError!,
+                          style: textTheme.bodySmall?.copyWith(
+                            color: isSuccess ? AppColors.teal : AppColors.coral,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              }),
             ],
           ),
         ),
