@@ -7,6 +7,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/section_header.dart';
+import '../../../app/routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
 
 /// Halaman Profil dan pengaturan perangkat DompetKu.
@@ -87,6 +88,19 @@ class _ProfilePageState extends State<ProfilePage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
+  }
+
+  Future<void> _lockApp() async {
+    final locked = await _controller.lockApp();
+    if (!mounted || !locked) {
+      if (mounted && _controller.error.value != null) {
+        ScaffoldMessenger.of(
+          context,
+        ).showSnackBar(SnackBar(content: Text(_controller.error.value!)));
+      }
+      return;
+    }
+    Get.offAllNamed(AppRoutes.biometricUnlock);
   }
 
   Future<void> _confirmReset() async {
@@ -308,6 +322,26 @@ class _ProfilePageState extends State<ProfilePage> {
                         ? null
                         : _setAutoLock,
                   ),
+                ),
+              ),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Obx(
+                () => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(
+                    Icons.lock_clock_outlined,
+                    color: AppColors.teal,
+                  ),
+                  title: const Text('Kunci aplikasi sekarang'),
+                  subtitle: const Text('Minta verifikasi sebelum membuka data'),
+                  trailing: _controller.lockingApp.value
+                      ? const SizedBox(
+                          width: 20,
+                          height: 20,
+                          child: CircularProgressIndicator(strokeWidth: 2),
+                        )
+                      : const Icon(Icons.chevron_right_rounded),
+                  onTap: _controller.lockingApp.value ? null : _lockApp,
                 ),
               ),
               const Divider(height: 1, color: Color(0xFFE2E8F0)),
