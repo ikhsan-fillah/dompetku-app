@@ -2,6 +2,10 @@ import 'package:dompetku_app/core/database/app_database.dart';
 import 'package:dompetku_app/core/services/local_data_reset_service.dart';
 import 'package:dompetku_app/core/services/secure_storage_service.dart';
 import 'package:dompetku_app/core/services/shared_prefs_service.dart';
+import 'package:dompetku_app/core/services/biometric_service.dart';
+import 'package:dompetku_app/features/auth/controllers/auth_controller.dart';
+import 'package:dompetku_app/features/auth/models/app_session_model.dart';
+import 'package:dompetku_app/features/auth/repositories/session_repository.dart';
 import 'package:dompetku_app/features/profile/controllers/profile_controller.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -60,11 +64,11 @@ class _FakeSecureStorage extends SecureStorageService {
 
 class _FakeResetService extends LocalDataResetService {
   _FakeResetService()
-      : super(
-          _FakeAppDatabase(),
-          _FakeSharedPrefsService(),
-          _FakeSecureStorage(),
-        );
+    : super(
+        _FakeAppDatabase(),
+        _FakeSharedPrefsService(),
+        _FakeSecureStorage(),
+      );
 
   bool fail = false;
   int calls = 0;
@@ -73,6 +77,48 @@ class _FakeResetService extends LocalDataResetService {
   Future<void> resetAll() async {
     calls++;
     if (fail) throw StateError('reset failed');
+  }
+}
+
+class _FakeSessionRepository implements SessionRepository {
+  @override
+  Future<AppSessionModel> read() async => const AppSessionModel(
+    isRegistered: true,
+    biometricEnabled: true,
+    biometricFailureCount: 0,
+  );
+
+  @override
+  Future<void> saveBiometricFailureState({
+    required int count,
+    DateTime? lockedUntil,
+  }) async {}
+
+  @override
+  Future<void> setBiometricEnabled(bool value) async {}
+
+  @override
+  Future<void> setRegistered(bool value) async {}
+}
+
+class _FakeBiometricService implements BiometricService {
+  @override
+  Future<bool> authenticate() async => true;
+
+  @override
+  Future<bool> isAvailable() async => true;
+}
+
+class _FakeAuthController extends AuthController {
+  _FakeAuthController()
+    : super(_FakeSessionRepository(), _FakeBiometricService());
+
+  int lockCalls = 0;
+
+  @override
+  void lock() {
+    lockCalls++;
+    super.lock();
   }
 }
 
@@ -183,10 +229,7 @@ void main() {
     expect(saved, isFalse);
     expect(controller.autoLockSeconds.value, 0);
     expect(controller.savingAutoLock.value, isFalse);
-    expect(
-      controller.error.value,
-      'Gagal menyimpan durasi kunci otomatis.',
-    );
+    expect(controller.error.value, 'Gagal menyimpan durasi kunci otomatis.');
   });
 
   test('resetAllData menghapus data dan mengatur ulang state profil', () async {
@@ -224,5 +267,26 @@ void main() {
     final reset = await controllerWithoutReset.resetAllData();
 
     expect(reset, isFalse);
+  });
+
+  test('lockApp mencabut akses tanpa mereset preferensi profil', () async {
+    final auth = _FakeAuthController()..unlock();
+    final controller = ProfileController(preferences, authController: auth);
+    controller.displayName.value = 'Ikhsan';
+    controller.autoLockSeconds.value = 300;
+
+    final locked = await controller.lockApp();
+
+    expect(locked, isTrue);
+    expect(auth.lockCalls, 1);
+    expect(auth.isUnlocked.value, isFalse);
+    expect(controller.displayName.value, 'Ikhsan');
+    expect(controller.autoLockSeconds.value, 300);
+    expect(controller.lockingApp.value, isFalse);
+  });
+
+  test('lockApp gagal bila AuthController tidak tersedia', () async {
+    expect(await controller.lockApp(), isFalse);
+    expect(controller.lockingApp.value, isFalse);
   });
 }

@@ -34,6 +34,7 @@ class ProfileController extends GetxController {
   final savingAutoLock = false.obs;
   final resettingData = false.obs;
   final exportingData = false.obs;
+  final lockingApp = false.obs;
   final exportSuccess = Rxn<String>();
   final exportError = Rxn<String>();
   final error = Rxn<String>();
@@ -124,6 +125,23 @@ class ProfileController extends GetxController {
       return false;
     } finally {
       exportingData.value = false;
+    }
+  }
+
+  Future<bool> lockApp() async {
+    final authController = _authController;
+    if (authController == null || lockingApp.value) return false;
+
+    lockingApp.value = true;
+    error.value = null;
+    try {
+      authController.lock();
+      return true;
+    } catch (_) {
+      error.value = 'Gagal mengunci aplikasi. Coba lagi.';
+      return false;
+    } finally {
+      lockingApp.value = false;
     }
   }
 
