@@ -176,7 +176,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
-              const Divider(height: 1, color: AppColors.divider),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
               const SizedBox(height: 12),
               Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
                 const Icon(
