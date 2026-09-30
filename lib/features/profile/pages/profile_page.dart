@@ -38,6 +38,11 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
+  static String _autoLockLabel(int seconds) {
+    if (seconds == 0) return 'Langsung';
+    return '${seconds ~/ 60} menit';
+  }
+
   Future<void> _save() async {
     await _controller.setDisplayName(_nameField.text);
     if (!mounted) return;
@@ -54,6 +59,19 @@ class _ProfilePageState extends State<ProfilePage> {
       SnackBar(
         content: Text(
           _controller.error.value ?? 'Gagal menyimpan pengaturan biometrik.',
+        ),
+      ),
+    );
+  }
+
+  Future<void> _setAutoLock(int? value) async {
+    if (value == null) return;
+    final saved = await _controller.setAutoLockSeconds(value);
+    if (!mounted || saved) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          _controller.error.value ?? 'Gagal menyimpan durasi kunci otomatis.',
         ),
       ),
     );
@@ -250,6 +268,32 @@ class _ProfilePageState extends State<ProfilePage> {
                     _controller.biometricEnabled.value
                         ? 'Aktif saat membuka aplikasi.'
                         : 'Tidak aktif untuk saat ini.',
+                  ),
+                ),
+              ),
+              const Divider(height: 1, color: Color(0xFFE2E8F0)),
+              Obx(
+                () => ListTile(
+                  contentPadding: EdgeInsets.zero,
+                  leading: const Icon(
+                    Icons.timer_outlined,
+                    color: AppColors.teal,
+                  ),
+                  title: const Text('Kunci otomatis'),
+                  subtitle: const Text('Setelah di latar belakang'),
+                  trailing: DropdownButton<int>(
+                    value: _controller.autoLockSeconds.value,
+                    underline: const SizedBox.shrink(),
+                    borderRadius: BorderRadius.circular(18),
+                    items: [
+                      for (final seconds in ProfileController.autoLockOptions)
+                        DropdownMenuItem<int>(
+                          value: seconds,
+                          child: Text(_autoLockLabel(seconds)),
+                        ),
+                    ],
+                    onChanged:
+                        _controller.savingAutoLock.value ? null : _setAutoLock,
                   ),
                 ),
               ),

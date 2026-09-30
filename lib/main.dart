@@ -1,10 +1,14 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'app/bindings/initial_binding.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
+import 'core/constant/app_constant.dart';
 import 'core/services/app_lock_service.dart';
 import 'core/services/data_refresh_service.dart';
+import 'core/services/shared_prefs_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/controllers/auth_controller.dart';
 
@@ -34,6 +38,10 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    unawaited(_handleLifecycle(state));
+  }
+
+  Future<void> _handleLifecycle(AppLifecycleState state) async {
     if (!Get.isRegistered<AppLockService>() ||
         !Get.isRegistered<AuthController>()) {
       return;
@@ -43,8 +51,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     if (state == AppLifecycleState.paused) {
       lockService.onBackgrounded(DateTime.now());
     } else if (state == AppLifecycleState.resumed) {
+      final now = DateTime.now();
+      var duration = AppConstants.defaultAutoLockDuration;
+      if (Get.isRegistered<SharedPrefsService>()) {
+        final seconds = await Get.find<SharedPrefsService>().getAutoLockSeconds();
+        duration = Duration(seconds: seconds);
+      }
       final shouldLock =
-          auth.isUnlocked.value && lockService.shouldLock(DateTime.now());
+          auth.isUnlocked.value &&
+          lockService.shouldLock(now, duration: duration);
       lockService.onForegrounded();
       if (shouldLock) {
         auth.lock();

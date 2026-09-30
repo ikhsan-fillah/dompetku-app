@@ -13,13 +13,17 @@ class ProfileController extends GetxController {
   })  : _resetService = resetService,
         _authController = authController;
 
+  static const autoLockOptions = [0, 60, 300, 900];
+
   final SharedPrefsService _preferences;
   final LocalDataResetService? _resetService;
   final AuthController? _authController;
   final biometricEnabled = false.obs;
   final themeMode = 'system'.obs;
   final displayName = ''.obs;
+  final autoLockSeconds = 0.obs;
   final savingBiometric = false.obs;
+  final savingAutoLock = false.obs;
   final resettingData = false.obs;
   final error = Rxn<String>();
 
@@ -36,6 +40,8 @@ class ProfileController extends GetxController {
     biometricEnabled.value = await _preferences.getBiometricEnabled();
     themeMode.value = await _preferences.getThemeMode();
     displayName.value = await _preferences.getDisplayName();
+    final seconds = await _preferences.getAutoLockSeconds();
+    autoLockSeconds.value = autoLockOptions.contains(seconds) ? seconds : 0;
   }
 
   Future<void> setThemeMode(String value) async {
@@ -65,6 +71,22 @@ class ProfileController extends GetxController {
     }
   }
 
+  Future<bool> setAutoLockSeconds(int value) async {
+    if (!autoLockOptions.contains(value) || savingAutoLock.value) return false;
+    savingAutoLock.value = true;
+    error.value = null;
+    try {
+      await _preferences.setAutoLockSeconds(value);
+      autoLockSeconds.value = value;
+      return true;
+    } catch (_) {
+      error.value = 'Gagal menyimpan durasi kunci otomatis.';
+      return false;
+    } finally {
+      savingAutoLock.value = false;
+    }
+  }
+
   Future<bool> resetAllData() async {
     final resetService = _resetService;
     if (resetService == null || resettingData.value) return false;
@@ -77,6 +99,7 @@ class ProfileController extends GetxController {
       biometricEnabled.value = false;
       themeMode.value = 'system';
       displayName.value = '';
+      autoLockSeconds.value = 0;
       return true;
     } catch (_) {
       error.value = 'Gagal menghapus semua data. Coba lagi.';
