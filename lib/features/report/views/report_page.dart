@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 
 import '../../../core/state/resource_state.dart';
 import '../../../core/utils/date_range.dart';
-import '../../dashboard/models/dashboard_summary_model.dart';
 import '../controllers/report_controller.dart';
 
 class ReportPage extends StatefulWidget {
@@ -193,12 +192,13 @@ const _cardShadow = [
 class _Summary extends StatelessWidget {
   const _Summary({required this.data, required this.money});
 
-  final DashboardSummaryModel data;
+  final ReportData data;
   final String Function(int) money;
 
   @override
   Widget build(BuildContext context) {
-    final remaining = data.remainingBudget;
+    final summary = data.summary;
+    final remaining = summary.remainingBudget;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
@@ -225,7 +225,7 @@ class _Summary extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(
-              money(data.balance),
+              money(summary.balance),
               style: const TextStyle(
                 color: Colors.white,
                 fontSize: 26,
@@ -240,7 +240,7 @@ class _Summary extends StatelessWidget {
             child: _StatCard(
               icon: Icons.arrow_downward_rounded,
               label: 'Pemasukan',
-              value: money(data.income),
+              value: money(summary.income),
               background: const Color(0xFFCCFBF1),
               foreground: const Color(0xFF0F766E),
             ),
@@ -250,7 +250,7 @@ class _Summary extends StatelessWidget {
             child: _StatCard(
               icon: Icons.arrow_upward_rounded,
               label: 'Pengeluaran',
-              value: money(data.expense),
+              value: money(summary.expense),
               background: const Color(0xFFFFE4E9),
               foreground: const Color(0xFFF43F5E),
             ),
@@ -270,8 +270,178 @@ class _Summary extends StatelessWidget {
                 : const Color(0xFF0F766E),
           ),
         ],
+        const SizedBox(height: 14),
+        _ChangeInsight(change: data.expenseChange),
+        if (data.expensesByCategory.isNotEmpty) ...[
+          const SizedBox(height: 14),
+          _CategoryBreakdown(
+            items: data.expensesByCategory,
+            total: summary.expense,
+            money: money,
+          ),
+        ],
       ],
     );
+  }
+}
+
+class _ChangeInsight extends StatelessWidget {
+  const _ChangeInsight({required this.change});
+
+  final double change;
+
+  @override
+  Widget build(BuildContext context) {
+    final unchanged = change.abs() < 0.005;
+    final decreased = change < 0;
+    final percent = (change.abs() * 100).round();
+    final background = unchanged
+        ? const Color(0xFFCCFBF1)
+        : decreased
+            ? const Color(0xFFCCFBF1)
+            : const Color(0xFFFFE4E9);
+    final foreground = unchanged
+        ? const Color(0xFF0F766E)
+        : decreased
+            ? const Color(0xFF0F766E)
+            : const Color(0xFFF43F5E);
+    final icon = unchanged
+        ? Icons.trending_flat_rounded
+        : decreased
+            ? Icons.trending_down_rounded
+            : Icons.trending_up_rounded;
+    final message = unchanged
+        ? 'Pengeluaran sama dengan periode sebelumnya.'
+        : decreased
+            ? 'Pengeluaran turun $percent% dari periode sebelumnya.'
+            : 'Pengeluaran naik $percent% dari periode sebelumnya.';
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: background,
+        borderRadius: BorderRadius.circular(22),
+      ),
+      child: Row(children: [
+        Icon(icon, color: foreground),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            message,
+            style: TextStyle(
+              color: foreground,
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+      ]),
+    );
+  }
+}
+
+class _CategoryBreakdown extends StatelessWidget {
+  const _CategoryBreakdown({
+    required this.items,
+    required this.total,
+    required this.money,
+  });
+
+  final List<ReportCategoryTotal> items;
+  final int total;
+  final String Function(int) money;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: _cardShadow,
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text(
+            'Rincian pengeluaran',
+            style: TextStyle(
+              color: Color(0xFF1F2937),
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 14),
+          for (var index = 0; index < items.length; index++) ...[
+            _CategoryRow(item: items[index], total: total, money: money),
+            if (index < items.length - 1) const SizedBox(height: 14),
+          ],
+        ]),
+      );
+}
+
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow({
+    required this.item,
+    required this.total,
+    required this.money,
+  });
+
+  final ReportCategoryTotal item;
+  final int total;
+  final String Function(int) money;
+
+  @override
+  Widget build(BuildContext context) {
+    final share = total <= 0 ? 0.0 : item.amount / total;
+    final color = Color(item.colorValue);
+    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+      Row(children: [
+        Container(
+          width: 10,
+          height: 10,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            item.name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF1F2937),
+              fontSize: 13,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ),
+        Text(
+          money(item.amount),
+          style: const TextStyle(
+            color: Color(0xFF1F2937),
+            fontSize: 12,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ]),
+      const SizedBox(height: 7),
+      ClipRRect(
+        borderRadius: BorderRadius.circular(9),
+        child: SizedBox(
+          height: 8,
+          child: Stack(children: [
+            const Positioned.fill(
+              child: ColoredBox(color: Color(0xFFEEF2F5)),
+            ),
+            FractionallySizedBox(
+              widthFactor: share.clamp(0.0, 1.0),
+              child: ColoredBox(color: color),
+            ),
+          ]),
+        ),
+      ),
+      const SizedBox(height: 5),
+      Text(
+        '${(share * 100).round()}% dari pengeluaran',
+        style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+      ),
+    ]);
   }
 }
 
