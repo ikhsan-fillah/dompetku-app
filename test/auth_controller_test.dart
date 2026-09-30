@@ -103,6 +103,30 @@ void main() {
     expect(controller.biometricStatus.value, BiometricStatus.failed);
   });
 
+  test('resetSessionState clears all in-memory authentication state', () async {
+    final controller = AuthController(
+      _FakeSessionRepository(),
+      _FakeBiometricService(result: true),
+    );
+    controller.onInit();
+    await controller.initialization;
+    controller.unlock();
+    controller.biometricFailureCount.value = 3;
+    controller.biometricLockedUntil.value = DateTime.now().add(
+      const Duration(minutes: 5),
+    );
+    controller.biometricStatus.value = BiometricStatus.lockedOut;
+
+    controller.resetSessionState();
+
+    expect(controller.isRegistered.value, isFalse);
+    expect(controller.isUnlocked.value, isFalse);
+    expect(controller.biometricEnabled.value, isFalse);
+    expect(controller.biometricFailureCount.value, 0);
+    expect(controller.biometricLockedUntil.value, isNull);
+    expect(controller.biometricStatus.value, BiometricStatus.required);
+  });
+
   test('app locks as soon as it returns from background by default', () {
     final service = AppLockService();
     final time = DateTime(2026, 9, 28, 10);

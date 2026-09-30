@@ -1,4 +1,5 @@
 import 'package:get/get.dart';
+
 import '../../../core/constant/domain_enums.dart';
 import '../../../core/services/biometric_service.dart';
 import '../../../core/utils/biometric_lockout.dart';
@@ -48,8 +49,19 @@ class AuthController extends GetxController {
   void lock() => isUnlocked.value = false;
   void unlock() => isUnlocked.value = true;
 
+  void resetSessionState() {
+    isRegistered.value = false;
+    lock();
+    biometricEnabled.value = false;
+    biometricFailureCount.value = 0;
+    biometricLockedUntil.value = null;
+    biometricStatus.value = BiometricStatus.required;
+  }
+
   bool get isLockedOut => BiometricLockout.isLockedOut(
-        biometricLockedUntil.value, now: DateTime.now());
+        biometricLockedUntil.value,
+        now: DateTime.now(),
+      );
 
   Future<bool> biometricAvailable() => _biometricService.isAvailable();
 
@@ -99,11 +111,18 @@ class AuthController extends GetxController {
       return true;
     }
     final count = biometricFailureCount.value + 1;
-    final until = BiometricLockout.lockedUntil(failureCount: count, now: DateTime.now());
-    await _sessionRepository.saveBiometricFailureState(count: count, lockedUntil: until);
+    final until = BiometricLockout.lockedUntil(
+      failureCount: count,
+      now: DateTime.now(),
+    );
+    await _sessionRepository.saveBiometricFailureState(
+      count: count,
+      lockedUntil: until,
+    );
     biometricFailureCount.value = count;
     biometricLockedUntil.value = until;
-    biometricStatus.value = until == null ? BiometricStatus.failed : BiometricStatus.lockedOut;
+    biometricStatus.value =
+        until == null ? BiometricStatus.failed : BiometricStatus.lockedOut;
     return false;
   }
 }

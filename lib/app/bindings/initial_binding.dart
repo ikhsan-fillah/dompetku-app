@@ -61,7 +61,11 @@ class InitialBinding extends Bindings {
       fenix: true,
     );
     Get.lazyPut(
-      () => ProfileController(Get.find(), resetService: Get.find()),
+      () => ProfileController(
+        Get.find(),
+        resetService: Get.find(),
+        authController: Get.find(),
+      ),
       fenix: true,
     );
   }
