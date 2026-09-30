@@ -7,6 +7,7 @@ class SharedPrefsService {
   static const _kBiometricLockedUntil = 'biometricLockedUntil';
   static const _kThemeMode = 'themeMode';
   static const _kDisplayName = 'displayName';
+  static const _kAutoLockSeconds = 'autoLockSeconds';
 
   Future<bool> getIsRegistered() async {
     final prefs = await SharedPreferences.getInstance();
@@ -74,6 +75,16 @@ class SharedPrefsService {
   Future<void> setDisplayName(String value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kDisplayName, value);
+  }
+
+  Future<int> getAutoLockSeconds() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getInt(_kAutoLockSeconds) ?? 0;
+  }
+
+  Future<void> setAutoLockSeconds(int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kAutoLockSeconds, value);
   }
 
   Future<void> clearAll() async {
