@@ -3,13 +3,19 @@ import 'package:get/get.dart';
 import '../../../core/services/local_data_reset_service.dart';
 import '../../../core/services/shared_prefs_service.dart';
 import '../../../core/utils/display_name.dart';
+import '../../auth/controllers/auth_controller.dart';
 
 class ProfileController extends GetxController {
-  ProfileController(this._preferences, {LocalDataResetService? resetService})
-      : _resetService = resetService;
+  ProfileController(
+    this._preferences, {
+    LocalDataResetService? resetService,
+    AuthController? authController,
+  })  : _resetService = resetService,
+        _authController = authController;
 
   final SharedPrefsService _preferences;
   final LocalDataResetService? _resetService;
+  final AuthController? _authController;
   final biometricEnabled = false.obs;
   final themeMode = 'system'.obs;
   final displayName = ''.obs;
@@ -67,6 +73,7 @@ class ProfileController extends GetxController {
     error.value = null;
     try {
       await resetService.resetAll();
+      _authController?.resetSessionState();
       biometricEnabled.value = false;
       themeMode.value = 'system';
       displayName.value = '';
