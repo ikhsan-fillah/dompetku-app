@@ -1,7 +1,7 @@
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 
 import '../../../core/services/local_data_export_service.dart';
+import '../../../core/services/local_export_file_service.dart';
 import '../../../core/services/local_data_reset_service.dart';
 import '../../../core/services/shared_prefs_service.dart';
 import '../../../core/utils/display_name.dart';
@@ -13,23 +13,19 @@ class ProfileController extends GetxController {
     LocalDataResetService? resetService,
     AuthController? authController,
     LocalDataExportService? exportService,
-    Future<void> Function(String text)? clipboardWriter,
-  })  : _resetService = resetService,
-        _authController = authController,
-        _exportService = exportService,
-        _clipboardWriter = clipboardWriter ?? _writeClipboard;
+    LocalExportFileService? exportFileService,
+  }) : _resetService = resetService,
+       _authController = authController,
+       _exportService = exportService,
+       _exportFileService = exportFileService;
 
   static const autoLockOptions = [0, 60, 300, 900];
-
-  static Future<void> _writeClipboard(String text) {
-    return Clipboard.setData(ClipboardData(text: text));
-  }
 
   final SharedPrefsService _preferences;
   final LocalDataResetService? _resetService;
   final AuthController? _authController;
   final LocalDataExportService? _exportService;
-  final Future<void> Function(String text) _clipboardWriter;
+  final LocalExportFileService? _exportFileService;
   final biometricEnabled = false.obs;
   final themeMode = 'system'.obs;
   final displayName = ''.obs;
@@ -102,20 +98,26 @@ class ProfileController extends GetxController {
     }
   }
 
-  /// Mengekspor kategori, transaksi, dan anggaran sebagai JSON ke clipboard.
-  /// Data tidak dikirim ke layanan eksternal.
+  /// Menyiapkan JSON dan membagikannya sebagai berkas lokal.
   Future<bool> exportData() async {
     final exportService = _exportService;
-    if (exportService == null || exportingData.value) return false;
+    final exportFileService = _exportFileService;
+    if (exportService == null ||
+        exportFileService == null ||
+        exportingData.value) {
+      return false;
+    }
 
     exportingData.value = true;
     exportSuccess.value = null;
     exportError.value = null;
     try {
-      final json = await exportService.exportJson();
-      await _clipboardWriter(json);
-      exportSuccess.value =
-          'Data berhasil disalin sebagai JSON. Tempel ke aplikasi catatan atau berkas untuk menyimpannya.';
+      final export = await exportService.createExport();
+      final result = await exportFileService.shareJson(
+        export.json,
+        exportedAt: export.exportedAt,
+      );
+      exportSuccess.value = 'Ekspor berhasil: ${result.fileName}';
       return true;
     } catch (_) {
       exportError.value = 'Gagal mengekspor data. Coba lagi.';

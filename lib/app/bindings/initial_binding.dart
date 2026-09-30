@@ -2,6 +2,7 @@ import 'package:dompetku_app/core/database/app_database.dart';
 import 'package:dompetku_app/core/services/app_lock_service.dart';
 import 'package:dompetku_app/core/services/biometric_service.dart';
 import 'package:dompetku_app/core/services/local_data_export_service.dart';
+import 'package:dompetku_app/core/services/local_export_file_service.dart';
 import 'package:dompetku_app/core/services/local_data_reset_service.dart';
 import 'package:dompetku_app/core/services/secure_storage_service.dart';
 import 'package:dompetku_app/core/services/shared_prefs_service.dart';
@@ -41,15 +42,28 @@ class InitialBinding extends Bindings {
     Get.put(CategoryLocalDataSource(Get.find()), permanent: true);
     Get.put(TransactionLocalDataSource(Get.find()), permanent: true);
     Get.put(BudgetLocalDataSource(Get.find()), permanent: true);
-    Get.put<CategoryRepository>(CategoryRepositoryImpl(Get.find()), permanent: true);
+    Get.put<CategoryRepository>(
+      CategoryRepositoryImpl(Get.find()),
+      permanent: true,
+    );
     Get.put<TransactionRepository>(
       TransactionRepositoryImpl(Get.find()),
       permanent: true,
     );
-    Get.put<BudgetRepository>(BudgetRepositoryImpl(Get.find()), permanent: true);
-    Get.put<SessionRepository>(SessionRepositoryImpl(Get.find()), permanent: true);
+    Get.put<BudgetRepository>(
+      BudgetRepositoryImpl(Get.find()),
+      permanent: true,
+    );
+    Get.put<SessionRepository>(
+      SessionRepositoryImpl(Get.find()),
+      permanent: true,
+    );
     Get.put(
       LocalDataExportService(Get.find(), Get.find(), Get.find()),
+      permanent: true,
+    );
+    Get.put<LocalExportFileService>(
+      const SharePlusExportFileService(),
       permanent: true,
     );
     Get.put(const FinancialCalculationService(), permanent: true);
@@ -71,6 +85,7 @@ class InitialBinding extends Bindings {
         resetService: Get.find(),
         authController: Get.find(),
         exportService: Get.find(),
+        exportFileService: Get.find(),
       ),
       fenix: true,
     );
