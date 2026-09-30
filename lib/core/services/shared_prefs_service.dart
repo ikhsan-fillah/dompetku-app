@@ -75,4 +75,9 @@ class SharedPrefsService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kDisplayName, value);
   }
+
+  Future<void> clearAll() async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.clear();
+  }
 }

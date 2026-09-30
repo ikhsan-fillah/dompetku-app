@@ -1,16 +1,20 @@
 import 'package:get/get.dart';
 
+import '../../../core/services/local_data_reset_service.dart';
 import '../../../core/services/shared_prefs_service.dart';
 import '../../../core/utils/display_name.dart';
 
 class ProfileController extends GetxController {
-  ProfileController(this._preferences);
+  ProfileController(this._preferences, {LocalDataResetService? resetService})
+      : _resetService = resetService;
 
   final SharedPrefsService _preferences;
+  final LocalDataResetService? _resetService;
   final biometricEnabled = false.obs;
   final themeMode = 'system'.obs;
   final displayName = ''.obs;
   final savingBiometric = false.obs;
+  final resettingData = false.obs;
   final error = Rxn<String>();
 
   String get greetingName => DisplayName.greeting(displayName.value);
@@ -52,6 +56,26 @@ class ProfileController extends GetxController {
       return false;
     } finally {
       savingBiometric.value = false;
+    }
+  }
+
+  Future<bool> resetAllData() async {
+    final resetService = _resetService;
+    if (resetService == null || resettingData.value) return false;
+
+    resettingData.value = true;
+    error.value = null;
+    try {
+      await resetService.resetAll();
+      biometricEnabled.value = false;
+      themeMode.value = 'system';
+      displayName.value = '';
+      return true;
+    } catch (_) {
+      error.value = 'Gagal menghapus semua data. Coba lagi.';
+      return false;
+    } finally {
+      resettingData.value = false;
     }
   }
 }
