@@ -10,6 +10,8 @@ class ProfileController extends GetxController {
   final biometricEnabled = false.obs;
   final themeMode = 'system'.obs;
   final displayName = ''.obs;
+  final savingBiometric = false.obs;
+  final error = Rxn<String>();
 
   String get greetingName => DisplayName.greeting(displayName.value);
   String get initial => DisplayName.initial(displayName.value);
@@ -35,5 +37,21 @@ class ProfileController extends GetxController {
     final normalized = DisplayName.normalize(value);
     displayName.value = normalized;
     await _preferences.setDisplayName(normalized);
+  }
+
+  Future<bool> setBiometricEnabled(bool value) async {
+    if (savingBiometric.value) return false;
+    savingBiometric.value = true;
+    error.value = null;
+    try {
+      await _preferences.setBiometricEnabled(value);
+      biometricEnabled.value = value;
+      return true;
+    } catch (_) {
+      error.value = 'Gagal menyimpan pengaturan biometrik.';
+      return false;
+    } finally {
+      savingBiometric.value = false;
+    }
   }
 }
