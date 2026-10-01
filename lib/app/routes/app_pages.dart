@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+
 import '../../core/services/data_refresh_service.dart';
 import '../../features/auth/controllers/auth_controller.dart';
 import '../../features/auth/pages/biometric_setup_page.dart';
@@ -10,12 +11,15 @@ import '../../features/budget/models/budget_model.dart';
 import '../../features/budget/views/budget_form_page.dart';
 import '../../features/category/controllers/category_controller.dart';
 import '../../features/category/pages/category_manage_page.dart';
+import '../../features/receipt/services/ml_kit_receipt_text_recognizer.dart';
+import '../../features/receipt/services/receipt_ocr_service.dart';
 import '../../features/report/views/report_page.dart';
 import '../../features/shell/controllers/main_shell_controller.dart';
 import '../../features/shell/pages/main_shell_page.dart';
 import '../../features/splash/pages/splash_page.dart';
 import '../../features/transaction/controllers/transaction_form_controller.dart';
 import 'app_routes.dart';
+
 
 class AppPages {
   static final pages = <GetPage>[
@@ -31,7 +35,11 @@ class AppPages {
         }
         Get.put(MainShellController());
         Get.lazyPut(
-          () => TransactionFormController(Get.find(), Get.find()),
+          () => TransactionFormController(
+            Get.find(),
+            Get.find(),
+            ocr: ReceiptOcrService(MlKitReceiptTextRecognizer()),
+          ),
           fenix: true,
         );
         BudgetBinding().dependencies();
@@ -68,6 +76,7 @@ class AppPages {
     ),
   ];
 }
+
 
 class FinancialRouteGuard extends GetMiddleware {
   @override

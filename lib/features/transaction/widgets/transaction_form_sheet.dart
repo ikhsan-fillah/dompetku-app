@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+
 import '../../../core/constant/domain_enums.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/category_style.dart';
@@ -11,8 +12,11 @@ import '../../../core/widgets/app_chip.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/category_icon_box.dart';
 import '../../category/models/category_model.dart';
+import '../../receipt/services/receipt_image_picker.dart';
+import '../../receipt/services/receipt_ocr_service.dart';
 import '../controllers/transaction_form_controller.dart';
 import '../models/transaction_model.dart';
+
 
 /// Membuka sheet tambah/edit transaksi. Mengembalikan true bila tersimpan.
 Future<bool> showTransactionSheet(
@@ -50,6 +54,7 @@ Future<bool> showTransactionSheet(
   return saved == true;
 }
 
+
 String _paymentLabel(PaymentMethod method) => switch (method) {
       PaymentMethod.cash => 'Tunai',
       PaymentMethod.eWallet => 'E-wallet',
@@ -60,12 +65,15 @@ String _paymentLabel(PaymentMethod method) => switch (method) {
       PaymentMethod.other => 'Lainnya',
     };
 
+
 class TransactionFormSheet extends StatefulWidget {
   const TransactionFormSheet({super.key});
+
 
   @override
   State<TransactionFormSheet> createState() => _TransactionFormSheetState();
 }
+
 
 class _TransactionFormSheetState extends State<TransactionFormSheet> {
   late final TransactionFormController _controller =
@@ -73,16 +81,24 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
   late final TextEditingController _titleField;
   late final TextEditingController _noteField;
 
+
   static const _keys = [
     '1', '2', '3', '4', '5', '6', '7', '8', '9', '000', '0', '⌫', //
   ];
+
 
   @override
   void initState() {
     super.initState();
     _titleField = TextEditingController(text: _controller.title.value);
     _noteField = TextEditingController(text: _controller.note.value);
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      final result = await _controller.recoverLostReceipt();
+      if (!mounted || result == null) return;
+      _applyOcrResult(result);
+    });
   }
+
 
   @override
   void dispose() {
@@ -90,6 +106,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
     _noteField.dispose();
     super.dispose();
   }
+
 
   Future<void> _pickDate() async {
     final picked = await showDatePicker(
@@ -101,10 +118,72 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
     if (picked != null) _controller.setDate(picked);
   }
 
+
+  Future<void> _scanReceipt() async {
+    final source = await showModalBottomSheet<ReceiptImageSource>(
+      context: context,
+      showDragHandle: true,
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Text('Scan struk', style: Theme.of(context).textTheme.titleLarge),
+              const SizedBox(height: 8),
+              const Text(
+                'Data hasil scan adalah usulan. Periksa kembali sebelum menyimpan.',
+                style: TextStyle(fontSize: 12, color: AppColors.muted),
+              ),
+              const SizedBox(height: 14),
+              ListTile(
+                leading: const Icon(Icons.photo_camera_outlined),
+                title: const Text('Ambil foto'),
+                subtitle: const Text('Gunakan kamera untuk memotret struk'),
+                onTap: () => Navigator.of(context).pop(ReceiptImageSource.camera),
+              ),
+              ListTile(
+                leading: const Icon(Icons.photo_library_outlined),
+                title: const Text('Pilih dari galeri'),
+                subtitle: const Text('Pilih foto struk yang sudah ada'),
+                onTap: () => Navigator.of(context).pop(ReceiptImageSource.gallery),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (!mounted || source == null) return;
+    final result = await _controller.scanReceipt(source);
+    if (!mounted || result == null) return;
+    _applyOcrResult(result);
+  }
+
+
+  void _applyOcrResult(ReceiptScanResult result) {
+    if (!result.isSuccess) return;
+    _titleField.value = TextEditingValue(
+      text: _controller.title.value,
+      selection: TextSelection.collapsed(offset: _controller.title.value.length),
+    );
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          result.receipt!.isComplete
+              ? 'Data struk terisi. Periksa sebelum menyimpan.'
+              : 'Sebagian data struk terisi. Lengkapi dan periksa kembali.',
+        ),
+      ),
+    );
+  }
+
+
   Future<void> _save() async {
     final ok = await _controller.save();
     if (ok && mounted) Navigator.of(context).pop(true);
   }
+
 
   @override
   Widget build(BuildContext context) {
@@ -133,6 +212,21 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                   icon: const Icon(Icons.close_rounded),
                 ),
               ],
+            ),
+            const SizedBox(height: 8),
+            Obx(
+              () => OutlinedButton.icon(
+                onPressed: c.scanning.value || c.saving.value ? null : _scanReceipt,
+                icon: c.scanning.value
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(strokeWidth: 2),
+                      )
+                    : const Icon(Icons.document_scanner_outlined),
+                label: Text(
+                  c.scanning.value ? 'Membaca struk...' : 'Scan struk'),
+              ),
             ),
             const SizedBox(height: 8),
             Obx(() => _TypeToggle(type: c.type.value, onChanged: c.setType)),
@@ -226,7 +320,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                 label: c.isEditing ? 'Simpan perubahan' : 'Simpan transaksi',
                 icon: Icons.check_rounded,
                 loading: c.saving.value,
-                onPressed: _save,
+                onPressed: c.scanning.value ? null : _save,
               ),
             ),
           ],
@@ -236,10 +330,13 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
   }
 }
 
+
 class _Label extends StatelessWidget {
   const _Label(this.text);
 
+
   final String text;
+
 
   @override
   Widget build(BuildContext context) {
@@ -257,11 +354,14 @@ class _Label extends StatelessWidget {
   }
 }
 
+
 class _TypeToggle extends StatelessWidget {
   const _TypeToggle({required this.type, required this.onChanged});
 
+
   final TransactionType type;
   final ValueChanged<TransactionType> onChanged;
+
 
   @override
   Widget build(BuildContext context) {
@@ -291,6 +391,7 @@ class _TypeToggle extends StatelessWidget {
   }
 }
 
+
 class _ToggleButton extends StatelessWidget {
   const _ToggleButton({
     required this.label,
@@ -299,10 +400,12 @@ class _ToggleButton extends StatelessWidget {
     required this.onTap,
   });
 
+
   final String label;
   final bool selected;
   final Color color;
   final VoidCallback onTap;
+
 
   @override
   Widget build(BuildContext context) {
@@ -345,11 +448,14 @@ class _ToggleButton extends StatelessWidget {
   }
 }
 
+
 class _AmountDisplay extends StatelessWidget {
   const _AmountDisplay({required this.digits, required this.type});
 
+
   final String digits;
   final TransactionType type;
+
 
   @override
   Widget build(BuildContext context) {
@@ -378,11 +484,14 @@ class _AmountDisplay extends StatelessWidget {
   }
 }
 
+
 class _DateRow extends StatelessWidget {
   const _DateRow({required this.date, required this.onTap});
 
+
   final DateTime date;
   final VoidCallback onTap;
+
 
   @override
   Widget build(BuildContext context) {
@@ -431,6 +540,7 @@ class _DateRow extends StatelessWidget {
   }
 }
 
+
 class _CategoryRow extends StatelessWidget {
   const _CategoryRow({
     required this.options,
@@ -438,9 +548,11 @@ class _CategoryRow extends StatelessWidget {
     required this.onSelect,
   });
 
+
   final List<CategoryModel> options;
   final int? selected;
   final ValueChanged<int> onSelect;
+
 
   @override
   Widget build(BuildContext context) {
@@ -472,6 +584,7 @@ class _CategoryRow extends StatelessWidget {
   }
 }
 
+
 class _CategoryChoice extends StatelessWidget {
   const _CategoryChoice({
     required this.category,
@@ -479,9 +592,11 @@ class _CategoryChoice extends StatelessWidget {
     required this.onTap,
   });
 
+
   final CategoryModel category;
   final bool selected;
   final VoidCallback onTap;
+
 
   @override
   Widget build(BuildContext context) {
@@ -529,11 +644,14 @@ class _CategoryChoice extends StatelessWidget {
   }
 }
 
+
 class _KeypadKey extends StatelessWidget {
   const _KeypadKey({required this.label, required this.onTap});
 
+
   final String label;
   final VoidCallback onTap;
+
 
   @override
   Widget build(BuildContext context) {
