@@ -10,6 +10,7 @@ import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/settings_tile.dart';
 import '../../../app/routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
+import '../../shell/controllers/main_shell_controller.dart';
 
 /// Halaman Profil dan pengaturan perangkat DompetKu.
 class ProfilePage extends StatefulWidget {
@@ -127,6 +128,13 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _openCategories() {
     Get.toNamed(AppRoutes.categories);
+  }
+
+  void _openBudgetTab() {
+    Get.back();
+    if (Get.isRegistered<MainShellController>()) {
+      Get.find<MainShellController>().select(2);
+    }
   }
 
   Future<void> _confirmReset() async {
@@ -371,7 +379,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 title: 'Anggaran',
                 subtitle: 'Batas bulanan & peringatan',
                 trailing: _chevron,
-                onTap: () => Get.toNamed(AppRoutes.budgetForm),
+                onTap: _openBudgetTab,
               ),
               SettingsTile(
                 icon: Icons.pie_chart_outline_rounded,
