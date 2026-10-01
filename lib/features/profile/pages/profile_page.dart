@@ -78,6 +78,14 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
+  Future<void> _setTheme(String value) async {
+    final saved = await _controller.setThemeMode(value);
+    if (!mounted || saved) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(_controller.error.value ?? 'Gagal menyimpan tema.')),
+    );
+  }
+
   Future<void> _exportData() async {
     final exported = await _controller.exportData();
     if (!mounted) return;
@@ -360,6 +368,48 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                 ],
+              ),
+            ],
+          ),
+        ),
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SectionHeader(title: 'Tampilan'),
+              Obx(
+                () => SizedBox(
+                  width: double.infinity,
+                  child: SegmentedButton<String>(
+                    showSelectedIcon: false,
+                    segments: const [
+                      ButtonSegment<String>(
+                        value: 'system',
+                        label: Text('Sistem'),
+                        icon: Icon(Icons.brightness_auto_rounded),
+                      ),
+                      ButtonSegment<String>(
+                        value: 'light',
+                        label: Text('Terang'),
+                        icon: Icon(Icons.light_mode_outlined),
+                      ),
+                      ButtonSegment<String>(
+                        value: 'dark',
+                        label: Text('Gelap'),
+                        icon: Icon(Icons.dark_mode_outlined),
+                      ),
+                    ],
+                    selected: {_controller.themeMode.value},
+                    onSelectionChanged: _controller.savingTheme.value
+                        ? null
+                        : (selection) => _setTheme(selection.first),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                'Sistem mengikuti mode terang atau gelap perangkat.',
+                style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
               ),
             ],
           ),

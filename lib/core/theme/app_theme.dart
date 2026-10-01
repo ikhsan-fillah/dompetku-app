@@ -31,9 +31,77 @@ class AppTheme {
       outlineVariant: AppColors.line,
     );
 
+    return _build(
+      brightness: Brightness.light,
+      scheme: scheme,
+      background: AppColors.background,
+      surface: AppColors.surface,
+      ink: AppColors.ink,
+      line: AppColors.line,
+      accent: AppColors.teal,
+      focus: AppColors.tealLight,
+      switchOff: const Color(0xFFCBD5E1),
+      snackBackground: AppColors.ink,
+      snackText: Colors.white,
+    );
+  }
+
+  static ThemeData get dark {
+    const background = Color(0xFF0B1A1C);
+    const surface = Color(0xFF132629);
+    const ink = Color(0xFFE6F2F1);
+    const line = Color(0xFF24403F);
+
+    final scheme = ColorScheme.fromSeed(
+      seedColor: AppColors.teal,
+      brightness: Brightness.dark,
+    ).copyWith(
+      primary: AppColors.tealLight,
+      onPrimary: const Color(0xFF042F2E),
+      primaryContainer: const Color(0xFF0F3B3A),
+      onPrimaryContainer: AppColors.mint,
+      secondary: AppColors.amber,
+      onSecondary: Colors.black,
+      error: AppColors.coral,
+      onError: Colors.white,
+      surface: surface,
+      onSurface: ink,
+      onSurfaceVariant: const Color(0xFF9FB5B4),
+      outline: line,
+      outlineVariant: line,
+    );
+
+    return _build(
+      brightness: Brightness.dark,
+      scheme: scheme,
+      background: background,
+      surface: surface,
+      ink: ink,
+      line: line,
+      accent: AppColors.tealLight,
+      focus: AppColors.tealLight,
+      switchOff: const Color(0xFF3B5352),
+      snackBackground: ink,
+      snackText: background,
+    );
+  }
+
+  static ThemeData _build({
+    required Brightness brightness,
+    required ColorScheme scheme,
+    required Color background,
+    required Color surface,
+    required Color ink,
+    required Color line,
+    required Color accent,
+    required Color focus,
+    required Color switchOff,
+    required Color snackBackground,
+    required Color snackText,
+  }) {
     final base = ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
+      brightness: brightness,
       colorScheme: scheme,
       fontFamily: fontFamily,
     );
@@ -73,25 +141,25 @@ class AppTheme {
             fontWeight: FontWeight.w500,
           ),
         )
-        .apply(bodyColor: AppColors.ink, displayColor: AppColors.ink);
+        .apply(bodyColor: ink, displayColor: ink);
 
     return ThemeData(
       useMaterial3: true,
-      brightness: Brightness.light,
+      brightness: brightness,
       colorScheme: scheme,
       fontFamily: fontFamily,
       textTheme: textTheme,
-      scaffoldBackgroundColor: AppColors.background,
-      appBarTheme: const AppBarTheme(
+      scaffoldBackgroundColor: background,
+      appBarTheme: AppBarTheme(
         centerTitle: false,
         elevation: 0,
         scrolledUnderElevation: 0,
-        backgroundColor: AppColors.background,
-        foregroundColor: AppColors.ink,
+        backgroundColor: background,
+        foregroundColor: ink,
         surfaceTintColor: Colors.transparent,
       ),
       cardTheme: CardThemeData(
-        color: AppColors.surface,
+        color: surface,
         elevation: 0,
         margin: EdgeInsets.zero,
         shape: RoundedRectangleBorder(
@@ -110,8 +178,8 @@ class AppTheme {
       outlinedButtonTheme: OutlinedButtonThemeData(
         style: OutlinedButton.styleFrom(
           minimumSize: const Size(AppSpacing.minTap, AppSpacing.buttonHeight),
-          foregroundColor: AppColors.teal,
-          side: const BorderSide(color: AppColors.tealLight, width: 1.5),
+          foregroundColor: accent,
+          side: BorderSide(color: AppColors.tealLight, width: 1.5),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(AppRadius.button),
           ),
@@ -120,25 +188,25 @@ class AppTheme {
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: AppColors.surface,
+        fillColor: surface,
         contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.field),
-          borderSide: const BorderSide(color: AppColors.line),
+          borderSide: BorderSide(color: line),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.field),
-          borderSide: const BorderSide(color: AppColors.line),
+          borderSide: BorderSide(color: line),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.field),
-          borderSide: const BorderSide(color: AppColors.tealLight, width: 1.6),
+          borderSide: BorderSide(color: focus, width: 1.6),
         ),
       ),
-      bottomSheetTheme: const BottomSheetThemeData(
-        backgroundColor: AppColors.surface,
+      bottomSheetTheme: BottomSheetThemeData(
+        backgroundColor: surface,
         showDragHandle: true,
-        shape: RoundedRectangleBorder(
+        shape: const RoundedRectangleBorder(
           borderRadius: BorderRadius.vertical(
             top: Radius.circular(AppRadius.sheet),
           ),
@@ -147,21 +215,22 @@ class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.all(Colors.white),
         trackColor: WidgetStateProperty.resolveWith(
-          (states) => states.contains(WidgetState.selected)
-              ? AppColors.tealLight
-              : const Color(0xFFCBD5E1),
+          (states) =>
+              states.contains(WidgetState.selected) ? AppColors.tealLight : switchOff,
         ),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),
       snackBarTheme: SnackBarThemeData(
         behavior: SnackBarBehavior.floating,
-        backgroundColor: AppColors.ink,
-        contentTextStyle: const TextStyle(color: Colors.white, fontSize: 13),
+        backgroundColor: snackBackground,
+        contentTextStyle: TextStyle(color: snackText, fontSize: 13),
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
       ),
-      progressIndicatorTheme: const ProgressIndicatorThemeData(
-        color: AppColors.teal,
-        linearTrackColor: AppColors.track,
+      progressIndicatorTheme: ProgressIndicatorThemeData(
+        color: accent,
+        linearTrackColor: brightness == Brightness.light
+            ? AppColors.track
+            : line,
       ),
     );
   }

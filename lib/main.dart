@@ -11,13 +11,24 @@ import 'core/services/data_refresh_service.dart';
 import 'core/services/shared_prefs_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/controllers/auth_controller.dart';
+import 'features/profile/controllers/profile_controller.dart';
 
-void main() {
-  runApp(const MyApp());
+Future<void> main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+  var initialThemeMode = ThemeMode.system;
+  try {
+    final saved = await SharedPrefsService().getThemeMode();
+    initialThemeMode = ProfileController.themeModeFor(saved);
+  } catch (_) {
+    initialThemeMode = ThemeMode.system;
+  }
+  runApp(MyApp(initialThemeMode: initialThemeMode));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, this.initialThemeMode = ThemeMode.system});
+
+  final ThemeMode initialThemeMode;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -76,7 +87,8 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
       theme: AppTheme.light,
-      themeMode: ThemeMode.light,
+      darkTheme: AppTheme.dark,
+      themeMode: widget.initialThemeMode,
       initialBinding: InitialBinding(),
       initialRoute: AppRoutes.splash,
       getPages: AppPages.pages,
