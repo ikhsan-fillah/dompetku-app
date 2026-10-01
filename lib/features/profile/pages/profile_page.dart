@@ -124,9 +124,7 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _openCategories() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Kelola kategori segera hadir.')),
-    );
+    Get.toNamed(AppRoutes.categories);
   }
 
   Future<void> _confirmReset() async {

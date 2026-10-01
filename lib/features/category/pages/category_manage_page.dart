@@ -10,6 +10,7 @@ import '../../../core/widgets/app_card.dart';
 import '../controllers/category_controller.dart';
 import '../models/category_model.dart';
 import '../utils/category_icons.dart';
+import '../widgets/category_form_sheet.dart';
 
 /// Halaman kelola kategori: filter tipe, favorit, urutan, dan arsip.
 class CategoryManagePage extends StatefulWidget {
@@ -45,6 +46,18 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
     final ok = await _controller.moveWithinType(oldIndex, newIndex);
     if (!mounted || ok) return;
     _showError();
+  }
+
+  Future<void> _showAddOrEditForm([CategoryModel? category]) async {
+    final ok = await showCategorySheet(context, category: category);
+    if (!mounted || !ok) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(
+          category == null ? 'Kategori ditambahkan.' : 'Kategori diperbarui.',
+        ),
+      ),
+    );
   }
 
   Future<void> _confirmArchive(CategoryModel category) async {
@@ -127,7 +140,7 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
       padding: const EdgeInsets.only(bottom: 24),
       buildDefaultDragHandles: false,
       itemCount: items.length,
-      onReorder: (oldIndex, newIndex) {
+      onReorderItem: (oldIndex, newIndex) {
         _move(oldIndex, newIndex);
       },
       itemBuilder: (context, index) {
@@ -136,68 +149,81 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
           key: ValueKey(category.id),
           margin: const EdgeInsets.only(bottom: 10),
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          child: Row(
-            children: [
-              Container(
-                width: 40,
-                height: 40,
-                decoration: BoxDecoration(
-                  color: Color(category.colorValue),
-                  borderRadius: BorderRadius.circular(14),
-                ),
-                child: Icon(
-                  CategoryIcons.of(category.iconKey),
-                  size: 20,
-                  color: Colors.white,
-                ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      category.name,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: textTheme.titleSmall,
-                    ),
-                    Text(
-                      category.isDefault ? 'Bawaan' : 'Kustom',
-                      style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
-                    ),
-                  ],
-                ),
-              ),
-              IconButton(
-                tooltip: category.isFavorite
-                    ? 'Hapus dari favorit'
-                    : 'Jadikan favorit',
-                onPressed: () => _toggleFavorite(category),
-                icon: Icon(
-                  category.isFavorite
-                      ? Icons.star_rounded
-                      : Icons.star_outline_rounded,
-                  color: category.isFavorite ? AppColors.amber : AppColors.muted,
-                ),
-              ),
-              PopupMenuButton<String>(
-                onSelected: (_) => _confirmArchive(category),
-                itemBuilder: (_) => const [
-                  PopupMenuItem<String>(value: 'archive', child: Text('Arsipkan')),
-                ],
-              ),
-              ReorderableDragStartListener(
-                index: index,
-                child: const Padding(
-                  padding: EdgeInsets.all(8),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(18),
+            onTap: () => _showAddOrEditForm(category),
+            child: Row(
+              children: [
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: Color(category.colorValue),
+                    borderRadius: BorderRadius.circular(14),
+                  ),
                   child: Icon(
-                    Icons.drag_indicator_rounded,
-                    color: AppColors.muted,
+                    CategoryIcons.of(category.iconKey),
+                    size: 20,
+                    color: Colors.white,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        category.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: textTheme.titleSmall,
+                      ),
+                      Text(
+                        category.isDefault ? 'Bawaan' : 'Kustom',
+                        style: textTheme.bodySmall?.copyWith(
+                          color: AppColors.muted,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                IconButton(
+                  tooltip: category.isFavorite
+                      ? 'Hapus dari favorit'
+                      : 'Jadikan favorit',
+                  onPressed: () => _toggleFavorite(category),
+                  icon: Icon(
+                    category.isFavorite
+                        ? Icons.star_rounded
+                        : Icons.star_outline_rounded,
+                    color: category.isFavorite ? AppColors.amber : AppColors.muted,
+                  ),
+                ),
+                PopupMenuButton<String>(
+                  onSelected: (value) {
+                    if (value == 'edit') {
+                      _showAddOrEditForm(category);
+                      return;
+                    }
+                    _confirmArchive(category);
+                  },
+                  itemBuilder: (_) => const [
+                    PopupMenuItem<String>(value: 'edit', child: Text('Edit')),
+                    PopupMenuItem<String>(value: 'archive', child: Text('Arsipkan')),
+                  ],
+                ),
+                ReorderableDragStartListener(
+                  index: index,
+                  child: const Padding(
+                    padding: EdgeInsets.all(8),
+                    child: Icon(
+                      Icons.drag_indicator_rounded,
+                      color: AppColors.muted,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },
@@ -237,7 +263,15 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                     ),
                   ),
                   const SizedBox(width: 12),
-                  Text('Kategori', style: textTheme.titleLarge),
+                  Expanded(
+                    child: Text('Kategori', style: textTheme.titleLarge),
+                  ),
+                  AppButton(
+                    label: 'Tambah',
+                    expand: false,
+                    icon: Icons.add_rounded,
+                    onPressed: () => _showAddOrEditForm(),
+                  ),
                 ],
               ),
               const SizedBox(height: 14),
