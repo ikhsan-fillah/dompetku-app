@@ -31,9 +31,9 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
 
   void _showError() {
     final message = _controller.state.value.message ?? 'Terjadi kesalahan.';
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   Future<void> _toggleFavorite(CategoryModel category) async {
@@ -90,9 +90,9 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
       _showError();
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Kategori diarsipkan.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Kategori diarsipkan.')));
   }
 
   Widget _message(String text, {bool retry = false}) {
@@ -103,9 +103,9 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
           Text(
             text,
             textAlign: TextAlign.center,
-            style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-              color: AppColors.muted,
-            ),
+            style: Theme.of(
+              context,
+            ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
           ),
           if (retry) ...[
             const SizedBox(height: 14),
@@ -196,7 +196,9 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                     category.isFavorite
                         ? Icons.star_rounded
                         : Icons.star_outline_rounded,
-                    color: category.isFavorite ? AppColors.amber : AppColors.muted,
+                    color: category.isFavorite
+                        ? AppColors.amber
+                        : AppColors.muted,
                   ),
                 ),
                 PopupMenuButton<String>(
@@ -209,7 +211,10 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                   },
                   itemBuilder: (_) => const [
                     PopupMenuItem<String>(value: 'edit', child: Text('Edit')),
-                    PopupMenuItem<String>(value: 'archive', child: Text('Arsipkan')),
+                    PopupMenuItem<String>(
+                      value: 'archive',
+                      child: Text('Arsipkan'),
+                    ),
                   ],
                 ),
                 ReorderableDragStartListener(
