@@ -1,5 +1,6 @@
 import 'package:get/get.dart';
 
+import '../../../core/constant/domain_enums.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/utils/validator.dart';
 import '../models/category_model.dart';
@@ -10,6 +11,17 @@ class CategoryController extends GetxController {
 
   final CategoryRepository _repository;
   final state = const ResourceState<List<CategoryModel>>.idle().obs;
+  final selectedType = TransactionType.expense.obs;
+
+  /// Kategori aktif untuk tipe yang sedang dipilih, sesuai urutan tersimpan.
+  List<CategoryModel> get visibleCategories {
+    final data = state.value.data ?? const <CategoryModel>[];
+    return data.where((c) => c.type == selectedType.value).toList();
+  }
+
+  void setType(TransactionType type) {
+    selectedType.value = type;
+  }
 
   @override
   void onInit() {
@@ -47,6 +59,7 @@ class CategoryController extends GetxController {
     }
   }
 
+  /// Mengarsipkan kategori. Transaksi yang memakainya tetap aman.
   Future<bool> archive(int id) async {
     try {
       await _repository.archive(id);
@@ -67,5 +80,49 @@ class CategoryController extends GetxController {
       state.value = const ResourceState.error('Gagal mengubah urutan kategori.');
       return false;
     }
+  }
+
+  Future<bool> toggleFavorite(CategoryModel category) async {
+    if (category.id == null) return false;
+    return save(
+      CategoryModel(
+        id: category.id,
+        name: category.name,
+        type: category.type,
+        iconKey: category.iconKey,
+        colorValue: category.colorValue,
+        isDefault: category.isDefault,
+        isFavorite: !category.isFavorite,
+        sortOrder: category.sortOrder,
+        isArchived: category.isArchived,
+        createdAt: category.createdAt,
+        updatedAt: DateTime.now(),
+      ),
+    );
+  }
+
+  /// Memindahkan kategori pada daftar tipe terpilih. Posisi tipe lain tetap.
+  Future<bool> moveWithinType(int oldIndex, int newIndex) async {
+    final all = state.value.data;
+    if (all == null) return false;
+    final visible = all.where((c) => c.type == selectedType.value).toList();
+    if (oldIndex < 0 || oldIndex >= visible.length) return false;
+
+    var target = newIndex;
+    if (target > oldIndex) target -= 1;
+    target = target.clamp(0, visible.length - 1);
+
+    final moved = visible.removeAt(oldIndex);
+    visible.insert(target, moved);
+
+    final result = <CategoryModel>[...all];
+    var cursor = 0;
+    for (var i = 0; i < all.length; i++) {
+      if (all[i].type == selectedType.value) {
+        result[i] = visible[cursor++];
+      }
+    }
+    final ids = result.map((c) => c.id).whereType<int>().toList();
+    return reorder(ids);
   }
 }
