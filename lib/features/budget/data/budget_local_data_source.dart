@@ -47,16 +47,20 @@ class BudgetLocalDataSource {
     );
   }
 
-  Future<void> archive(int id) async {
+  Future<void> _setArchived(int id, bool archived) async {
     final database = await _appDatabase.database;
     await database.update(
       DatabaseTables.budgets,
       {
-        DatabaseColumns.isArchived: 1,
+        DatabaseColumns.isArchived: archived ? 1 : 0,
         DatabaseColumns.updatedAt: DateTime.now().toUtc().toIso8601String(),
       },
       where: '${DatabaseColumns.id} = ?',
       whereArgs: [id],
     );
   }
+
+  Future<void> archive(int id) => _setArchived(id, true);
+
+  Future<void> restore(int id) => _setArchived(id, false);
 }

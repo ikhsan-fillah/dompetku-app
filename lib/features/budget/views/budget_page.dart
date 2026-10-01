@@ -32,6 +32,16 @@ class BudgetPage extends GetView<BudgetController> {
           title: const Text('Anggaran'),
           backgroundColor: const Color(0xFFF6FAF9),
           surfaceTintColor: Colors.transparent,
+          actions: [
+            IconButton(
+              tooltip: 'Anggaran terarsip',
+              onPressed: () => Get.toNamed(AppRoutes.budgetArchive),
+              icon: const Icon(
+                Icons.inventory_2_outlined,
+                color: Color(0xFF0F766E),
+              ),
+            ),
+          ],
         ),
         floatingActionButton: Padding(
           padding: const EdgeInsets.only(bottom: 84),

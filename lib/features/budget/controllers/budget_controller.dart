@@ -16,6 +16,7 @@ class BudgetController extends GetxController {
   final BudgetRepository _repository;
   final TransactionRepository? _transactions;
   final state = const ResourceState<List<BudgetViewModel>>.idle().obs;
+  final archived = const ResourceState<List<BudgetViewModel>>.idle().obs;
 
   Worker? _refreshWorker;
   int _requestId = 0;
@@ -49,6 +50,9 @@ class BudgetController extends GetxController {
     if (!silent || state.value.status != ResourceStatus.success) {
       state.value = const ResourceState.loading();
     }
+    if (archived.value.status == ResourceStatus.success) {
+      await loadArchived();
+    }
     try {
       final budgets = await _repository.getAll();
       final transactionRepository = _transactionRepository;
@@ -66,6 +70,27 @@ class BudgetController extends GetxController {
     } catch (_) {
       if (requestId != _requestId) return;
       state.value = const ResourceState.error('Gagal memuat anggaran.');
+    }
+  }
+
+  Future<void> loadArchived() async {
+    try {
+      final budgets = await _repository.getAll(includeArchived: true);
+      final transactionRepository = _transactionRepository;
+      final transactions = transactionRepository == null
+          ? const <TransactionModel>[]
+          : await transactionRepository.getAll();
+      final items = [
+        for (final budget in budgets)
+          BudgetViewModel(budget: budget, used: _usedFor(budget, transactions)),
+      ];
+      archived.value = items.isEmpty
+          ? const ResourceState.empty()
+          : ResourceState.success(items);
+    } catch (_) {
+      archived.value = const ResourceState.error(
+        'Gagal memuat anggaran terarsip.',
+      );
     }
   }
 
@@ -95,6 +120,21 @@ class BudgetController extends GetxController {
       return true;
     } catch (_) {
       state.value = const ResourceState.error('Gagal mengarsipkan anggaran.');
+      return false;
+    }
+  }
+
+  /// Memulihkan anggaran terarsip kembali ke daftar aktif.
+  Future<bool> restore(int id) async {
+    try {
+      await _repository.restore(id);
+      await load(silent: true);
+      await loadArchived();
+      return true;
+    } catch (_) {
+      archived.value = const ResourceState.error(
+        'Gagal memulihkan anggaran.',
+      );
       return false;
     }
   }

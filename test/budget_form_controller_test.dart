@@ -30,6 +30,9 @@ class _FakeBudgets implements BudgetRepository {
 
   @override
   Future<void> archive(int id) async {}
+
+  @override
+  Future<void> restore(int id) async {}
 }
 
 class _FakeCategories implements CategoryRepository {
