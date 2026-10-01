@@ -116,4 +116,43 @@ class FinancialCalculationService {
     if (previous == 0) return current == 0 ? 0 : 1;
     return (current - previous) / previous;
   }
+
+  /// Rata-rata pengeluaran harian pada rentang (total dibagi jumlah hari).
+  /// Hari tanpa transaksi tetap dihitung.
+  double dailyAverage(Iterable<TransactionModel> transactions, DateRange range) {
+    final total = totalForType(transactions, TransactionType.expense, range);
+    return range.dayCount == 0 ? 0 : total / range.dayCount;
+  }
+
+  /// Hari dengan total pengeluaran terbesar pada rentang.
+  DateTime? highestSpendingDay(Iterable<TransactionModel> transactions, DateRange range) {
+    final daily = dailyExpenses(transactions, range);
+    if (daily.isEmpty) return null;
+    return daily.reduce((a, b) => a.amount >= b.amount ? a : b).date;
+  }
+
+  /// Total pengeluaran pada [day].
+  int expenseOnDay(Iterable<TransactionModel> transactions, DateTime day) {
+    return _within(transactions, DateRange(start: day, end: day))
+        .where((transaction) => transaction.type == TransactionType.expense)
+        .fold(0, (total, transaction) => total + transaction.amount);
+  }
+
+  /// Nama merchant yang paling sering dipakai transaksi (judul, bukan kategori).
+  /// Mengembalikan null bila tidak ada transaksi bergaya merchant.
+  MapEntry<String, int>? topMerchant(Iterable<TransactionModel> transactions, DateRange range) {
+    final counts = <String, int>{};
+    for (final transaction in _within(transactions, range)) {
+      final merchant = transaction.merchantOrSource;
+      final name = (merchant == null || merchant.trim().isEmpty)
+          ? transaction.title
+          : merchant.trim();
+      if (name.isEmpty) continue;
+      counts.update(name, (value) => value + 1, ifAbsent: () => 1);
+    }
+    if (counts.isEmpty) return null;
+    final sorted = counts.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    return sorted.first;
+  }
 }

@@ -12,6 +12,21 @@ class ReportPage extends StatefulWidget {
   State<ReportPage> createState() => _ReportPageState();
 }
 
+const _months = [
+  'Jan',
+  'Feb',
+  'Mar',
+  'Apr',
+  'Mei',
+  'Jun',
+  'Jul',
+  'Agu',
+  'Sep',
+  'Okt',
+  'Nov',
+  'Des',
+];
+
 class _ReportPageState extends State<ReportPage> {
   static const _presets = <(DateRangePreset, String)>[
     (DateRangePreset.today, 'Hari ini'),
@@ -22,21 +37,6 @@ class _ReportPageState extends State<ReportPage> {
     (DateRangePreset.year, '1 Tahun'),
     (DateRangePreset.allTime, 'Semua'),
     (DateRangePreset.custom, 'Kustom'),
-  ];
-
-  static const _months = [
-    'Jan',
-    'Feb',
-    'Mar',
-    'Apr',
-    'Mei',
-    'Jun',
-    'Jul',
-    'Agu',
-    'Sep',
-    'Okt',
-    'Nov',
-    'Des',
   ];
 
   final controller = Get.find<ReportController>();
@@ -272,6 +272,12 @@ class _Summary extends StatelessWidget {
         ],
         const SizedBox(height: 14),
         _ChangeInsight(change: data.expenseChange),
+        if (data.dailyAverage > 0 ||
+            data.highestSpendingDay != null ||
+            data.topMerchant != null) ...[
+          const SizedBox(height: 14),
+          _SpendingStats(data: data, money: money),
+        ],
         if (data.expensesByCategory.isNotEmpty) ...[
           const SizedBox(height: 14),
           _CategoryBreakdown(
@@ -337,6 +343,107 @@ class _ChangeInsight extends StatelessWidget {
       ]),
     );
   }
+}
+
+class _SpendingStats extends StatelessWidget {
+  const _SpendingStats({required this.data, required this.money});
+
+  final ReportData data;
+  final String Function(int) money;
+
+  @override
+  Widget build(BuildContext context) => Container(
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(22),
+          boxShadow: _cardShadow,
+        ),
+        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          const Text(
+            'Statistik belanja',
+            style: TextStyle(
+              color: Color(0xFF1F2937),
+              fontSize: 16,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 14),
+          if (data.dailyAverage > 0)
+            _StatRow(
+              icon: Icons.calculate_outlined,
+              label: 'Rata-rata harian',
+              value: '${money(data.dailyAverage.round())} / hari',
+            ),
+          if (data.highestSpendingDay != null) ...[
+            if (data.dailyAverage > 0) const SizedBox(height: 12),
+            _StatRow(
+              icon: Icons.event_busy_rounded,
+              label: 'Hari belanja terbesar',
+              value:
+                  '${_dayLabel(data.highestSpendingDay!)} · ${money(data.highestSpendingDayAmount)}',
+            ),
+          ],
+          if (data.topMerchant != null) ...[
+            const SizedBox(height: 12),
+            _StatRow(
+              icon: Icons.storefront_outlined,
+              label: 'Merchant teratas',
+              value: '${data.topMerchant} · ${data.topMerchantCount}x',
+            ),
+          ],
+        ]),
+      );
+
+  String _dayLabel(DateTime value) =>
+      '${value.day} ${_months[value.month - 1]} ${value.year}';
+}
+
+class _StatRow extends StatelessWidget {
+  const _StatRow({required this.icon, required this.label, required this.value});
+
+  final IconData icon;
+  final String label;
+  final String value;
+
+  @override
+  Widget build(BuildContext context) => Row(children: [
+        Container(
+          width: 34,
+          height: 34,
+          decoration: const BoxDecoration(
+            color: Color(0xFFCCFBF1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(icon, size: 18, color: const Color(0xFF0F766E)),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 11,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+              Text(
+                value,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF1F2937),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ]);
 }
 
 class _CategoryBreakdown extends StatelessWidget {

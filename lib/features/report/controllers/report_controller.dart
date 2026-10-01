@@ -12,11 +12,21 @@ class ReportData {
     required this.summary,
     required this.expensesByCategory,
     required this.expenseChange,
+    required this.dailyAverage,
+    this.highestSpendingDay,
+    this.highestSpendingDayAmount = 0,
+    this.topMerchant,
+    this.topMerchantCount = 0,
   });
 
   final DashboardSummaryModel summary;
   final List<ReportCategoryTotal> expensesByCategory;
   final double expenseChange;
+  final double dailyAverage;
+  final DateTime? highestSpendingDay;
+  final int highestSpendingDayAmount;
+  final String? topMerchant;
+  final int topMerchantCount;
 }
 
 class ReportCategoryTotal {
@@ -77,6 +87,10 @@ class ReportController extends GetxController {
           .toList()
         ..sort((a, b) => b.amount.compareTo(a.amount));
 
+      final highDay = _calculations.highestSpendingDay(transactions, selectedRange);
+      final highDayAmount = highDay == null ? 0 : _calculations.expenseOnDay(transactions, highDay);
+      final merchant = _calculations.topMerchant(transactions, selectedRange);
+
       state.value = ResourceState.success(
         ReportData(
           summary: _calculations.summary(transactions, selectedRange),
@@ -85,6 +99,11 @@ class ReportController extends GetxController {
             transactions,
             selectedRange,
           ),
+          dailyAverage: _calculations.dailyAverage(transactions, selectedRange),
+          highestSpendingDay: highDay,
+          highestSpendingDayAmount: highDayAmount,
+          topMerchant: merchant?.key,
+          topMerchantCount: merchant?.value ?? 0,
         ),
       );
     } catch (_) {
