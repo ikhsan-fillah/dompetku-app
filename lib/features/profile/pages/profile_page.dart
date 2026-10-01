@@ -7,6 +7,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/section_header.dart';
+import '../../../core/widgets/settings_tile.dart';
 import '../../../app/routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
 
@@ -43,6 +44,17 @@ class _ProfilePageState extends State<ProfilePage> {
     if (seconds == 0) return 'Langsung';
     return '${seconds ~/ 60} menit';
   }
+
+  static const _spinner = SizedBox(
+    width: 20,
+    height: 20,
+    child: CircularProgressIndicator(strokeWidth: 2),
+  );
+
+  static const _chevron = Icon(
+    Icons.chevron_right_rounded,
+    color: AppColors.muted,
+  );
 
   Future<void> _save() async {
     await _controller.setDisplayName(_nameField.text);
@@ -109,6 +121,12 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
     Get.offAllNamed(AppRoutes.biometricUnlock);
+  }
+
+  void _openCategories() {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(content: Text('Kelola kategori segera hadir.')),
+    );
   }
 
   Future<void> _confirmReset() async {
@@ -209,8 +227,8 @@ class _ProfilePageState extends State<ProfilePage> {
             () => Row(
               children: [
                 Container(
-                  width: 56,
-                  height: 56,
+                  width: 58,
+                  height: 58,
                   alignment: Alignment.center,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
@@ -222,7 +240,7 @@ class _ProfilePageState extends State<ProfilePage> {
                     _controller.initial,
                     style: const TextStyle(
                       color: Colors.white,
-                      fontSize: 20,
+                      fontSize: 19,
                       fontWeight: FontWeight.w700,
                     ),
                   ),
@@ -233,18 +251,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Halo, ${_controller.greetingName}',
+                        _controller.greetingName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: textTheme.titleMedium?.copyWith(
                           color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        'Data tersimpan di perangkat ini',
+                        '1 dompet · data tersimpan di perangkat ini',
                         style: textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.85),
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 11.5,
                         ),
                       ),
                     ],
@@ -286,35 +307,23 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               const SectionHeader(title: 'Keamanan'),
               Obx(
-                () => SwitchListTile.adaptive(
-                  contentPadding: EdgeInsets.zero,
-                  value: _controller.biometricEnabled.value,
-                  onChanged: _controller.savingBiometric.value
-                      ? null
-                      : _setBiometric,
-                  activeThumbColor: AppColors.teal,
-                  secondary: const Icon(
-                    Icons.fingerprint_rounded,
-                    color: AppColors.teal,
-                  ),
-                  title: const Text('Kunci biometrik'),
-                  subtitle: Text(
-                    _controller.biometricEnabled.value
-                        ? 'Aktif saat membuka aplikasi.'
-                        : 'Tidak aktif untuk saat ini.',
+                () => SettingsTile(
+                  icon: Icons.fingerprint_rounded,
+                  title: 'Kunci biometrik',
+                  subtitle: 'Wajib sebelum data tampil',
+                  trailing: Switch.adaptive(
+                    value: _controller.biometricEnabled.value,
+                    onChanged: _controller.savingBiometric.value
+                        ? null
+                        : _setBiometric,
                   ),
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
               Obx(
-                () => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(
-                    Icons.timer_outlined,
-                    color: AppColors.teal,
-                  ),
-                  title: const Text('Kunci otomatis'),
-                  subtitle: const Text('Setelah di latar belakang'),
+                () => SettingsTile(
+                  icon: Icons.timer_outlined,
+                  title: 'Kunci otomatis',
+                  subtitle: 'Setelah keluar dari aplikasi',
                   trailing: DropdownButton<int>(
                     value: _controller.autoLockSeconds.value,
                     underline: const SizedBox.shrink(),
@@ -332,42 +341,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
               Obx(
-                () => ListTile(
-                  contentPadding: EdgeInsets.zero,
-                  leading: const Icon(
-                    Icons.lock_clock_outlined,
-                    color: AppColors.teal,
-                  ),
-                  title: const Text('Kunci aplikasi sekarang'),
-                  subtitle: const Text('Minta verifikasi sebelum membuka data'),
-                  trailing: _controller.lockingApp.value
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(strokeWidth: 2),
-                        )
-                      : const Icon(Icons.chevron_right_rounded),
+                () => SettingsTile(
+                  icon: Icons.lock_clock_outlined,
+                  title: 'Kunci aplikasi sekarang',
+                  subtitle: 'Minta verifikasi sebelum membuka data',
+                  showDivider: false,
+                  trailing: _controller.lockingApp.value ? _spinner : _chevron,
                   onTap: _controller.lockingApp.value ? null : _lockApp,
                 ),
-              ),
-              const Divider(height: 1, color: Color(0xFFE2E8F0)),
-              const SizedBox(height: 12),
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Icon(Icons.lock_outline_rounded, color: AppColors.teal),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text(
-                      'Data keuangan tersimpan lokal di perangkat ini. DompetKu tidak menggunakan akun atau cloud.',
-                      style: textTheme.bodySmall?.copyWith(
-                        color: AppColors.muted,
-                      ),
-                    ),
-                  ),
-                ],
               ),
             ],
           ),
@@ -376,7 +358,43 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionHeader(title: 'Tampilan'),
+              const SectionHeader(title: 'Kelola'),
+              SettingsTile(
+                icon: Icons.label_outline_rounded,
+                title: 'Kategori',
+                subtitle: 'Ikon, warna, urutan, favorit',
+                trailing: _chevron,
+                onTap: _openCategories,
+              ),
+              SettingsTile(
+                icon: Icons.track_changes_rounded,
+                title: 'Anggaran',
+                subtitle: 'Batas bulanan & peringatan',
+                trailing: _chevron,
+                onTap: () => Get.toNamed(AppRoutes.budgetForm),
+              ),
+              SettingsTile(
+                icon: Icons.pie_chart_outline_rounded,
+                title: 'Laporan',
+                subtitle: 'Perbandingan & insight',
+                showDivider: false,
+                trailing: _chevron,
+                onTap: () => Get.toNamed(AppRoutes.report),
+              ),
+            ],
+          ),
+        ),
+        AppCard(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const SectionHeader(title: 'Tampilan & data'),
+              const SettingsTile(
+                icon: Icons.palette_outlined,
+                title: 'Tema',
+                subtitle: 'Ikuti sistem, terang, atau gelap',
+                showDivider: false,
+              ),
               Obx(
                 () => SizedBox(
                   width: double.infinity,
@@ -406,52 +424,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 8),
-              Text(
-                'Sistem mengikuti mode terang atau gelap perangkat.',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
-              ),
-            ],
-          ),
-        ),
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SectionHeader(title: 'Ekspor data'),
-              Text(
-                'Simpan dan bagikan kategori, transaksi, serta anggaran sebagai berkas JSON sebelum menghapus data. Ekspor tetap lokal dan tidak dikirim ke layanan eksternal.',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
-              ),
-              const SizedBox(height: 14),
+              const SizedBox(height: 12),
+              const Divider(height: 1, color: Color(0xFFF1F5F9)),
               Obx(
-                () => SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: AppColors.teal,
-                      side: const BorderSide(color: AppColors.teal),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                    onPressed: _controller.exportingData.value
-                        ? null
-                        : _exportData,
-                    icon: _controller.exportingData.value
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.file_download_outlined),
-                    label: Text(
-                      _controller.exportingData.value
-                          ? 'Menyiapkan ekspor...'
-                          : 'Simpan dan bagikan ekspor',
-                    ),
-                  ),
+                () => SettingsTile(
+                  icon: Icons.file_download_outlined,
+                  title: 'Ekspor data',
+                  subtitle: 'Simpan cadangan di perangkat',
+                  trailing: _controller.exportingData.value ? _spinner : _chevron,
+                  onTap: _controller.exportingData.value ? null : _exportData,
                 ),
               ),
               Obx(() {
@@ -462,7 +443,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 }
                 final isSuccess = success != null;
                 return Padding(
-                  padding: const EdgeInsets.only(top: 12),
+                  padding: const EdgeInsets.only(top: 12, bottom: 4),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
@@ -485,50 +466,26 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 );
               }),
-            ],
-          ),
-        ),
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SectionHeader(title: 'Zona bahaya'),
-              Text(
-                'Hapus database, seluruh pengaturan, dan data aman dari perangkat ini. Setelahnya Anda perlu daftar ulang.',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
-              ),
-              const SizedBox(height: 14),
               Obx(
-                () => SizedBox(
-                  width: double.infinity,
-                  child: OutlinedButton.icon(
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: const Color(0xFFF43F5E),
-                      side: const BorderSide(color: Color(0xFFF43F5E)),
-                      padding: const EdgeInsets.symmetric(vertical: 16),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                    ),
-                    onPressed: _controller.resettingData.value
-                        ? null
-                        : _confirmReset,
-                    icon: _controller.resettingData.value
-                        ? const SizedBox(
-                            width: 18,
-                            height: 18,
-                            child: CircularProgressIndicator(strokeWidth: 2),
-                          )
-                        : const Icon(Icons.delete_forever_rounded),
-                    label: Text(
-                      _controller.resettingData.value
-                          ? 'Menghapus data...'
-                          : 'Hapus semua data',
-                    ),
-                  ),
+                () => SettingsTile(
+                  icon: Icons.delete_forever_rounded,
+                  iconBackground: AppColors.coralSoft,
+                  iconColor: AppColors.coral,
+                  titleColor: AppColors.coral,
+                  title: 'Hapus semua data',
+                  subtitle: 'Tidak dapat dibatalkan',
+                  showDivider: false,
+                  trailing: _controller.resettingData.value ? _spinner : null,
+                  onTap: _controller.resettingData.value ? null : _confirmReset,
                 ),
               ),
             ],
+          ),
+        ),
+        Center(
+          child: Text(
+            'DompetKu 1.0.0 · Privasi: tanpa cloud',
+            style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
           ),
         ),
       ],
