@@ -14,10 +14,13 @@ class _Budgets implements BudgetRepository {
   _Budgets(this.items);
   final List<BudgetModel> items;
   final archived = <int>[];
+  final restored = <int>[];
   @override
   Future<List<BudgetModel>> getAll({bool includeArchived = false}) async => List.of(items);
   @override
   Future<void> archive(int id) async { archived.add(id); items.removeWhere((item) => item.id == id); }
+  @override
+  Future<void> restore(int id) async { restored.add(id); }
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
@@ -60,4 +63,27 @@ void main() {
     expect(repository.archived, [1]);
     expect(controller.state.value.status, ResourceStatus.empty);
   });
+  test('pulihkan memanggil repository dan memuat ulang daftar terarsip', () async {
+    final repository = _Budgets([]);
+    final controller = Get.put(BudgetController(repository));
+    await pumpEventQueue();
+    expect(await controller.restore(7), isTrue);
+    await pumpEventQueue();
+    expect(repository.restored, [7]);
+    expect(controller.archived.value.status, ResourceStatus.empty);
+  });
+  test('pulihkan gagal bila repository melempar', () async {
+    final repository = _BrokenBudgets();
+    final controller = Get.put(BudgetController(repository));
+    await pumpEventQueue();
+    expect(await controller.restore(1), isFalse);
+    expect(controller.archived.value.status, ResourceStatus.error);
+  });
+}
+
+class _BrokenBudgets implements BudgetRepository {
+  @override
+  Future<void> restore(int id) async => throw StateError('db error');
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
