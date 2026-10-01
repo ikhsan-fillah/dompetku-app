@@ -6,7 +6,7 @@ The implementation order is intentional: stabilize the project, prepare the core
 
 ## Implementation Status
 
-Last updated: 29 September 2026.
+Last updated: 1 October 2026.
 
 Current quality gate: `flutter analyze` reports no issues and `flutter test` passes.
 
@@ -17,16 +17,14 @@ Current quality gate: `flutter analyze` reports no issues and `flutter test` pas
 | 2 | Database and migrations | Done |
 | 3 | Models and domain logic | Done |
 | 4 | Platform services | Done |
-| 5 | Authentication and security logic | Implemented (auth controller, route guard, biometric pages); to be confirmed against exit criteria |
-| 6 | Controllers and state flow | In progress: transaction, budget, and shell controllers exist; report and profile controllers to be confirmed |
-| 7 | Minimal UI shell | Implemented (splash, login, biometric pages, main shell); to be confirmed |
-| 8 | Transaction feature UI | Implemented (history and form sheet); to be confirmed |
-| 9 | Dashboard UI | Implemented (home page); to be verified against calculation tests |
-| 10 | Budgets, reports, and profile UI | In progress: budgets done (Stage 5A); threshold warnings, reports, and profile settings pending |
-| 11 | OCR | Not started |
-| 12 | Quality and release preparation | Not started |
-
-Statuses marked "to be confirmed" were inferred from the code present in the repository and must be checked against each phase's exit criteria before being marked Done.
+| 5 | Authentication and security logic | Done |
+| 6 | Controllers and state flow | Done |
+| 7 | Minimal UI shell | Done |
+| 8 | Transaction feature UI | Done |
+| 9 | Dashboard UI | Done |
+| 10 | Budgets, reports, and profile UI | Done (including archived budgets with restore and report spending statistics) |
+| 11 | OCR | Done (on-device ML Kit, review before save) |
+| 12 | Quality and release preparation | Done (automated tests, README, release notes) |
 
 ### Stage 5A: Budgets (completed)
 
@@ -52,13 +50,11 @@ Implemented budget rules:
 
 ### Next Steps
 
-1. Align budget warnings with the 75%, 90%, and 100% thresholds from the README, using `BudgetStatus` levels instead of the fixed 80% used by the first budget card.
-2. Show a budget summary and warnings on the dashboard.
-3. Add an archived-budgets screen with restore.
-4. Build report filters and visualizations (Phase 10).
-5. Complete profile and settings (theme, biometric preference, auto-lock, safe data deletion).
-6. Implement OCR with mandatory review (Phase 11).
-7. Run the full quality checklist and prepare release notes (Phase 12).
+All planned phases are complete. Remaining ideas for future iterations:
+
+1. Line-item extraction for OCR receipts.
+2. Merchant statistics across reports and dashboards.
+3. Additional export formats (CSV).
 
 ## 1. Development Rules
 

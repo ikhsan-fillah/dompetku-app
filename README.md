@@ -179,7 +179,7 @@ Transaction history should support search, date filtering, category filtering, a
 
 The first budget version supports monthly category budgets and an overall monthly spending limit.
 
-Each budget shows its limit, used amount, remaining amount, usage percentage, progress state, and warnings at 75%, 90%, and 100%. Budgets can be edited or archived without deleting transaction history.
+Each budget shows its limit, used amount, remaining amount, usage percentage, progress state, and warnings at 75%, 90%, and 100%. Budgets can be edited or archived without deleting transaction history. Archived budgets can be reviewed and restored from the archive screen.
 
 Implemented behavior (Stage 5A):
 
@@ -188,7 +188,7 @@ Implemented behavior (Stage 5A):
 - Usage is the sum of expense transactions inside the budget period, filtered by category when the budget has one.
 - Budgets can be edited or archived from the card menu. Archiving keeps all transaction history.
 - The list refreshes automatically when a budget or transaction changes.
-- Still pending: the 75%, 90%, and 100% warning levels (the first card version uses a fixed 80% warning), a dashboard budget summary, and an archived-budgets screen.
+- Still pending: a dashboard budget summary, and an archived-budgets screen.
 
 Feature folder: `lib/features/budget/` with `bindings`, `controllers`, `data`, `models`, `repositories`, and `views`.
 
@@ -197,6 +197,8 @@ Feature folder: `lib/features/budget/` with `bindings`, `controllers`, `data`, `
 Reports may provide category breakdowns, income versus expense comparison, monthly trends, top merchants, highest spending days, average daily spending, and comparison with the previous equivalent period.
 
 Insights should be descriptive and non-judgmental. For example: "Food spending was 18% higher than the previous month."
+
+The report page implements: income versus expense summary, remaining budget, spending change versus the previous equivalent period, category breakdown, average daily spending, highest spending day, and top merchant.
 
 ### 4.6 Profile and Settings
 
@@ -240,18 +242,32 @@ The product direction is considered complete when the specification is clear abo
 
 ## 7. Implementation Status
 
-Last updated: 29 September 2026. The detailed phase tracker and commit log are in [DEV_PLAN.md](DEV_PLAN.md).
+Last updated: 1 October 2026. The detailed phase tracker and commit log are in [DEV_PLAN.md](DEV_PLAN.md).
 
 | Area | Status |
 |---|---|
 | Local database, models, repositories | Done |
-| Login, biometric unlock, app route guard | Implemented |
-| Transactions (history and form) | Implemented |
-| Dashboard / home | Implemented |
-| Budgets (list, create, edit, archive) | Done |
-| Budget warning levels 75% / 90% / 100% | Pending |
-| Reports | Not started or to be confirmed |
-| Profile and settings | Partial, to be confirmed |
-| OCR receipt scan | Not started |
+| Login, biometric unlock, app route guard | Done |
+| Transactions (history and form) | Done |
+| Dashboard / home | Done |
+| Budgets (list, create, edit, archive, restore) | Done |
+| Budget warning levels 75% / 90% / 100% | Done |
+| Reports (summary, breakdown, daily statistics) | Done |
+| Profile and settings | Done |
+| OCR receipt scan (on-device ML Kit, review before save) | Done |
 
 Quality gate: `flutter analyze` reports no issues and `flutter test` passes.
+
+## 8. Release Notes
+
+### 1.0.0
+
+- Offline-first personal finance for one user on one device.
+- Biometric protection with a five-failure lockout of five minutes, plus configurable auto-lock.
+- Income and expense transactions with editable historical dates, search, filtering, duplication, and deletion.
+- On-device ML Kit receipt OCR that fills candidate fields for review; photos are never stored.
+- Dashboard with preset and custom date ranges, category breakdown, spending trend, budget summary, and insights.
+- Budgets with 75%, 90%, and 100% warning levels, archive, and restore.
+- Reports with category breakdown, previous-period comparison, daily average, highest spending day, and top merchant.
+- Category management with custom icons, colors, favorites, ordering, and archive.
+- Profile settings: display name, theme, auto-lock, manual lock, local export, and safe full reset.
