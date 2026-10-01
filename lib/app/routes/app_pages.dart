@@ -8,6 +8,8 @@ import '../../features/auth/pages/login_page.dart';
 import '../../features/budget/bindings/budget_binding.dart';
 import '../../features/budget/models/budget_model.dart';
 import '../../features/budget/views/budget_form_page.dart';
+import '../../features/category/controllers/category_controller.dart';
+import '../../features/category/pages/category_manage_page.dart';
 import '../../features/report/views/report_page.dart';
 import '../../features/shell/controllers/main_shell_controller.dart';
 import '../../features/shell/pages/main_shell_page.dart';
@@ -40,6 +42,16 @@ class AppPages {
       page: () => BudgetFormPage(budget: Get.arguments as BudgetModel?),
       middlewares: [FinancialRouteGuard()],
       binding: BudgetBinding(),
+    ),
+    GetPage(
+      name: AppRoutes.categories,
+      page: () => const CategoryManagePage(),
+      middlewares: [FinancialRouteGuard()],
+      binding: BindingsBuilder(() {
+        if (!Get.isRegistered<CategoryController>()) {
+          Get.put(CategoryController(Get.find()));
+        }
+      }),
     ),
     GetPage(
       name: AppRoutes.report,
