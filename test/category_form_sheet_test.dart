@@ -12,7 +12,7 @@ final _now = DateTime(2026, 9, 29, 12);
 
 class _FakeCategoryRepository implements CategoryRepository {
   _FakeCategoryRepository([List<CategoryModel>? initial])
-      : items = [...?initial];
+    : items = [...?initial];
 
   final List<CategoryModel> items;
   final inserted = <CategoryModel>[];
@@ -101,9 +101,7 @@ Future<void> _pumpForm(
   await tester.pumpWidget(
     MaterialApp(
       theme: AppTheme.light,
-      home: Scaffold(
-        body: CategoryFormSheet(category: category),
-      ),
+      home: Scaffold(body: CategoryFormSheet(category: category)),
     ),
   );
   await tester.pumpAndSettle();
@@ -112,8 +110,9 @@ Future<void> _pumpForm(
 void main() {
   tearDown(Get.reset);
 
-  testWidgets('kategori baru mendapat urutan terakhir untuk tipenya',
-      (tester) async {
+  testWidgets('kategori baru mendapat urutan terakhir untuk tipenya', (
+    tester,
+  ) async {
     final repository = _FakeCategoryRepository([
       _category(1, 'Makan', TransactionType.expense, 0),
       _category(2, 'Transportasi', TransactionType.expense, 3),

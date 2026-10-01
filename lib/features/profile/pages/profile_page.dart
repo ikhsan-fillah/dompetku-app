@@ -94,7 +94,9 @@ class _ProfilePageState extends State<ProfilePage> {
     final saved = await _controller.setThemeMode(value);
     if (!mounted || saved) return;
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_controller.error.value ?? 'Gagal menyimpan tema.')),
+      SnackBar(
+        content: Text(_controller.error.value ?? 'Gagal menyimpan tema.'),
+      ),
     );
   }
 
@@ -429,7 +431,9 @@ class _ProfilePageState extends State<ProfilePage> {
                   icon: Icons.file_download_outlined,
                   title: 'Ekspor data',
                   subtitle: 'Simpan cadangan di perangkat',
-                  trailing: _controller.exportingData.value ? _spinner : _chevron,
+                  trailing: _controller.exportingData.value
+                      ? _spinner
+                      : _chevron,
                   onTap: _controller.exportingData.value ? null : _exportData,
                 ),
               ),

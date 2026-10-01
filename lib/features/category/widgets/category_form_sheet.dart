@@ -88,14 +88,15 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
     }
 
     final controller = Get.find<CategoryController>();
-    final categories =
-      controller.state.value.data ?? const <CategoryModel>[];
-    final nextSortOrder = categories
-        .where((item) => item.type == _type)
-        .fold<int>(-1, (current, item) {
+    final categories = controller.state.value.data ?? const <CategoryModel>[];
+    final nextSortOrder =
+        categories.where((item) => item.type == _type).fold<int>(-1, (
+          current,
+          item,
+        ) {
           return item.sortOrder > current ? item.sortOrder : current;
         }) +
-      1;
+        1;
     final category = CategoryModel(
       id: widget.category?.id,
       name: trimmed,
@@ -139,7 +140,9 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    widget.category == null ? 'Tambah kategori' : 'Edit kategori',
+                    widget.category == null
+                        ? 'Tambah kategori'
+                        : 'Edit kategori',
                     style: textTheme.titleLarge,
                   ),
                 ),
@@ -215,18 +218,24 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
                     onTap: () => setState(() => _iconKey = iconKey),
                     child: Container(
                       decoration: BoxDecoration(
-                        color: _iconKey == iconKey ? Color(_colorValue) : AppColors.surface,
+                        color: _iconKey == iconKey
+                            ? Color(_colorValue)
+                            : AppColors.surface,
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
                           color: _iconKey == iconKey
-                              ? Color(_colorValue).withAlpha((255 * 0.7).round())
+                              ? Color(
+                                  _colorValue,
+                                ).withAlpha((255 * 0.7).round())
                               : AppColors.line,
                           width: _iconKey == iconKey ? 1.5 : 1,
                         ),
                       ),
                       child: Icon(
                         CategoryIcons.of(iconKey),
-                        color: _iconKey == iconKey ? Colors.white : AppColors.teal,
+                        color: _iconKey == iconKey
+                            ? Colors.white
+                            : AppColors.teal,
                       ),
                     ),
                   ),
@@ -259,7 +268,9 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
                         color: Color(value),
                         borderRadius: BorderRadius.circular(16),
                         border: Border.all(
-                          color: _colorValue == value ? Colors.black : Colors.transparent,
+                          color: _colorValue == value
+                              ? Colors.black
+                              : Colors.transparent,
                           width: _colorValue == value ? 2.5 : 0,
                         ),
                       ),
@@ -283,7 +294,9 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
             ],
             const SizedBox(height: 16),
             AppButton(
-              label: widget.category == null ? 'Simpan kategori' : 'Perbarui kategori',
+              label: widget.category == null
+                  ? 'Simpan kategori'
+                  : 'Perbarui kategori',
               icon: Icons.check_rounded,
               onPressed: _save,
             ),
