@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 
-
 import '../../../core/constant/domain_enums.dart';
 import '../../../core/services/data_refresh_service.dart';
 import '../../../core/utils/amount_input.dart';
@@ -11,7 +10,6 @@ import '../../receipt/services/receipt_ocr_service.dart';
 import '../models/transaction_model.dart';
 import '../repositories/transaction_repository.dart';
 
-
 /// State dan aturan form tambah/edit transaksi.
 class TransactionFormController extends GetxController {
   TransactionFormController(
@@ -19,15 +17,13 @@ class TransactionFormController extends GetxController {
     this._categories, {
     ReceiptImagePicker? imagePicker,
     required ReceiptOcrService ocr,
-  })  : _imagePicker = imagePicker ?? DeviceReceiptImagePicker(),
-        _ocr = ocr;
-
+  }) : _imagePicker = imagePicker ?? DeviceReceiptImagePicker(),
+       _ocr = ocr;
 
   final TransactionRepository _transactions;
   final CategoryRepository _categories;
   final ReceiptImagePicker _imagePicker;
   final ReceiptOcrService _ocr;
-
 
   final type = TransactionType.expense.obs;
   final amountDigits = ''.obs;
@@ -41,26 +37,19 @@ class TransactionFormController extends GetxController {
   final scanning = false.obs;
   final categories = <CategoryModel>[].obs;
 
-
   TransactionModel? _editing;
-
 
   bool get isEditing => _editing != null;
 
-
   int? get amount => AmountInput.parse(amountDigits.value);
 
-
-  List<CategoryModel> get availableCategories => categories
-      .where((c) => c.type == type.value && !c.isArchived)
-      .toList();
-
+  List<CategoryModel> get availableCategories =>
+      categories.where((c) => c.type == type.value && !c.isArchived).toList();
 
   static DateTime _day(DateTime value) {
     final local = value.toLocal();
     return DateTime(local.year, local.month, local.day);
   }
-
 
   void _reset(TransactionType initialType) {
     _editing = null;
@@ -76,7 +65,6 @@ class TransactionFormController extends GetxController {
     scanning.value = false;
   }
 
-
   Future<void> _loadCategories() async {
     try {
       categories.assignAll(await _categories.getAll());
@@ -85,7 +73,6 @@ class TransactionFormController extends GetxController {
     }
   }
 
-
   void _selectDefaultCategory() {
     final options = availableCategories;
     if (options.isEmpty) {
@@ -93,9 +80,9 @@ class TransactionFormController extends GetxController {
       return;
     }
     final favorite = options.where((c) => c.isFavorite);
-    categoryId.value = (favorite.isNotEmpty ? favorite.first : options.first).id;
+    categoryId.value =
+        (favorite.isNotEmpty ? favorite.first : options.first).id;
   }
-
 
   Future<void> startNew({
     TransactionType initialType = TransactionType.expense,
@@ -104,7 +91,6 @@ class TransactionFormController extends GetxController {
     await _loadCategories();
     _selectDefaultCategory();
   }
-
 
   Future<void> startEdit(TransactionModel transaction) async {
     _reset(transaction.type);
@@ -118,7 +104,6 @@ class TransactionFormController extends GetxController {
     await _loadCategories();
   }
 
-
   void setType(TransactionType value) {
     if (type.value == value) return;
     type.value = value;
@@ -126,12 +111,10 @@ class TransactionFormController extends GetxController {
     _selectDefaultCategory();
   }
 
-
   void pressKey(String key) {
     amountDigits.value = AmountInput.apply(amountDigits.value, key);
     error.value = null;
   }
-
 
   void setDate(DateTime value) {
     final chosen = _day(value);
@@ -140,7 +123,6 @@ class TransactionFormController extends GetxController {
     error.value = null;
   }
 
-
   /// Memilih gambar lalu mengisi kandidat OCR. Foto tidak disimpan.
   Future<ReceiptScanResult?> scanReceipt(ReceiptImageSource source) async {
     if (scanning.value || saving.value) return null;
@@ -148,13 +130,12 @@ class TransactionFormController extends GetxController {
     try {
       final path = await _imagePicker.pick(source);
       if (path == null) return null;
-      return _scanImage(path);
+      return await _scanImage(path);
     } catch (_) {
       error.value = 'Tidak dapat membuka kamera atau galeri.';
       return null;
     }
   }
-
 
   /// Memproses foto kamera yang tertunda bila Android menghentikan aplikasi.
   Future<ReceiptScanResult?> recoverLostReceipt() async {
@@ -162,12 +143,11 @@ class TransactionFormController extends GetxController {
     try {
       final path = await _imagePicker.recoverLostImage();
       if (path == null) return null;
-      return _scanImage(path);
+      return await _scanImage(path);
     } catch (_) {
       return null;
     }
   }
-
 
   Future<ReceiptScanResult> _scanImage(String path) async {
     scanning.value = true;
@@ -191,13 +171,11 @@ class TransactionFormController extends GetxController {
     }
   }
 
-
   String? _validate(int? value) {
     if (value == null || value <= 0) return 'Nominal harus lebih dari nol.';
     if (categoryId.value == null) return 'Pilih kategori dulu.';
     return null;
   }
-
 
   DateTime _timestampFor(DateTime chosenDay) {
     final original = _editing?.transactionDate.toLocal();
@@ -210,7 +188,6 @@ class TransactionFormController extends GetxController {
       clock.minute,
     );
   }
-
 
   /// Menyimpan transaksi. Mengembalikan true bila berhasil.
   Future<bool> save() async {
@@ -259,7 +236,6 @@ class TransactionFormController extends GetxController {
       saving.value = false;
     }
   }
-
 
   @override
   void onClose() {

@@ -3,6 +3,7 @@ import 'package:dompetku_app/core/services/data_refresh_service.dart';
 import 'package:dompetku_app/core/utils/date_range.dart';
 import 'package:dompetku_app/features/category/models/category_model.dart';
 import 'package:dompetku_app/features/category/repositories/category_repository.dart';
+import 'package:dompetku_app/features/receipt/services/receipt_ocr_service.dart';
 import 'package:dompetku_app/features/transaction/controllers/transaction_form_controller.dart';
 import 'package:dompetku_app/features/transaction/models/transaction_model.dart';
 import 'package:dompetku_app/features/transaction/repositories/transaction_repository.dart';
@@ -36,13 +37,21 @@ class _Transactions implements TransactionRepository {
 class _Categories implements CategoryRepository {
   @override
   Future<List<CategoryModel>> getAll({bool includeArchived = false}) async => [
-        _cat(1, 'Makanan', TransactionType.expense),
-        _cat(2, 'Transportasi', TransactionType.expense),
-        _cat(3, 'Gaji', TransactionType.income),
-      ];
+    _cat(1, 'Makanan', TransactionType.expense),
+    _cat(2, 'Transportasi', TransactionType.expense),
+    _cat(3, 'Gaji', TransactionType.income),
+  ];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _NoopReceiptTextRecognizer implements ReceiptTextRecognizer {
+  @override
+  Future<String> recognize(String imagePath) async => '';
+
+  @override
+  Future<void> dispose() async {}
 }
 
 CategoryModel _cat(int id, String name, TransactionType type) {
@@ -67,7 +76,11 @@ void main() {
 
   setUp(() {
     repository = _Transactions();
-    controller = TransactionFormController(repository, _Categories());
+    controller = TransactionFormController(
+      repository,
+      _Categories(),
+      ocr: ReceiptOcrService(_NoopReceiptTextRecognizer()),
+    );
   });
 
   tearDown(Get.reset);
@@ -92,23 +105,25 @@ void main() {
     expect(repository.inserted, isEmpty);
   });
 
-  test('menyimpan memakai nama kategori bila judul kosong dan memberi sinyal',
-      () async {
-    final refresh = Get.put(DataRefreshService());
-    await controller.startNew();
-    for (final key in ['4', '5', '000']) {
-      controller.pressKey(key);
-    }
-    expect(controller.amount, 45000);
+  test(
+    'menyimpan memakai nama kategori bila judul kosong dan memberi sinyal',
+    () async {
+      final refresh = Get.put(DataRefreshService());
+      await controller.startNew();
+      for (final key in ['4', '5', '000']) {
+        controller.pressKey(key);
+      }
+      expect(controller.amount, 45000);
 
-    expect(await controller.save(), isTrue);
-    final saved = repository.inserted.single;
-    expect(saved.amount, 45000);
-    expect(saved.title, 'Makanan');
-    expect(saved.categoryId, 1);
-    expect(saved.note, isNull);
-    expect(refresh.version.value, 1);
-  });
+      expect(await controller.save(), isTrue);
+      final saved = repository.inserted.single;
+      expect(saved.amount, 45000);
+      expect(saved.title, 'Makanan');
+      expect(saved.categoryId, 1);
+      expect(saved.note, isNull);
+      expect(refresh.version.value, 1);
+    },
+  );
 
   test('judul dan catatan diisi pengguna dipakai apa adanya', () async {
     await controller.startNew();
@@ -127,40 +142,39 @@ void main() {
 
     controller.setDate(DateTime.now().add(const Duration(days: 30)));
     final today = DateTime.now();
-    expect(
-      controller.date.value,
-      DateTime(today.year, today.month, today.day),
-    );
+    expect(controller.date.value, DateTime(today.year, today.month, today.day));
   });
 
-  test('mengedit memperbarui transaksi yang sama dan mempertahankan data lain',
-      () async {
-    final original = TransactionModel(
-      id: 7,
-      type: TransactionType.expense,
-      title: 'Warung',
-      amount: 25000,
-      transactionDate: DateTime(2026, 9, 20, 13, 30),
-      categoryId: 2,
-      merchantOrSource: 'Warung Bu Ani',
-      paymentMethod: PaymentMethod.qris,
-      createdAt: DateTime(2026, 9, 20),
-      updatedAt: DateTime(2026, 9, 20),
-    );
-    await controller.startEdit(original);
-    expect(controller.isEditing, isTrue);
-    expect(controller.amountDigits.value, '25000');
+  test(
+    'mengedit memperbarui transaksi yang sama dan mempertahankan data lain',
+    () async {
+      final original = TransactionModel(
+        id: 7,
+        type: TransactionType.expense,
+        title: 'Warung',
+        amount: 25000,
+        transactionDate: DateTime(2026, 9, 20, 13, 30),
+        categoryId: 2,
+        merchantOrSource: 'Warung Bu Ani',
+        paymentMethod: PaymentMethod.qris,
+        createdAt: DateTime(2026, 9, 20),
+        updatedAt: DateTime(2026, 9, 20),
+      );
+      await controller.startEdit(original);
+      expect(controller.isEditing, isTrue);
+      expect(controller.amountDigits.value, '25000');
 
-    controller.pressKey('⌫');
-    controller.pressKey('0');
-    expect(await controller.save(), isTrue);
+      controller.pressKey('⌫');
+      controller.pressKey('0');
+      expect(await controller.save(), isTrue);
 
-    expect(repository.inserted, isEmpty);
-    final updated = repository.updated.single;
-    expect(updated.id, 7);
-    expect(updated.merchantOrSource, 'Warung Bu Ani');
-    expect(updated.paymentMethod, PaymentMethod.qris);
-    expect(updated.transactionDate, DateTime(2026, 9, 20, 13, 30));
-    expect(updated.createdAt, DateTime(2026, 9, 20));
-  });
+      expect(repository.inserted, isEmpty);
+      final updated = repository.updated.single;
+      expect(updated.id, 7);
+      expect(updated.merchantOrSource, 'Warung Bu Ani');
+      expect(updated.paymentMethod, PaymentMethod.qris);
+      expect(updated.transactionDate, DateTime(2026, 9, 20, 13, 30));
+      expect(updated.createdAt, DateTime(2026, 9, 20));
+    },
+  );
 }

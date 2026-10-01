@@ -3,6 +3,7 @@ import 'package:dompetku_app/core/theme/app_theme.dart';
 import 'package:dompetku_app/core/utils/date_range.dart';
 import 'package:dompetku_app/features/category/models/category_model.dart';
 import 'package:dompetku_app/features/category/repositories/category_repository.dart';
+import 'package:dompetku_app/features/receipt/services/receipt_ocr_service.dart';
 import 'package:dompetku_app/features/transaction/controllers/transaction_form_controller.dart';
 import 'package:dompetku_app/features/transaction/models/transaction_model.dart';
 import 'package:dompetku_app/features/transaction/repositories/transaction_repository.dart';
@@ -32,13 +33,21 @@ class _Transactions implements TransactionRepository {
 class _Categories implements CategoryRepository {
   @override
   Future<List<CategoryModel>> getAll({bool includeArchived = false}) async => [
-        _cat(1, 'Makanan', TransactionType.expense),
-        _cat(2, 'Transportasi', TransactionType.expense),
-        _cat(3, 'Gaji', TransactionType.income),
-      ];
+    _cat(1, 'Makanan', TransactionType.expense),
+    _cat(2, 'Transportasi', TransactionType.expense),
+    _cat(3, 'Gaji', TransactionType.income),
+  ];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _NoopReceiptTextRecognizer implements ReceiptTextRecognizer {
+  @override
+  Future<String> recognize(String imagePath) async => '';
+
+  @override
+  Future<void> dispose() async {}
 }
 
 CategoryModel _cat(int id, String name, TransactionType type) {
@@ -61,7 +70,13 @@ Future<_Transactions> _openSheet(WidgetTester tester) async {
   await tester.binding.setSurfaceSize(const Size(500, 900));
   addTearDown(() => tester.binding.setSurfaceSize(null));
   final repository = _Transactions();
-  Get.put(TransactionFormController(repository, _Categories()));
+  Get.put(
+    TransactionFormController(
+      repository,
+      _Categories(),
+      ocr: ReceiptOcrService(_NoopReceiptTextRecognizer()),
+    ),
+  );
   await tester.pumpWidget(
     MaterialApp(
       theme: AppTheme.light,
@@ -90,8 +105,9 @@ Future<void> _reveal(WidgetTester tester, Finder finder) async {
 void main() {
   tearDown(Get.reset);
 
-  testWidgets('sheet baru menampilkan judul, nominal nol, dan kategori',
-      (tester) async {
+  testWidgets('sheet baru menampilkan judul, nominal nol, dan kategori', (
+    tester,
+  ) async {
     await _openSheet(tester);
     expect(find.text('Tambah transaksi'), findsOneWidget);
     expect(find.text('Rp 0'), findsOneWidget);
@@ -100,8 +116,9 @@ void main() {
     expect(find.text('Gaji'), findsNothing);
   });
 
-  testWidgets('keypad mengisi nominal lalu simpan menutup sheet',
-      (tester) async {
+  testWidgets('keypad mengisi nominal lalu simpan menutup sheet', (
+    tester,
+  ) async {
     final repository = await _openSheet(tester);
     final five = find.text('5');
     final thousand = find.text('000');
@@ -124,19 +141,21 @@ void main() {
     expect(find.text('Transaksi tersimpan.'), findsOneWidget);
   });
 
-  testWidgets('simpan tanpa nominal menampilkan pesan dan sheet tetap terbuka',
-      (tester) async {
-    final repository = await _openSheet(tester);
-    final save = find.text('Simpan transaksi');
+  testWidgets(
+    'simpan tanpa nominal menampilkan pesan dan sheet tetap terbuka',
+    (tester) async {
+      final repository = await _openSheet(tester);
+      final save = find.text('Simpan transaksi');
 
-    await _reveal(tester, save);
-    await tester.tap(save);
-    await tester.pumpAndSettle();
+      await _reveal(tester, save);
+      await tester.tap(save);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Nominal harus lebih dari nol.'), findsOneWidget);
-    expect(find.text('Tambah transaksi'), findsOneWidget);
-    expect(repository.inserted, isEmpty);
-  });
+      expect(find.text('Nominal harus lebih dari nol.'), findsOneWidget);
+      expect(find.text('Tambah transaksi'), findsOneWidget);
+      expect(repository.inserted, isEmpty);
+    },
+  );
 
   testWidgets('memilih Pemasukan mengganti daftar kategori', (tester) async {
     await _openSheet(tester);
