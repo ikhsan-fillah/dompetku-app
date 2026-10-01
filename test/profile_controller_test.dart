@@ -7,6 +7,7 @@ import 'package:dompetku_app/features/auth/controllers/auth_controller.dart';
 import 'package:dompetku_app/features/auth/models/app_session_model.dart';
 import 'package:dompetku_app/features/auth/repositories/session_repository.dart';
 import 'package:dompetku_app/features/profile/controllers/profile_controller.dart';
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeSharedPrefsService extends SharedPrefsService {
@@ -16,6 +17,7 @@ class _FakeSharedPrefsService extends SharedPrefsService {
   int autoLock = 0;
   bool failBiometricWrite = false;
   bool failAutoLockWrite = false;
+  bool failThemeWrite = false;
 
   @override
   Future<bool> getBiometricEnabled() async => biometric;
@@ -37,6 +39,7 @@ class _FakeSharedPrefsService extends SharedPrefsService {
 
   @override
   Future<void> setThemeMode(String value) async {
+    if (failThemeWrite) throw StateError('write failed');
     theme = value;
   }
 
@@ -126,11 +129,17 @@ void main() {
   late _FakeSharedPrefsService preferences;
   late _FakeResetService resetService;
   late ProfileController controller;
+  late List<ThemeMode> appliedThemes;
 
   setUp(() {
     preferences = _FakeSharedPrefsService();
     resetService = _FakeResetService();
-    controller = ProfileController(preferences, resetService: resetService);
+    appliedThemes = [];
+    controller = ProfileController(
+      preferences,
+      resetService: resetService,
+      themeApplier: appliedThemes.add,
+    );
   });
 
   test('load membaca preferensi profil', () async {
@@ -153,6 +162,14 @@ void main() {
     await controller.load();
 
     expect(controller.autoLockSeconds.value, 0);
+  });
+
+  test('load menormalkan tema tidak dikenal menjadi sistem', () async {
+    preferences.theme = 'ungu';
+
+    await controller.load();
+
+    expect(controller.themeMode.value, 'system');
   });
 
   test('setBiometricEnabled menyimpan dan memperbarui state', () async {
@@ -196,11 +213,43 @@ void main() {
     expect(controller.initial, 'I');
   });
 
-  test('setThemeMode menyimpan preferensi tema', () async {
-    await controller.setThemeMode('light');
+  test('setThemeMode menyimpan dan menerapkan tema', () async {
+    final saved = await controller.setThemeMode('dark');
 
-    expect(controller.themeMode.value, 'light');
-    expect(preferences.theme, 'light');
+    expect(saved, isTrue);
+    expect(controller.themeMode.value, 'dark');
+    expect(preferences.theme, 'dark');
+    expect(appliedThemes, [ThemeMode.dark]);
+    expect(controller.savingTheme.value, isFalse);
+    expect(controller.error.value, isNull);
+  });
+
+  test('setThemeMode menolak nilai tidak valid', () async {
+    final saved = await controller.setThemeMode('biru');
+
+    expect(saved, isFalse);
+    expect(controller.themeMode.value, 'system');
+    expect(preferences.theme, 'system');
+    expect(appliedThemes, isEmpty);
+  });
+
+  test('setThemeMode menangani kegagalan penyimpanan', () async {
+    preferences.failThemeWrite = true;
+
+    final saved = await controller.setThemeMode('dark');
+
+    expect(saved, isFalse);
+    expect(controller.themeMode.value, 'system');
+    expect(appliedThemes, isEmpty);
+    expect(controller.savingTheme.value, isFalse);
+    expect(controller.error.value, 'Gagal menyimpan tema.');
+  });
+
+  test('themeModeFor memetakan nilai tersimpan ke ThemeMode', () {
+    expect(ProfileController.themeModeFor('system'), ThemeMode.system);
+    expect(ProfileController.themeModeFor('light'), ThemeMode.light);
+    expect(ProfileController.themeModeFor('dark'), ThemeMode.dark);
+    expect(ProfileController.themeModeFor('tidak-dikenal'), ThemeMode.system);
   });
 
   test('setAutoLockSeconds menyimpan durasi yang valid', () async {
@@ -244,6 +293,7 @@ void main() {
     expect(resetService.calls, 1);
     expect(controller.biometricEnabled.value, isFalse);
     expect(controller.themeMode.value, 'system');
+    expect(appliedThemes.last, ThemeMode.system);
     expect(controller.displayName.value, isEmpty);
     expect(controller.autoLockSeconds.value, 0);
     expect(controller.resettingData.value, isFalse);

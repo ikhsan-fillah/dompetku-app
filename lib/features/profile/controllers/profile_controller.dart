@@ -1,3 +1,4 @@
+import 'package:flutter/material.dart' show ThemeMode;
 import 'package:get/get.dart';
 
 import '../../../core/services/local_data_export_service.dart';
@@ -14,24 +15,29 @@ class ProfileController extends GetxController {
     AuthController? authController,
     LocalDataExportService? exportService,
     LocalExportFileService? exportFileService,
+    void Function(ThemeMode mode)? themeApplier,
   }) : _resetService = resetService,
        _authController = authController,
        _exportService = exportService,
-       _exportFileService = exportFileService;
+       _exportFileService = exportFileService,
+       _themeApplier = themeApplier ?? Get.changeThemeMode;
 
   static const autoLockOptions = [0, 60, 300, 900];
+  static const themeOptions = ['system', 'light', 'dark'];
 
   final SharedPrefsService _preferences;
   final LocalDataResetService? _resetService;
   final AuthController? _authController;
   final LocalDataExportService? _exportService;
   final LocalExportFileService? _exportFileService;
+  final void Function(ThemeMode mode) _themeApplier;
   final biometricEnabled = false.obs;
   final themeMode = 'system'.obs;
   final displayName = ''.obs;
   final autoLockSeconds = 0.obs;
   final savingBiometric = false.obs;
   final savingAutoLock = false.obs;
+  final savingTheme = false.obs;
   final resettingData = false.obs;
   final exportingData = false.obs;
   final lockingApp = false.obs;
@@ -42,6 +48,18 @@ class ProfileController extends GetxController {
   String get greetingName => DisplayName.greeting(displayName.value);
   String get initial => DisplayName.initial(displayName.value);
 
+  /// Memetakan nilai tersimpan ke [ThemeMode]; nilai tak dikenal jadi sistem.
+  static ThemeMode themeModeFor(String value) {
+    switch (value) {
+      case 'light':
+        return ThemeMode.light;
+      case 'dark':
+        return ThemeMode.dark;
+      default:
+        return ThemeMode.system;
+    }
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -50,15 +68,28 @@ class ProfileController extends GetxController {
 
   Future<void> load() async {
     biometricEnabled.value = await _preferences.getBiometricEnabled();
-    themeMode.value = await _preferences.getThemeMode();
+    final theme = await _preferences.getThemeMode();
+    themeMode.value = themeOptions.contains(theme) ? theme : 'system';
     displayName.value = await _preferences.getDisplayName();
     final seconds = await _preferences.getAutoLockSeconds();
     autoLockSeconds.value = autoLockOptions.contains(seconds) ? seconds : 0;
   }
 
-  Future<void> setThemeMode(String value) async {
-    themeMode.value = value;
-    await _preferences.setThemeMode(value);
+  Future<bool> setThemeMode(String value) async {
+    if (!themeOptions.contains(value) || savingTheme.value) return false;
+    savingTheme.value = true;
+    error.value = null;
+    try {
+      await _preferences.setThemeMode(value);
+      themeMode.value = value;
+      _themeApplier(themeModeFor(value));
+      return true;
+    } catch (_) {
+      error.value = 'Gagal menyimpan tema.';
+      return false;
+    } finally {
+      savingTheme.value = false;
+    }
   }
 
   Future<void> setDisplayName(String value) async {
@@ -156,6 +187,7 @@ class ProfileController extends GetxController {
       _authController?.resetSessionState();
       biometricEnabled.value = false;
       themeMode.value = 'system';
+      _themeApplier(ThemeMode.system);
       displayName.value = '';
       autoLockSeconds.value = 0;
       exportSuccess.value = null;
