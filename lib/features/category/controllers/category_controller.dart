@@ -80,7 +80,7 @@ class CategoryController extends GetxController {
       } else {
         await _repository.update(category);
       }
-      return _reloadAfterWrite();
+      return await _reloadAfterWrite();
     } catch (_) {
       state.value = const ResourceState.error('Gagal menyimpan kategori.');
       return false;
@@ -92,7 +92,7 @@ class CategoryController extends GetxController {
   Future<bool> archive(int id) async {
     try {
       await _repository.archive(id);
-      return _reloadAfterWrite();
+      return await _reloadAfterWrite();
     } catch (_) {
       state.value = const ResourceState.error('Gagal mengarsipkan kategori.');
       return false;
@@ -103,7 +103,7 @@ class CategoryController extends GetxController {
   Future<bool> reorder(List<int> ids) async {
     try {
       await _repository.reorder(ids);
-      return _reloadAfterWrite();
+      return await _reloadAfterWrite();
     } catch (_) {
       state.value = const ResourceState.error('Gagal mengubah urutan kategori.');
       return false;
