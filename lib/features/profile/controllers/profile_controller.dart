@@ -23,7 +23,8 @@ class ProfileController extends GetxController {
        _themeApplier = themeApplier ?? Get.changeThemeMode;
 
   static const autoLockOptions = [0, 60, 300, 900];
-  static const themeOptions = ['system', 'light', 'dark'];
+  static const themeOptions = ['light', 'dark'];
+  static const defaultThemeMode = 'light';
 
   final SharedPrefsService _preferences;
   final LocalDataResetService? _resetService;
@@ -32,7 +33,7 @@ class ProfileController extends GetxController {
   final LocalExportFileService? _exportFileService;
   final void Function(ThemeMode mode) _themeApplier;
   final biometricEnabled = false.obs;
-  final themeMode = 'system'.obs;
+  final themeMode = defaultThemeMode.obs;
   final displayName = ''.obs;
   final autoLockSeconds = 0.obs;
   final savingBiometric = false.obs;
@@ -48,15 +49,13 @@ class ProfileController extends GetxController {
   String get greetingName => DisplayName.greeting(displayName.value);
   String get initial => DisplayName.initial(displayName.value);
 
-  /// Memetakan nilai tersimpan ke [ThemeMode]; nilai tak dikenal jadi sistem.
   static ThemeMode themeModeFor(String value) {
     switch (value) {
-      case 'light':
-        return ThemeMode.light;
       case 'dark':
         return ThemeMode.dark;
+      case 'light':
       default:
-        return ThemeMode.system;
+        return ThemeMode.light;
     }
   }
 
@@ -68,8 +67,14 @@ class ProfileController extends GetxController {
 
   Future<void> load() async {
     biometricEnabled.value = await _preferences.getBiometricEnabled();
-    final theme = await _preferences.getThemeMode();
-    themeMode.value = themeOptions.contains(theme) ? theme : 'system';
+    final savedTheme = await _preferences.getThemeMode();
+    final selectedTheme =
+        themeOptions.contains(savedTheme) ? savedTheme : defaultThemeMode;
+    themeMode.value = selectedTheme;
+    if (savedTheme != selectedTheme) {
+      await _preferences.setThemeMode(selectedTheme);
+    }
+    _themeApplier(themeModeFor(selectedTheme));
     displayName.value = await _preferences.getDisplayName();
     final seconds = await _preferences.getAutoLockSeconds();
     autoLockSeconds.value = autoLockOptions.contains(seconds) ? seconds : 0;
@@ -130,7 +135,6 @@ class ProfileController extends GetxController {
     }
   }
 
-  /// Menyiapkan JSON dan membagikannya sebagai berkas lokal.
   Future<bool> exportData() async {
     final exportService = _exportService;
     final exportFileService = _exportFileService;
@@ -186,8 +190,8 @@ class ProfileController extends GetxController {
       await resetService.resetAll();
       _authController?.resetSessionState();
       biometricEnabled.value = false;
-      themeMode.value = 'system';
-      _themeApplier(ThemeMode.system);
+      themeMode.value = defaultThemeMode;
+      _themeApplier(ThemeMode.light);
       displayName.value = '';
       autoLockSeconds.value = 0;
       exportSuccess.value = null;
