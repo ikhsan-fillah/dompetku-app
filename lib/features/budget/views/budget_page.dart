@@ -290,7 +290,6 @@ class _HeroStat extends StatelessWidget {
       ],
     );
   }
-      );
 }
 
 String _date(DateTime value) =>
