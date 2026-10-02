@@ -1,21 +1,19 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../app/routes/app_routes.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/date_range.dart';
 import '../../../core/utils/formatter.dart';
-import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
+import '../../dashboard/models/dashboard_summary_model.dart';
 import '../../dashboard/widgets/expense_donut.dart';
 import '../../dashboard/widgets/spending_bars.dart';
 import '../../shell/controllers/main_shell_controller.dart';
-import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../widgets/budget_summary_cards.dart';
 import '../widgets/category_cards_grid.dart';
 import '../widgets/home_app_bar.dart';
@@ -51,7 +49,7 @@ class HomePage extends StatelessWidget {
     }
   }
 
-  /// Data yang ditampilkan: data asli, data nol (periode kosong), atau contoh.
+  /// Data yang ditampilkan: data asli atau data nol pada periode kosong.
   DashboardData? _displayData(
     ResourceState<DashboardData> state,
     DashboardController controller,
@@ -60,9 +58,12 @@ class HomePage extends StatelessWidget {
       case ResourceStatus.success:
         return state.data;
       case ResourceStatus.empty:
-        return controller.hasAnyTransactions.value
-            ? DashboardData.emptyPeriod()
-            : DashboardData.preview();
+        return const DashboardData(
+          summary: DashboardSummaryModel(income: 0, expense: 0, balance: 0),
+          trend: [],
+          previousPeriodExpenseChange: 0,
+          expenses: [],
+        );
       case ResourceStatus.idle:
       case ResourceStatus.loading:
       case ResourceStatus.error:
@@ -71,6 +72,7 @@ class HomePage extends StatelessWidget {
   }
 
   List<Widget> _content(
+    BuildContext context,
     ResourceState<DashboardData> state,
     DashboardData? data,
     DashboardController controller,
@@ -97,7 +99,9 @@ class HomePage extends StatelessWidget {
         return [
           BudgetSummaryCards(
             budget: data.budget,
-            topCategory: data.expenses.isEmpty ? null : data.expenses.first,
+            topCategory: data.summary.expense == 0 || data.expenses.isEmpty
+                ? null
+                : data.expenses.first,
             onSetupBudget: () => _openTab(2),
           ),
           AppCard(
@@ -129,12 +133,12 @@ class HomePage extends StatelessWidget {
             const SectionHeader(title: 'Kategori favorit'),
             CategoryCardsGrid(items: data.favorites),
           ],
-          if (data.recent.isNotEmpty)
-            RecentTransactionsCard(
-              items: data.recent,
-              onSeeAll: () => _openTab(1),
-            ),
-          if (data.insight != null) InsightBanner(message: data.insight!.message),
+          RecentTransactionsCard(
+            items: data.recent,
+            onSeeAll: () => _openTab(1),
+          ),
+          if (data.insight != null)
+            InsightBanner(message: data.insight!.message),
         ];
     }
   }
@@ -148,8 +152,6 @@ class HomePage extends StatelessWidget {
         Expanded(
           child: Obx(() {
             final state = controller.state.value;
-            final isEmpty = state.status == ResourceStatus.empty;
-            final isPreview = isEmpty && !controller.hasAnyTransactions.value;
             final data = _displayData(state, controller);
             return ListView(
               padding: const EdgeInsets.fromLTRB(
@@ -159,109 +161,29 @@ class HomePage extends StatelessWidget {
                 130,
               ),
               children: [
-                if (isPreview)
-                  _PreviewBanner(onAdd: () => showTransactionSheet(context)),
-                if (data != null) ...[
-                  _BalanceCard(data: data),
-                  if (!isPreview)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: () => Get.toNamed(AppRoutes.report),
-                        icon: const Icon(Icons.bar_chart_rounded, size: 18),
-                        label: const Text('Lihat laporan'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.teal,
-                        ),
-                      ),
-                    ),
-                ],
-                PeriodChips(
-                  selected: controller.preset.value,
-                  onSelect: (preset) {
-                    if (preset == DateRangePreset.custom) {
-                      _pickCustomRange(context, controller);
-                    } else {
-                      controller.setPreset(preset);
-                    }
-                  },
+                Padding(
+                  padding: const EdgeInsets.only(bottom: AppSpacing.gap),
+                  child: PeriodChips(
+                    selected: controller.preset.value,
+                    onSelect: (preset) {
+                      if (preset == DateRangePreset.custom) {
+                        _pickCustomRange(context, controller);
+                      } else {
+                        controller.setPreset(preset);
+                      }
+                    },
+                  ),
                 ),
-                const _AutoRefreshHint(),
-                if (isEmpty && !isPreview) const _EmptyPeriodNote(),
-                ..._content(state, data, controller),
+                if (data != null) ...[_BalanceCard(data: data)],
+                if (!controller.hasTransactionsInPeriod.value &&
+                    controller.hasAnyTransactions.value)
+                  const _EmptyPeriodNote(),
+                ..._content(context, state, data, controller),
               ],
             );
           }),
         ),
       ],
-    );
-  }
-}
-
-/// Penanda bahwa isi Beranda masih contoh sampai transaksi pertama dicatat.
-class _PreviewBanner extends StatelessWidget {
-  const _PreviewBanner({required this.onAdd});
-
-  final VoidCallback onAdd;
-
-  @override
-  Widget build(BuildContext context) {
-    return AppCard(
-      padding: const EdgeInsets.all(14),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [AppColors.mint, Color(0xFFA7F3D0)],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: const Icon(
-                  Icons.auto_awesome_rounded,
-                  size: 20,
-                  color: AppColors.teal,
-                ),
-              ),
-              const SizedBox(width: 12),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Contoh tampilan',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    SizedBox(height: 2),
-                    Text(
-                      'Angka di bawah hanya contoh. Data aslimu muncul setelah kamu mencatat transaksi pertama.',
-                      style: TextStyle(fontSize: 11.5, color: AppColors.muted),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 12),
-          AppButton(
-            label: 'Catat transaksi pertama',
-            icon: Icons.add_rounded,
-            onPressed: onAdd,
-          ),
-        ],
-      ),
     );
   }
 }
@@ -288,36 +210,6 @@ class _EmptyPeriodNote extends StatelessWidget {
               'Tidak ada transaksi pada periode ini. Coba pilih periode lain.',
               style: TextStyle(fontSize: 12, color: AppColors.muted),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class _AutoRefreshHint extends StatelessWidget {
-  const _AutoRefreshHint();
-
-  @override
-  Widget build(BuildContext context) {
-    return const Padding(
-      padding: EdgeInsets.only(bottom: 12, left: 2),
-      child: Row(
-        children: [
-          SizedBox(
-            width: 7,
-            height: 7,
-            child: DecoratedBox(
-              decoration: BoxDecoration(
-                color: AppColors.emerald,
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          SizedBox(width: 6),
-          Text(
-            'Diperbarui otomatis',
-            style: TextStyle(fontSize: 10.5, color: AppColors.muted),
           ),
         ],
       ),

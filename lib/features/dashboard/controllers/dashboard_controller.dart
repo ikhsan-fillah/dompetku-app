@@ -29,121 +29,6 @@ class DashboardData {
     this.insight,
   });
 
-  /// Data contoh untuk pengguna yang belum pernah mencatat transaksi,
-  /// agar Beranda tetap menampilkan seluruh kartu dan grafik.
-  factory DashboardData.preview({DateTime? now}) {
-    final today = now ?? DateTime.now();
-    final day = DateTime(today.year, today.month, today.day);
-    const dailyAmounts = [120000, 85000, 0, 240000, 60000, 310000, 150000];
-    final dates = [
-      for (var i = 0; i < dailyAmounts.length; i++)
-        DateTime(day.year, day.month, day.day - (dailyAmounts.length - 1 - i)),
-    ];
-    const rawExpenses = <(int, String, int, int)>[
-      (1, 'Makan & Minum', 0xFFE57373, 1300000),
-      (2, 'Transportasi', 0xFF64B5F6, 800000),
-      (3, 'Belanja', 0xFFBA68C8, 600000),
-      (4, 'Tagihan', 0xFFFFB74D, 550000),
-    ];
-    const icons = ['restaurant', 'directions_car', 'shopping_bag', 'receipt_long'];
-    final totalExpense = rawExpenses.fold<int>(0, (sum, item) => sum + item.$4);
-    const income = 5000000;
-    final daysInMonth = DateTime(day.year, day.month + 1, 0).day;
-
-    return DashboardData(
-      summary: DashboardSummaryModel(
-        income: income,
-        expense: totalExpense,
-        balance: income - totalExpense,
-      ),
-      trend: [
-        for (var i = 0; i < dailyAmounts.length; i++)
-          SpendingTrendPoint(date: dates[i], amount: dailyAmounts[i]),
-      ],
-      trendBuckets: [
-        for (var i = 0; i < dailyAmounts.length; i++)
-          TrendBucket(
-            label: '${dates[i].day}',
-            start: dates[i],
-            end: dates[i],
-            amount: dailyAmounts[i],
-          ),
-      ],
-      previousPeriodExpenseChange: 0.12,
-      expenses: [
-        for (final item in rawExpenses)
-          ExpenseSlice(
-            categoryId: item.$1,
-            name: item.$2,
-            colorValue: item.$3,
-            amount: item.$4,
-            percent: item.$4 * 100 / totalExpense,
-          ),
-      ],
-      budget: BudgetProgressModel(
-        name: 'Contoh anggaran',
-        limit: 3000000,
-        used: 1850000,
-        elapsedDays: day.day,
-        totalDays: daysInMonth,
-      ),
-      favorites: [
-        for (var i = 0; i < rawExpenses.length; i++)
-          CategoryCardData(
-            categoryId: rawExpenses[i].$1,
-            name: rawExpenses[i].$2,
-            iconKey: icons[i],
-            colorValue: rawExpenses[i].$3,
-            amount: rawExpenses[i].$4,
-            sharePercent: rawExpenses[i].$4 * 100 / totalExpense,
-          ),
-      ],
-      recent: [
-        RecentTransactionItem(
-          id: -1,
-          title: 'Makan siang',
-          categoryName: 'Makan & Minum',
-          iconKey: 'restaurant',
-          colorValue: 0xFFE57373,
-          amount: 35000,
-          isIncome: false,
-          date: day,
-        ),
-        RecentTransactionItem(
-          id: -2,
-          title: 'Isi bensin',
-          categoryName: 'Transportasi',
-          iconKey: 'directions_car',
-          colorValue: 0xFF64B5F6,
-          amount: 50000,
-          isIncome: false,
-          date: dates[dates.length - 2],
-        ),
-        RecentTransactionItem(
-          id: -3,
-          title: 'Gaji bulanan',
-          categoryName: 'Gaji',
-          iconKey: 'payments',
-          colorValue: 0xFF43A047,
-          amount: 5000000,
-          isIncome: true,
-          date: dates[dates.length - 4],
-        ),
-      ],
-      insight: const DashboardInsight(
-        message: 'Makan & Minum naik 12% dibanding periode sebelumnya',
-      ),
-    );
-  }
-
-  /// Data nol untuk periode tanpa transaksi (pengguna sudah punya transaksi lain).
-  factory DashboardData.emptyPeriod() => const DashboardData(
-    summary: DashboardSummaryModel(income: 0, expense: 0, balance: 0),
-    trend: <SpendingTrendPoint>[],
-    previousPeriodExpenseChange: 0,
-    expenses: <ExpenseSlice>[],
-  );
-
   final DashboardSummaryModel summary;
   final List<SpendingTrendPoint> trend;
   final double previousPeriodExpenseChange;
@@ -175,6 +60,7 @@ class DashboardController extends GetxController {
 
   /// True bila pengguna pernah mencatat setidaknya satu transaksi (periode apa pun).
   final hasAnyTransactions = false.obs;
+  final hasTransactionsInPeriod = false.obs;
 
   Worker? _refreshWorker;
   int _requestId = 0;
@@ -232,16 +118,44 @@ class DashboardController extends GetxController {
       final current = transactions
           .where((item) => selected.contains(item.transactionDate))
           .toList();
-      if (current.isEmpty) {
-        state.value = const ResourceState.empty();
-        return;
-      }
+      hasTransactionsInPeriod.value = current.isNotEmpty;
       final categories = await _categories.getAll(includeArchived: true);
       final budgetRepository = _budgetRepository;
       final budgets = budgetRepository == null
           ? <BudgetModel>[]
           : await budgetRepository.getAll();
       if (requestId != _requestId) return;
+
+      if (current.isEmpty) {
+        final cards = _insights.zeroStateCards(categories);
+        state.value = ResourceState.success(
+          DashboardData(
+            summary: const DashboardSummaryModel(
+              income: 0,
+              expense: 0,
+              balance: 0,
+            ),
+            trend: const [],
+            trendBuckets: _zeroTrendBuckets(selected),
+            previousPeriodExpenseChange: 0,
+            expenses: [
+              for (final card in cards)
+                ExpenseSlice(
+                  categoryId: card.categoryId,
+                  name: card.name,
+                  colorValue: card.colorValue,
+                  amount: 0,
+                  percent: 0,
+                ),
+            ],
+            budget: null,
+            favorites: cards,
+            recent: const [],
+            insight: null,
+          ),
+        );
+        return;
+      }
 
       final totals = _calculations.categoryTotals(transactions, selected);
       final previousTotals = _calculations.categoryTotals(
@@ -284,5 +198,18 @@ class DashboardController extends GetxController {
         'Gagal memuat ringkasan dashboard.',
       );
     }
+  }
+
+  List<TrendBucket> _zeroTrendBuckets(DateRange selected) {
+    final end = selected.end.toLocal();
+    return [
+      for (var offset = 6; offset >= 0; offset--)
+        TrendBucket(
+          label: '${DateTime(end.year, end.month, end.day - offset).day}',
+          start: DateTime(end.year, end.month, end.day - offset),
+          end: DateTime(end.year, end.month, end.day - offset),
+          amount: 0,
+        ),
+    ];
   }
 }

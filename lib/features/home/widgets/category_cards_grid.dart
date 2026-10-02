@@ -79,9 +79,11 @@ class _CategoryCard extends StatelessWidget {
           AppProgressBar(
             value: item.sharePercent / 100,
             height: 6,
-            gradient: LinearGradient(
-              colors: [color, color.withValues(alpha: 0.6)],
-            ),
+            gradient: item.amount == 0
+                ? const LinearGradient(
+                    colors: [AppColors.track, AppColors.track],
+                  )
+                : LinearGradient(colors: [color, color.withValues(alpha: 0.6)]),
           ),
         ],
       ),
