@@ -345,14 +345,14 @@ class _BudgetCard extends StatelessWidget {
                   width: 44,
                   height: 44,
                   decoration: BoxDecoration(
-                    color: visual.background,
+                    color: AppColors.mint,
                     borderRadius: BorderRadius.circular(14),
                   ),
                   child: Icon(
                     item.isOverall
                         ? Icons.account_balance_wallet_outlined
                         : Icons.category_outlined,
-                    color: visual.foreground,
+                    color: AppColors.teal,
                   ),
                 ),
                 const SizedBox(width: 12),
