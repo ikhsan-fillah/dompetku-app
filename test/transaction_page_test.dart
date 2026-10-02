@@ -38,10 +38,10 @@ class _Transactions implements TransactionRepository {
 class _Categories implements CategoryRepository {
   @override
   Future<List<CategoryModel>> getAll({bool includeArchived = false}) async => [
-        _cat(1, 'Makanan', TransactionType.expense),
-        _cat(2, 'Transportasi', TransactionType.expense),
-        _cat(3, 'Gaji', TransactionType.income),
-      ];
+    _cat(1, 'Makanan', TransactionType.expense),
+    _cat(2, 'Transportasi', TransactionType.expense),
+    _cat(3, 'Gaji', TransactionType.income),
+  ];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -88,8 +88,14 @@ List<TransactionModel> _sample() {
   return [
     _tx(1, TransactionType.expense, 'Kopi', 25000, 1, noon),
     _tx(2, TransactionType.expense, 'Bensin', 50000, 2, noon),
-    _tx(3, TransactionType.income, 'Gaji', 5000000, 3,
-        noon.subtract(const Duration(days: 1))),
+    _tx(
+      3,
+      TransactionType.income,
+      'Gaji',
+      5000000,
+      3,
+      noon.subtract(const Duration(days: 1)),
+    ),
   ];
 }
 
@@ -112,9 +118,9 @@ Future<_Transactions> _open(
 }
 
 Finder _incomeTile() => find.ancestor(
-      of: find.text('+ Rp 5.000.000'),
-      matching: find.byType(TransactionTile),
-    );
+  of: find.text('+ Rp 5.000.000'),
+  matching: find.byType(TransactionTile),
+);
 
 void main() {
   tearDown(Get.reset);
@@ -157,8 +163,9 @@ void main() {
     expect(find.text('Tidak ada hasil'), findsOneWidget);
   });
 
-  testWidgets('mengetuk baris menampilkan aksi dan hapus butuh konfirmasi',
-      (tester) async {
+  testWidgets('mengetuk baris menampilkan aksi dan hapus butuh konfirmasi', (
+    tester,
+  ) async {
     final repository = await _open(tester);
 
     await tester.tap(find.text('Kopi'));

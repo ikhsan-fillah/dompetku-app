@@ -77,16 +77,15 @@ TransactionModel _tx(
   int amount,
   DateTime date, {
   int categoryId = 1,
-}) =>
-    TransactionModel(
-      type: type,
-      title: 'Transaksi',
-      amount: amount,
-      transactionDate: date,
-      categoryId: categoryId,
-      createdAt: date,
-      updatedAt: date,
-    );
+}) => TransactionModel(
+  type: type,
+  title: 'Transaksi',
+  amount: amount,
+  transactionDate: date,
+  categoryId: categoryId,
+  createdAt: date,
+  updatedAt: date,
+);
 
 CategoryModel _category({
   required int id,
@@ -177,7 +176,12 @@ void main() {
 
   test('kategori yang tidak tersedia tetap tampil dalam laporan', () async {
     transactions.items = [
-      _tx(TransactionType.expense, 100000, DateTime(2026, 9, 15), categoryId: 9),
+      _tx(
+        TransactionType.expense,
+        100000,
+        DateTime(2026, 9, 15),
+        categoryId: 9,
+      ),
     ];
     await controller.load(september);
     final item = controller.state.value.data!.expensesByCategory.single;
@@ -186,16 +190,19 @@ void main() {
     expect(item.colorValue, 0xFF64748B);
   });
 
-  test('membandingkan pengeluaran dengan periode sebelumnya yang setara', () async {
-    transactions.items = [
-      _tx(TransactionType.expense, 150000, DateTime(2026, 9, 10)),
-      _tx(TransactionType.expense, 100000, DateTime(2026, 8, 10)),
-    ];
-    await controller.load(
-      DateRange(start: DateTime(2026, 9, 1), end: DateTime(2026, 9, 30)),
-    );
-    expect(controller.state.value.data!.expenseChange, 0.5);
-  });
+  test(
+    'membandingkan pengeluaran dengan periode sebelumnya yang setara',
+    () async {
+      transactions.items = [
+        _tx(TransactionType.expense, 150000, DateTime(2026, 9, 10)),
+        _tx(TransactionType.expense, 100000, DateTime(2026, 8, 10)),
+      ];
+      await controller.load(
+        DateRange(start: DateTime(2026, 9, 1), end: DateTime(2026, 9, 30)),
+      );
+      expect(controller.state.value.data!.expenseChange, 0.5);
+    },
+  );
 
   test('transaksi di luar rentang tidak ikut dihitung', () async {
     transactions.items = [
@@ -237,36 +244,41 @@ void main() {
     expect(controller.state.value.data!.summary.income, 200000);
   });
 
-  test('statistik belanja: rata-rata harian, hari terbesar, merchant teratas', () async {
-    transactions.items = [
-      _tx(TransactionType.expense, 100000, DateTime(2026, 9, 10), categoryId: 1),
-      _tx(TransactionType.expense, 200000, DateTime(2026, 9, 15)),
-      _tx(TransactionType.expense, 50000, DateTime(2026, 9, 20)),
-    ];
-    await controller.load(september);
-    final report = controller.state.value.data!;
-    expect(report.dailyAverage, closeTo(350000 / 30, 0.5));
-    expect(report.highestSpendingDay, DateTime(2026, 9, 15));
-    expect(report.highestSpendingDayAmount, 200000);
-    expect(report.topMerchant, 'Transaksi');
-    expect(report.topMerchantCount, 3);
-  });
+  test(
+    'statistik belanja: rata-rata harian, hari terbesar, merchant teratas',
+    () async {
+      transactions.items = [
+        _tx(
+          TransactionType.expense,
+          100000,
+          DateTime(2026, 9, 10),
+          categoryId: 1,
+        ),
+        _tx(TransactionType.expense, 200000, DateTime(2026, 9, 15)),
+        _tx(TransactionType.expense, 50000, DateTime(2026, 9, 20)),
+      ];
+      await controller.load(september);
+      final report = controller.state.value.data!;
+      expect(report.dailyAverage, closeTo(350000 / 30, 0.5));
+      expect(report.highestSpendingDay, DateTime(2026, 9, 15));
+      expect(report.highestSpendingDayAmount, 200000);
+      expect(report.topMerchant, 'Transaksi');
+      expect(report.topMerchantCount, 3);
+    },
+  );
 
   test('statistik belanja menghitung merchant dari merchantOrSource', () async {
-    TransactionModel merchantTx(
-      int amount,
-      DateTime date,
-      String merchant,
-    ) => TransactionModel(
-      type: TransactionType.expense,
-      title: 'Transaksi',
-      amount: amount,
-      transactionDate: date,
-      categoryId: 1,
-      merchantOrSource: merchant,
-      createdAt: date,
-      updatedAt: date,
-    );
+    TransactionModel merchantTx(int amount, DateTime date, String merchant) =>
+        TransactionModel(
+          type: TransactionType.expense,
+          title: 'Transaksi',
+          amount: amount,
+          transactionDate: date,
+          categoryId: 1,
+          merchantOrSource: merchant,
+          createdAt: date,
+          updatedAt: date,
+        );
     transactions.items = [
       merchantTx(50000, DateTime(2026, 9, 5), 'Kopi Kenangan'),
       merchantTx(60000, DateTime(2026, 9, 12), 'Kopi Kenangan'),

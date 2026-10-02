@@ -37,9 +37,9 @@ class _TransactionListPageState extends State<TransactionListPage> {
   }
 
   void _snack(String message) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(message)),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _toggle(int id) {
@@ -149,7 +149,10 @@ class _TransactionListPageState extends State<TransactionListPage> {
                 ),
               ),
               AppCard(
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 4,
+                ),
                 margin: const EdgeInsets.only(bottom: 4),
                 child: Column(
                   children: [

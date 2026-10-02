@@ -6,9 +6,7 @@ import '../../features/auth/pages/biometric_setup_page.dart';
 import '../../features/auth/pages/biometric_unlock_page.dart';
 import '../../features/auth/pages/login_page.dart';
 import '../../features/budget/bindings/budget_binding.dart';
-import '../../features/budget/models/budget_model.dart';
 import '../../features/budget/views/budget_archive_page.dart';
-import '../../features/budget/views/budget_form_page.dart';
 import '../../features/category/controllers/category_controller.dart';
 import '../../features/category/pages/category_manage_page.dart';
 import '../../features/receipt/services/ml_kit_receipt_text_recognizer.dart';
@@ -43,12 +41,6 @@ class AppPages {
         );
         BudgetBinding().dependencies();
       }),
-    ),
-    GetPage(
-      name: AppRoutes.budgetForm,
-      page: () => BudgetFormPage(budget: Get.arguments as BudgetModel?),
-      middlewares: [FinancialRouteGuard()],
-      binding: BudgetBinding(),
     ),
     GetPage(
       name: AppRoutes.budgetArchive,

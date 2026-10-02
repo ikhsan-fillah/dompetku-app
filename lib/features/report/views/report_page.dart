@@ -93,100 +93,99 @@ class _ReportPageState extends State<ReportPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: const Color(0xFFF6FAF9),
-        appBar: AppBar(
-          title: const Text('Laporan'),
-          backgroundColor: const Color(0xFFF6FAF9),
-          surfaceTintColor: Colors.transparent,
+    backgroundColor: const Color(0xFFF6FAF9),
+    appBar: AppBar(
+      title: const Text('Laporan'),
+      backgroundColor: const Color(0xFFF6FAF9),
+      surfaceTintColor: Colors.transparent,
+    ),
+    body: Column(
+      children: [
+        SizedBox(
+          height: 48,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+            itemCount: _presets.length,
+            separatorBuilder: (_, _) => const SizedBox(width: 8),
+            itemBuilder: (_, index) {
+              final (preset, label) = _presets[index];
+              final selected = preset == _preset;
+              return ChoiceChip(
+                label: Text(label),
+                selected: selected,
+                showCheckmark: false,
+                onSelected: (_) => _selectPreset(preset),
+                backgroundColor: Colors.white,
+                selectedColor: const Color(0xFFCCFBF1),
+                shape: const StadiumBorder(),
+                side: BorderSide(
+                  color: selected
+                      ? const Color(0xFF0F766E)
+                      : const Color(0xFFE2E8F0),
+                ),
+                labelStyle: TextStyle(
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w600,
+                  color: selected
+                      ? const Color(0xFF0F766E)
+                      : const Color(0xFF64748B),
+                ),
+              );
+            },
+          ),
         ),
-        body: Column(children: [
-          SizedBox(
-            height: 48,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-              itemCount: _presets.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (_, index) {
-                final (preset, label) = _presets[index];
-                final selected = preset == _preset;
-                return ChoiceChip(
-                  label: Text(label),
-                  selected: selected,
-                  showCheckmark: false,
-                  onSelected: (_) => _selectPreset(preset),
-                  backgroundColor: Colors.white,
-                  selectedColor: const Color(0xFFCCFBF1),
-                  shape: const StadiumBorder(),
-                  side: BorderSide(
-                    color: selected
-                        ? const Color(0xFF0F766E)
-                        : const Color(0xFFE2E8F0),
-                  ),
-                  labelStyle: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: selected
-                        ? const Color(0xFF0F766E)
-                        : const Color(0xFF64748B),
-                  ),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Obx(() {
-                final range = controller.range.value;
-                return Text(
-                  '${_date(range.start)} - ${_date(range.end)}',
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
-                  ),
-                );
-              }),
-            ),
-          ),
-          Expanded(
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
+          child: Align(
+            alignment: Alignment.centerLeft,
             child: Obx(() {
-              final current = controller.state.value;
-              return switch (current.status) {
-                ResourceStatus.idle || ResourceStatus.loading =>
-                  const Center(child: CircularProgressIndicator()),
-                ResourceStatus.empty => _Message(
-                    icon: Icons.insert_chart_outlined_rounded,
-                    text: 'Belum ada transaksi pada periode ini',
-                    action: 'Muat ulang',
-                    onTap: _reload,
-                  ),
-                ResourceStatus.error => _Message(
-                    icon: Icons.error_outline_rounded,
-                    text: current.message ?? 'Gagal memuat laporan.',
-                    action: 'Coba lagi',
-                    onTap: _reload,
-                  ),
-                ResourceStatus.success => RefreshIndicator(
-                    color: const Color(0xFF0F766E),
-                    onRefresh: _reload,
-                    child: _Summary(data: current.data!, money: _money),
-                  ),
-              };
+              final range = controller.range.value;
+              return Text(
+                '${_date(range.start)} - ${_date(range.end)}',
+                style: const TextStyle(
+                  color: Color(0xFF64748B),
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
+                ),
+              );
             }),
           ),
-        ]),
-      );
+        ),
+        Expanded(
+          child: Obx(() {
+            final current = controller.state.value;
+            return switch (current.status) {
+              ResourceStatus.idle || ResourceStatus.loading => const Center(
+                child: CircularProgressIndicator(),
+              ),
+              ResourceStatus.empty => _Message(
+                icon: Icons.insert_chart_outlined_rounded,
+                text: 'Belum ada transaksi pada periode ini',
+                action: 'Muat ulang',
+                onTap: _reload,
+              ),
+              ResourceStatus.error => _Message(
+                icon: Icons.error_outline_rounded,
+                text: current.message ?? 'Gagal memuat laporan.',
+                action: 'Coba lagi',
+                onTap: _reload,
+              ),
+              ResourceStatus.success => RefreshIndicator(
+                color: const Color(0xFF0F766E),
+                onRefresh: _reload,
+                child: _Summary(data: current.data!, money: _money),
+              ),
+            };
+          }),
+        ),
+      ],
+    ),
+  );
 }
 
 const _cardShadow = [
-  BoxShadow(
-    color: Color(0x170F766E),
-    blurRadius: 22,
-    offset: Offset(0, 6),
-  ),
+  BoxShadow(color: Color(0x170F766E), blurRadius: 22, offset: Offset(0, 6)),
 ];
 
 class _Summary extends StatelessWidget {
@@ -214,48 +213,54 @@ class _Summary extends StatelessWidget {
             borderRadius: BorderRadius.circular(22),
             boxShadow: _cardShadow,
           ),
-          child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-            const Text(
-              'Saldo periode ini',
-              style: TextStyle(
-                color: Color(0xE6FFFFFF),
-                fontSize: 12.5,
-                fontWeight: FontWeight.w500,
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Saldo periode ini',
+                style: TextStyle(
+                  color: Color(0xE6FFFFFF),
+                  fontSize: 12.5,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
-            ),
-            const SizedBox(height: 6),
-            Text(
-              money(summary.balance),
-              style: const TextStyle(
-                color: Colors.white,
-                fontSize: 26,
-                fontWeight: FontWeight.w600,
+              const SizedBox(height: 6),
+              Text(
+                money(summary.balance),
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 26,
+                  fontWeight: FontWeight.w600,
+                ),
               ),
-            ),
-          ]),
+            ],
+          ),
         ),
         const SizedBox(height: 14),
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Expanded(
-            child: _StatCard(
-              icon: Icons.arrow_downward_rounded,
-              label: 'Pemasukan',
-              value: money(summary.income),
-              background: const Color(0xFFCCFBF1),
-              foreground: const Color(0xFF0F766E),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(
+              child: _StatCard(
+                icon: Icons.arrow_downward_rounded,
+                label: 'Pemasukan',
+                value: money(summary.income),
+                background: const Color(0xFFCCFBF1),
+                foreground: const Color(0xFF0F766E),
+              ),
             ),
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: _StatCard(
-              icon: Icons.arrow_upward_rounded,
-              label: 'Pengeluaran',
-              value: money(summary.expense),
-              background: const Color(0xFFFFE4E9),
-              foreground: const Color(0xFFF43F5E),
+            const SizedBox(width: 12),
+            Expanded(
+              child: _StatCard(
+                icon: Icons.arrow_upward_rounded,
+                label: 'Pengeluaran',
+                value: money(summary.expense),
+                background: const Color(0xFFFFE4E9),
+                foreground: const Color(0xFFF43F5E),
+              ),
             ),
-          ),
-        ]),
+          ],
+        ),
         if (remaining != null) ...[
           const SizedBox(height: 12),
           _StatCard(
@@ -304,43 +309,45 @@ class _ChangeInsight extends StatelessWidget {
     final background = unchanged
         ? const Color(0xFFCCFBF1)
         : decreased
-            ? const Color(0xFFCCFBF1)
-            : const Color(0xFFFFE4E9);
+        ? const Color(0xFFCCFBF1)
+        : const Color(0xFFFFE4E9);
     final foreground = unchanged
         ? const Color(0xFF0F766E)
         : decreased
-            ? const Color(0xFF0F766E)
-            : const Color(0xFFF43F5E);
+        ? const Color(0xFF0F766E)
+        : const Color(0xFFF43F5E);
     final icon = unchanged
         ? Icons.trending_flat_rounded
         : decreased
-            ? Icons.trending_down_rounded
-            : Icons.trending_up_rounded;
+        ? Icons.trending_down_rounded
+        : Icons.trending_up_rounded;
     final message = unchanged
         ? 'Pengeluaran sama dengan periode sebelumnya.'
         : decreased
-            ? 'Pengeluaran turun $percent% dari periode sebelumnya.'
-            : 'Pengeluaran naik $percent% dari periode sebelumnya.';
+        ? 'Pengeluaran turun $percent% dari periode sebelumnya.'
+        : 'Pengeluaran naik $percent% dari periode sebelumnya.';
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: background,
         borderRadius: BorderRadius.circular(22),
       ),
-      child: Row(children: [
-        Icon(icon, color: foreground),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Text(
-            message,
-            style: TextStyle(
-              color: foreground,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+      child: Row(
+        children: [
+          Icon(icon, color: foreground),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              message,
+              style: TextStyle(
+                color: foreground,
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
+              ),
             ),
           ),
-        ),
-      ]),
+        ],
+      ),
     );
   }
 }
@@ -353,97 +360,106 @@ class _SpendingStats extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: _cardShadow,
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text(
-            'Statistik belanja',
-            style: TextStyle(
-              color: Color(0xFF1F2937),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
+      boxShadow: _cardShadow,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Statistik belanja',
+          style: TextStyle(
+            color: Color(0xFF1F2937),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 14),
-          if (data.dailyAverage > 0)
-            _StatRow(
-              icon: Icons.calculate_outlined,
-              label: 'Rata-rata harian',
-              value: '${money(data.dailyAverage.round())} / hari',
-            ),
-          if (data.highestSpendingDay != null) ...[
-            if (data.dailyAverage > 0) const SizedBox(height: 12),
-            _StatRow(
-              icon: Icons.event_busy_rounded,
-              label: 'Hari belanja terbesar',
-              value:
-                  '${_dayLabel(data.highestSpendingDay!)} · ${money(data.highestSpendingDayAmount)}',
-            ),
-          ],
-          if (data.topMerchant != null) ...[
-            const SizedBox(height: 12),
-            _StatRow(
-              icon: Icons.storefront_outlined,
-              label: 'Merchant teratas',
-              value: '${data.topMerchant} · ${data.topMerchantCount}x',
-            ),
-          ],
-        ]),
-      );
+        ),
+        const SizedBox(height: 14),
+        if (data.dailyAverage > 0)
+          _StatRow(
+            icon: Icons.calculate_outlined,
+            label: 'Rata-rata harian',
+            value: '${money(data.dailyAverage.round())} / hari',
+          ),
+        if (data.highestSpendingDay != null) ...[
+          if (data.dailyAverage > 0) const SizedBox(height: 12),
+          _StatRow(
+            icon: Icons.event_busy_rounded,
+            label: 'Hari belanja terbesar',
+            value:
+                '${_dayLabel(data.highestSpendingDay!)} · ${money(data.highestSpendingDayAmount)}',
+          ),
+        ],
+        if (data.topMerchant != null) ...[
+          const SizedBox(height: 12),
+          _StatRow(
+            icon: Icons.storefront_outlined,
+            label: 'Merchant teratas',
+            value: '${data.topMerchant} · ${data.topMerchantCount}x',
+          ),
+        ],
+      ],
+    ),
+  );
 
   String _dayLabel(DateTime value) =>
       '${value.day} ${_months[value.month - 1]} ${value.year}';
 }
 
 class _StatRow extends StatelessWidget {
-  const _StatRow({required this.icon, required this.label, required this.value});
+  const _StatRow({
+    required this.icon,
+    required this.label,
+    required this.value,
+  });
 
   final IconData icon;
   final String label;
   final String value;
 
   @override
-  Widget build(BuildContext context) => Row(children: [
-        Container(
-          width: 34,
-          height: 34,
-          decoration: const BoxDecoration(
-            color: Color(0xFFCCFBF1),
-            shape: BoxShape.circle,
-          ),
-          child: Icon(icon, size: 18, color: const Color(0xFF0F766E)),
+  Widget build(BuildContext context) => Row(
+    children: [
+      Container(
+        width: 34,
+        height: 34,
+        decoration: const BoxDecoration(
+          color: Color(0xFFCCFBF1),
+          shape: BoxShape.circle,
         ),
-        const SizedBox(width: 10),
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                label,
-                style: const TextStyle(
-                  color: Color(0xFF64748B),
-                  fontSize: 11,
-                  fontWeight: FontWeight.w500,
-                ),
+        child: Icon(icon, size: 18, color: const Color(0xFF0F766E)),
+      ),
+      const SizedBox(width: 10),
+      Expanded(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              label,
+              style: const TextStyle(
+                color: Color(0xFF64748B),
+                fontSize: 11,
+                fontWeight: FontWeight.w500,
               ),
-              Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF1F2937),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+            ),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Color(0xFF1F2937),
+                fontSize: 13,
+                fontWeight: FontWeight.w600,
               ),
-            ],
-          ),
+            ),
+          ],
         ),
-      ]);
+      ),
+    ],
+  );
 }
 
 class _CategoryBreakdown extends StatelessWidget {
@@ -459,28 +475,31 @@ class _CategoryBreakdown extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: _cardShadow,
-        ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          const Text(
-            'Rincian pengeluaran',
-            style: TextStyle(
-              color: Color(0xFF1F2937),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
+      boxShadow: _cardShadow,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text(
+          'Rincian pengeluaran',
+          style: TextStyle(
+            color: Color(0xFF1F2937),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 14),
-          for (var index = 0; index < items.length; index++) ...[
-            _CategoryRow(item: items[index], total: total, money: money),
-            if (index < items.length - 1) const SizedBox(height: 14),
-          ],
-        ]),
-      );
+        ),
+        const SizedBox(height: 14),
+        for (var index = 0; index < items.length; index++) ...[
+          _CategoryRow(item: items[index], total: total, money: money),
+          if (index < items.length - 1) const SizedBox(height: 14),
+        ],
+      ],
+    ),
+  );
 }
 
 class _CategoryRow extends StatelessWidget {
@@ -498,57 +517,64 @@ class _CategoryRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final share = total <= 0 ? 0.0 : item.amount / total;
     final color = Color(item.colorValue);
-    return Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-      Row(children: [
-        Container(
-          width: 10,
-          height: 10,
-          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 10,
+              height: 10,
+              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                item.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: Color(0xFF1F2937),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            Text(
+              money(item.amount),
+              style: const TextStyle(
+                color: Color(0xFF1F2937),
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            item.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(
-              color: Color(0xFF1F2937),
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+        const SizedBox(height: 7),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(9),
+          child: SizedBox(
+            height: 8,
+            child: Stack(
+              children: [
+                const Positioned.fill(
+                  child: ColoredBox(color: Color(0xFFEEF2F5)),
+                ),
+                FractionallySizedBox(
+                  widthFactor: share.clamp(0.0, 1.0),
+                  child: ColoredBox(color: color),
+                ),
+              ],
             ),
           ),
         ),
+        const SizedBox(height: 5),
         Text(
-          money(item.amount),
-          style: const TextStyle(
-            color: Color(0xFF1F2937),
-            fontSize: 12,
-            fontWeight: FontWeight.w600,
-          ),
+          '${(share * 100).round()}% dari pengeluaran',
+          style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
         ),
-      ]),
-      const SizedBox(height: 7),
-      ClipRRect(
-        borderRadius: BorderRadius.circular(9),
-        child: SizedBox(
-          height: 8,
-          child: Stack(children: [
-            const Positioned.fill(
-              child: ColoredBox(color: Color(0xFFEEF2F5)),
-            ),
-            FractionallySizedBox(
-              widthFactor: share.clamp(0.0, 1.0),
-              child: ColoredBox(color: color),
-            ),
-          ]),
-        ),
-      ),
-      const SizedBox(height: 5),
-      Text(
-        '${(share * 100).round()}% dari pengeluaran',
-        style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
-      ),
-    ]);
+      ],
+    );
   }
 }
 
@@ -569,40 +595,43 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(16),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(22),
-          boxShadow: _cardShadow,
+    width: double.infinity,
+    padding: const EdgeInsets.all(16),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(22),
+      boxShadow: _cardShadow,
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          decoration: BoxDecoration(color: background, shape: BoxShape.circle),
+          child: Icon(icon, size: 20, color: foreground),
         ),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(color: background, shape: BoxShape.circle),
-            child: Icon(icon, size: 20, color: foreground),
+        const SizedBox(height: 12),
+        Text(
+          label,
+          style: const TextStyle(
+            color: Color(0xFF64748B),
+            fontSize: 12,
+            fontWeight: FontWeight.w500,
           ),
-          const SizedBox(height: 12),
-          Text(
-            label,
-            style: const TextStyle(
-              color: Color(0xFF64748B),
-              fontSize: 12,
-              fontWeight: FontWeight.w500,
-            ),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          value,
+          style: const TextStyle(
+            color: Color(0xFF1F2937),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
           ),
-          const SizedBox(height: 4),
-          Text(
-            value,
-            style: const TextStyle(
-              color: Color(0xFF1F2937),
-              fontSize: 16,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ]),
-      );
+        ),
+      ],
+    ),
+  );
 }
 
 class _Message extends StatelessWidget {
@@ -620,11 +649,14 @@ class _Message extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Icon(icon, size: 56, color: const Color(0xFF0F766E)),
-          const SizedBox(height: 12),
-          Text(text),
-          TextButton(onPressed: onTap, child: Text(action)),
-        ]),
-      );
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Icon(icon, size: 56, color: const Color(0xFF0F766E)),
+        const SizedBox(height: 12),
+        Text(text),
+        TextButton(onPressed: onTap, child: Text(action)),
+      ],
+    ),
+  );
 }

@@ -15,7 +15,7 @@ abstract class ReceiptImagePicker {
 
 class DeviceReceiptImagePicker implements ReceiptImagePicker {
   DeviceReceiptImagePicker([ImagePicker? picker])
-      : _picker = picker ?? ImagePicker();
+    : _picker = picker ?? ImagePicker();
 
   final ImagePicker _picker;
 

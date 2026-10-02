@@ -9,20 +9,24 @@ class SessionRepositoryImpl implements SessionRepository {
 
   @override
   Future<AppSessionModel> read() async => AppSessionModel(
-        isRegistered: await _prefs.getIsRegistered(),
-        biometricEnabled: await _prefs.getBiometricEnabled(),
-        biometricFailureCount: await _prefs.getBiometricFailureCount(),
-        biometricLockedUntil: await _prefs.getBiometricLockedUntil(),
-      );
+    isRegistered: await _prefs.getIsRegistered(),
+    biometricEnabled: await _prefs.getBiometricEnabled(),
+    biometricFailureCount: await _prefs.getBiometricFailureCount(),
+    biometricLockedUntil: await _prefs.getBiometricLockedUntil(),
+  );
 
   @override
   Future<void> setRegistered(bool value) => _prefs.setIsRegistered(value);
 
   @override
-  Future<void> setBiometricEnabled(bool value) => _prefs.setBiometricEnabled(value);
+  Future<void> setBiometricEnabled(bool value) =>
+      _prefs.setBiometricEnabled(value);
 
   @override
-  Future<void> saveBiometricFailureState({required int count, DateTime? lockedUntil}) async {
+  Future<void> saveBiometricFailureState({
+    required int count,
+    DateTime? lockedUntil,
+  }) async {
     await _prefs.setBiometricFailureCount(count);
     await _prefs.setBiometricLockedUntil(lockedUntil);
   }

@@ -115,12 +115,19 @@ class _NavButton extends StatelessWidget {
             children: [
               AnimatedContainer(
                 duration: const Duration(milliseconds: 250),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 5),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 5,
+                ),
                 decoration: BoxDecoration(
                   color: selected ? AppColors.mint : Colors.transparent,
                   borderRadius: BorderRadius.circular(14),
                 ),
-                child: Icon(selected ? activeIcon : icon, size: 22, color: color),
+                child: Icon(
+                  selected ? activeIcon : icon,
+                  size: 22,
+                  color: color,
+                ),
               ),
               const SizedBox(height: 2),
               Text(

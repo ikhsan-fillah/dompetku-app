@@ -7,7 +7,7 @@ abstract interface class BiometricService {
 
 class LocalAuthBiometricService implements BiometricService {
   LocalAuthBiometricService({LocalAuthentication? localAuthentication})
-      : _localAuthentication = localAuthentication ?? LocalAuthentication();
+    : _localAuthentication = localAuthentication ?? LocalAuthentication();
 
   final LocalAuthentication _localAuthentication;
 

@@ -12,5 +12,6 @@ class AppSessionModel {
   final DateTime? biometricLockedUntil;
 
   bool get isLockedOut =>
-      biometricLockedUntil != null && DateTime.now().isBefore(biometricLockedUntil!);
+      biometricLockedUntil != null &&
+      DateTime.now().isBefore(biometricLockedUntil!);
 }

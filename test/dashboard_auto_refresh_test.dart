@@ -47,13 +47,16 @@ class _FakeTransactions implements TransactionRepository {
   Future<List<TransactionModel>> getByCategory(int categoryId) async => [];
 
   @override
-  Future<int> getTotal({required TransactionType type, DateRange? range}) async =>
-      0;
+  Future<int> getTotal({
+    required TransactionType type,
+    DateRange? range,
+  }) async => 0;
 }
 
 class _FakeCategories implements CategoryRepository {
   @override
-  Future<List<CategoryModel>> getAll({bool includeArchived = false}) async => [];
+  Future<List<CategoryModel>> getAll({bool includeArchived = false}) async =>
+      [];
 
   @override
   Future<CategoryModel?> getById(int id) async => null;

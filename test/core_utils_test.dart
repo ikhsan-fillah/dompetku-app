@@ -78,16 +78,54 @@ void main() {
   });
 
   group('FinancialCalculationService', () {
-    final range = DateRange(start: DateTime(2026, 9, 1), end: DateTime(2026, 9, 30));
+    final range = DateRange(
+      start: DateTime(2026, 9, 1),
+      end: DateTime(2026, 9, 30),
+    );
     final transactions = [
-      TransactionModel(type: TransactionType.income, title: 'Salary', amount: 5000000, transactionDate: DateTime(2026, 9, 1), categoryId: 1, createdAt: DateTime(2026, 9, 1), updatedAt: DateTime(2026, 9, 1)),
-      TransactionModel(type: TransactionType.expense, title: 'Food', amount: 150000, transactionDate: DateTime(2026, 9, 2), categoryId: 2, createdAt: DateTime(2026, 9, 2), updatedAt: DateTime(2026, 9, 2)),
-      TransactionModel(type: TransactionType.expense, title: 'Fuel', amount: 50000, transactionDate: DateTime(2026, 9, 2), categoryId: 3, createdAt: DateTime(2026, 9, 2), updatedAt: DateTime(2026, 9, 2)),
-      TransactionModel(type: TransactionType.expense, title: 'Old', amount: 999, transactionDate: DateTime(2026, 8, 31), categoryId: 2, createdAt: DateTime(2026, 8, 31), updatedAt: DateTime(2026, 8, 31)),
+      TransactionModel(
+        type: TransactionType.income,
+        title: 'Salary',
+        amount: 5000000,
+        transactionDate: DateTime(2026, 9, 1),
+        categoryId: 1,
+        createdAt: DateTime(2026, 9, 1),
+        updatedAt: DateTime(2026, 9, 1),
+      ),
+      TransactionModel(
+        type: TransactionType.expense,
+        title: 'Food',
+        amount: 150000,
+        transactionDate: DateTime(2026, 9, 2),
+        categoryId: 2,
+        createdAt: DateTime(2026, 9, 2),
+        updatedAt: DateTime(2026, 9, 2),
+      ),
+      TransactionModel(
+        type: TransactionType.expense,
+        title: 'Fuel',
+        amount: 50000,
+        transactionDate: DateTime(2026, 9, 2),
+        categoryId: 3,
+        createdAt: DateTime(2026, 9, 2),
+        updatedAt: DateTime(2026, 9, 2),
+      ),
+      TransactionModel(
+        type: TransactionType.expense,
+        title: 'Old',
+        amount: 999,
+        transactionDate: DateTime(2026, 8, 31),
+        categoryId: 2,
+        createdAt: DateTime(2026, 8, 31),
+        updatedAt: DateTime(2026, 8, 31),
+      ),
     ];
 
     test('uses one inclusive range for totals and balance', () {
-      final summary = const FinancialCalculationService().summary(transactions, range);
+      final summary = const FinancialCalculationService().summary(
+        transactions,
+        range,
+      );
       expect(summary.income, 5000000);
       expect(summary.expense, 200000);
       expect(summary.balance, 4800000);
@@ -95,7 +133,10 @@ void main() {
 
     test('groups spending by category and date', () {
       final service = const FinancialCalculationService();
-      expect(service.categoryTotals(transactions, range), {2: 150000, 3: 50000});
+      expect(service.categoryTotals(transactions, range), {
+        2: 150000,
+        3: 50000,
+      });
       expect(service.dailyExpenses(transactions, range).single.amount, 200000);
     });
   });

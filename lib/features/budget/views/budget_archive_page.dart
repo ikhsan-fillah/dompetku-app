@@ -49,61 +49,57 @@ class BudgetArchivePage extends GetView<BudgetController> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: const Color(0xFFF6FAF9),
-        appBar: AppBar(
-          title: const Text('Anggaran terarsip'),
-          backgroundColor: const Color(0xFFF6FAF9),
-          surfaceTintColor: Colors.transparent,
+    backgroundColor: const Color(0xFFF6FAF9),
+    appBar: AppBar(
+      title: const Text('Anggaran terarsip'),
+      backgroundColor: const Color(0xFFF6FAF9),
+      surfaceTintColor: Colors.transparent,
+    ),
+    body: Obx(() {
+      final current = controller.archived.value;
+      return switch (current.status) {
+        ResourceStatus.idle || ResourceStatus.loading => const Center(
+          child: CircularProgressIndicator(),
         ),
-        body: Obx(() {
-          final current = controller.archived.value;
-          return switch (current.status) {
-            ResourceStatus.idle ||
-            ResourceStatus.loading =>
-              const Center(child: CircularProgressIndicator()),
-            ResourceStatus.error => Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(current.message ?? 'Gagal memuat anggaran terarsip.'),
-                    TextButton(
-                      onPressed: controller.loadArchived,
-                      child: const Text('Coba lagi'),
-                    ),
-                  ],
-                ),
+        ResourceStatus.error => Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(current.message ?? 'Gagal memuat anggaran terarsip.'),
+              TextButton(
+                onPressed: controller.loadArchived,
+                child: const Text('Coba lagi'),
               ),
-            ResourceStatus.empty => const Center(
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Icon(
-                      Icons.inventory_2_outlined,
-                      size: 56,
-                      color: AppColors.teal,
-                    ),
-                    SizedBox(height: 12),
-                    Text('Tidak ada anggaran terarsip'),
-                  ],
-                ),
-              ),
-            ResourceStatus.success => RefreshIndicator(
-                color: AppColors.teal,
-                onRefresh: controller.loadArchived,
-                child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                  itemCount: current.data!.length,
-                  separatorBuilder: (_, _) => const SizedBox(height: 14),
-                  itemBuilder: (_, index) => _ArchivedCard(
-                        item: current.data![index],
-                        money: _money,
-                        onRestore: () => _confirmRestore(current.data![index]),
-                      ),
-                ),
-              ),
-          };
-        }),
-      );
+            ],
+          ),
+        ),
+        ResourceStatus.empty => const Center(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(Icons.inventory_2_outlined, size: 56, color: AppColors.teal),
+              SizedBox(height: 12),
+              Text('Tidak ada anggaran terarsip'),
+            ],
+          ),
+        ),
+        ResourceStatus.success => RefreshIndicator(
+          color: AppColors.teal,
+          onRefresh: controller.loadArchived,
+          child: ListView.separated(
+            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+            itemCount: current.data!.length,
+            separatorBuilder: (_, _) => const SizedBox(height: 14),
+            itemBuilder: (_, index) => _ArchivedCard(
+              item: current.data![index],
+              money: _money,
+              onRestore: () => _confirmRestore(current.data![index]),
+            ),
+          ),
+        ),
+      };
+    }),
+  );
 }
 
 class _ArchivedCard extends StatelessWidget {
@@ -158,9 +154,7 @@ class _ArchivedCard extends StatelessWidget {
                   item.isOverall
                       ? '${money(item.used)} dari ${money(item.budget.amountLimit)} · keseluruhan'
                       : '${money(item.used)} dari ${money(item.budget.amountLimit)}',
-                  style: textTheme.bodySmall?.copyWith(
-                    color: AppColors.muted,
-                  ),
+                  style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
                 ),
               ],
             ),

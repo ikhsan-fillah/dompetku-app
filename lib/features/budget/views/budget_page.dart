@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/budget_status.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
 
@@ -24,7 +25,11 @@ class BudgetPage extends GetView<BudgetController> {
   }
 
   Future<void> _openForm([BudgetViewModel? item]) async {
-    await Get.toNamed(AppRoutes.budgetForm, arguments: item?.budget);
+    await showTransactionSheet(
+      Get.context!,
+      editBudget: item?.budget,
+      initialMode: FinancialInputMode.budget,
+    );
     await controller.load(silent: true);
   }
 
@@ -285,6 +290,7 @@ class _HeroStat extends StatelessWidget {
       ],
     );
   }
+      );
 }
 
 String _date(DateTime value) =>
@@ -330,121 +336,146 @@ class _BudgetCard extends StatelessWidget {
       ),
       child: Padding(
         padding: const EdgeInsets.all(16),
-        child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(children: [
-            Container(
-              width: 44,
-              height: 44,
-              decoration: BoxDecoration(
-                color: AppColors.mint,
-                borderRadius: BorderRadius.circular(14),
-              ),
-              child: Icon(
-                item.isOverall
-                    ? Icons.account_balance_wallet_outlined
-                    : Icons.category_outlined,
-                color: AppColors.teal,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(
-                    item.budget.name,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          fontWeight: FontWeight.w600,
-                          color: const Color(0xFF1F2937),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: visual.background,
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                  child: Icon(
+                    item.isOverall
+                        ? Icons.account_balance_wallet_outlined
+                        : Icons.category_outlined,
+                    color: visual.foreground,
+                  ),
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        item.budget.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.titleMedium
+                            ?.copyWith(
+                              fontWeight: FontWeight.w600,
+                              color: const Color(0xFF1F2937),
+                            ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        '${item.isOverall ? 'Anggaran lama' : 'Per kategori'} · $period',
+                        style: const TextStyle(
+                          color: Color(0xFF64748B),
+                          fontSize: 11.5,
                         ),
+                      ),
+                    ],
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    '${item.isOverall ? 'Keseluruhan' : 'Per kategori'} · $period',
-                    style: const TextStyle(
-                      color: Color(0xFF64748B),
-                      fontSize: 11.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            PopupMenuButton<String>(
-              icon: const Icon(Icons.more_horiz_rounded),
-              color: Colors.white,
-              onSelected: (value) => value == 'edit' ? onEdit() : onArchive(),
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'edit', child: Text('Edit')),
-                PopupMenuItem(value: 'archive', child: Text('Arsipkan')),
+                ),
+                PopupMenuButton<String>(
+                  icon: const Icon(Icons.more_horiz_rounded),
+                  color: Colors.white,
+                  onSelected: (value) =>
+                      value == 'edit' ? onEdit() : onArchive(),
+                  itemBuilder: (_) => const [
+                    PopupMenuItem(value: 'edit', child: Text('Edit')),
+                    PopupMenuItem(value: 'archive', child: Text('Arsipkan')),
+                  ],
+                ),
               ],
             ),
-          ]),
-          const SizedBox(height: 16),
-          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
-            Expanded(
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: Alignment.centerLeft,
-                child: Text(
-                  money(item.used),
-                  style: const TextStyle(
-                    color: Color(0xFF1F2937),
-                    fontSize: 22,
+            const SizedBox(height: 16),
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                Expanded(
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      money(item.used),
+                      style: const TextStyle(
+                        color: Color(0xFF1F2937),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                ),
+                Text(
+                  '$percentText%',
+                  style: TextStyle(
+                    color: visual.foreground,
+                    fontSize: 16,
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-              ),
+              ],
             ),
+            const SizedBox(height: 2),
+            if (item.budget.note?.trim().isNotEmpty == true) ...[
+              const SizedBox(height: 8),
+              Text(
+                item.budget.note!,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+              ),
+            ],
             Text(
-              '$percentText%',
-              style: TextStyle(
-                color: visual.foreground,
-                fontSize: 16,
-                fontWeight: FontWeight.w700,
+              'dari ${money(item.budget.amountLimit)}',
+              style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+            ),
+            const SizedBox(height: 12),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(10),
+              child: SizedBox(
+                height: 10,
+                child: Stack(
+                  children: [
+                    const Positioned.fill(
+                      child: ColoredBox(color: Color(0xFFEEF2F5)),
+                    ),
+                    FractionallySizedBox(
+                      widthFactor: (item.percent / 100)
+                          .clamp(0.0, 1.0)
+                          .toDouble(),
+                      child: DecoratedBox(
+                        decoration: BoxDecoration(gradient: visual.gradient),
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ),
-          ]),
-          const SizedBox(height: 2),
-          Text(
-            'dari ${money(item.budget.amountLimit)}',
-            style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
-          ),
-          const SizedBox(height: 12),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(10),
-            child: SizedBox(
-              height: 10,
-              child: Stack(children: [
-                const Positioned.fill(
-                  child: ColoredBox(color: Color(0xFFEEF2F5)),
-                ),
-                FractionallySizedBox(
-                  widthFactor: (item.percent / 100).clamp(0.0, 1.0).toDouble(),
-                  child: DecoratedBox(
-                    decoration: BoxDecoration(gradient: visual.gradient),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    status,
+                    style: TextStyle(
+                      color: visual.foreground,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w500,
+                    ),
                   ),
                 ),
-              ]),
+                const SizedBox(width: 8),
+                _StatusChip(visual: visual),
+              ],
             ),
-          ),
-          const SizedBox(height: 10),
-          Row(children: [
-            Expanded(
-              child: Text(
-                status,
-                style: TextStyle(
-                  color: visual.foreground,
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                ),
-              ),
-            ),
-            const SizedBox(width: 8),
-            _StatusChip(visual: visual),
-          ]),
-        ]),
+          ],
+        ),
       ),
     );
   }
@@ -456,20 +487,20 @@ class _StatusChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-        decoration: BoxDecoration(
-          color: visual.background,
-          borderRadius: BorderRadius.circular(99),
-        ),
-        child: Text(
-          visual.label,
-          style: TextStyle(
-            color: visual.foreground,
-            fontSize: 10,
-            fontWeight: FontWeight.w600,
-          ),
-        ),
-      );
+    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+    decoration: BoxDecoration(
+      color: visual.background,
+      borderRadius: BorderRadius.circular(99),
+    ),
+    child: Text(
+      visual.label,
+      style: TextStyle(
+        color: visual.foreground,
+        fontSize: 10,
+        fontWeight: FontWeight.w600,
+      ),
+    ),
+  );
 }
 
 class _BudgetVisual {
@@ -486,39 +517,31 @@ class _BudgetVisual {
   final LinearGradient gradient;
 
   factory _BudgetVisual.forLevel(BudgetLevel level) => switch (level) {
-        BudgetLevel.safe => const _BudgetVisual(
-            label: 'Aman < 75%',
-            background: Color(0xFFCCFBF1),
-            foreground: Color(0xFF0F766E),
-            gradient: LinearGradient(
-              colors: [Color(0xFF14B8A6), Color(0xFF10B981)],
-            ),
-          ),
-        BudgetLevel.warning => const _BudgetVisual(
-            label: 'Waspada 75%',
-            background: Color(0xFFFEF3C7),
-            foreground: Color(0xFFB45309),
-            gradient: LinearGradient(
-              colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)],
-            ),
-          ),
-        BudgetLevel.critical => const _BudgetVisual(
-            label: 'Kritis 90%',
-            background: Color(0xFFFFEDD5),
-            foreground: Color(0xFFC2410C),
-            gradient: LinearGradient(
-              colors: [Color(0xFFFB923C), Color(0xFFEA580C)],
-            ),
-          ),
-        BudgetLevel.exceeded => const _BudgetVisual(
-            label: 'Habis 100%',
-            background: Color(0xFFFFE4E9),
-            foreground: Color(0xFFF43F5E),
-            gradient: LinearGradient(
-              colors: [Color(0xFFFB7185), Color(0xFFF43F5E)],
-            ),
-          ),
-      };
+    BudgetLevel.safe => const _BudgetVisual(
+      label: 'Aman < 75%',
+      background: Color(0xFFCCFBF1),
+      foreground: Color(0xFF0F766E),
+      gradient: LinearGradient(colors: [Color(0xFF14B8A6), Color(0xFF10B981)]),
+    ),
+    BudgetLevel.warning => const _BudgetVisual(
+      label: 'Waspada 75%',
+      background: Color(0xFFFEF3C7),
+      foreground: Color(0xFFB45309),
+      gradient: LinearGradient(colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)]),
+    ),
+    BudgetLevel.critical => const _BudgetVisual(
+      label: 'Kritis 90%',
+      background: Color(0xFFFFEDD5),
+      foreground: Color(0xFFC2410C),
+      gradient: LinearGradient(colors: [Color(0xFFFB923C), Color(0xFFEA580C)]),
+    ),
+    BudgetLevel.exceeded => const _BudgetVisual(
+      label: 'Habis 100%',
+      background: Color(0xFFFFE4E9),
+      foreground: Color(0xFFF43F5E),
+      gradient: LinearGradient(colors: [Color(0xFFFB7185), Color(0xFFF43F5E)]),
+    ),
+  };
 }
 
 class _Empty extends StatelessWidget {
@@ -575,9 +598,12 @@ class _Error extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          Text(message),
-          TextButton(onPressed: onRetry, child: const Text('Coba lagi')),
-        ]),
-      );
+    child: Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(message),
+        TextButton(onPressed: onRetry, child: const Text('Coba lagi')),
+      ],
+    ),
+  );
 }

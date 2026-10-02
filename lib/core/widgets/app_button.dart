@@ -114,40 +114,38 @@ class _Look {
   final List<BoxShadow>? shadow;
 
   static _Look of(AppButtonKind kind) => switch (kind) {
-        AppButtonKind.primary => const _Look(
-            foreground: Colors.white,
-            gradient: AppColors.primaryGradient,
-            shadow: [
-              BoxShadow(
-                color: Color(0x590F766E),
-                blurRadius: 22,
-                offset: Offset(0, 10),
-              ),
-            ],
-          ),
-        AppButtonKind.soft => const _Look(
-            foreground: AppColors.teal,
-            background: AppColors.mint,
-          ),
-        AppButtonKind.outline => const _Look(
-            foreground: AppColors.teal,
-            background: AppColors.surface,
-            border: Border.fromBorderSide(
-              BorderSide(color: AppColors.tealLight, width: 1.5),
-            ),
-          ),
-        AppButtonKind.danger => const _Look(
-            foreground: Colors.white,
-            gradient: LinearGradient(
-              colors: [Color(0xFFE11D48), AppColors.coral],
-            ),
-            shadow: [
-              BoxShadow(
-                color: Color(0x59F43F5E),
-                blurRadius: 22,
-                offset: Offset(0, 10),
-              ),
-            ],
-          ),
-      };
+    AppButtonKind.primary => const _Look(
+      foreground: Colors.white,
+      gradient: AppColors.primaryGradient,
+      shadow: [
+        BoxShadow(
+          color: Color(0x590F766E),
+          blurRadius: 22,
+          offset: Offset(0, 10),
+        ),
+      ],
+    ),
+    AppButtonKind.soft => const _Look(
+      foreground: AppColors.teal,
+      background: AppColors.mint,
+    ),
+    AppButtonKind.outline => const _Look(
+      foreground: AppColors.teal,
+      background: AppColors.surface,
+      border: Border.fromBorderSide(
+        BorderSide(color: AppColors.tealLight, width: 1.5),
+      ),
+    ),
+    AppButtonKind.danger => const _Look(
+      foreground: Colors.white,
+      gradient: LinearGradient(colors: [Color(0xFFE11D48), AppColors.coral]),
+      shadow: [
+        BoxShadow(
+          color: Color(0x59F43F5E),
+          blurRadius: 22,
+          offset: Offset(0, 10),
+        ),
+      ],
+    ),
+  };
 }

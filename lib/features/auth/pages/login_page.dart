@@ -16,31 +16,46 @@ class _LoginPageState extends State<LoginPage> {
   String? error;
 
   Future<void> start() async {
-    setState(() { busy = true; error = null; });
+    setState(() {
+      busy = true;
+      error = null;
+    });
     try {
       final auth = Get.find<AuthController>();
       await auth.markRegistered();
       if (mounted) Get.offAllNamed(AppRoutes.home);
     } catch (_) {
-      if (mounted) setState(() { busy = false; error = 'Gagal menyiapkan aplikasi. Coba lagi.'; });
+      if (mounted) {
+        setState(() {
+          busy = false;
+          error = 'Gagal menyiapkan aplikasi. Coba lagi.';
+        });
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) => AuthScaffold(
-        icon: Icons.account_balance_wallet_outlined,
-        title: 'Mulai kelola uangmu',
-        description: 'DompetKu mencatat pemasukan dan pengeluaran secara pribadi di perangkat ini. Tidak perlu akun atau koneksi internet.',
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            if (error != null) ...[Text(error!, style: TextStyle(color: Theme.of(context).colorScheme.error)), const SizedBox(height: 16)],
-            FilledButton.icon(
-              onPressed: busy ? null : start,
-              icon: const Icon(Icons.arrow_forward_rounded),
-              label: Text(busy ? 'Menyiapkan…' : 'Mulai'),
-            ),
-          ],
+    icon: Icons.account_balance_wallet_outlined,
+    title: 'Mulai kelola uangmu',
+    description:
+        'DompetKu mencatat pemasukan dan pengeluaran secara pribadi di perangkat ini. Tidak perlu akun atau koneksi internet.',
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        if (error != null) ...[
+          Text(
+            error!,
+            style: TextStyle(color: Theme.of(context).colorScheme.error),
+          ),
+          const SizedBox(height: 16),
+        ],
+        FilledButton.icon(
+          onPressed: busy ? null : start,
+          icon: const Icon(Icons.arrow_forward_rounded),
+          label: Text(busy ? 'Menyiapkan…' : 'Mulai'),
         ),
-      );
+      ],
+    ),
+  );
 }

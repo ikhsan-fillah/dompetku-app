@@ -80,7 +80,10 @@ class _Row extends StatelessWidget {
                   '${item.categoryName} · ${DateLabel.day(item.date)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(fontSize: 10.5, color: AppColors.muted),
+                  style: const TextStyle(
+                    fontSize: 10.5,
+                    color: AppColors.muted,
+                  ),
                 ),
               ],
             ),

@@ -49,8 +49,15 @@ final _data = [
   _tx(1, TransactionType.expense, 1, 10, DateTime(2026, 9, 28, 9)),
   _tx(2, TransactionType.expense, 1, 20, DateTime(2026, 9, 28, 15)),
   _tx(3, TransactionType.income, 2, 500, DateTime(2026, 9, 25, 10)),
-  _tx(4, TransactionType.expense, 2, 30, DateTime(2026, 9, 29, 8),
-      title: 'Isi bensin', note: 'Pertalite'),
+  _tx(
+    4,
+    TransactionType.expense,
+    2,
+    30,
+    DateTime(2026, 9, 29, 8),
+    title: 'Isi bensin',
+    note: 'Pertalite',
+  ),
 ];
 
 void main() {
@@ -82,13 +89,14 @@ void main() {
   });
 
   test('pencarian mencakup judul, catatan, dan nama kategori', () {
-    List<int> ids(String query) => _service
-        .build(transactions: _data, categories: categories, query: query)
-        .groups
-        .expand((g) => g.items)
-        .map((i) => i.id)
-        .toList()
-      ..sort();
+    List<int> ids(String query) =>
+        _service
+            .build(transactions: _data, categories: categories, query: query)
+            .groups
+            .expand((g) => g.items)
+            .map((i) => i.id)
+            .toList()
+          ..sort();
 
     expect(ids('makanan'), [1, 2]);
     expect(ids('PERTALITE'), [4]);

@@ -9,7 +9,9 @@ List<int> roundPercentages(List<double> values) {
   var remaining = 100 - floors.fold<int>(0, (a, b) => a + b);
   final order = List<int>.generate(values.length, (i) => i)
     ..sort((a, b) {
-      final byRemainder = (scaled[b] - floors[b]).compareTo(scaled[a] - floors[a]);
+      final byRemainder = (scaled[b] - floors[b]).compareTo(
+        scaled[a] - floors[a],
+      );
       return byRemainder != 0 ? byRemainder : a.compareTo(b);
     });
   for (final index in order) {

@@ -23,10 +23,10 @@ class BiometricUnlockPage extends StatelessWidget {
         final message = locked
             ? 'Terkunci sementara sampai ${until == null ? '-' : TimeOfDay.fromDateTime(until.toLocal()).format(context)}.'
             : status == BiometricStatus.unavailable
-                ? 'Biometrik tidak tersedia. Periksa pengaturan perangkat.'
-                : status == BiometricStatus.failed
-                    ? 'Autentikasi gagal. Silakan coba lagi.'
-                    : 'Data keuanganmu tersimpan hanya di perangkat ini.';
+            ? 'Biometrik tidak tersedia. Periksa pengaturan perangkat.'
+            : status == BiometricStatus.failed
+            ? 'Autentikasi gagal. Silakan coba lagi.'
+            : 'Data keuanganmu tersimpan hanya di perangkat ini.';
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

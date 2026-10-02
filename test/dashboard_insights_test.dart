@@ -46,20 +46,23 @@ TransactionModel _tx(int id, int categoryId, int amount, DateTime date) {
 
 void main() {
   group('favoriteCards', () {
-    test('favorit lebih dulu lalu diisi kategori dengan pengeluaran terbesar', () {
-      final cards = _service.favoriteCards(
-        totals: {2: 500, 3: 900, 4: 100, 5: 300},
-        categories: [
-          _cat(1, 'A', favorite: true),
-          _cat(2, 'B'),
-          _cat(3, 'C'),
-          _cat(4, 'D'),
-          _cat(5, 'E'),
-        ],
-      );
-      expect(cards.map((c) => c.categoryId).toList(), [1, 3, 2, 5]);
-      expect(cards.first.amount, 0);
-    });
+    test(
+      'favorit lebih dulu lalu diisi kategori dengan pengeluaran terbesar',
+      () {
+        final cards = _service.favoriteCards(
+          totals: {2: 500, 3: 900, 4: 100, 5: 300},
+          categories: [
+            _cat(1, 'A', favorite: true),
+            _cat(2, 'B'),
+            _cat(3, 'C'),
+            _cat(4, 'D'),
+            _cat(5, 'E'),
+          ],
+        );
+        expect(cards.map((c) => c.categoryId).toList(), [1, 3, 2, 5]);
+        expect(cards.first.amount, 0);
+      },
+    );
 
     test('kategori arsip dan pemasukan tidak dipakai', () {
       final cards = _service.favoriteCards(

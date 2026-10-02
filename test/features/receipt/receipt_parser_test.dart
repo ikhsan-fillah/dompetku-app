@@ -5,8 +5,10 @@ void main() {
   const parser = ReceiptParser();
 
   group('ReceiptParser', () {
-    test('mengurai struk minimarket dan mengabaikan subtotal, tunai, kembali', () {
-      const raw = """
+    test(
+      'mengurai struk minimarket dan mengabaikan subtotal, tunai, kembali',
+      () {
+        const raw = """
 ALFAMART CILANDAK
 JL. TB SIMATUPANG NO 5
 25/09/2026 14:32
@@ -17,12 +19,13 @@ TOTAL 34.500
 TUNAI 50.000
 KEMBALI 15.500
 """;
-      final result = parser.parse(raw);
-      expect(result.merchant, 'ALFAMART CILANDAK');
-      expect(result.date, DateTime(2026, 9, 25));
-      expect(result.total, 34500);
-      expect(result.isComplete, isTrue);
-    });
+        final result = parser.parse(raw);
+        expect(result.merchant, 'ALFAMART CILANDAK');
+        expect(result.date, DateTime(2026, 9, 25));
+        expect(result.total, 34500);
+        expect(result.isComplete, isTrue);
+      },
+    );
 
     test('grand total mengalahkan total biasa', () {
       const raw = """

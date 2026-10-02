@@ -87,42 +87,40 @@ void main() {
       expect(progress.remaining, -200000);
     });
 
-    test('tanggal anggaran yang tersimpan dalam UTC dibaca sebagai hari lokal',
-        () {
-      final progress = _service.budgetProgress(
-        [_tx(100000)],
-        _budget(
-          start: DateTime(2026, 9, 1).toUtc(),
-          end: DateTime(2026, 9, 30).toUtc(),
-        ),
-        now: _now,
-      );
-      expect(progress.totalDays, 30);
-      expect(progress.used, 100000);
-    });
+    test(
+      'tanggal anggaran yang tersimpan dalam UTC dibaca sebagai hari lokal',
+      () {
+        final progress = _service.budgetProgress(
+          [_tx(100000)],
+          _budget(
+            start: DateTime(2026, 9, 1).toUtc(),
+            end: DateTime(2026, 9, 30).toUtc(),
+          ),
+          now: _now,
+        );
+        expect(progress.totalDays, 30);
+        expect(progress.used, 100000);
+      },
+    );
   });
 
   group('activeOverallBudget', () {
     test('memilih anggaran keseluruhan yang berlaku', () {
-      final active = _service.activeOverallBudget(
-        [
-          _budget(categoryId: 3),
-          _budget(archived: true),
-          _budget(start: DateTime(2026, 8, 1), end: DateTime(2026, 8, 31)),
-          _budget(limit: 777),
-        ],
-        now: _now,
-      );
+      final active = _service.activeOverallBudget([
+        _budget(categoryId: 3),
+        _budget(archived: true),
+        _budget(start: DateTime(2026, 8, 1), end: DateTime(2026, 8, 31)),
+        _budget(limit: 777),
+      ], now: _now);
       expect(active, isNotNull);
       expect(active!.amountLimit, 777);
     });
 
     test('tidak ada anggaran berlaku menghasilkan null', () {
       expect(
-        _service.activeOverallBudget(
-          [_budget(start: DateTime(2026, 8, 1), end: DateTime(2026, 8, 31))],
-          now: _now,
-        ),
+        _service.activeOverallBudget([
+          _budget(start: DateTime(2026, 8, 1), end: DateTime(2026, 8, 31)),
+        ], now: _now),
         isNull,
       );
     });

@@ -72,8 +72,9 @@ class ReceiptParser {
   ];
 
   static final _isoDate = RegExp(r'\b(\d{4})[/\-.](\d{1,2})[/\-.](\d{1,2})\b');
-  static final _numericDate =
-      RegExp(r'\b(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4}|\d{2})\b');
+  static final _numericDate = RegExp(
+    r'\b(\d{1,2})[/\-.](\d{1,2})[/\-.](\d{4}|\d{2})\b',
+  );
   static final _namedDate = RegExp(
     r'\b(\d{1,2})\s+(jan|feb|mar|apr|mei|may|jun|jul|agu|ags|aug|sep|okt|oct|nov|des|dec)[a-z]*\.?\s+(\d{4})\b',
     caseSensitive: false,
@@ -163,7 +164,8 @@ class ReceiptParser {
     for (var i = 0; i < lines.length; i++) {
       final priority = _totalPriority(lines[i].toLowerCase());
       if (priority == 0 || priority < bestPriority) continue;
-      final amount = _amountOnLine(lines[i]) ??
+      final amount =
+          _amountOnLine(lines[i]) ??
           (i + 1 < lines.length ? _amountOnlyLine(lines[i + 1]) : null);
       if (amount == null) continue;
       best = amount;
@@ -189,7 +191,10 @@ class ReceiptParser {
   }
 
   int? _amountOnlyLine(String line) {
-    final stripped = line.replaceAll(RegExp(r'rp\.?', caseSensitive: false), '');
+    final stripped = line.replaceAll(
+      RegExp(r'rp\.?', caseSensitive: false),
+      '',
+    );
     if (_letter.hasMatch(stripped)) return null;
     return _amountOnLine(line);
   }

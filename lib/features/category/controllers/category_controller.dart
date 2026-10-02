@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 
-
 import '../../../core/constant/domain_enums.dart';
 import '../../../core/services/data_refresh_service.dart';
 import '../../../core/state/resource_state.dart';
@@ -8,15 +7,12 @@ import '../../../core/utils/validator.dart';
 import '../models/category_model.dart';
 import '../repositories/category_repository.dart';
 
-
 class CategoryController extends GetxController {
   CategoryController(this._repository);
-
 
   final CategoryRepository _repository;
   final state = const ResourceState<List<CategoryModel>>.idle().obs;
   final selectedType = TransactionType.expense.obs;
-
 
   /// Kategori aktif untuk tipe yang sedang dipilih, sesuai urutan tersimpan.
   List<CategoryModel> get visibleCategories {
@@ -24,18 +20,15 @@ class CategoryController extends GetxController {
     return data.where((c) => c.type == selectedType.value).toList();
   }
 
-
   void setType(TransactionType type) {
     selectedType.value = type;
   }
-
 
   @override
   void onInit() {
     super.onInit();
     load();
   }
-
 
   /// Memuat kategori. Bila [silent] true dan data sudah tampil,
   /// layar tidak berkedip ke keadaan memuat.
@@ -44,13 +37,16 @@ class CategoryController extends GetxController {
       state.value = const ResourceState.loading();
     }
     try {
-      final categories = await _repository.getAll(includeArchived: includeArchived);
-      state.value = categories.isEmpty ? const ResourceState.empty() : ResourceState.success(categories);
+      final categories = await _repository.getAll(
+        includeArchived: includeArchived,
+      );
+      state.value = categories.isEmpty
+          ? const ResourceState.empty()
+          : ResourceState.success(categories);
     } catch (_) {
       state.value = const ResourceState.error('Gagal memuat kategori.');
     }
   }
-
 
   /// Memberi tahu dashboard dan layar lain bahwa data kategori berubah.
   void _notifyDataChanged() {
@@ -59,14 +55,12 @@ class CategoryController extends GetxController {
     }
   }
 
-
   Future<bool> _reloadAfterWrite() async {
     await load(silent: true);
     final ok = state.value.status != ResourceStatus.error;
     if (ok) _notifyDataChanged();
     return ok;
   }
-
 
   Future<bool> save(CategoryModel category) async {
     final nameError = requiredText(category.name, fieldName: 'Nama kategori');
@@ -87,7 +81,6 @@ class CategoryController extends GetxController {
     }
   }
 
-
   /// Mengarsipkan kategori. Transaksi yang memakainya tetap aman.
   Future<bool> archive(int id) async {
     try {
@@ -99,17 +92,17 @@ class CategoryController extends GetxController {
     }
   }
 
-
   Future<bool> reorder(List<int> ids) async {
     try {
       await _repository.reorder(ids);
       return await _reloadAfterWrite();
     } catch (_) {
-      state.value = const ResourceState.error('Gagal mengubah urutan kategori.');
+      state.value = const ResourceState.error(
+        'Gagal mengubah urutan kategori.',
+      );
       return false;
     }
   }
-
 
   Future<bool> toggleFavorite(CategoryModel category) async {
     if (category.id == null) return false;
@@ -130,7 +123,6 @@ class CategoryController extends GetxController {
     );
   }
 
-
   /// Memindahkan kategori pada daftar tipe terpilih. Posisi tipe lain tetap.
   Future<bool> moveWithinType(int oldIndex, int newIndex) async {
     final all = state.value.data;
@@ -138,15 +130,12 @@ class CategoryController extends GetxController {
     final visible = all.where((c) => c.type == selectedType.value).toList();
     if (oldIndex < 0 || oldIndex >= visible.length) return false;
 
-
     var target = newIndex;
     if (target > oldIndex) target -= 1;
     target = target.clamp(0, visible.length - 1);
 
-
     final moved = visible.removeAt(oldIndex);
     visible.insert(target, moved);
-
 
     final result = <CategoryModel>[...all];
     var cursor = 0;

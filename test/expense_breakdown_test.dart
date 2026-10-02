@@ -6,9 +6,17 @@ import 'package:flutter_test/flutter_test.dart';
 void main() {
   final now = DateTime(2026, 9, 28);
   CategoryModel category(int id, String name) => CategoryModel(
-    id: id, name: name, type: TransactionType.expense, iconKey: 'more_horiz',
-    colorValue: 0xFF0F766E, isDefault: false, isFavorite: false, sortOrder: id,
-    isArchived: false, createdAt: now, updatedAt: now,
+    id: id,
+    name: name,
+    type: TransactionType.expense,
+    iconKey: 'more_horiz',
+    colorValue: 0xFF0F766E,
+    isDefault: false,
+    isFavorite: false,
+    sortOrder: id,
+    isArchived: false,
+    createdAt: now,
+    updatedAt: now,
   );
 
   test('orders expenses descending and calculates exact proportions', () {

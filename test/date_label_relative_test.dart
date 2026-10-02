@@ -5,11 +5,17 @@ void main() {
   final now = DateTime(2026, 9, 29, 14, 30);
 
   test('hari yang sama disebut Hari ini', () {
-    expect(DateLabel.relativeDay(DateTime(2026, 9, 29, 1), now: now), 'Hari ini');
+    expect(
+      DateLabel.relativeDay(DateTime(2026, 9, 29, 1), now: now),
+      'Hari ini',
+    );
   });
 
   test('sehari sebelumnya disebut Kemarin', () {
-    expect(DateLabel.relativeDay(DateTime(2026, 9, 28, 23), now: now), 'Kemarin');
+    expect(
+      DateLabel.relativeDay(DateTime(2026, 9, 28, 23), now: now),
+      'Kemarin',
+    );
   });
 
   test('lebih lama memakai tanggal lengkap', () {

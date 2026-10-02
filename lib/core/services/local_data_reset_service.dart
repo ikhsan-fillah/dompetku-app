@@ -3,11 +3,7 @@ import 'secure_storage_service.dart';
 import 'shared_prefs_service.dart';
 
 class LocalDataResetService {
-  LocalDataResetService(
-    this._database,
-    this._preferences,
-    this._secureStorage,
-  );
+  LocalDataResetService(this._database, this._preferences, this._secureStorage);
 
   final AppDatabase _database;
   final SharedPrefsService _preferences;

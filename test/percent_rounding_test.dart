@@ -9,8 +9,13 @@ void main() {
   });
 
   test('contoh mockup 38/22/18/12/10 tetap utuh', () {
-    expect(roundPercentages([1387000, 803000, 657000, 438000, 365000]),
-        [38, 22, 18, 12, 10]);
+    expect(roundPercentages([1387000, 803000, 657000, 438000, 365000]), [
+      38,
+      22,
+      18,
+      12,
+      10,
+    ]);
   });
 
   test('selalu berjumlah 100 untuk pecahan sulit', () {
