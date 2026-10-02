@@ -6,6 +6,7 @@ import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/budget_status.dart';
+import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../controllers/budget_controller.dart';
@@ -63,68 +64,56 @@ class BudgetPage extends GetView<BudgetController> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-        backgroundColor: Colors.transparent,
-        floatingActionButton: Padding(
-          padding: const EdgeInsets.only(bottom: 84),
-          child: FloatingActionButton.extended(
-            onPressed: _openForm,
-            backgroundColor: AppColors.teal,
-            foregroundColor: Colors.white,
-            icon: const Icon(Icons.add),
-            label: const Text('Tambah'),
-          ),
+    backgroundColor: Colors.transparent,
+    body: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _Header(onArchive: () => Get.toNamed(AppRoutes.budgetArchive)),
+        Expanded(
+          child: Obx(() {
+            final current = controller.state.value;
+            return switch (current.status) {
+              ResourceStatus.idle || ResourceStatus.loading => const Center(
+                child: CircularProgressIndicator(),
+              ),
+              ResourceStatus.empty => _Empty(onCreate: _openForm),
+              ResourceStatus.error => _Error(
+                message: current.message ?? 'Gagal memuat anggaran.',
+                onRetry: controller.load,
+              ),
+              ResourceStatus.success => RefreshIndicator(
+                color: AppColors.teal,
+                onRefresh: controller.load,
+                child: ListView.separated(
+                  physics: const AlwaysScrollableScrollPhysics(),
+                  padding: const EdgeInsets.fromLTRB(
+                    AppSpacing.page,
+                    4,
+                    AppSpacing.page,
+                    160,
+                  ),
+                  itemCount: current.data!.length + 1,
+                  separatorBuilder: (_, _) => const SizedBox(height: 14),
+                  itemBuilder: (itemContext, index) {
+                    if (index == 0) {
+                      return _SummaryHero(items: current.data!, money: _money);
+                    }
+                    final item = current.data![index - 1];
+                    return _BudgetCard(
+                      item: item,
+                      money: _money,
+                      onEdit: () => _openForm(item),
+                      onArchive: () => _confirmArchive(itemContext, item),
+                    );
+                  },
+                ),
+              ),
+            };
+          }),
         ),
-        body: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            _Header(onArchive: () => Get.toNamed(AppRoutes.budgetArchive)),
-            Expanded(
-              child: Obx(() {
-                final current = controller.state.value;
-                return switch (current.status) {
-                  ResourceStatus.idle || ResourceStatus.loading =>
-                    const Center(child: CircularProgressIndicator()),
-                  ResourceStatus.empty => _Empty(onCreate: _openForm),
-                  ResourceStatus.error => _Error(
-                      message: current.message ?? 'Gagal memuat anggaran.',
-                      onRetry: controller.load,
-                    ),
-                  ResourceStatus.success => RefreshIndicator(
-                      color: AppColors.teal,
-                      onRefresh: controller.load,
-                      child: ListView.separated(
-                        physics: const AlwaysScrollableScrollPhysics(),
-                        padding: const EdgeInsets.fromLTRB(
-                          AppSpacing.page,
-                          4,
-                          AppSpacing.page,
-                          160,
-                        ),
-                        itemCount: current.data!.length + 1,
-                        separatorBuilder: (_, _) => const SizedBox(height: 14),
-                        itemBuilder: (itemContext, index) {
-                          if (index == 0) {
-                            return _SummaryHero(
-                              items: current.data!,
-                              money: _money,
-                            );
-                          }
-                          final item = current.data![index - 1];
-                          return _BudgetCard(
-                            item: item,
-                            money: _money,
-                            onEdit: () => _openForm(item),
-                            onArchive: () => _confirmArchive(itemContext, item),
-                          );
-                        },
-                      ),
-                    ),
-                };
-              }),
-            ),
-          ],
-        ),
-      );
+      ],
+    ),
+  );
 }
 
 /// Judul halaman di dalam body (sama seperti tab Profil dan Transaksi).
@@ -186,11 +175,13 @@ class _SummaryHero extends StatelessWidget {
   Widget build(BuildContext context) {
     final scoped = items.where((item) => !item.isOverall).toList();
     final basis = scoped.isEmpty ? items : scoped;
-    final limit = basis.fold<int>(0, (sum, item) => sum + item.budget.amountLimit);
+    final limit = basis.fold<int>(
+      0,
+      (sum, item) => sum + item.budget.amountLimit,
+    );
     final used = basis.fold<int>(0, (sum, item) => sum + item.used);
     final remaining = limit - used;
-    final ratio =
-        limit <= 0 ? 0.0 : (used / limit).clamp(0.0, 1.0).toDouble();
+    final ratio = limit <= 0 ? 0.0 : (used / limit).clamp(0.0, 1.0).toDouble();
     final textTheme = Theme.of(context).textTheme;
 
     return AppCard(
@@ -549,45 +540,47 @@ class _Empty extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32),
-          child: Column(mainAxisSize: MainAxisSize.min, children: [
-            Container(
-              width: 72,
-              height: 72,
-              decoration: BoxDecoration(
-                color: AppColors.mint,
-                borderRadius: BorderRadius.circular(24),
-              ),
-              child: const Icon(
-                Icons.account_balance_wallet_outlined,
-                size: 36,
-                color: AppColors.teal,
-              ),
+    child: Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 32),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 72,
+            height: 72,
+            decoration: BoxDecoration(
+              color: AppColors.mint,
+              borderRadius: BorderRadius.circular(24),
             ),
-            const SizedBox(height: 14),
-            const Text(
-              'Belum ada anggaran',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            child: const Icon(
+              Icons.account_balance_wallet_outlined,
+              size: 36,
+              color: AppColors.teal,
             ),
-            const SizedBox(height: 6),
-            const Text(
-              'Atur batas pengeluaran bulanan agar keuangan lebih terkendali.',
-              textAlign: TextAlign.center,
-              style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
-            ),
-            const SizedBox(height: 16),
-            FilledButton.icon(
-              onPressed: onCreate,
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.teal,
-              ),
-              icon: const Icon(Icons.add),
-              label: const Text('Buat anggaran'),
-            ),
-          ]),
-        ),
-      );
+          ),
+          const SizedBox(height: 14),
+          const Text(
+            'Belum ada anggaran',
+            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+          ),
+          const SizedBox(height: 6),
+          const Text(
+            'Atur batas pengeluaran bulanan agar keuangan lebih terkendali.',
+            textAlign: TextAlign.center,
+            style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+          ),
+          const SizedBox(height: 16),
+          AppButton(
+            expand: false,
+            kind: AppButtonKind.primary,
+            onPressed: onCreate,
+            icon: Icons.add,
+            label: 'Buat anggaran',
+          ),
+        ],
+      ),
+    ),
+  );
 }
 
 class _Error extends StatelessWidget {
