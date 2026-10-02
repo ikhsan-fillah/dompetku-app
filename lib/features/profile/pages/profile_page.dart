@@ -55,23 +55,17 @@ class _ProfilePageState extends State<ProfilePage> {
     await _controller.setDisplayName(_nameField.text);
     if (!mounted) return;
     FocusScope.of(context).unfocus();
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Nama tersimpan.')),
-    );
-  }
-
-  Future<void> _setTheme(String value) async {
-    final saved = await _controller.setThemeMode(value);
-    if (!mounted || saved) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_controller.error.value ?? 'Gagal menyimpan tema.')),
-    );
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(const SnackBar(content: Text('Nama tersimpan.')));
   }
 
   void _showDarkModeMaintenance() {
     ScaffoldMessenger.of(context).showSnackBar(
       const SnackBar(
-        content: Text('Mode gelap sedang dalam perbaikan dan akan segera hadir.'),
+        content: Text(
+          'Mode gelap sedang dalam perbaikan dan akan segera hadir.',
+        ),
       ),
     );
   }
@@ -83,7 +77,9 @@ class _ProfilePageState extends State<ProfilePage> {
     final message = exported
         ? _controller.exportSuccess.value ?? 'Data berhasil diekspor.'
         : _controller.exportError.value ?? 'Gagal mengekspor data. Coba lagi.';
-    ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(
+      context,
+    ).showSnackBar(SnackBar(content: Text(message)));
   }
 
   void _openCategories() => Get.toNamed(AppRoutes.categories);
@@ -102,7 +98,9 @@ class _ProfilePageState extends State<ProfilePage> {
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(22),
+          ),
           title: const Text('Hapus semua data?'),
           content: Column(
             mainAxisSize: MainAxisSize.min,
@@ -119,7 +117,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   labelText: 'Ketik HAPUS untuk melanjutkan',
                   border: OutlineInputBorder(),
                 ),
-                onChanged: (value) => setDialogState(() => canDelete = value == 'HAPUS'),
+                onChanged: (value) =>
+                    setDialogState(() => canDelete = value == 'HAPUS'),
               ),
             ],
           ),
@@ -132,9 +131,13 @@ class _ProfilePageState extends State<ProfilePage> {
               style: FilledButton.styleFrom(
                 backgroundColor: const Color(0xFFF43F5E),
                 disabledBackgroundColor: const Color(0xFFE2E8F0),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(18)),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(18),
+                ),
               ),
-              onPressed: canDelete ? () => Navigator.of(dialogContext).pop(true) : null,
+              onPressed: canDelete
+                  ? () => Navigator.of(dialogContext).pop(true)
+                  : null,
               child: const Text('Hapus semua data'),
             ),
           ],
@@ -151,7 +154,11 @@ class _ProfilePageState extends State<ProfilePage> {
       return;
     }
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(content: Text(_controller.error.value ?? 'Gagal menghapus semua data. Coba lagi.')),
+      SnackBar(
+        content: Text(
+          _controller.error.value ?? 'Gagal menghapus semua data. Coba lagi.',
+        ),
+      ),
     );
   }
 
@@ -159,7 +166,12 @@ class _ProfilePageState extends State<ProfilePage> {
   Widget build(BuildContext context) {
     final textTheme = Theme.of(context).textTheme;
     return ListView(
-      padding: const EdgeInsets.fromLTRB(AppSpacing.page, 12, AppSpacing.page, 130),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        12,
+        AppSpacing.page,
+        130,
+      ),
       children: [
         Text('Profil', style: textTheme.titleLarge),
         const SizedBox(height: 14),
@@ -176,11 +188,17 @@ class _ProfilePageState extends State<ProfilePage> {
                   alignment: Alignment.center,
                   decoration: const BoxDecoration(
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(colors: [AppColors.amber, AppColors.coral]),
+                    gradient: LinearGradient(
+                      colors: [AppColors.amber, AppColors.coral],
+                    ),
                   ),
                   child: Text(
                     _controller.initial,
-                    style: const TextStyle(color: Colors.white, fontSize: 19, fontWeight: FontWeight.w700),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w700,
+                    ),
                   ),
                 ),
                 const SizedBox(width: 14),
@@ -192,12 +210,19 @@ class _ProfilePageState extends State<ProfilePage> {
                         _controller.greetingName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: textTheme.titleMedium?.copyWith(color: Colors.white, fontSize: 17, fontWeight: FontWeight.w700),
+                        style: textTheme.titleMedium?.copyWith(
+                          color: Colors.white,
+                          fontSize: 17,
+                          fontWeight: FontWeight.w700,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '1 dompet · data tersimpan di perangkat ini',
-                        style: textTheme.bodySmall?.copyWith(color: Colors.white.withValues(alpha: 0.9), fontSize: 11.5),
+                        style: textTheme.bodySmall?.copyWith(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          fontSize: 11.5,
+                        ),
                       ),
                     ],
                   ),
@@ -224,7 +249,11 @@ class _ProfilePageState extends State<ProfilePage> {
                 style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
               ),
               const SizedBox(height: 14),
-              AppButton(label: 'Simpan nama', icon: Icons.check_rounded, onPressed: _save),
+              AppButton(
+                label: 'Simpan nama',
+                icon: Icons.check_rounded,
+                onPressed: _save,
+              ),
             ],
           ),
         ),
@@ -266,7 +295,8 @@ class _ProfilePageState extends State<ProfilePage> {
               const SettingsTile(
                 icon: Icons.palette_outlined,
                 title: 'Tema',
-                subtitle: 'Tema terang aktif. Mode gelap masih dalam maintenance.',
+                subtitle:
+                    'Tema terang aktif. Mode gelap masih dalam maintenance.',
                 showDivider: false,
               ),
               const SizedBox(height: 8),
@@ -275,8 +305,16 @@ class _ProfilePageState extends State<ProfilePage> {
                 child: SegmentedButton<String>(
                   showSelectedIcon: false,
                   segments: const [
-                    ButtonSegment<String>(value: 'light', label: Text('Terang'), icon: Icon(Icons.light_mode_outlined)),
-                    ButtonSegment<String>(value: 'dark', label: Text('Gelap'), icon: Icon(Icons.dark_mode_outlined)),
+                    ButtonSegment<String>(
+                      value: 'light',
+                      label: Text('Terang'),
+                      icon: Icon(Icons.light_mode_outlined),
+                    ),
+                    ButtonSegment<String>(
+                      value: 'dark',
+                      label: Text('Gelap'),
+                      icon: Icon(Icons.dark_mode_outlined),
+                    ),
                   ],
                   selected: const {'light'},
                   onSelectionChanged: (_) => _showDarkModeMaintenance(),
@@ -289,14 +327,17 @@ class _ProfilePageState extends State<ProfilePage> {
                   icon: Icons.file_download_outlined,
                   title: 'Ekspor data',
                   subtitle: 'Simpan cadangan di perangkat',
-                  trailing: _controller.exportingData.value ? _spinner : _chevron,
+                  trailing: _controller.exportingData.value
+                      ? _spinner
+                      : _chevron,
                   onTap: _controller.exportingData.value ? null : _exportData,
                 ),
               ),
               Obx(() {
                 final success = _controller.exportSuccess.value;
                 final exportError = _controller.exportError.value;
-                if (success == null && exportError == null) return const SizedBox.shrink();
+                if (success == null && exportError == null)
+                  return const SizedBox.shrink();
                 final isSuccess = success != null;
                 return Padding(
                   padding: const EdgeInsets.only(top: 12, bottom: 4),
@@ -304,14 +345,18 @@ class _ProfilePageState extends State<ProfilePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Icon(
-                        isSuccess ? Icons.check_circle_outline_rounded : Icons.error_outline_rounded,
+                        isSuccess
+                            ? Icons.check_circle_outline_rounded
+                            : Icons.error_outline_rounded,
                         color: isSuccess ? AppColors.emerald : AppColors.coral,
                       ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
                           success ?? exportError!,
-                          style: textTheme.bodySmall?.copyWith(color: isSuccess ? AppColors.teal : AppColors.coral),
+                          style: textTheme.bodySmall?.copyWith(
+                            color: isSuccess ? AppColors.teal : AppColors.coral,
+                          ),
                         ),
                       ),
                     ],

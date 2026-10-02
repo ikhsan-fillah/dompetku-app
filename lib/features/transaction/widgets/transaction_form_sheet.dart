@@ -388,7 +388,9 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
             const SizedBox(height: 16),
             Obx(() {
               final color = _isBudget
-                  ? AppColors.teal
+                  ? (_budgetController?.error.value == null
+                        ? AppColors.teal
+                        : AppColors.coral)
                   : c.type.value == TransactionType.expense
                   ? AppColors.coral
                   : AppColors.income;
