@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/date_range.dart';
 import '../../../core/utils/formatter.dart';
+import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/section_header.dart';
@@ -14,6 +15,7 @@ import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../dashboard/widgets/expense_donut.dart';
 import '../../dashboard/widgets/spending_bars.dart';
 import '../../shell/controllers/main_shell_controller.dart';
+import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../widgets/budget_summary_cards.dart';
 import '../widgets/category_cards_grid.dart';
 import '../widgets/home_app_bar.dart';
@@ -49,6 +51,25 @@ class HomePage extends StatelessWidget {
     }
   }
 
+  /// Data yang ditampilkan: data asli, data nol (periode kosong), atau contoh.
+  DashboardData? _displayData(
+    ResourceState<DashboardData> state,
+    DashboardController controller,
+  ) {
+    switch (state.status) {
+      case ResourceStatus.success:
+        return state.data;
+      case ResourceStatus.empty:
+        return controller.hasAnyTransactions.value
+            ? DashboardData.emptyPeriod()
+            : DashboardData.preview();
+      case ResourceStatus.idle:
+      case ResourceStatus.loading:
+      case ResourceStatus.error:
+        return null;
+    }
+  }
+
   List<Widget> _content(
     ResourceState<DashboardData> state,
     DashboardData? data,
@@ -71,14 +92,6 @@ class HomePage extends StatelessWidget {
           ),
         ];
       case ResourceStatus.empty:
-        return const [
-          AppEmptyView(
-            icon: Icons.receipt_long_outlined,
-            title: 'Belum ada transaksi',
-            message:
-                'Tidak ada transaksi pada periode yang dipilih. Coba pilih periode lain.',
-          ),
-        ];
       case ResourceStatus.success:
         if (data == null) return const [];
         return [
@@ -93,11 +106,13 @@ class HomePage extends StatelessWidget {
               children: [
                 const SectionHeader(title: 'Pengeluaran per kategori'),
                 ExpenseDonut(slices: data.expenses),
-                const SizedBox(height: 8),
-                const Text(
-                  'Urut dari terbesar ke terkecil · ketuk untuk detail',
-                  style: TextStyle(fontSize: 10.5, color: AppColors.muted),
-                ),
+                if (data.expenses.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Urut dari terbesar ke terkecil · ketuk untuk detail',
+                    style: TextStyle(fontSize: 10.5, color: AppColors.muted),
+                  ),
+                ],
               ],
             ),
           ),
@@ -119,8 +134,7 @@ class HomePage extends StatelessWidget {
               items: data.recent,
               onSeeAll: () => _openTab(1),
             ),
-          if (data.insight != null)
-            InsightBanner(message: data.insight!.message),
+          if (data.insight != null) InsightBanner(message: data.insight!.message),
         ];
     }
   }
@@ -134,7 +148,9 @@ class HomePage extends StatelessWidget {
         Expanded(
           child: Obx(() {
             final state = controller.state.value;
-            final data = state.data;
+            final isEmpty = state.status == ResourceStatus.empty;
+            final isPreview = isEmpty && !controller.hasAnyTransactions.value;
+            final data = _displayData(state, controller);
             return ListView(
               padding: const EdgeInsets.fromLTRB(
                 AppSpacing.page,
@@ -143,19 +159,22 @@ class HomePage extends StatelessWidget {
                 130,
               ),
               children: [
-                if (state.status == ResourceStatus.success && data != null) ...[
+                if (isPreview)
+                  _PreviewBanner(onAdd: () => showTransactionSheet(context)),
+                if (data != null) ...[
                   _BalanceCard(data: data),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton.icon(
-                      onPressed: () => Get.toNamed(AppRoutes.report),
-                      icon: const Icon(Icons.bar_chart_rounded, size: 18),
-                      label: const Text('Lihat laporan'),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.teal,
+                  if (!isPreview)
+                    Align(
+                      alignment: Alignment.centerRight,
+                      child: TextButton.icon(
+                        onPressed: () => Get.toNamed(AppRoutes.report),
+                        icon: const Icon(Icons.bar_chart_rounded, size: 18),
+                        label: const Text('Lihat laporan'),
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.teal,
+                        ),
                       ),
                     ),
-                  ),
                 ],
                 PeriodChips(
                   selected: controller.preset.value,
@@ -168,12 +187,110 @@ class HomePage extends StatelessWidget {
                   },
                 ),
                 const _AutoRefreshHint(),
+                if (isEmpty && !isPreview) const _EmptyPeriodNote(),
                 ..._content(state, data, controller),
               ],
             );
           }),
         ),
       ],
+    );
+  }
+}
+
+/// Penanda bahwa isi Beranda masih contoh sampai transaksi pertama dicatat.
+class _PreviewBanner extends StatelessWidget {
+  const _PreviewBanner({required this.onAdd});
+
+  final VoidCallback onAdd;
+
+  @override
+  Widget build(BuildContext context) {
+    return AppCard(
+      padding: const EdgeInsets.all(14),
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [AppColors.mint, Color(0xFFA7F3D0)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.auto_awesome_rounded,
+                  size: 20,
+                  color: AppColors.teal,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Contoh tampilan',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Angka di bawah hanya contoh. Data aslimu muncul setelah kamu mencatat transaksi pertama.',
+                      style: TextStyle(fontSize: 11.5, color: AppColors.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 12),
+          AppButton(
+            label: 'Catat transaksi pertama',
+            icon: Icons.add_rounded,
+            onPressed: onAdd,
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Catatan kecil bila periode terpilih kosong tetapi pengguna punya transaksi lain.
+class _EmptyPeriodNote extends StatelessWidget {
+  const _EmptyPeriodNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 14),
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.mintSoft,
+        borderRadius: BorderRadius.circular(14),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.info_outline_rounded, size: 18, color: AppColors.teal),
+          SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              'Tidak ada transaksi pada periode ini. Coba pilih periode lain.',
+              style: TextStyle(fontSize: 12, color: AppColors.muted),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
