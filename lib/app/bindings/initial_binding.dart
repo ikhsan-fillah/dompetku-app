@@ -79,13 +79,15 @@ class InitialBinding extends Bindings {
       () => ReportController(Get.find(), Get.find(), Get.find()),
       fenix: true,
     );
+    // Tipe eksplisit: parameter ProfileController bertipe nullable, sehingga
+    // Get.find() tanpa tipe akan mencari 'Tipe?' dan gagal ditemukan.
     Get.lazyPut(
       () => ProfileController(
-        Get.find(),
-        resetService: Get.find(),
-        authController: Get.find(),
-        exportService: Get.find(),
-        exportFileService: Get.find(),
+        Get.find<SharedPrefsService>(),
+        resetService: Get.find<LocalDataResetService>(),
+        authController: Get.find<AuthController>(),
+        exportService: Get.find<LocalDataExportService>(),
+        exportFileService: Get.find<LocalExportFileService>(),
       ),
       fenix: true,
     );
