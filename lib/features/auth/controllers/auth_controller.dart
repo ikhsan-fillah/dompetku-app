@@ -39,11 +39,16 @@ class AuthController extends GetxController {
       biometricStatus.value = BiometricStatus.required;
       await _sessionRepository.saveBiometricFailureState(count: 0);
     }
+    // Aplikasi pribadi: pengguna yang sudah pernah login langsung masuk.
+    if (isRegistered.value) {
+      unlock();
+    }
   }
 
   Future<void> markRegistered() async {
     await _sessionRepository.setRegistered(true);
     isRegistered.value = true;
+    unlock();
   }
 
   void lock() => isUnlocked.value = false;
@@ -70,8 +75,7 @@ class AuthController extends GetxController {
     biometricEnabled.value = value;
   }
 
-  Future<bool> setupBiometric() async {
-    lock();
+  Future<bool> setupBiometric() {
     return _authenticate(enableAfterSuccess: true);
   }
 

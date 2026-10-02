@@ -1,12 +1,9 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+
 import 'app/bindings/initial_binding.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
-import 'core/constant/app_constant.dart';
-import 'core/services/app_lock_service.dart';
 import 'core/services/data_refresh_service.dart';
 import 'core/services/shared_prefs_service.dart';
 import 'core/theme/app_theme.dart';
@@ -49,36 +46,15 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    unawaited(_handleLifecycle(state));
-  }
-
-  Future<void> _handleLifecycle(AppLifecycleState state) async {
-    if (!Get.isRegistered<AppLockService>() ||
-        !Get.isRegistered<AuthController>()) {
+    if (state != AppLifecycleState.resumed) return;
+    // Aplikasi pribadi: tidak ada kunci ulang saat kembali dari background.
+    // Cukup muat ulang data agar tampilan selalu terbaru.
+    if (!Get.isRegistered<AuthController>() ||
+        !Get.isRegistered<DataRefreshService>()) {
       return;
     }
-    final lockService = Get.find<AppLockService>();
-    final auth = Get.find<AuthController>();
-    if (state == AppLifecycleState.paused) {
-      lockService.onBackgrounded(DateTime.now());
-    } else if (state == AppLifecycleState.resumed) {
-      final now = DateTime.now();
-      var duration = AppConstants.defaultAutoLockDuration;
-      if (Get.isRegistered<SharedPrefsService>()) {
-        final seconds = await Get.find<SharedPrefsService>().getAutoLockSeconds();
-        duration = Duration(seconds: seconds);
-      }
-      final shouldLock =
-          auth.isUnlocked.value &&
-          lockService.shouldLock(now, duration: duration);
-      lockService.onForegrounded();
-      if (shouldLock) {
-        auth.lock();
-        Get.offAllNamed(AppRoutes.biometricUnlock);
-      } else if (auth.isUnlocked.value &&
-          Get.isRegistered<DataRefreshService>()) {
-        Get.find<DataRefreshService>().bump();
-      }
+    if (Get.find<AuthController>().isUnlocked.value) {
+      Get.find<DataRefreshService>().bump();
     }
   }
 

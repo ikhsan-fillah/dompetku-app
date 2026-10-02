@@ -7,11 +7,9 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/date_range.dart';
 import '../../../core/utils/formatter.dart';
-import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/section_header.dart';
-import '../../auth/controllers/auth_controller.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../dashboard/widgets/expense_donut.dart';
 import '../../dashboard/widgets/spending_bars.dart';
@@ -128,67 +126,54 @@ class HomePage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final auth = Get.find<AuthController>();
-    return Obx(() {
-      if (!auth.isUnlocked.value) {
-        return Center(
-          child: AppButton(
-            label: 'Buka dengan biometrik',
-            icon: Icons.fingerprint_rounded,
-            expand: false,
-            onPressed: () => Get.offAllNamed(AppRoutes.biometricUnlock),
-          ),
-        );
-      }
-      final controller = Get.find<DashboardController>();
-      return Column(
-        children: [
-          const HomeAppBar(),
-          Expanded(
-            child: Obx(() {
-              final state = controller.state.value;
-              final data = state.data;
-              return ListView(
-                padding: const EdgeInsets.fromLTRB(
-                  AppSpacing.page,
-                  4,
-                  AppSpacing.page,
-                  130,
-                ),
-                children: [
-                  if (state.status == ResourceStatus.success && data != null) ...[
-                    _BalanceCard(data: data),
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton.icon(
-                        onPressed: () => Get.toNamed(AppRoutes.report),
-                        icon: const Icon(Icons.bar_chart_rounded, size: 18),
-                        label: const Text('Lihat laporan'),
-                        style: TextButton.styleFrom(
-                          foregroundColor: AppColors.teal,
-                        ),
+    final controller = Get.find<DashboardController>();
+    return Column(
+      children: [
+        const HomeAppBar(),
+        Expanded(
+          child: Obx(() {
+            final state = controller.state.value;
+            final data = state.data;
+            return ListView(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.page,
+                4,
+                AppSpacing.page,
+                130,
+              ),
+              children: [
+                if (state.status == ResourceStatus.success && data != null) ...[
+                  _BalanceCard(data: data),
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton.icon(
+                      onPressed: () => Get.toNamed(AppRoutes.report),
+                      icon: const Icon(Icons.bar_chart_rounded, size: 18),
+                      label: const Text('Lihat laporan'),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.teal,
                       ),
                     ),
-                  ],
-                  PeriodChips(
-                    selected: controller.preset.value,
-                    onSelect: (preset) {
-                      if (preset == DateRangePreset.custom) {
-                        _pickCustomRange(context, controller);
-                      } else {
-                        controller.setPreset(preset);
-                      }
-                    },
                   ),
-                  const _AutoRefreshHint(),
-                  ..._content(state, data, controller),
                 ],
-              );
-            }),
-          ),
-        ],
-      );
-    });
+                PeriodChips(
+                  selected: controller.preset.value,
+                  onSelect: (preset) {
+                    if (preset == DateRangePreset.custom) {
+                      _pickCustomRange(context, controller);
+                    } else {
+                      controller.setPreset(preset);
+                    }
+                  },
+                ),
+                const _AutoRefreshHint(),
+                ..._content(state, data, controller),
+              ],
+            );
+          }),
+        ),
+      ],
+    );
   }
 }
 

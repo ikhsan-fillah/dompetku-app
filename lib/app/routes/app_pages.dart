@@ -1,6 +1,5 @@
 import 'package:get/get.dart';
 
-
 import '../../core/services/data_refresh_service.dart';
 import '../../features/auth/controllers/auth_controller.dart';
 import '../../features/auth/pages/biometric_setup_page.dart';
@@ -20,7 +19,6 @@ import '../../features/shell/pages/main_shell_page.dart';
 import '../../features/splash/pages/splash_page.dart';
 import '../../features/transaction/controllers/transaction_form_controller.dart';
 import 'app_routes.dart';
-
 
 class AppPages {
   static final pages = <GetPage>[
@@ -84,13 +82,13 @@ class AppPages {
   ];
 }
 
-
+/// Aplikasi pribadi: cukup sudah pernah login (terdaftar) untuk masuk.
 class FinancialRouteGuard extends GetMiddleware {
   @override
   GetPage? onPageCalled(GetPage? page) {
     if (page == null) return null;
     if (!Get.isRegistered<AuthController>() ||
-        !Get.find<AuthController>().isUnlocked.value) {
+        !Get.find<AuthController>().isRegistered.value) {
       return page.copy(name: AppRoutes.splash, page: () => const SplashPage());
     }
     return page;

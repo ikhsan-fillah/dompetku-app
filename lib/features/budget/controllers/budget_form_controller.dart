@@ -14,6 +14,7 @@ class BudgetFormController extends GetxController {
   final name = ''.obs;
   final amountDigits = ''.obs;
   final categoryId = Rxn<int>();
+  final isOverallMode = true.obs;
   final startDate = _day(DateTime.now()).obs;
   final endDate = _monthEnd(DateTime.now()).obs;
   final availableCategories = <CategoryModel>[].obs;
@@ -22,7 +23,7 @@ class BudgetFormController extends GetxController {
   BudgetModel? _editing;
 
   bool get isEditing => _editing != null;
-  bool get isOverall => categoryId.value == null;
+  bool get isOverall => isOverallMode.value;
   int? get amount => int.tryParse(amountDigits.value);
 
   static DateTime _day(DateTime value) {
@@ -51,6 +52,7 @@ class BudgetFormController extends GetxController {
     name.value = '';
     amountDigits.value = '';
     categoryId.value = null;
+    isOverallMode.value = true;
     startDate.value = DateTime(today.year, today.month, 1);
     endDate.value = _monthEnd(today);
     error.value = null;
@@ -63,6 +65,7 @@ class BudgetFormController extends GetxController {
     name.value = budget.name;
     amountDigits.value = budget.amountLimit.toString();
     categoryId.value = budget.categoryId;
+    isOverallMode.value = budget.categoryId == null;
     startDate.value = _day(budget.startDate);
     endDate.value = _day(budget.endDate);
     error.value = null;
@@ -77,7 +80,12 @@ class BudgetFormController extends GetxController {
   }
 
   void setOverall(bool value) {
-    if (value) categoryId.value = null;
+    isOverallMode.value = value;
+    if (value) {
+      categoryId.value = null;
+    } else if (categoryId.value == null && availableCategories.isNotEmpty) {
+      categoryId.value = availableCategories.first.id;
+    }
     error.value = null;
   }
 
@@ -85,6 +93,9 @@ class BudgetFormController extends GetxController {
     if (name.value.trim().isEmpty) return 'Nama anggaran wajib diisi.';
     if (amount == null || amount! <= 0) {
       return 'Batas anggaran harus lebih dari nol.';
+    }
+    if (!isOverallMode.value && categoryId.value == null) {
+      return 'Pilih kategori untuk anggaran ini.';
     }
     if (startDate.value.isAfter(endDate.value)) {
       return 'Tanggal mulai tidak boleh setelah tanggal selesai.';
@@ -105,7 +116,7 @@ class BudgetFormController extends GetxController {
         id: _editing?.id,
         name: name.value.trim(),
         amountLimit: amount!,
-        categoryId: categoryId.value,
+        categoryId: isOverallMode.value ? null : categoryId.value,
         startDate: startDate.value,
         endDate: endDate.value,
         isArchived: _editing?.isArchived ?? false,
