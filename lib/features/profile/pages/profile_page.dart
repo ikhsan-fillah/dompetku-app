@@ -336,8 +336,9 @@ class _ProfilePageState extends State<ProfilePage> {
               Obx(() {
                 final success = _controller.exportSuccess.value;
                 final exportError = _controller.exportError.value;
-                if (success == null && exportError == null)
+                if (success == null && exportError == null) {
                   return const SizedBox.shrink();
+                }
                 final isSuccess = success != null;
                 return Padding(
                   padding: const EdgeInsets.only(top: 12, bottom: 4),

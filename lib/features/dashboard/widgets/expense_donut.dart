@@ -56,6 +56,7 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
         child: Center(child: Text('Belum ada pengeluaran pada periode ini.')),
       );
     }
+    final isZeroState = _total == 0;
     final percents = roundPercentages([
       for (final s in slices) s.amount.toDouble(),
     ]);
@@ -64,10 +65,12 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
         : null;
 
     final donut = GestureDetector(
-      onTapUp: (details) {
-        final index = _sliceAt(details.localPosition);
-        if (index != null) _toggle(index);
-      },
+      onTapUp: isZeroState
+          ? null
+          : (details) {
+              final index = _sliceAt(details.localPosition);
+              if (index != null) _toggle(index);
+            },
       child: SizedBox(
         width: _size,
         height: _size,
@@ -110,7 +113,7 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
             slice: slices[i],
             percent: percents[i],
             selected: selected == i,
-            onTap: () => _toggle(i),
+            onTap: isZeroState ? null : () => _toggle(i),
           ),
         if (slices.length > _legendLimit)
           Padding(
@@ -123,7 +126,7 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
       ],
     );
 
-    return LayoutBuilder(
+    final layout = LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 300) {
           return Column(children: [donut, const SizedBox(height: 16), legend]);
@@ -137,6 +140,19 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
           ],
         );
       },
+    );
+    return Column(
+      children: [
+        layout,
+        if (isZeroState)
+          const Padding(
+            padding: EdgeInsets.only(top: 8),
+            child: Text(
+              'Belum ada pengeluaran pada periode ini.',
+              style: TextStyle(fontSize: 10.5, color: AppColors.muted),
+            ),
+          ),
+      ],
     );
   }
 }
@@ -197,13 +213,13 @@ class _LegendRow extends StatelessWidget {
   final ExpenseSlice slice;
   final int percent;
   final bool selected;
-  final VoidCallback onTap;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
     final color = CategoryStyle.color(slice.colorValue);
     return Semantics(
-      button: true,
+      button: onTap != null,
       excludeSemantics: true,
       label: '${slice.name}, $percent persen, ${formatIdr(slice.amount)}',
       child: InkWell(
@@ -273,7 +289,6 @@ class _DonutPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final total = slices.fold<int>(0, (sum, s) => sum + s.amount);
-    if (total <= 0) return;
     final rect = Rect.fromCircle(
       center: size.center(Offset.zero),
       radius: size.shortestSide / 2 - 13,
@@ -291,14 +306,20 @@ class _DonutPainter extends CustomPainter {
     const gap = 0.045;
     var start = -math.pi / 2;
     for (var i = 0; i < slices.length; i++) {
-      final sweep = slices[i].amount / total * 2 * math.pi;
+      final sweep = total <= 0
+          ? 2 * math.pi / slices.length
+          : slices[i].amount / total * 2 * math.pi;
       final spaced = sweep > gap * 2;
       final paint = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = selected == i ? 24 : 18
-        ..color = CategoryStyle.color(
-          slices[i].colorValue,
-        ).withValues(alpha: selected == null || selected == i ? 1 : 0.35);
+        ..color = CategoryStyle.color(slices[i].colorValue).withValues(
+          alpha: total <= 0
+              ? 0.45
+              : selected == null || selected == i
+              ? 1
+              : 0.35,
+        );
       canvas.drawArc(
         rect,
         start + (spaced ? gap / 2 : 0),

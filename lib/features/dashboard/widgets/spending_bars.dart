@@ -37,6 +37,7 @@ class _SpendingBarsState extends State<SpendingBars> {
       0,
       (m, b) => b.amount > m ? b.amount : m,
     );
+    final isZeroState = maxAmount == 0;
     final selected = (_selected != null && _selected! < buckets.length)
         ? _selected
         : null;
@@ -50,7 +51,9 @@ class _SpendingBarsState extends State<SpendingBars> {
           child: Align(
             alignment: Alignment.centerLeft,
             child: Text(
-              selected == null
+              isZeroState
+                  ? 'Belum ada pengeluaran pada periode ini.'
+                  : selected == null
                   ? 'Ketuk batang untuk melihat nilai'
                   : '${_rangeLabel(buckets[selected])} · ${formatIdr(buckets[selected].amount)}',
               style: TextStyle(
@@ -58,7 +61,9 @@ class _SpendingBarsState extends State<SpendingBars> {
                 fontWeight: selected == null
                     ? FontWeight.w400
                     : FontWeight.w600,
-                color: selected == null ? AppColors.muted : AppColors.ink,
+                color: isZeroState || selected == null
+                    ? AppColors.muted
+                    : AppColors.ink,
               ),
             ),
           ),
@@ -74,10 +79,13 @@ class _SpendingBarsState extends State<SpendingBars> {
                     padding: const EdgeInsets.symmetric(horizontal: 2.5),
                     child: GestureDetector(
                       behavior: HitTestBehavior.opaque,
-                      onTap: () =>
-                          setState(() => _selected = selected == i ? null : i),
+                      onTap: isZeroState
+                          ? null
+                          : () => setState(
+                              () => _selected = selected == i ? null : i,
+                            ),
                       child: Semantics(
-                        button: true,
+                        button: !isZeroState,
                         label:
                             '${_rangeLabel(buckets[i])}: ${formatIdr(buckets[i].amount)}',
                         excludeSemantics: true,
@@ -102,7 +110,12 @@ class _SpendingBarsState extends State<SpendingBars> {
                               gradient: LinearGradient(
                                 begin: Alignment.topCenter,
                                 end: Alignment.bottomCenter,
-                                colors: selected == i
+                                colors: isZeroState
+                                    ? const [
+                                        Color(0xFFD7E9E5),
+                                        Color(0xFFB9DAD3),
+                                      ]
+                                    : selected == i
                                     ? const [AppColors.amber, AppColors.coral]
                                     : const [Color(0xFF99E6DA), AppColors.mint],
                               ),

@@ -28,13 +28,14 @@ class RecentTransactionsCard extends StatelessWidget {
         children: [
           SectionHeader(
             title: 'Transaksi terbaru',
-            actionLabel: 'Lihat semua',
-            onAction: onSeeAll,
+            actionLabel: items.isEmpty ? null : 'Lihat semua',
+            onAction: items.isEmpty ? null : onSeeAll,
           ),
-          for (var i = 0; i < items.length; i++) ...[
-            if (i > 0) const Divider(height: 1, color: Color(0xFFF1F5F9)),
-            _Row(item: items[i]),
-          ],
+          if (items.isNotEmpty)
+            for (var i = 0; i < items.length; i++) ...[
+              if (i > 0) const Divider(height: 1, color: Color(0xFFF1F5F9)),
+              _Row(item: items[i]),
+            ],
         ],
       ),
     );

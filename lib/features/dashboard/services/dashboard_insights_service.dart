@@ -11,6 +11,62 @@ import '../models/spending_trend_point.dart';
 class DashboardInsightsService {
   const DashboardInsightsService();
 
+  List<CategoryCardData> zeroStateCards(
+    List<CategoryModel> categories, {
+    int limit = 4,
+  }) {
+    final active = categories
+        .where(
+          (category) =>
+              category.id != null &&
+              !category.isArchived &&
+              category.type == TransactionType.expense,
+        )
+        .toList();
+    final chosen = <CategoryModel>[
+      ...active.where((category) => category.isFavorite),
+      ...active.where((category) => !category.isFavorite),
+    ];
+    chosen.sort((a, b) {
+      if (a.isFavorite != b.isFavorite) return a.isFavorite ? -1 : 1;
+      return a.sortOrder.compareTo(b.sortOrder);
+    });
+    const fallback = [
+      (-1, 'Food and drinks', 'restaurant', 0xFFE57373),
+      (-2, 'Transportation', 'directions_car', 0xFF64B5F6),
+      (-3, 'Shopping', 'shopping_bag', 0xFFBA68C8),
+      (-4, 'Bills', 'receipt_long', 0xFFFFB74D),
+    ];
+    final result = <CategoryCardData>[];
+    for (final category in chosen.take(limit)) {
+      result.add(
+        CategoryCardData(
+          categoryId: category.id!,
+          name: category.name,
+          iconKey: category.iconKey,
+          colorValue: category.colorValue,
+          amount: 0,
+          sharePercent: 0,
+        ),
+      );
+    }
+    for (final item in fallback) {
+      if (result.length >= limit) break;
+      if (result.any((card) => card.name == item.$2)) continue;
+      result.add(
+        CategoryCardData(
+          categoryId: item.$1,
+          name: item.$2,
+          iconKey: item.$3,
+          colorValue: item.$4,
+          amount: 0,
+          sharePercent: 0,
+        ),
+      );
+    }
+    return result;
+  }
+
   /// Kategori favorit lebih dulu, sisanya diisi kategori dengan pengeluaran terbesar.
   List<CategoryCardData> favoriteCards({
     required Map<int, int> totals,

@@ -155,12 +155,23 @@ class _TopCategoryCard extends StatelessWidget {
             style: Theme.of(context).textTheme.titleSmall,
           ),
           const SizedBox(height: 12),
-          if (current == null)
+          if (current == null) ...[
+            const CategoryIconBox(
+              icon: Icons.auto_awesome_rounded,
+              color: AppColors.amber,
+              size: 42,
+            ),
+            const SizedBox(height: 10),
             const Text(
               'Belum ada data',
-              style: TextStyle(fontSize: 12, color: AppColors.muted),
-            )
-          else ...[
+              style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 2),
+            const Text(
+              'Kategori teratas akan muncul di sini.',
+              style: TextStyle(fontSize: 11, color: AppColors.muted),
+            ),
+          ] else ...[
             CategoryIconBox(
               icon: Icons.emoji_events_rounded,
               color: CategoryStyle.color(current.colorValue),
