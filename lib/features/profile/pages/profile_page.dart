@@ -41,11 +41,6 @@ class _ProfilePageState extends State<ProfilePage> {
     super.dispose();
   }
 
-  static String _autoLockLabel(int seconds) {
-    if (seconds == 0) return 'Langsung';
-    return '${seconds ~/ 60} menit';
-  }
-
   static const _spinner = SizedBox(
     width: 20,
     height: 20,
@@ -64,31 +59,6 @@ class _ProfilePageState extends State<ProfilePage> {
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(const SnackBar(content: Text('Nama tersimpan.')));
-  }
-
-  Future<void> _setBiometric(bool value) async {
-    final saved = await _controller.setBiometricEnabled(value);
-    if (!mounted || saved) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _controller.error.value ?? 'Gagal menyimpan pengaturan biometrik.',
-        ),
-      ),
-    );
-  }
-
-  Future<void> _setAutoLock(int? value) async {
-    if (value == null) return;
-    final saved = await _controller.setAutoLockSeconds(value);
-    if (!mounted || saved) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          _controller.error.value ?? 'Gagal menyimpan durasi kunci otomatis.',
-        ),
-      ),
-    );
   }
 
   Future<void> _setTheme(String value) async {
@@ -113,25 +83,12 @@ class _ProfilePageState extends State<ProfilePage> {
     ).showSnackBar(SnackBar(content: Text(message)));
   }
 
-  Future<void> _lockApp() async {
-    final locked = await _controller.lockApp();
-    if (!mounted || !locked) {
-      if (mounted && _controller.error.value != null) {
-        ScaffoldMessenger.of(
-          context,
-        ).showSnackBar(SnackBar(content: Text(_controller.error.value!)));
-      }
-      return;
-    }
-    Get.offAllNamed(AppRoutes.biometricUnlock);
-  }
-
   void _openCategories() {
     Get.toNamed(AppRoutes.categories);
   }
 
   void _openBudgetTab() {
-    Get.back();
+    // Profil adalah tab di dalam shell, cukup pindah tab (tanpa Get.back()).
     if (Get.isRegistered<MainShellController>()) {
       Get.find<MainShellController>().select(2);
     }
@@ -201,7 +158,7 @@ class _ProfilePageState extends State<ProfilePage> {
     if (!mounted) return;
 
     if (reset) {
-      Get.offAllNamed('/login');
+      Get.offAllNamed(AppRoutes.login);
       return;
     }
 
@@ -305,59 +262,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 label: 'Simpan nama',
                 icon: Icons.check_rounded,
                 onPressed: _save,
-              ),
-            ],
-          ),
-        ),
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SectionHeader(title: 'Keamanan'),
-              Obx(
-                () => SettingsTile(
-                  icon: Icons.fingerprint_rounded,
-                  title: 'Kunci biometrik',
-                  subtitle: 'Wajib sebelum data tampil',
-                  trailing: Switch.adaptive(
-                    value: _controller.biometricEnabled.value,
-                    onChanged: _controller.savingBiometric.value
-                        ? null
-                        : _setBiometric,
-                  ),
-                ),
-              ),
-              Obx(
-                () => SettingsTile(
-                  icon: Icons.timer_outlined,
-                  title: 'Kunci otomatis',
-                  subtitle: 'Setelah keluar dari aplikasi',
-                  trailing: DropdownButton<int>(
-                    value: _controller.autoLockSeconds.value,
-                    underline: const SizedBox.shrink(),
-                    borderRadius: BorderRadius.circular(18),
-                    items: [
-                      for (final seconds in ProfileController.autoLockOptions)
-                        DropdownMenuItem<int>(
-                          value: seconds,
-                          child: Text(_autoLockLabel(seconds)),
-                        ),
-                    ],
-                    onChanged: _controller.savingAutoLock.value
-                        ? null
-                        : _setAutoLock,
-                  ),
-                ),
-              ),
-              Obx(
-                () => SettingsTile(
-                  icon: Icons.lock_clock_outlined,
-                  title: 'Kunci aplikasi sekarang',
-                  subtitle: 'Minta verifikasi sebelum membuka data',
-                  showDivider: false,
-                  trailing: _controller.lockingApp.value ? _spinner : _chevron,
-                  onTap: _controller.lockingApp.value ? null : _lockApp,
-                ),
               ),
             ],
           ),
