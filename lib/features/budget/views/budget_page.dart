@@ -25,6 +25,34 @@ class BudgetPage extends GetView<BudgetController> {
     await controller.load(silent: true);
   }
 
+  Future<void> _confirmArchive(
+    BuildContext context,
+    BudgetViewModel item,
+  ) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Arsipkan anggaran?'),
+        content: Text(
+          '"${item.budget.name}" dipindahkan ke arsip. Riwayat transaksi tidak ikut terhapus.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Arsipkan'),
+          ),
+        ],
+      ),
+    );
+    if (confirmed == true) {
+      await controller.archive(item.budget.id!);
+    }
+  }
+
   @override
   Widget build(BuildContext context) => Scaffold(
         backgroundColor: const Color(0xFFF6FAF9),
@@ -58,7 +86,7 @@ class BudgetPage extends GetView<BudgetController> {
           return switch (current.status) {
             ResourceStatus.idle || ResourceStatus.loading =>
               const Center(child: CircularProgressIndicator()),
-            ResourceStatus.empty => _Empty(onReload: controller.load),
+            ResourceStatus.empty => _Empty(onCreate: _openForm),
             ResourceStatus.error => _Error(
                 message: current.message ?? 'Gagal memuat anggaran.',
                 onRetry: controller.load,
@@ -67,16 +95,16 @@ class BudgetPage extends GetView<BudgetController> {
                 color: const Color(0xFF0F766E),
                 onRefresh: controller.load,
                 child: ListView.separated(
-                  padding: const EdgeInsets.fromLTRB(16, 16, 16, 120),
+                  padding: const EdgeInsets.fromLTRB(16, 8, 16, 160),
                   itemCount: current.data!.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 14),
-                  itemBuilder: (_, index) {
+                  itemBuilder: (itemContext, index) {
                     final item = current.data![index];
                     return _BudgetCard(
                       item: item,
                       money: _money,
                       onEdit: () => _openForm(item),
-                      onArchive: () => controller.archive(item.budget.id!),
+                      onArchive: () => _confirmArchive(itemContext, item),
                     );
                   },
                 ),
@@ -85,6 +113,9 @@ class BudgetPage extends GetView<BudgetController> {
         }),
       );
 }
+
+String _date(DateTime value) =>
+    '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}';
 
 class _BudgetCard extends StatelessWidget {
   const _BudgetCard({
@@ -109,6 +140,8 @@ class _BudgetCard extends StatelessWidget {
       BudgetLevel.critical => 'Hampir habis • Sisa ${money(item.remaining)}',
       BudgetLevel.exceeded => 'Melebihi batas ${money(-item.remaining)}',
     };
+    final period =
+        '${_date(item.budget.startDate)} – ${_date(item.budget.endDate)}';
 
     return Container(
       decoration: BoxDecoration(
@@ -125,20 +158,43 @@ class _BudgetCard extends StatelessWidget {
       child: Padding(
         padding: const EdgeInsets.all(16),
         child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-          Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+          Row(children: [
+            Container(
+              width: 44,
+              height: 44,
+              decoration: BoxDecoration(
+                color: visual.background,
+                borderRadius: BorderRadius.circular(14),
+              ),
+              child: Icon(
+                item.isOverall
+                    ? Icons.account_balance_wallet_outlined
+                    : Icons.category_outlined,
+                color: visual.foreground,
+              ),
+            ),
+            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   Text(
                     item.budget.name,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.w600,
                           color: const Color(0xFF1F2937),
                         ),
                   ),
-                  const SizedBox(height: 7),
-                  _StatusChip(visual: visual),
+                  const SizedBox(height: 2),
+                  Text(
+                    '${item.isOverall ? 'Keseluruhan' : 'Per kategori'} · $period',
+                    style: const TextStyle(
+                      color: Color(0xFF64748B),
+                      fontSize: 11.5,
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -153,10 +209,40 @@ class _BudgetCard extends StatelessWidget {
             ),
           ]),
           const SizedBox(height: 16),
+          Row(crossAxisAlignment: CrossAxisAlignment.end, children: [
+            Expanded(
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  money(item.used),
+                  style: const TextStyle(
+                    color: Color(0xFF1F2937),
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ),
+            Text(
+              '$percentText%',
+              style: TextStyle(
+                color: visual.foreground,
+                fontSize: 16,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ]),
+          const SizedBox(height: 2),
+          Text(
+            'dari ${money(item.budget.amountLimit)}',
+            style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+          ),
+          const SizedBox(height: 12),
           ClipRRect(
-            borderRadius: BorderRadius.circular(9),
+            borderRadius: BorderRadius.circular(10),
             child: SizedBox(
-              height: 9,
+              height: 10,
               child: Stack(children: [
                 const Positioned.fill(
                   child: ColoredBox(color: Color(0xFFEEF2F5)),
@@ -170,36 +256,21 @@ class _BudgetCard extends StatelessWidget {
               ]),
             ),
           ),
-          const SizedBox(height: 11),
+          const SizedBox(height: 10),
           Row(children: [
             Expanded(
               child: Text(
-                '${money(item.used)} dari ${money(item.budget.amountLimit)}',
-                style: const TextStyle(
-                  color: Color(0xFF1F2937),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
+                status,
+                style: TextStyle(
+                  color: visual.foreground,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w500,
                 ),
               ),
             ),
-            Text(
-              '$percentText%',
-              style: TextStyle(
-                color: visual.foreground,
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
-              ),
-            ),
+            const SizedBox(width: 8),
+            _StatusChip(visual: visual),
           ]),
-          const SizedBox(height: 5),
-          Text(
-            status,
-            style: TextStyle(
-              color: visual.foreground,
-              fontSize: 11.5,
-              fontWeight: FontWeight.w500,
-            ),
-          ),
         ]),
       ),
     );
@@ -278,21 +349,41 @@ class _BudgetVisual {
 }
 
 class _Empty extends StatelessWidget {
-  const _Empty({required this.onReload});
-  final Future<void> Function({bool silent}) onReload;
+  const _Empty({required this.onCreate});
+  final VoidCallback onCreate;
 
   @override
   Widget build(BuildContext context) => Center(
-        child: Column(mainAxisSize: MainAxisSize.min, children: [
-          const Icon(
-            Icons.account_balance_wallet_outlined,
-            size: 56,
-            color: Color(0xFF0F766E),
-          ),
-          const SizedBox(height: 12),
-          const Text('Belum ada anggaran'),
-          TextButton(onPressed: onReload, child: const Text('Muat ulang')),
-        ]),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 32),
+          child: Column(mainAxisSize: MainAxisSize.min, children: [
+            const Icon(
+              Icons.account_balance_wallet_outlined,
+              size: 56,
+              color: Color(0xFF0F766E),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Belum ada anggaran',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            ),
+            const SizedBox(height: 6),
+            const Text(
+              'Atur batas pengeluaran bulanan agar keuangan lebih terkendali.',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+            ),
+            const SizedBox(height: 16),
+            FilledButton.icon(
+              onPressed: onCreate,
+              style: FilledButton.styleFrom(
+                backgroundColor: const Color(0xFF0F766E),
+              ),
+              icon: const Icon(Icons.add),
+              label: const Text('Buat anggaran'),
+            ),
+          ]),
+        ),
       );
 }
 

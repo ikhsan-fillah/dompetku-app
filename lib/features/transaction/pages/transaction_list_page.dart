@@ -138,11 +138,11 @@ class _TransactionListPageState extends State<TransactionListPage> {
             _SummaryRow(income: result.income, expense: result.expense),
             for (final group in result.groups) ...[
               Padding(
-                padding: const EdgeInsets.only(top: 10, bottom: 6, left: 2),
+                padding: const EdgeInsets.only(top: 14, bottom: 6, left: 2),
                 child: Text(
                   _groupLabel(group.date),
                   style: const TextStyle(
-                    fontSize: 11,
+                    fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.muted,
                   ),
@@ -208,7 +208,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
         Padding(
           padding: const EdgeInsets.symmetric(
             horizontal: AppSpacing.page,
-            vertical: 6,
+            vertical: 8,
           ),
           child: Obx(
             () => SingleChildScrollView(
@@ -240,6 +240,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
   }
 }
 
+/// Ringkasan satu kartu: pemasukan dan pengeluaran berdampingan.
 class _SummaryRow extends StatelessWidget {
   const _SummaryRow({required this.income, required this.expense});
 
@@ -248,75 +249,68 @@ class _SummaryRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        Expanded(
-          child: _SummaryCard(
-            label: 'Pemasukan',
-            amount: income,
-            color: AppColors.income,
-            gradient: const [Color(0xFFDCFCE7), Color(0xFFF0FDF4)],
+    return AppCard(
+      margin: const EdgeInsets.only(bottom: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      child: Row(
+        children: [
+          Expanded(
+            child: _SummaryItem(
+              label: 'Pemasukan',
+              amount: income,
+              color: AppColors.income,
+            ),
           ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _SummaryCard(
-            label: 'Pengeluaran',
-            amount: expense,
-            color: AppColors.coral,
-            gradient: const [AppColors.coralSoft, Color(0xFFFFF1F3)],
+          const SizedBox(width: 16),
+          Container(width: 1, height: 34, color: const Color(0xFFE2E8F0)),
+          const SizedBox(width: 16),
+          Expanded(
+            child: _SummaryItem(
+              label: 'Pengeluaran',
+              amount: expense,
+              color: AppColors.coral,
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
 
-class _SummaryCard extends StatelessWidget {
-  const _SummaryCard({
+class _SummaryItem extends StatelessWidget {
+  const _SummaryItem({
     required this.label,
     required this.amount,
     required this.color,
-    required this.gradient,
   });
 
   final String label;
   final int amount;
   final Color color;
-  final List<Color> gradient;
 
   @override
   Widget build(BuildContext context) {
-    return AppCard(
-      margin: const EdgeInsets.only(bottom: 4),
-      padding: const EdgeInsets.all(12),
-      gradient: LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: gradient,
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            label,
-            style: const TextStyle(fontSize: 11, color: AppColors.muted),
-          ),
-          const SizedBox(height: 2),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              formatIdr(amount),
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w700,
-                color: color,
-              ),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          label,
+          style: const TextStyle(fontSize: 11, color: AppColors.muted),
+        ),
+        const SizedBox(height: 2),
+        FittedBox(
+          fit: BoxFit.scaleDown,
+          alignment: Alignment.centerLeft,
+          child: Text(
+            formatIdr(amount),
+            style: TextStyle(
+              fontSize: 15,
+              fontWeight: FontWeight.w700,
+              color: color,
             ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }
