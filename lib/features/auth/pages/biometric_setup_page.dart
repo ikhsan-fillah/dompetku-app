@@ -14,7 +14,8 @@ class BiometricSetupPage extends StatelessWidget {
     return AuthScaffold(
       icon: Icons.fingerprint_rounded,
       title: 'Lindungi dompetmu',
-      description: 'Aktifkan biometrik agar catatan keuangan hanya terlihat setelah kamu mengizinkannya.',
+      description:
+          'Aktifkan biometrik agar catatan keuangan hanya terlihat setelah kamu mengizinkannya.',
       child: Obx(() {
         final status = auth.biometricStatus.value;
         final until = auth.biometricLockedUntil.value;
@@ -23,10 +24,10 @@ class BiometricSetupPage extends StatelessWidget {
         final message = locked
             ? 'Terlalu banyak percobaan. Coba lagi setelah ${until == null ? '-' : TimeOfDay.fromDateTime(until.toLocal()).format(context)}.'
             : status == BiometricStatus.unavailable
-                ? 'Biometrik tidak tersedia. Daftarkan biometrik di pengaturan perangkat, lalu coba lagi.'
-                : status == BiometricStatus.failed
-                    ? 'Verifikasi gagal. Coba lagi.'
-                    : 'Verifikasi biometrik sekali untuk menyelesaikan pengaturan.';
+            ? 'Biometrik tidak tersedia. Daftarkan biometrik di pengaturan perangkat, lalu coba lagi.'
+            : status == BiometricStatus.failed
+            ? 'Verifikasi gagal. Coba lagi.'
+            : 'Verifikasi biometrik sekali untuk menyelesaikan pengaturan.';
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

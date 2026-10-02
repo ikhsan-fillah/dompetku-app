@@ -42,26 +42,27 @@ class TransactionListService {
     };
     final needle = query.trim().toLowerCase();
 
-    final selected = transactions.where((item) {
-      final typeOk = switch (filter) {
-        TransactionTypeFilter.all => true,
-        TransactionTypeFilter.expense => item.type == TransactionType.expense,
-        TransactionTypeFilter.income => item.type == TransactionType.income,
-      };
-      if (!typeOk) return false;
-      if (needle.isEmpty) return true;
-      final haystack = [
-        item.title,
-        item.note ?? '',
-        item.merchantOrSource ?? '',
-        byId[item.categoryId]?.name ?? '',
-      ].join(' ').toLowerCase();
-      return haystack.contains(needle);
-    }).toList()
-      ..sort((a, b) {
-        final byDate = b.transactionDate.compareTo(a.transactionDate);
-        return byDate != 0 ? byDate : (b.id ?? 0).compareTo(a.id ?? 0);
-      });
+    final selected =
+        transactions.where((item) {
+          final typeOk = switch (filter) {
+            TransactionTypeFilter.all => true,
+            TransactionTypeFilter.expense =>
+              item.type == TransactionType.expense,
+            TransactionTypeFilter.income => item.type == TransactionType.income,
+          };
+          if (!typeOk) return false;
+          if (needle.isEmpty) return true;
+          final haystack = [
+            item.title,
+            item.note ?? '',
+            item.merchantOrSource ?? '',
+            byId[item.categoryId]?.name ?? '',
+          ].join(' ').toLowerCase();
+          return haystack.contains(needle);
+        }).toList()..sort((a, b) {
+          final byDate = b.transactionDate.compareTo(a.transactionDate);
+          return byDate != 0 ? byDate : (b.id ?? 0).compareTo(a.id ?? 0);
+        });
 
     var income = 0;
     var expense = 0;
@@ -75,7 +76,9 @@ class TransactionListService {
       final local = item.transactionDate.toLocal();
       final day = DateTime(local.year, local.month, local.day);
       final category = byId[item.categoryId];
-      groups.putIfAbsent(day, () => []).add(
+      groups
+          .putIfAbsent(day, () => [])
+          .add(
             RecentTransactionItem(
               id: item.id ?? 0,
               title: item.title,

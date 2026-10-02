@@ -4,15 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _host(AppBottomNav nav) => MaterialApp(
-      theme: AppTheme.light,
-      home: Scaffold(
-        body: Align(alignment: Alignment.bottomCenter, child: nav),
-      ),
-    );
+  theme: AppTheme.light,
+  home: Scaffold(
+    body: Align(alignment: Alignment.bottomCenter, child: nav),
+  ),
+);
 
 void main() {
-  testWidgets('mengetuk tab memanggil onSelect dengan indeks yang benar',
-      (tester) async {
+  testWidgets('mengetuk tab memanggil onSelect dengan indeks yang benar', (
+    tester,
+  ) async {
     int? selected;
     await tester.pumpWidget(
       _host(

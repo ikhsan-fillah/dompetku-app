@@ -63,7 +63,9 @@ class DashboardController extends GetxController {
 
   BudgetRepository? get _budgetRepository =>
       _budgets ??
-      (Get.isRegistered<BudgetRepository>() ? Get.find<BudgetRepository>() : null);
+      (Get.isRegistered<BudgetRepository>()
+          ? Get.find<BudgetRepository>()
+          : null);
 
   @override
   void onInit() {

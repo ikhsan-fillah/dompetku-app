@@ -11,7 +11,7 @@ import '../repositories/budget_repository.dart';
 
 class BudgetController extends GetxController {
   BudgetController(this._repository, {TransactionRepository? transactions})
-      : _transactions = transactions;
+    : _transactions = transactions;
 
   final BudgetRepository _repository;
   final TransactionRepository? _transactions;
@@ -132,9 +132,7 @@ class BudgetController extends GetxController {
       await loadArchived();
       return true;
     } catch (_) {
-      archived.value = const ResourceState.error(
-        'Gagal memulihkan anggaran.',
-      );
+      archived.value = const ResourceState.error('Gagal memulihkan anggaran.');
       return false;
     }
   }

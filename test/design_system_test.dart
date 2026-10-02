@@ -9,9 +9,9 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _host(Widget child) => MaterialApp(
-      theme: AppTheme.light,
-      home: Scaffold(body: Center(child: child)),
-    );
+  theme: AppTheme.light,
+  home: Scaffold(body: Center(child: child)),
+);
 
 void main() {
   testWidgets('AppChip memanggil onTap', (tester) async {
@@ -26,7 +26,9 @@ void main() {
   testWidgets('AppButton aktif memanggil onPressed', (tester) async {
     var count = 0;
     await tester.pumpWidget(
-      _host(AppButton(label: 'Simpan', expand: false, onPressed: () => count++)),
+      _host(
+        AppButton(label: 'Simpan', expand: false, onPressed: () => count++),
+      ),
     );
     await tester.tap(find.text('Simpan'));
     expect(count, 1);
@@ -49,8 +51,9 @@ void main() {
     expect(count, 0);
   });
 
-  testWidgets('AppProgressBar tampil tanpa error untuk nilai di luar batas',
-      (tester) async {
+  testWidgets('AppProgressBar tampil tanpa error untuk nilai di luar batas', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _host(const SizedBox(width: 200, child: AppProgressBar(value: 1.7))),
     );

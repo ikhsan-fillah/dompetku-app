@@ -60,13 +60,14 @@ class DashboardInsightsService {
       for (final category in categories)
         if (category.id != null) category.id!: category,
     };
-    final inRange = transactions
-        .where((item) => range.contains(item.transactionDate))
-        .toList()
-      ..sort((a, b) {
-        final byDate = b.transactionDate.compareTo(a.transactionDate);
-        return byDate != 0 ? byDate : (b.id ?? 0).compareTo(a.id ?? 0);
-      });
+    final inRange =
+        transactions
+            .where((item) => range.contains(item.transactionDate))
+            .toList()
+          ..sort((a, b) {
+            final byDate = b.transactionDate.compareTo(a.transactionDate);
+            return byDate != 0 ? byDate : (b.id ?? 0).compareTo(a.id ?? 0);
+          });
     return [
       for (final item in inRange.take(limit))
         RecentTransactionItem(
@@ -121,7 +122,8 @@ class DashboardInsightsService {
     if (points.isEmpty) return const [];
     final amounts = {
       for (final point in points)
-        DateTime(point.date.year, point.date.month, point.date.day): point.amount,
+        DateTime(point.date.year, point.date.month, point.date.day):
+            point.amount,
     };
     final first = points.first.date;
     final start = range.dayCount <= 400
@@ -133,8 +135,7 @@ class DashboardInsightsService {
     final buckets = <TrendBucket>[];
     for (var offset = 0; offset < totalDays; offset += size) {
       final last = math.min(offset + size - 1, totalDays - 1);
-      final bucketStart =
-          DateTime(start.year, start.month, start.day + offset);
+      final bucketStart = DateTime(start.year, start.month, start.day + offset);
       final bucketEnd = DateTime(start.year, start.month, start.day + last);
       var sum = 0;
       for (var day = offset; day <= last; day++) {
@@ -154,7 +155,9 @@ class DashboardInsightsService {
     return buckets;
   }
 
-  int _daysBetween(DateTime from, DateTime to) => DateTime.utc(to.year, to.month, to.day)
-      .difference(DateTime.utc(from.year, from.month, from.day))
-      .inDays;
+  int _daysBetween(DateTime from, DateTime to) => DateTime.utc(
+    to.year,
+    to.month,
+    to.day,
+  ).difference(DateTime.utc(from.year, from.month, from.day)).inDays;
 }

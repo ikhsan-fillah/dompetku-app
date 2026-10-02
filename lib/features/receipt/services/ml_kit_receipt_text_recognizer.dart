@@ -5,7 +5,7 @@ import 'receipt_ocr_service.dart';
 /// OCR di perangkat memakai ML Kit (aksara Latin). Foto tidak dikirim ke server.
 class MlKitReceiptTextRecognizer implements ReceiptTextRecognizer {
   MlKitReceiptTextRecognizer()
-      : _recognizer = TextRecognizer(script: TextRecognitionScript.latin);
+    : _recognizer = TextRecognizer(script: TextRecognitionScript.latin);
 
   final TextRecognizer _recognizer;
 

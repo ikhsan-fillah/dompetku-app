@@ -5,7 +5,9 @@ abstract final class AmountInput {
   /// Menerapkan satu tombol keypad (0-9, 000, atau ⌫) pada [current].
   static String apply(String current, String key) {
     if (key == '⌫') {
-      return current.isEmpty ? current : current.substring(0, current.length - 1);
+      return current.isEmpty
+          ? current
+          : current.substring(0, current.length - 1);
     }
     if (!RegExp(r'^\d+$').hasMatch(key)) return current;
     final next = (current + key).replaceFirst(RegExp(r'^0+'), '');
@@ -13,7 +15,8 @@ abstract final class AmountInput {
     return next;
   }
 
-  static int? parse(String digits) => digits.isEmpty ? null : int.tryParse(digits);
+  static int? parse(String digits) =>
+      digits.isEmpty ? null : int.tryParse(digits);
 
   /// Tampilan bertitik ribuan, misalnya 1250000 menjadi 1.250.000.
   static String display(String digits) {

@@ -9,27 +9,28 @@ class AppTheme {
   static const fontFamily = 'Poppins';
 
   static ThemeData get light {
-    final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.teal,
-      brightness: Brightness.light,
-    ).copyWith(
-      primary: AppColors.teal,
-      onPrimary: Colors.white,
-      primaryContainer: AppColors.mint,
-      onPrimaryContainer: AppColors.tealDeep,
-      secondary: AppColors.amber,
-      onSecondary: Colors.white,
-      secondaryContainer: AppColors.amberSoft,
-      onSecondaryContainer: AppColors.amberDeep,
-      error: AppColors.coral,
-      onError: Colors.white,
-      errorContainer: AppColors.coralSoft,
-      surface: AppColors.surface,
-      onSurface: AppColors.ink,
-      onSurfaceVariant: AppColors.muted,
-      outline: AppColors.line,
-      outlineVariant: AppColors.line,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.teal,
+          brightness: Brightness.light,
+        ).copyWith(
+          primary: AppColors.teal,
+          onPrimary: Colors.white,
+          primaryContainer: AppColors.mint,
+          onPrimaryContainer: AppColors.tealDeep,
+          secondary: AppColors.amber,
+          onSecondary: Colors.white,
+          secondaryContainer: AppColors.amberSoft,
+          onSecondaryContainer: AppColors.amberDeep,
+          error: AppColors.coral,
+          onError: Colors.white,
+          errorContainer: AppColors.coralSoft,
+          surface: AppColors.surface,
+          onSurface: AppColors.ink,
+          onSurfaceVariant: AppColors.muted,
+          outline: AppColors.line,
+          outlineVariant: AppColors.line,
+        );
 
     return _build(
       brightness: Brightness.light,
@@ -52,24 +53,25 @@ class AppTheme {
     const ink = Color(0xFFE6F2F1);
     const line = Color(0xFF24403F);
 
-    final scheme = ColorScheme.fromSeed(
-      seedColor: AppColors.teal,
-      brightness: Brightness.dark,
-    ).copyWith(
-      primary: AppColors.tealLight,
-      onPrimary: const Color(0xFF042F2E),
-      primaryContainer: const Color(0xFF0F3B3A),
-      onPrimaryContainer: AppColors.mint,
-      secondary: AppColors.amber,
-      onSecondary: Colors.black,
-      error: AppColors.coral,
-      onError: Colors.white,
-      surface: surface,
-      onSurface: ink,
-      onSurfaceVariant: const Color(0xFF9FB5B4),
-      outline: line,
-      outlineVariant: line,
-    );
+    final scheme =
+        ColorScheme.fromSeed(
+          seedColor: AppColors.teal,
+          brightness: Brightness.dark,
+        ).copyWith(
+          primary: AppColors.tealLight,
+          onPrimary: const Color(0xFF042F2E),
+          primaryContainer: const Color(0xFF0F3B3A),
+          onPrimaryContainer: AppColors.mint,
+          secondary: AppColors.amber,
+          onSecondary: Colors.black,
+          error: AppColors.coral,
+          onError: Colors.white,
+          surface: surface,
+          onSurface: ink,
+          onSurfaceVariant: const Color(0xFF9FB5B4),
+          outline: line,
+          outlineVariant: line,
+        );
 
     return _build(
       brightness: Brightness.dark,
@@ -189,7 +191,10 @@ class AppTheme {
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
         fillColor: surface,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 16,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(AppRadius.field),
           borderSide: BorderSide(color: line),
@@ -215,8 +220,9 @@ class AppTheme {
       switchTheme: SwitchThemeData(
         thumbColor: WidgetStateProperty.all(Colors.white),
         trackColor: WidgetStateProperty.resolveWith(
-          (states) =>
-              states.contains(WidgetState.selected) ? AppColors.tealLight : switchOff,
+          (states) => states.contains(WidgetState.selected)
+              ? AppColors.tealLight
+              : switchOff,
         ),
         trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
       ),

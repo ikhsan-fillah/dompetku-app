@@ -47,6 +47,7 @@ class Migrations {
 				${DatabaseColumns.name} TEXT NOT NULL,
 				${DatabaseColumns.amountLimit} INTEGER NOT NULL CHECK (${DatabaseColumns.amountLimit} > 0),
 				${DatabaseColumns.categoryId} INTEGER,
+        ${DatabaseColumns.note} TEXT,
 				${DatabaseColumns.startDate} TEXT NOT NULL,
 				${DatabaseColumns.endDate} TEXT NOT NULL,
 				${DatabaseColumns.isArchived} INTEGER NOT NULL DEFAULT 0,
@@ -78,7 +79,11 @@ class Migrations {
     int oldVersion,
     int newVersion,
   ) async {
-    // Add future schema migrations here in ascending version order.
+    if (oldVersion < 2) {
+      await db.execute(
+        'ALTER TABLE ${DatabaseTables.budgets} ADD COLUMN ${DatabaseColumns.note} TEXT',
+      );
+    }
   }
 
   static Future<void> _seedCategories(Database db) async {

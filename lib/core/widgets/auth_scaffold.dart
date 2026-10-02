@@ -23,7 +23,9 @@ class AuthScaffold extends StatelessWidget {
           builder: (context, constraints) => SingleChildScrollView(
             padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 24),
             child: ConstrainedBox(
-              constraints: BoxConstraints(minHeight: constraints.maxHeight - 48),
+              constraints: BoxConstraints(
+                minHeight: constraints.maxHeight - 48,
+              ),
               child: Center(
                 child: ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 440),
@@ -37,15 +39,29 @@ class AuthScaffold extends StatelessWidget {
                           Align(
                             alignment: Alignment.centerLeft,
                             child: Container(
-                              width: 64, height: 64,
-                              decoration: BoxDecoration(color: scheme.primaryContainer, borderRadius: BorderRadius.circular(20)),
-                              child: Icon(icon, size: 34, color: scheme.onPrimaryContainer),
+                              width: 64,
+                              height: 64,
+                              decoration: BoxDecoration(
+                                color: scheme.primaryContainer,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Icon(
+                                icon,
+                                size: 34,
+                                color: scheme.onPrimaryContainer,
+                              ),
                             ),
                           ),
                           const SizedBox(height: 24),
-                          Text(title, style: Theme.of(context).textTheme.headlineMedium),
+                          Text(
+                            title,
+                            style: Theme.of(context).textTheme.headlineMedium,
+                          ),
                           const SizedBox(height: 12),
-                          Text(description, style: Theme.of(context).textTheme.bodyLarge),
+                          Text(
+                            description,
+                            style: Theme.of(context).textTheme.bodyLarge,
+                          ),
                           const SizedBox(height: 28),
                           child,
                         ],

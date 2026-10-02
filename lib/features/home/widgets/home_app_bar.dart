@@ -24,9 +24,7 @@ class HomeAppBar extends StatelessWidget {
       initialDateRange: DateTimeRange(start: current.start, end: current.end),
     );
     if (picked != null) {
-      await dashboard.setRange(
-        DateRange(start: picked.start, end: picked.end),
-      );
+      await dashboard.setRange(DateRange(start: picked.start, end: picked.end));
     }
   }
 

@@ -120,7 +120,9 @@ class _BudgetCard extends StatelessWidget {
                   style: TextStyle(
                     fontSize: 12,
                     fontWeight: FontWeight.w600,
-                    color: current.remaining >= 0 ? AppColors.ink : AppColors.coral,
+                    color: current.remaining >= 0
+                        ? AppColors.ink
+                        : AppColors.coral,
                   ),
                 ),
               ],
@@ -148,7 +150,10 @@ class _TopCategoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Kategori teratas', style: Theme.of(context).textTheme.titleSmall),
+          Text(
+            'Kategori teratas',
+            style: Theme.of(context).textTheme.titleSmall,
+          ),
           const SizedBox(height: 12),
           if (current == null)
             const Text(

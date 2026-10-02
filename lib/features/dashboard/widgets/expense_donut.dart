@@ -59,8 +59,9 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
     final percents = roundPercentages([
       for (final s in slices) s.amount.toDouble(),
     ]);
-    final selected =
-        (_selected != null && _selected! < slices.length) ? _selected : null;
+    final selected = (_selected != null && _selected! < slices.length)
+        ? _selected
+        : null;
 
     final donut = GestureDetector(
       onTapUp: (details) {
@@ -125,13 +126,15 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
     return LayoutBuilder(
       builder: (context, constraints) {
         if (constraints.maxWidth < 300) {
-          return Column(
-            children: [donut, const SizedBox(height: 16), legend],
-          );
+          return Column(children: [donut, const SizedBox(height: 16), legend]);
         }
         return Row(
           crossAxisAlignment: CrossAxisAlignment.center,
-          children: [donut, const SizedBox(width: 14), Expanded(child: legend)],
+          children: [
+            donut,
+            const SizedBox(width: 14),
+            Expanded(child: legend),
+          ],
         );
       },
     );
@@ -248,7 +251,10 @@ class _LegendRow extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 '$percent%',
-                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+                style: const TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                ),
               ),
             ],
           ),
@@ -290,9 +296,9 @@ class _DonutPainter extends CustomPainter {
       final paint = Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = selected == i ? 24 : 18
-        ..color = CategoryStyle.color(slices[i].colorValue).withValues(
-          alpha: selected == null || selected == i ? 1 : 0.35,
-        );
+        ..color = CategoryStyle.color(
+          slices[i].colorValue,
+        ).withValues(alpha: selected == null || selected == i ? 1 : 0.35);
       canvas.drawArc(
         rect,
         start + (spaced ? gap / 2 : 0),

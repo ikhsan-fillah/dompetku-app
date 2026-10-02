@@ -33,9 +33,13 @@ class _SpendingBarsState extends State<SpendingBars> {
     if (buckets.isEmpty) {
       return const Text('Belum ada pengeluaran pada periode ini.');
     }
-    final maxAmount = buckets.fold<int>(0, (m, b) => b.amount > m ? b.amount : m);
-    final selected =
-        (_selected != null && _selected! < buckets.length) ? _selected : null;
+    final maxAmount = buckets.fold<int>(
+      0,
+      (m, b) => b.amount > m ? b.amount : m,
+    );
+    final selected = (_selected != null && _selected! < buckets.length)
+        ? _selected
+        : null;
     final compactLabels = buckets.every((b) => b.label.length <= 2);
 
     return Column(
@@ -51,7 +55,9 @@ class _SpendingBarsState extends State<SpendingBars> {
                   : '${_rangeLabel(buckets[selected])} · ${formatIdr(buckets[selected].amount)}',
               style: TextStyle(
                 fontSize: 12,
-                fontWeight: selected == null ? FontWeight.w400 : FontWeight.w600,
+                fontWeight: selected == null
+                    ? FontWeight.w400
+                    : FontWeight.w600,
                 color: selected == null ? AppColors.muted : AppColors.ink,
               ),
             ),
@@ -84,7 +90,9 @@ class _SpendingBarsState extends State<SpendingBars> {
                                 ? 6
                                 : math.max(
                                     6,
-                                    buckets[i].amount / maxAmount * _chartHeight,
+                                    buckets[i].amount /
+                                        maxAmount *
+                                        _chartHeight,
                                   ),
                             decoration: BoxDecoration(
                               borderRadius: const BorderRadius.vertical(

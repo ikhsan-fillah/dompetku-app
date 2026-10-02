@@ -6,6 +6,7 @@ class BudgetModel {
     required this.name,
     required this.amountLimit,
     this.categoryId,
+    this.note,
     required this.startDate,
     required this.endDate,
     required this.isArchived,
@@ -17,6 +18,7 @@ class BudgetModel {
   final String name;
   final int amountLimit;
   final int? categoryId;
+  final String? note;
   final DateTime startDate;
   final DateTime endDate;
   final bool isArchived;
@@ -29,6 +31,7 @@ class BudgetModel {
       name: map[DatabaseColumns.name] as String,
       amountLimit: map[DatabaseColumns.amountLimit] as int,
       categoryId: map[DatabaseColumns.categoryId] as int?,
+      note: map[DatabaseColumns.note] as String?,
       startDate: DateTime.parse(map[DatabaseColumns.startDate] as String),
       endDate: DateTime.parse(map[DatabaseColumns.endDate] as String),
       isArchived: (map[DatabaseColumns.isArchived] as int) == 1,
@@ -43,6 +46,7 @@ class BudgetModel {
       DatabaseColumns.name: name,
       DatabaseColumns.amountLimit: amountLimit,
       DatabaseColumns.categoryId: categoryId,
+      DatabaseColumns.note: note,
       DatabaseColumns.startDate: startDate.toUtc().toIso8601String(),
       DatabaseColumns.endDate: endDate.toUtc().toIso8601String(),
       DatabaseColumns.isArchived: isArchived ? 1 : 0,

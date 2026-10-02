@@ -5,7 +5,7 @@ import 'package:get/get.dart';
 class SplashController extends GetxController {
   final AuthController _auth = Get.find<AuthController>();
 
-  static const _minimumSplash = Duration(milliseconds: 1400);
+  static const _minimumSplash = Duration(milliseconds: 2200);
 
   /// Menunggu sesi terbaca (dan splash tampil minimal sebentar), lalu:
   /// belum login -> halaman login, sudah login -> langsung beranda.

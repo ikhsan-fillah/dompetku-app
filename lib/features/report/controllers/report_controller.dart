@@ -74,21 +74,23 @@ class ReportController extends GetxController {
           if (category.id != null) category.id!: category,
       };
       final totals = _calculations.categoryTotals(transactions, selectedRange);
-      final expensesByCategory = totals.entries
-          .map((entry) {
-            final category = categoriesById[entry.key];
-            return ReportCategoryTotal(
-              categoryId: entry.key,
-              name: category?.name ?? 'Kategori diarsipkan',
-              colorValue: category?.colorValue ?? 0xFF64748B,
-              amount: entry.value,
-            );
-          })
-          .toList()
-        ..sort((a, b) => b.amount.compareTo(a.amount));
+      final expensesByCategory = totals.entries.map((entry) {
+        final category = categoriesById[entry.key];
+        return ReportCategoryTotal(
+          categoryId: entry.key,
+          name: category?.name ?? 'Kategori diarsipkan',
+          colorValue: category?.colorValue ?? 0xFF64748B,
+          amount: entry.value,
+        );
+      }).toList()..sort((a, b) => b.amount.compareTo(a.amount));
 
-      final highDay = _calculations.highestSpendingDay(transactions, selectedRange);
-      final highDayAmount = highDay == null ? 0 : _calculations.expenseOnDay(transactions, highDay);
+      final highDay = _calculations.highestSpendingDay(
+        transactions,
+        selectedRange,
+      );
+      final highDayAmount = highDay == null
+          ? 0
+          : _calculations.expenseOnDay(transactions, highDay);
       final merchant = _calculations.topMerchant(transactions, selectedRange);
 
       state.value = ResourceState.success(

@@ -119,7 +119,8 @@ class HomePage extends StatelessWidget {
               items: data.recent,
               onSeeAll: () => _openTab(1),
             ),
-          if (data.insight != null) InsightBanner(message: data.insight!.message),
+          if (data.insight != null)
+            InsightBanner(message: data.insight!.message),
         ];
     }
   }

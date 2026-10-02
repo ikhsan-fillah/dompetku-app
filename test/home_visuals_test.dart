@@ -10,13 +10,13 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _host(Widget child) => MaterialApp(
-      theme: AppTheme.light,
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: Padding(padding: const EdgeInsets.all(16), child: child),
-        ),
-      ),
-    );
+  theme: AppTheme.light,
+  home: Scaffold(
+    body: SingleChildScrollView(
+      child: Padding(padding: const EdgeInsets.all(16), child: child),
+    ),
+  ),
+);
 
 ExpenseSlice _slice(int id, String name, int amount, double percent) {
   return ExpenseSlice(
@@ -29,8 +29,9 @@ ExpenseSlice _slice(int id, String name, int amount, double percent) {
 }
 
 void main() {
-  testWidgets('donat menampilkan legenda berurutan beserta persen bulat',
-      (tester) async {
+  testWidgets('donat menampilkan legenda berurutan beserta persen bulat', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _host(
         ExpenseDonut(
@@ -54,8 +55,9 @@ void main() {
     expect(second, lessThan(third));
   });
 
-  testWidgets('mengetuk legenda menampilkan detail kategori di tengah',
-      (tester) async {
+  testWidgets('mengetuk legenda menampilkan detail kategori di tengah', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _host(
         ExpenseDonut(
@@ -74,7 +76,10 @@ void main() {
 
   testWidgets('donat tanpa data menampilkan pesan', (tester) async {
     await tester.pumpWidget(_host(const ExpenseDonut(slices: [])));
-    expect(find.text('Belum ada pengeluaran pada periode ini.'), findsOneWidget);
+    expect(
+      find.text('Belum ada pengeluaran pada periode ini.'),
+      findsOneWidget,
+    );
   });
 
   testWidgets('cincin anggaran menampilkan persen bulat', (tester) async {
@@ -114,8 +119,9 @@ void main() {
     expect(find.textContaining('Rp 200'), findsOneWidget);
   });
 
-  testWidgets('chip periode memanggil onSelect dengan preset yang dipilih',
-      (tester) async {
+  testWidgets('chip periode memanggil onSelect dengan preset yang dipilih', (
+    tester,
+  ) async {
     DateRangePreset? picked;
     await tester.pumpWidget(
       _host(

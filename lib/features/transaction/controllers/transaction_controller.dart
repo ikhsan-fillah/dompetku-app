@@ -12,7 +12,7 @@ import '../services/transaction_list_service.dart';
 
 class TransactionController extends GetxController {
   TransactionController(this._repository, {CategoryRepository? categories})
-      : _categories = categories;
+    : _categories = categories;
 
   final TransactionRepository _repository;
   final CategoryRepository? _categories;
@@ -35,11 +35,11 @@ class TransactionController extends GetxController {
 
   /// Daftar yang sudah difilter, dicari, dan dikelompokkan per hari.
   TransactionListResult get list => _listService.build(
-        transactions: state.value.data ?? const <TransactionModel>[],
-        categories: categories.toList(),
-        filter: filter.value,
-        query: query.value,
-      );
+    transactions: state.value.data ?? const <TransactionModel>[],
+    categories: categories.toList(),
+    filter: filter.value,
+    query: query.value,
+  );
 
   @override
   void onInit() {
@@ -102,8 +102,10 @@ class TransactionController extends GetxController {
   }
 
   Future<bool> save(TransactionModel transaction) async {
-    final titleError =
-        requiredText(transaction.title, fieldName: 'Nama transaksi');
+    final titleError = requiredText(
+      transaction.title,
+      fieldName: 'Nama transaksi',
+    );
     final amountError = positiveAmount(transaction.amount);
     if (titleError != null ||
         amountError != null ||

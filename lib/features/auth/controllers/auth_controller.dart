@@ -64,9 +64,9 @@ class AuthController extends GetxController {
   }
 
   bool get isLockedOut => BiometricLockout.isLockedOut(
-        biometricLockedUntil.value,
-        now: DateTime.now(),
-      );
+    biometricLockedUntil.value,
+    now: DateTime.now(),
+  );
 
   Future<bool> biometricAvailable() => _biometricService.isAvailable();
 
@@ -79,10 +79,12 @@ class AuthController extends GetxController {
     return _authenticate(enableAfterSuccess: true);
   }
 
-  Future<bool> unlockWithBiometric() => _authenticate(enableAfterSuccess: false);
+  Future<bool> unlockWithBiometric() =>
+      _authenticate(enableAfterSuccess: false);
 
   Future<bool> _authenticate({required bool enableAfterSuccess}) async {
-    if (!isRegistered.value || (!enableAfterSuccess && !biometricEnabled.value)) {
+    if (!isRegistered.value ||
+        (!enableAfterSuccess && !biometricEnabled.value)) {
       lock();
       return false;
     }
@@ -125,8 +127,9 @@ class AuthController extends GetxController {
     );
     biometricFailureCount.value = count;
     biometricLockedUntil.value = until;
-    biometricStatus.value =
-        until == null ? BiometricStatus.failed : BiometricStatus.lockedOut;
+    biometricStatus.value = until == null
+        ? BiometricStatus.failed
+        : BiometricStatus.lockedOut;
     return false;
   }
 }

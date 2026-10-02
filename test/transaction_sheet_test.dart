@@ -109,8 +109,8 @@ void main() {
     tester,
   ) async {
     await _openSheet(tester);
-    expect(find.text('Tambah transaksi'), findsOneWidget);
-    expect(find.text('Rp 0'), findsOneWidget);
+    expect(find.text('Catat Keuangan'), findsOneWidget);
+    expect(find.text('0'), findsOneWidget);
     expect(find.text('Makanan'), findsOneWidget);
     expect(find.text('Transportasi'), findsOneWidget);
     expect(find.text('Gaji'), findsNothing);
@@ -120,16 +120,13 @@ void main() {
     tester,
   ) async {
     final repository = await _openSheet(tester);
-    final five = find.text('5');
-    final thousand = find.text('000');
     final save = find.text('Simpan transaksi');
 
-    await _reveal(tester, five);
-    await tester.tap(five);
-    await _reveal(tester, thousand);
-    await tester.tap(thousand);
+    final amount = find.byType(TextField).first;
+    await _reveal(tester, amount);
+    await tester.enterText(amount, '5000');
     await tester.pump();
-    expect(find.text('Rp 5.000'), findsOneWidget);
+    expect(find.text('5.000'), findsOneWidget);
 
     await _reveal(tester, save);
     await tester.tap(save);
@@ -138,7 +135,7 @@ void main() {
     expect(repository.inserted.single.amount, 5000);
     expect(repository.inserted.single.title, 'Makanan');
     expect(find.text('Tambah transaksi'), findsNothing);
-    expect(find.text('Transaksi tersimpan.'), findsOneWidget);
+    expect(find.text('Pengeluaran tersimpan.'), findsOneWidget);
   });
 
   testWidgets(
@@ -152,7 +149,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.text('Nominal harus lebih dari nol.'), findsOneWidget);
-      expect(find.text('Tambah transaksi'), findsOneWidget);
+      expect(find.text('Catat Keuangan'), findsOneWidget);
       expect(repository.inserted, isEmpty);
     },
   );

@@ -58,7 +58,9 @@ class SettingsTile extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: textTheme.titleSmall?.copyWith(color: titleColor),
+                        style: textTheme.titleSmall?.copyWith(
+                          color: titleColor,
+                        ),
                       ),
                       const SizedBox(height: 2),
                       Text(
@@ -71,10 +73,7 @@ class SettingsTile extends StatelessWidget {
                     ],
                   ),
                 ),
-                if (trailing != null) ...[
-                  const SizedBox(width: 8),
-                  trailing!,
-                ],
+                if (trailing != null) ...[const SizedBox(width: 8), trailing!],
               ],
             ),
           ),

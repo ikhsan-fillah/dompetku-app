@@ -55,7 +55,9 @@ class AppEmptyView extends StatelessWidget {
             Text(
               message,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+              style: theme.textTheme.bodyMedium?.copyWith(
+                color: AppColors.muted,
+              ),
             ),
             if (action != null) ...[const SizedBox(height: 14), action!],
           ],
@@ -73,15 +75,15 @@ class AppErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AppEmptyView(
-        icon: Icons.error_outline_rounded,
-        title: 'Terjadi kendala',
-        message: message,
-        action: AppButton(
-          label: 'Coba lagi',
-          icon: Icons.refresh_rounded,
-          kind: AppButtonKind.soft,
-          expand: false,
-          onPressed: onRetry,
-        ),
-      );
+    icon: Icons.error_outline_rounded,
+    title: 'Terjadi kendala',
+    message: message,
+    action: AppButton(
+      label: 'Coba lagi',
+      icon: Icons.refresh_rounded,
+      kind: AppButtonKind.soft,
+      expand: false,
+      onPressed: onRetry,
+    ),
+  );
 }

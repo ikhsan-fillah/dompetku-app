@@ -10,18 +10,18 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 Widget _host(Widget child) => MaterialApp(
-      theme: AppTheme.light,
-      home: Scaffold(
-        body: SingleChildScrollView(
-          child: Center(
-            child: SizedBox(
-              width: 360,
-              child: Padding(padding: const EdgeInsets.all(16), child: child),
-            ),
-          ),
+  theme: AppTheme.light,
+  home: Scaffold(
+    body: SingleChildScrollView(
+      child: Center(
+        child: SizedBox(
+          width: 360,
+          child: Padding(padding: const EdgeInsets.all(16), child: child),
         ),
       ),
-    );
+    ),
+  ),
+);
 
 const _slice = ExpenseSlice(
   categoryId: 1,
@@ -32,8 +32,9 @@ const _slice = ExpenseSlice(
 );
 
 void main() {
-  testWidgets('kartu anggaran menampilkan cincin, hari berjalan, dan sisa',
-      (tester) async {
+  testWidgets('kartu anggaran menampilkan cincin, hari berjalan, dan sisa', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _host(
         BudgetSummaryCards(
@@ -56,8 +57,9 @@ void main() {
     expect(find.text('Sisa Rp 1.350.000'), findsOneWidget);
   });
 
-  testWidgets('anggaran terlewati menampilkan status habis dan jumlah lewat',
-      (tester) async {
+  testWidgets('anggaran terlewati menampilkan status habis dan jumlah lewat', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _host(
         BudgetSummaryCards(
@@ -79,8 +81,9 @@ void main() {
     expect(find.text('Belum ada data'), findsOneWidget);
   });
 
-  testWidgets('tanpa anggaran menampilkan ajakan dan tombol Atur',
-      (tester) async {
+  testWidgets('tanpa anggaran menampilkan ajakan dan tombol Atur', (
+    tester,
+  ) async {
     var tapped = false;
     await tester.pumpWidget(
       _host(
@@ -97,8 +100,9 @@ void main() {
     expect(tapped, isTrue);
   });
 
-  testWidgets('kategori teratas menampilkan nama dan bagiannya',
-      (tester) async {
+  testWidgets('kategori teratas menampilkan nama dan bagiannya', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _host(
         BudgetSummaryCards(
@@ -113,8 +117,9 @@ void main() {
     expect(find.text('38% dari pengeluaran'), findsOneWidget);
   });
 
-  testWidgets('kartu kategori menampilkan semua item termasuk yang ganjil',
-      (tester) async {
+  testWidgets('kartu kategori menampilkan semua item termasuk yang ganjil', (
+    tester,
+  ) async {
     await tester.pumpWidget(
       _host(
         const CategoryCardsGrid(
@@ -155,8 +160,9 @@ void main() {
     expect(find.text('Rp 1.387.000'), findsOneWidget);
   });
 
-  testWidgets('transaksi terbaru menampilkan tanda nominal dan Lihat semua',
-      (tester) async {
+  testWidgets('transaksi terbaru menampilkan tanda nominal dan Lihat semua', (
+    tester,
+  ) async {
     var seeAll = false;
     await tester.pumpWidget(
       _host(

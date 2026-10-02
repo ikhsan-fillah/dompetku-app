@@ -44,12 +44,14 @@ class DateRange {
   int get dayCount => end.difference(start).inDays + 1;
 
   DateRange get previousEquivalentPeriod => DateRange(
-        start: start.subtract(Duration(days: dayCount)),
-        end: start.subtract(const Duration(days: 1)),
-      );
+    start: start.subtract(Duration(days: dayCount)),
+    end: start.subtract(const Duration(days: 1)),
+  );
 
-  static int daysInMonth(DateTime date) =>
-      DateTime(date.year, date.month + 1).difference(DateTime(date.year, date.month)).inDays;
+  static int daysInMonth(DateTime date) => DateTime(
+    date.year,
+    date.month + 1,
+  ).difference(DateTime(date.year, date.month)).inDays;
 
   /// Waktu yang tersimpan dalam UTC dibaca sebagai hari di zona waktu lokal,
   /// sehingga transaksi dini hari (misalnya WIB) tidak masuk ke hari sebelumnya.

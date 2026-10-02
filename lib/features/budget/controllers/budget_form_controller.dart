@@ -6,15 +6,17 @@ import '../../category/repositories/category_repository.dart';
 import '../models/budget_model.dart';
 import '../repositories/budget_repository.dart';
 
+enum BudgetPeriodPreset { currentMonth, nextMonth, thirtyDays }
+
 class BudgetFormController extends GetxController {
   BudgetFormController(this._budgets, this._categories);
 
   final BudgetRepository _budgets;
   final CategoryRepository _categories;
   final name = ''.obs;
+  final note = ''.obs;
   final amountDigits = ''.obs;
   final categoryId = Rxn<int>();
-  final isOverallMode = true.obs;
   final startDate = _day(DateTime.now()).obs;
   final endDate = _monthEnd(DateTime.now()).obs;
   final availableCategories = <CategoryModel>[].obs;
@@ -23,7 +25,7 @@ class BudgetFormController extends GetxController {
   BudgetModel? _editing;
 
   bool get isEditing => _editing != null;
-  bool get isOverall => isOverallMode.value;
+  bool get isOverall => false;
   int? get amount => int.tryParse(amountDigits.value);
 
   static DateTime _day(DateTime value) {
@@ -38,8 +40,12 @@ class BudgetFormController extends GetxController {
     try {
       final all = await _categories.getAll();
       availableCategories.assignAll(
-        all.where((item) =>
-            !item.isArchived && item.type.name == 'expense' && item.id != null),
+        all.where(
+          (item) =>
+              !item.isArchived &&
+              item.type.name == 'expense' &&
+              item.id != null,
+        ),
       );
     } catch (_) {
       error.value = 'Gagal memuat kategori.';
@@ -50,22 +56,25 @@ class BudgetFormController extends GetxController {
     final today = _day(now ?? DateTime.now());
     _editing = null;
     name.value = '';
+    note.value = '';
     amountDigits.value = '';
     categoryId.value = null;
-    isOverallMode.value = true;
     startDate.value = DateTime(today.year, today.month, 1);
     endDate.value = _monthEnd(today);
     error.value = null;
     saving.value = false;
     await _loadCategories();
+    if (availableCategories.isNotEmpty) {
+      categoryId.value = availableCategories.first.id;
+    }
   }
 
   Future<void> startEdit(BudgetModel budget) async {
     _editing = budget;
     name.value = budget.name;
+    note.value = budget.note ?? '';
     amountDigits.value = budget.amountLimit.toString();
     categoryId.value = budget.categoryId;
-    isOverallMode.value = budget.categoryId == null;
     startDate.value = _day(budget.startDate);
     endDate.value = _day(budget.endDate);
     error.value = null;
@@ -79,28 +88,62 @@ class BudgetFormController extends GetxController {
     error.value = null;
   }
 
+  void setCategory(int? value) {
+    categoryId.value = value;
+    error.value = null;
+  }
+
+  @Deprecated('Anggaran keseluruhan tidak lagi didukung.')
   void setOverall(bool value) {
-    isOverallMode.value = value;
-    if (value) {
-      categoryId.value = null;
-    } else if (categoryId.value == null && availableCategories.isNotEmpty) {
-      categoryId.value = availableCategories.first.id;
+    if (!value) return;
+    categoryId.value = null;
+    error.value = null;
+  }
+
+  void setPreset(BudgetPeriodPreset preset, {DateTime? now}) {
+    final today = _day(now ?? DateTime.now());
+    switch (preset) {
+      case BudgetPeriodPreset.currentMonth:
+        startDate.value = DateTime(today.year, today.month, 1);
+        endDate.value = _monthEnd(today);
+      case BudgetPeriodPreset.nextMonth:
+        final nextMonth = DateTime(today.year, today.month + 1, 1);
+        startDate.value = nextMonth;
+        endDate.value = _monthEnd(nextMonth);
+      case BudgetPeriodPreset.thirtyDays:
+        startDate.value = today;
+        endDate.value = today.add(const Duration(days: 29));
     }
     error.value = null;
   }
 
   String? _validate() {
-    if (name.value.trim().isEmpty) return 'Nama anggaran wajib diisi.';
     if (amount == null || amount! <= 0) {
       return 'Batas anggaran harus lebih dari nol.';
     }
-    if (!isOverallMode.value && categoryId.value == null) {
-      return 'Pilih kategori untuk anggaran ini.';
+    if (categoryId.value == null ||
+        !availableCategories.any(
+          (category) => category.id == categoryId.value,
+        )) {
+      return 'Pilih kategori pengeluaran aktif.';
     }
     if (startDate.value.isAfter(endDate.value)) {
-      return 'Tanggal mulai tidak boleh setelah tanggal selesai.';
+      return 'Tanggal selesai tidak boleh sebelum tanggal mulai.';
     }
     return null;
+  }
+
+  Future<bool> _hasOverlappingBudget() async {
+    final budgets = await _budgets.getAll();
+    return budgets.any((budget) {
+      if (budget.id == _editing?.id ||
+          budget.isArchived ||
+          budget.categoryId != categoryId.value) {
+        return false;
+      }
+      return !budget.endDate.isBefore(startDate.value) &&
+          !budget.startDate.isAfter(endDate.value);
+    });
   }
 
   Future<bool> save() async {
@@ -111,12 +154,23 @@ class BudgetFormController extends GetxController {
     }
     saving.value = true;
     try {
+      if (await _hasOverlappingBudget()) {
+        error.value =
+            'Sudah ada anggaran aktif untuk kategori ini pada periode yang tumpang tindih. Edit anggaran sebelumnya atau pilih periode lain.';
+        return false;
+      }
       final now = DateTime.now();
+      final categoryName = availableCategories
+          .firstWhere((category) => category.id == categoryId.value)
+          .name;
       final budget = BudgetModel(
         id: _editing?.id,
-        name: name.value.trim(),
+        name: name.value.trim().isEmpty
+            ? 'Anggaran $categoryName'
+            : name.value.trim(),
         amountLimit: amount!,
-        categoryId: isOverallMode.value ? null : categoryId.value,
+        categoryId: categoryId.value,
+        note: note.value.trim().isEmpty ? null : note.value.trim(),
         startDate: startDate.value,
         endDate: endDate.value,
         isArchived: _editing?.isArchived ?? false,
