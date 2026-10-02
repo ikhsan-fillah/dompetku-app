@@ -5,18 +5,21 @@ import 'package:get/get.dart';
 class SplashController extends GetxController {
   final AuthController _auth = Get.find<AuthController>();
 
+  static const _minimumSplash = Duration(milliseconds: 1400);
+
+  /// Menunggu sesi terbaca (dan splash tampil minimal sebentar), lalu:
+  /// belum login -> halaman login, sudah login -> langsung beranda.
   Future<void> decideNextPage() async {
-    await _auth.initialization;
-    _auth.lock();
+    await Future.wait<void>([
+      _auth.initialization,
+      Future<void>.delayed(_minimumSplash),
+    ]);
 
     if (!_auth.isRegistered.value) {
       Get.offAllNamed(AppRoutes.login);
       return;
     }
-    Get.offAllNamed(
-      _auth.biometricEnabled.value
-          ? AppRoutes.biometricUnlock
-          : AppRoutes.biometricSetup,
-    );
+    _auth.unlock();
+    Get.offAllNamed(AppRoutes.home);
   }
 }

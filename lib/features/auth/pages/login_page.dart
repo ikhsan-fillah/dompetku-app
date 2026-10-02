@@ -20,8 +20,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final auth = Get.find<AuthController>();
       await auth.markRegistered();
-      auth.lock();
-      if (mounted) Get.offAllNamed(AppRoutes.biometricSetup);
+      if (mounted) Get.offAllNamed(AppRoutes.home);
     } catch (_) {
       if (mounted) setState(() { busy = false; error = 'Gagal menyiapkan aplikasi. Coba lagi.'; });
     }
@@ -39,7 +38,7 @@ class _LoginPageState extends State<LoginPage> {
             FilledButton.icon(
               onPressed: busy ? null : start,
               icon: const Icon(Icons.arrow_forward_rounded),
-              label: Text(busy ? 'Menyiapkan…' : 'Mulai dan atur biometrik'),
+              label: Text(busy ? 'Menyiapkan…' : 'Mulai'),
             ),
           ],
         ),
