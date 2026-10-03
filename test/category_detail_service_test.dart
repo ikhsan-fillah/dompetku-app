@@ -35,6 +35,36 @@ TransactionModel _tx(int id, int amount, DateTime date) => TransactionModel(
 void main() {
   const service = CategoryDetailService();
 
+  test('mengelompokkan dan mengurutkan transaksi per hari', () {
+    final older = _tx(1, 100, DateTime(2026, 3, 1, 8));
+    final newer = _tx(2, 200, DateTime(2026, 3, 1, 12));
+    final otherDay = _tx(3, 300, DateTime(2026, 2, 28, 10));
+
+    final newest = service.group(
+      [older, newer, otherDay],
+      CategoryTransactionSort.newest,
+    );
+    expect(newest.map((item) => item.date), [DateTime(2026, 3, 1), DateTime(2026, 2, 28)]);
+    expect(newest.first.transactions.map((item) => item.id), [2, 1]);
+
+    final oldest = service.group(
+      [older, newer, otherDay],
+      CategoryTransactionSort.oldest,
+    );
+    expect(oldest.map((item) => item.date), [DateTime(2026, 2, 28), DateTime(2026, 3, 1)]);
+    expect(oldest.last.transactions.map((item) => item.id), [1, 2]);
+  });
+
+  test('menggunakan id sebagai fallback ketika timestamp sama', () {
+    final first = _tx(1, 100, DateTime(2026, 3, 1, 8));
+    final second = _tx(2, 200, DateTime(2026, 3, 1, 8));
+    final groups = service.group(
+      [first, second],
+      CategoryTransactionSort.newest,
+    );
+    expect(groups.single.transactions.map((item) => item.id), [2, 1]);
+  });
+
   test('menghitung total, rata-rata, persen, dan perubahan periode', () {
     final data = service.build(
       categoryId: 1,
