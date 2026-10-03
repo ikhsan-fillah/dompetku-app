@@ -12,21 +12,72 @@ void main() {
   group('DateRange', () {
     final now = DateTime(2026, 9, 28, 18, 30);
 
-    test('creates the current month range through today', () {
+    test('creates one calendar month through today', () {
       final range = DateRange.fromPreset(DateRangePreset.month, now: now);
 
-      expect(range.start, DateTime(2026, 9, 1));
+      expect(range.start, DateTime(2026, 8, 28));
       expect(range.end, DateTime(2026, 9, 28));
-      expect(range.dayCount, 28);
+      expect(range.dayCount, 32);
     });
 
-    test('supports leap-year month boundaries', () {
+    test('supports calendar month and year clamping', () {
       final range = DateRange.fromPreset(
         DateRangePreset.month,
         now: DateTime(2024, 2, 29),
       );
 
-      expect(range.dayCount, 29);
+      expect(range.start, DateTime(2024, 1, 29));
+      expect(
+        DateRange.fromPreset(
+          DateRangePreset.month,
+          now: DateTime(2026, 3, 31),
+        ).start,
+        DateTime(2026, 2, 28),
+      );
+      expect(
+        DateRange.fromPreset(
+          DateRangePreset.year,
+          now: DateTime(2025, 2, 28),
+        ).start,
+        DateTime(2024, 2, 28),
+      );
+    });
+
+    test('supports current month, year to date, and all time through today', () {
+      final today = DateTime(2026, 10, 3, 18, 30);
+      final currentMonth = DateRange.fromPreset(
+        DateRangePreset.currentMonth,
+        now: today,
+      );
+      expect(currentMonth.start, DateTime(2026, 10, 1));
+      expect(currentMonth.end, DateTime(2026, 10, 3));
+      expect(
+        DateRange.fromPreset(DateRangePreset.yearToDate, now: today).start,
+        DateTime(2026, 1, 1),
+      );
+      expect(
+        DateRange.fromPreset(DateRangePreset.allTime, now: today).end,
+        DateTime(2026, 10, 3),
+      );
+    });
+
+    test('history ranges reject a future end date', () {
+      expect(
+        () => DateRange.history(
+          start: DateTime(2026, 10, 1),
+          end: DateTime(2026, 10, 4),
+          now: DateTime(2026, 10, 3),
+        ),
+        throwsArgumentError,
+      );
+      expect(
+        () => DateRange.history(
+          start: DateTime(2026, 10, 4),
+          end: DateTime(2026, 10, 3),
+          now: DateTime(2026, 10, 3),
+        ),
+        throwsArgumentError,
+      );
     });
 
     test('calculates every calendar month length', () {

@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
 import '../../../core/state/resource_state.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/date_range.dart';
+import '../../../core/widgets/app_back_button.dart';
 import '../controllers/report_controller.dart';
 
 class ReportPage extends StatefulWidget {
@@ -36,6 +38,7 @@ class _ReportPageState extends State<ReportPage> {
     (DateRangePreset.yearToDate, 'Tahun ini'),
     (DateRangePreset.year, '1 Tahun'),
     (DateRangePreset.allTime, 'Semua'),
+    (DateRangePreset.currentMonth, 'Bulan ini'),
     (DateRangePreset.custom, 'Kustom'),
   ];
 
@@ -86,7 +89,9 @@ class _ReportPageState extends State<ReportPage> {
     );
     if (picked == null || !mounted) return;
     setState(() => _preset = DateRangePreset.custom);
-    await controller.load(DateRange(start: picked.start, end: picked.end));
+    await controller.load(
+      DateRange.history(start: picked.start, end: picked.end),
+    );
   }
 
   Future<void> _reload() => controller.load(controller.range.value);
@@ -94,92 +99,113 @@ class _ReportPageState extends State<ReportPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: const Color(0xFFF6FAF9),
-    appBar: AppBar(
-      title: const Text('Laporan'),
-      backgroundColor: const Color(0xFFF6FAF9),
-      surfaceTintColor: Colors.transparent,
-    ),
-    body: Column(
-      children: [
-        SizedBox(
-          height: 48,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-            itemCount: _presets.length,
-            separatorBuilder: (_, _) => const SizedBox(width: 8),
-            itemBuilder: (_, index) {
-              final (preset, label) = _presets[index];
-              final selected = preset == _preset;
-              return ChoiceChip(
-                label: Text(label),
-                selected: selected,
-                showCheckmark: false,
-                onSelected: (_) => _selectPreset(preset),
-                backgroundColor: Colors.white,
-                selectedColor: const Color(0xFFCCFBF1),
-                shape: const StadiumBorder(),
-                side: BorderSide(
-                  color: selected
-                      ? const Color(0xFF0F766E)
-                      : const Color(0xFFE2E8F0),
+    body: SafeArea(
+      child: Column(
+        children: [
+          Padding(
+            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+            child: Row(
+              children: [
+                const AppBackButton(),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Text(
+                    'Laporan',
+                    style: Theme.of(context).textTheme.titleLarge,
+                  ),
                 ),
-                labelStyle: TextStyle(
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w600,
-                  color: selected
-                      ? const Color(0xFF0F766E)
-                      : const Color(0xFF64748B),
-                ),
-              );
-            },
+              ],
+            ),
           ),
-        ),
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 4, 16, 8),
-          child: Align(
-            alignment: Alignment.centerLeft,
+          const SizedBox(height: AppSpacing.gap),
+          SizedBox(
+            height: 48,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              padding: const EdgeInsets.symmetric(
+                horizontal: AppSpacing.page,
+                vertical: 6,
+              ),
+              itemCount: _presets.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (_, index) {
+                final (preset, label) = _presets[index];
+                final selected = preset == _preset;
+                return ChoiceChip(
+                  label: Text(label),
+                  selected: selected,
+                  showCheckmark: false,
+                  onSelected: (_) => _selectPreset(preset),
+                  backgroundColor: Colors.white,
+                  selectedColor: const Color(0xFFCCFBF1),
+                  shape: const StadiumBorder(),
+                  side: BorderSide(
+                    color: selected
+                        ? const Color(0xFF0F766E)
+                        : const Color(0xFFE2E8F0),
+                  ),
+                  labelStyle: TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w600,
+                    color: selected
+                        ? const Color(0xFF0F766E)
+                        : const Color(0xFF64748B),
+                  ),
+                );
+              },
+            ),
+          ),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              AppSpacing.page,
+              AppSpacing.tight,
+              AppSpacing.page,
+              AppSpacing.gap,
+            ),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Obx(() {
+                final range = controller.range.value;
+                return Text(
+                  '${_date(range.start)} - ${_date(range.end)}',
+                  style: const TextStyle(
+                    color: Color(0xFF64748B),
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                );
+              }),
+            ),
+          ),
+          Expanded(
             child: Obx(() {
-              final range = controller.range.value;
-              return Text(
-                '${_date(range.start)} - ${_date(range.end)}',
-                style: const TextStyle(
-                  color: Color(0xFF64748B),
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+              final current = controller.state.value;
+              return switch (current.status) {
+                ResourceStatus.idle || ResourceStatus.loading => const Center(
+                  child: CircularProgressIndicator(),
                 ),
-              );
+                ResourceStatus.empty => _Message(
+                  icon: Icons.insert_chart_outlined_rounded,
+                  text: 'Belum ada transaksi pada periode ini',
+                  action: 'Muat ulang',
+                  onTap: _reload,
+                ),
+                ResourceStatus.error => _Message(
+                  icon: Icons.error_outline_rounded,
+                  text: current.message ?? 'Gagal memuat laporan.',
+                  action: 'Coba lagi',
+                  onTap: _reload,
+                ),
+                ResourceStatus.success => RefreshIndicator(
+                  color: const Color(0xFF0F766E),
+                  onRefresh: _reload,
+                  child: _Summary(data: current.data!, money: _money),
+                ),
+              };
             }),
           ),
-        ),
-        Expanded(
-          child: Obx(() {
-            final current = controller.state.value;
-            return switch (current.status) {
-              ResourceStatus.idle || ResourceStatus.loading => const Center(
-                child: CircularProgressIndicator(),
-              ),
-              ResourceStatus.empty => _Message(
-                icon: Icons.insert_chart_outlined_rounded,
-                text: 'Belum ada transaksi pada periode ini',
-                action: 'Muat ulang',
-                onTap: _reload,
-              ),
-              ResourceStatus.error => _Message(
-                icon: Icons.error_outline_rounded,
-                text: current.message ?? 'Gagal memuat laporan.',
-                action: 'Coba lagi',
-                onTap: _reload,
-              ),
-              ResourceStatus.success => RefreshIndicator(
-                color: const Color(0xFF0F766E),
-                onRefresh: _reload,
-                child: _Summary(data: current.data!, money: _money),
-              ),
-            };
-          }),
-        ),
-      ],
+        ],
+      ),
     ),
   );
 }

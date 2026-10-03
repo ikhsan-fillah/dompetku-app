@@ -19,6 +19,7 @@ class PeriodChips extends StatelessWidget {
     (DateRangePreset.week, '1 Minggu'),
     (DateRangePreset.month, '1 Bulan'),
     (DateRangePreset.threeMonths, '3 Bulan'),
+    (DateRangePreset.currentMonth, 'Bulan ini'),
     (DateRangePreset.yearToDate, 'Tahun ini'),
     (DateRangePreset.custom, 'Kustom'),
   ];

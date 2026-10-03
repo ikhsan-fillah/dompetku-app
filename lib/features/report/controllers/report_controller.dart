@@ -49,7 +49,7 @@ class ReportController extends GetxController {
   final TransactionRepository _transactions;
   final CategoryRepository _categories;
   final FinancialCalculationService _calculations;
-  final range = DateRange.fromPreset(DateRangePreset.month).obs;
+  final range = DateRange.fromPreset(DateRangePreset.currentMonth).obs;
   final state = const ResourceState<ReportData>.idle().obs;
 
   Future<void> load(DateRange selectedRange) async {

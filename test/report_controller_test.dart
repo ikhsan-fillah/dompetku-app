@@ -129,7 +129,7 @@ void main() {
   });
 
   test('state awal idle dengan rentang bulan berjalan', () {
-    final month = DateRange.fromPreset(DateRangePreset.month);
+    final month = DateRange.fromPreset(DateRangePreset.currentMonth);
     expect(controller.state.value.status, ResourceStatus.idle);
     expect(controller.range.value.start, month.start);
     expect(controller.range.value.end, month.end);

@@ -45,7 +45,7 @@ class HomePage extends StatelessWidget {
     );
     if (picked != null) {
       await controller.setRange(
-        DateRange(start: picked.start, end: picked.end),
+        DateRange.history(start: picked.start, end: picked.end),
       );
     }
   }
