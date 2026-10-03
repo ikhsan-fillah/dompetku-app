@@ -108,7 +108,7 @@ class TransactionLocalDataSource implements TransactionPageRepository {
          LEFT JOIN ${DatabaseTables.categories} c
            ON c.${DatabaseColumns.id} = t.${DatabaseColumns.categoryId}
          WHERE ${filter.sql}
-         ORDER BY ${_orderBy(request.sort)}
+         ORDER BY ${request.categoryId != null ? _categoryOrderBy(request.dateSort) : _orderBy(request.sort)}
          LIMIT ? OFFSET ?''',
       [...filter.args, request.limit, request.offset],
     );
@@ -142,9 +142,38 @@ class TransactionLocalDataSource implements TransactionPageRepository {
     );
   }
 
+  @override
+  Future<CategoryTransactionSummary> getCategorySummary({
+    required int categoryId,
+    DateRange? range,
+  }) async {
+    final database = await _appDatabase.database;
+    final rows = await database.rawQuery(
+      '''SELECT COALESCE(SUM(${DatabaseColumns.amount}), 0) AS total,
+         COUNT(*) AS count FROM ${DatabaseTables.transactions}
+         WHERE ${DatabaseColumns.categoryId} = ?
+         ${range == null ? '' : 'AND date(${DatabaseColumns.transactionDate}) BETWEEN date(?) AND date(?)'}''',
+      [
+        categoryId,
+        if (range != null) ...[
+          range.start.toIso8601String(),
+          range.end.toIso8601String(),
+        ],
+      ],
+    );
+    return CategoryTransactionSummary(
+      total: (rows.first['total'] as num).toInt(),
+      count: (rows.first['count'] as num).toInt(),
+    );
+  }
+
   ({String sql, List<Object?> args}) _where(TransactionPageRequest request) {
     final clauses = <String>['1 = 1'];
     final args = <Object?>[];
+    if (request.categoryId != null) {
+      clauses.add('t.${DatabaseColumns.categoryId} = ?');
+      args.add(request.categoryId);
+    }
     if (request.filter != TransactionTypeFilter.all) {
       clauses.add('t.${DatabaseColumns.type} = ?');
       args.add(
@@ -189,4 +218,8 @@ class TransactionLocalDataSource implements TransactionPageRepository {
     TransactionSort.kategoriAZ =>
       'lower(coalesce(c.${DatabaseColumns.name}, \'Tanpa kategori\')) ASC, t.${DatabaseColumns.transactionDate} DESC, t.${DatabaseColumns.id} DESC',
   };
+
+  String _categoryOrderBy(TransactionDateSort sort) => sort == TransactionDateSort.newest
+      ? 't.${DatabaseColumns.transactionDate} DESC, t.${DatabaseColumns.createdAt} DESC, t.${DatabaseColumns.id} DESC'
+      : 't.${DatabaseColumns.transactionDate} ASC, t.${DatabaseColumns.createdAt} ASC, t.${DatabaseColumns.id} ASC';
 }

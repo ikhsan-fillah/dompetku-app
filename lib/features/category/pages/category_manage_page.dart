@@ -11,6 +11,7 @@ import '../controllers/category_controller.dart';
 import '../models/category_model.dart';
 import '../utils/category_icons.dart';
 import '../widgets/category_form_sheet.dart';
+import '../../../app/routes/app_routes.dart';
 
 /// Halaman kelola kategori: filter tipe, favorit, urutan, dan arsip.
 class CategoryManagePage extends StatefulWidget {
@@ -151,7 +152,10 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
           child: InkWell(
             borderRadius: BorderRadius.circular(18),
-            onTap: () => _showAddOrEditForm(category),
+            onTap: () => Get.toNamed(
+              AppRoutes.categoryDetail,
+              arguments: {'categoryId': category.id},
+            ),
             child: Row(
               children: [
                 Container(

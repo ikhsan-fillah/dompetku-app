@@ -1,6 +1,7 @@
+import '../../transaction/models/transaction_model.dart';
+import '../../../core/constant/domain_enums.dart';
 import '../../../core/utils/date_range.dart';
 import '../../budget/models/budget_model.dart';
-import '../../transaction/models/transaction_model.dart';
 import '../models/category_model.dart';
 
 class CategoryDetailData {
@@ -25,12 +26,15 @@ class CategoryDetailData {
   final int previousTotal;
   final double changePercent;
   final BudgetModel? budget;
+}
 
-  int get budgetUsed => total;
-  int get budgetRemaining => (budget?.amountLimit ?? 0) - total;
-  double get budgetPercent => budget == null || budget!.amountLimit == 0
-      ? 0
-      : total * 100 / budget!.amountLimit;
+enum CategoryTransactionSort { newest, oldest }
+
+class TransactionDayGroup {
+  const TransactionDayGroup({required this.date, required this.transactions});
+
+  final DateTime date;
+  final List<TransactionModel> transactions;
 }
 
 class CategoryDetailService {
@@ -43,56 +47,61 @@ class CategoryDetailService {
     required List<CategoryModel> categories,
     Iterable<BudgetModel> budgets = const [],
   }) {
-    final category = categories.cast<CategoryModel?>().firstWhere(
-      (item) => item?.id == categoryId,
-      orElse: () => null,
-    );
-    final current = transactions.where(
-      (item) =>
-          item.categoryId == categoryId &&
-          item.type.name == 'expense' &&
-          range.contains(item.transactionDate),
-    ).toList()
-      ..sort((a, b) {
-        final date = b.transactionDate.compareTo(a.transactionDate);
-        return date != 0 ? date : (b.id ?? 0).compareTo(a.id ?? 0);
-      });
+    final current = transactions.where((item) =>
+        item.categoryId == categoryId && range.contains(item.transactionDate));
+    final list = current.toList();
+    final total = list.fold<int>(0, (sum, item) => sum + item.amount);
     final previousRange = range.previousEquivalentPeriod;
     final previousTotal = transactions
-        .where(
-          (item) =>
-              item.categoryId == categoryId &&
-              item.type.name == 'expense' &&
-              previousRange.contains(item.transactionDate),
-        )
-        .fold<int>(0, (sum, item) => sum + item.amount);
-    final total = current.fold<int>(0, (sum, item) => sum + item.amount);
+      .where((item) => item.categoryId == categoryId &&
+        previousRange.contains(item.transactionDate))
+      .fold<int>(0, (sum, item) => sum + item.amount);
     final periodExpenses = transactions
-        .where(
-          (item) =>
-              item.type.name == 'expense' &&
-              range.contains(item.transactionDate),
-        )
-        .fold<int>(0, (sum, item) => sum + item.amount);
-    final activeBudget = budgets.where((item) {
-      return !item.isArchived &&
-          item.categoryId == categoryId &&
-          !item.endDate.isBefore(range.start) &&
-          !item.startDate.isAfter(range.end);
-    }).firstOrNull;
+      .where((item) => item.type == TransactionType.expense &&
+        range.contains(item.transactionDate))
+      .fold<int>(0, (sum, item) => sum + item.amount);
     return CategoryDetailData(
-      category: category,
-      transactions: current,
+      category: categories.where((item) => item.id == categoryId).firstOrNull,
+      transactions: list,
       total: total,
-      transactionCount: current.length,
-      average: current.isEmpty ? 0 : total ~/ current.length,
-      percentOfExpenses:
-          periodExpenses == 0 ? 0 : total * 100 / periodExpenses,
-      previousTotal: previousTotal,
-      changePercent: previousTotal == 0
+      transactionCount: list.length,
+      average: list.isEmpty ? 0 : total ~/ list.length,
+        percentOfExpenses: periodExpenses == 0 ? 0 : total * 100 / periodExpenses,
+        previousTotal: previousTotal,
+        changePercent: previousTotal == 0
           ? (total == 0 ? 0 : 100)
           : (total - previousTotal) * 100 / previousTotal,
-      budget: activeBudget,
+      budget: budgets.where((item) => item.categoryId == categoryId).firstOrNull,
     );
+  }
+
+  List<TransactionDayGroup> group(
+    Iterable<TransactionModel> transactions,
+    CategoryTransactionSort sort,
+  ) {
+    final sorted = transactions.toList()
+      ..sort((a, b) {
+        var result = a.transactionDate.compareTo(b.transactionDate);
+        if (sort == CategoryTransactionSort.newest) result = -result;
+        if (result == 0) {
+          result = a.createdAt.compareTo(b.createdAt);
+          if (sort == CategoryTransactionSort.newest) result = -result;
+        }
+        if (result == 0) {
+          result = (a.id ?? 0).compareTo(b.id ?? 0);
+          if (sort == CategoryTransactionSort.newest) result = -result;
+        }
+        return result;
+      });
+    final groups = <DateTime, List<TransactionModel>>{};
+    for (final transaction in sorted) {
+      final local = transaction.transactionDate.toLocal();
+      final day = DateTime(local.year, local.month, local.day);
+      groups.putIfAbsent(day, () => []).add(transaction);
+    }
+    return [
+      for (final entry in groups.entries)
+        TransactionDayGroup(date: entry.key, transactions: entry.value),
+    ];
   }
 }
