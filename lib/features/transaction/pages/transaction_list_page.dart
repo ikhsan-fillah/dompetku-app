@@ -244,9 +244,9 @@ class _TransactionListPageState extends State<TransactionListPage> {
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.page,
-            4,
+            2,
             AppSpacing.page,
-            0,
+            2,
           ),
           child: AppTextField(
             controller: _search,

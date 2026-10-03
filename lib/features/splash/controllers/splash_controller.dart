@@ -19,7 +19,12 @@ class SplashController extends GetxController {
       Get.offAllNamed(AppRoutes.login);
       return;
     }
-    _auth.unlock();
-    Get.offAllNamed(AppRoutes.home);
+    if (_auth.biometricEnabled.value) {
+      _auth.lock();
+      Get.offAllNamed(AppRoutes.biometricUnlock);
+    } else {
+      _auth.unlock();
+      Get.offAllNamed(AppRoutes.home);
+    }
   }
 }

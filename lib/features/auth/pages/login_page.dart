@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
+import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/auth_scaffold.dart';
 import '../controllers/auth_controller.dart';
 
@@ -23,7 +24,7 @@ class _LoginPageState extends State<LoginPage> {
     try {
       final auth = Get.find<AuthController>();
       await auth.markRegistered();
-      if (mounted) Get.offAllNamed(AppRoutes.home);
+      if (mounted) Get.offAllNamed(AppRoutes.biometricSetup);
     } catch (_) {
       if (mounted) {
         setState(() {
@@ -50,10 +51,9 @@ class _LoginPageState extends State<LoginPage> {
           ),
           const SizedBox(height: 16),
         ],
-        FilledButton.icon(
+        AppButton(
           onPressed: busy ? null : start,
-          icon: const Icon(Icons.arrow_forward_rounded),
-          label: Text(busy ? 'Menyiapkan…' : 'Mulai'),
+          label: busy ? 'Menyiapkan...' : 'Mulai',
         ),
       ],
     ),

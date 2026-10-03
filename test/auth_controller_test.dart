@@ -83,6 +83,21 @@ void main() {
     },
   );
 
+  test(
+    'sesi dengan biometrik aktif tidak langsung terbuka saat startup',
+    () async {
+      final controller = AuthController(
+        _FakeSessionRepository(),
+        _FakeBiometricService(result: true),
+      );
+      controller.onInit();
+      await controller.initialization;
+
+      expect(controller.biometricEnabled.value, isTrue);
+      expect(controller.isUnlocked.value, isFalse);
+    },
+  );
+
   test('an expired lockout resets failures before a new attempt', () async {
     final repository = _FakeSessionRepository()
       ..value = AppSessionModel(
@@ -127,10 +142,14 @@ void main() {
     expect(controller.biometricStatus.value, BiometricStatus.required);
   });
 
-  test('app locks as soon as it returns from background by default', () {
+  test('app locks after five minutes in background', () {
     final service = AppLockService();
     final time = DateTime(2026, 9, 28, 10);
     service.onBackgrounded(time);
-    expect(service.shouldLock(time), isTrue);
+    expect(
+      service.shouldLock(time.add(const Duration(minutes: 4, seconds: 59))),
+      isFalse,
+    );
+    expect(service.shouldLock(time.add(const Duration(minutes: 5))), isTrue);
   });
 }

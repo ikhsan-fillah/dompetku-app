@@ -17,9 +17,9 @@ class PeriodChips extends StatelessWidget {
   static const _items = [
     (DateRangePreset.today, 'Hari ini'),
     (DateRangePreset.week, '1 Minggu'),
+    (DateRangePreset.currentMonth, 'Bulan ini'),
     (DateRangePreset.month, '1 Bulan'),
     (DateRangePreset.threeMonths, '3 Bulan'),
-    (DateRangePreset.currentMonth, 'Bulan ini'),
     (DateRangePreset.yearToDate, 'Tahun ini'),
     (DateRangePreset.custom, 'Kustom'),
   ];

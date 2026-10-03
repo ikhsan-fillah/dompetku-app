@@ -57,25 +57,22 @@ class TransactionListService {
     };
     final needle = query.trim().toLowerCase();
 
-    final selected =
-        transactions.where((item) {
-          final typeOk = switch (filter) {
-            TransactionTypeFilter.all => true,
-            TransactionTypeFilter.expense =>
-              item.type == TransactionType.expense,
-            TransactionTypeFilter.income => item.type == TransactionType.income,
-          };
-          if (!typeOk) return false;
-          if (needle.isEmpty) return true;
-          final haystack = [
-            item.title,
-            item.note ?? '',
-            item.merchantOrSource ?? '',
-            byId[item.categoryId]?.name ?? '',
-          ].join(' ').toLowerCase();
-          return haystack.contains(needle);
-        }).toList()
-      ..sort((a, b) => _compare(a, b, sort, byId));
+    final selected = transactions.where((item) {
+      final typeOk = switch (filter) {
+        TransactionTypeFilter.all => true,
+        TransactionTypeFilter.expense => item.type == TransactionType.expense,
+        TransactionTypeFilter.income => item.type == TransactionType.income,
+      };
+      if (!typeOk) return false;
+      if (needle.isEmpty) return true;
+      final haystack = [
+        item.title,
+        item.note ?? '',
+        item.merchantOrSource ?? '',
+        byId[item.categoryId]?.name ?? '',
+      ].join(' ').toLowerCase();
+      return haystack.contains(needle);
+    }).toList()..sort((a, b) => _compare(a, b, sort, byId));
 
     var income = 0;
     var expense = 0;
@@ -91,15 +88,15 @@ class TransactionListService {
       final day = DateTime(local.year, local.month, local.day);
       final category = byId[item.categoryId];
       final view = RecentTransactionItem(
-              id: item.id ?? 0,
-              title: item.title,
-              categoryName: category?.name ?? 'Tanpa kategori',
-              iconKey: category?.iconKey ?? 'more_horiz',
-              colorValue: category?.colorValue ?? 0xFF90A4AE,
-              amount: item.amount,
-              isIncome: item.type == TransactionType.income,
-              date: local,
-            );
+        id: item.id ?? 0,
+        title: item.title,
+        categoryName: category?.name ?? 'Tanpa kategori',
+        iconKey: category?.iconKey ?? 'more_horiz',
+        colorValue: category?.colorValue ?? 0xFF90A4AE,
+        amount: item.amount,
+        isIncome: item.type == TransactionType.income,
+        date: local,
+      );
       if (sort == TransactionSort.terbaru || sort == TransactionSort.terlama) {
         groups.putIfAbsent(day, () => []).add(view);
       } else {

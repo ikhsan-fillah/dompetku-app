@@ -5,7 +5,7 @@ class AppConstants {
   static const maxBiometricFailures = 5;
   static const biometricLockoutMinutes = 5;
   static const defaultDashboardStartDay = 1;
-  static const defaultAutoLockDuration = Duration.zero;
+  static const defaultAutoLockDuration = Duration(minutes: 5);
 
   const AppConstants._();
 }

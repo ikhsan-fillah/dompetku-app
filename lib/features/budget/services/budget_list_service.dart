@@ -17,13 +17,16 @@ class BudgetListService {
     final result = items.toList();
     result.sort((a, b) {
       final value = switch (order) {
-        BudgetSort.persentaseTerpakaiTertinggi =>
-          b.percent.compareTo(a.percent),
+        BudgetSort.persentaseTerpakaiTertinggi => b.percent.compareTo(
+          a.percent,
+        ),
         BudgetSort.sisaTerkecil => a.remaining.compareTo(b.remaining),
-        BudgetSort.limitTerbesar =>
-          b.budget.amountLimit.compareTo(a.budget.amountLimit),
-        BudgetSort.namaAZ =>
-          a.budget.name.toLowerCase().compareTo(b.budget.name.toLowerCase()),
+        BudgetSort.limitTerbesar => b.budget.amountLimit.compareTo(
+          a.budget.amountLimit,
+        ),
+        BudgetSort.namaAZ => a.budget.name.toLowerCase().compareTo(
+          b.budget.name.toLowerCase(),
+        ),
       };
       if (value != 0) return value;
       final date = b.budget.startDate.compareTo(a.budget.startDate);

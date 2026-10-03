@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/date_label.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_back_button.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/category_icon_box.dart';
 import '../../transaction/models/transaction_model.dart';
@@ -48,45 +49,78 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: Obx(() => Text(controller.category.value?.name ?? 'Detail kategori')),
-        actions: [
-          Obx(() => PopupMenuButton<CategoryTransactionSort>(
-            tooltip: 'Urutkan transaksi',
-            icon: const Icon(Icons.sort_rounded),
-            onSelected: controller.setSort,
-            itemBuilder: (context) => [
-              CheckedPopupMenuItem(
-                value: CategoryTransactionSort.newest,
-                checked: controller.sort.value == CategoryTransactionSort.newest,
-                child: const Text('Tanggal terbaru'),
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.page,
+                12,
+                AppSpacing.page,
+                0,
               ),
-              CheckedPopupMenuItem(
-                value: CategoryTransactionSort.oldest,
-                checked: controller.sort.value == CategoryTransactionSort.oldest,
-                child: const Text('Tanggal terlama'),
+              child: Row(
+                children: [
+                  const AppBackButton(),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Obx(
+                      () => Text(
+                        controller.category.value?.name ?? 'Detail kategori',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                    ),
+                  ),
+                  Obx(() {
+                    final selectedSort = controller.sort.value;
+                    return PopupMenuButton<CategoryTransactionSort>(
+                      tooltip: 'Urutkan transaksi',
+                      icon: const Icon(Icons.sort_rounded),
+                      onSelected: controller.setSort,
+                      itemBuilder: (context) => [
+                        CheckedPopupMenuItem(
+                          value: CategoryTransactionSort.newest,
+                          checked:
+                              selectedSort == CategoryTransactionSort.newest,
+                          child: const Text('Tanggal terbaru'),
+                        ),
+                        CheckedPopupMenuItem(
+                          value: CategoryTransactionSort.oldest,
+                          checked:
+                              selectedSort == CategoryTransactionSort.oldest,
+                          child: const Text('Tanggal terlama'),
+                        ),
+                      ],
+                    );
+                  }),
+                ],
               ),
-            ],
-          )),
-        ],
+            ),
+            Expanded(
+              child: Obx(() {
+                final current = controller.state.value;
+                return switch (current.status) {
+                  ResourceStatus.idle || ResourceStatus.loading => const Center(
+                    child: CircularProgressIndicator(),
+                  ),
+                  ResourceStatus.error => AppErrorView(
+                    message:
+                        current.message ?? 'Gagal memuat transaksi kategori.',
+                    onRetry: controller.load,
+                  ),
+                  ResourceStatus.empty => const AppEmptyView(
+                    icon: Icons.receipt_long_outlined,
+                    title: 'Belum ada transaksi pada kategori ini',
+                    message:
+                        'Transaksi dengan kategori ini akan tampil di sini.',
+                  ),
+                  ResourceStatus.success => _content(context),
+                };
+              }),
+            ),
+          ],
+        ),
       ),
-      body: Obx(() {
-        final current = controller.state.value;
-        return switch (current.status) {
-          ResourceStatus.idle || ResourceStatus.loading =>
-            const Center(child: CircularProgressIndicator()),
-          ResourceStatus.error => AppErrorView(
-            message: current.message ?? 'Gagal memuat transaksi kategori.',
-            onRetry: controller.load,
-          ),
-          ResourceStatus.empty => const AppEmptyView(
-            icon: Icons.receipt_long_outlined,
-            title: 'Belum ada transaksi pada kategori ini',
-            message: 'Transaksi dengan kategori ini akan tampil di sini.',
-          ),
-          ResourceStatus.success => _content(context),
-        };
-      }),
     );
   }
 
@@ -96,7 +130,12 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
     final groups = controller.groups;
     return ListView.builder(
       controller: scrollController,
-      padding: const EdgeInsets.fromLTRB(AppSpacing.page, 12, AppSpacing.page, 120),
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        12,
+        AppSpacing.page,
+        120,
+      ),
       itemCount: groups.length + 2 + (controller.isLoadingMore.value ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == 0) {
@@ -113,9 +152,15 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(category?.name ?? 'Kategori', style: Theme.of(context).textTheme.titleMedium),
+                      Text(
+                        category?.name ?? 'Kategori',
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                       const SizedBox(height: 2),
-                      Text('${formatIdr(summary?.total ?? 0)} · ${summary?.count ?? 0} transaksi', style: const TextStyle(color: AppColors.muted)),
+                      Text(
+                        '${formatIdr(summary?.total ?? 0)} · ${summary?.count ?? 0} transaksi',
+                        style: const TextStyle(color: AppColors.muted),
+                      ),
                     ],
                   ),
                 ),
@@ -135,9 +180,16 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 18, bottom: 7, left: 2),
-              child: Text(_dateLabel(group.date), style: const TextStyle(fontWeight: FontWeight.w600, color: AppColors.muted)),
+              child: Text(
+                _dateLabel(group.date),
+                style: const TextStyle(
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.muted,
+                ),
+              ),
             ),
-            for (final transaction in group.transactions) _TransactionRow(transaction: transaction),
+            for (final transaction in group.transactions)
+              _TransactionRow(transaction: transaction),
           ],
         );
       },
@@ -159,14 +211,28 @@ class _TransactionRow extends StatelessWidget {
       child: ListTile(
         contentPadding: EdgeInsets.zero,
         title: Text(transaction.title),
-        subtitle: Text([
-          '${transaction.transactionDate.toLocal().hour.toString().padLeft(2, '0')}:${transaction.transactionDate.toLocal().minute.toString().padLeft(2, '0')}',
-          if (transaction.merchantOrSource?.isNotEmpty == true) transaction.merchantOrSource!,
-          if (transaction.paymentMethod != null) transaction.paymentMethod!.name,
-        ].join(' · ')),
-        trailing: Text(
-          '${isIncome ? '+' : '-'}${formatIdr(transaction.amount)}',
-          style: TextStyle(color: isIncome ? AppColors.income : AppColors.coral, fontWeight: FontWeight.w600),
+        subtitle: Text(
+          [
+            '${transaction.transactionDate.toLocal().hour.toString().padLeft(2, '0')}:${transaction.transactionDate.toLocal().minute.toString().padLeft(2, '0')}',
+            if (transaction.merchantOrSource?.isNotEmpty == true)
+              transaction.merchantOrSource!,
+            if (transaction.paymentMethod != null)
+              transaction.paymentMethod!.name,
+          ].join(' · '),
+        ),
+        trailing: ConstrainedBox(
+          constraints: const BoxConstraints(maxWidth: 132),
+          child: FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerRight,
+            child: Text(
+              '${isIncome ? '+' : '-'}${formatIdr(transaction.amount)}',
+              style: TextStyle(
+                color: isIncome ? AppColors.income : AppColors.coral,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
         ),
         onTap: () => showTransactionSheet(context, edit: transaction),
       ),
