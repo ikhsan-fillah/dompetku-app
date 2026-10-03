@@ -11,6 +11,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_chip.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../dashboard/models/dashboard_view_models.dart';
 import '../controllers/transaction_controller.dart';
 import '../services/transaction_list_service.dart';
 import '../widgets/transaction_form_sheet.dart';
@@ -28,12 +29,24 @@ class _TransactionListPageState extends State<TransactionListPage> {
   late final TransactionController _controller =
       Get.find<TransactionController>();
   final TextEditingController _search = TextEditingController();
+  final ScrollController _scroll = ScrollController();
   final RxnInt _expanded = RxnInt();
 
   @override
   void dispose() {
     _search.dispose();
+    _scroll.dispose();
     super.dispose();
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _scroll.addListener(() {
+      if (_scroll.position.pixels >= _scroll.position.maxScrollExtent - 300) {
+        _controller.loadNextPage();
+      }
+    });
   }
 
   void _snack(String message) {
@@ -94,6 +107,16 @@ class _TransactionListPageState extends State<TransactionListPage> {
     return relative == full ? full : '$relative · $full';
   }
 
+  String _sortLabel(TransactionSort sort) => switch (sort) {
+    TransactionSort.terbaru => 'Terbaru',
+    TransactionSort.terlama => 'Terlama',
+    TransactionSort.nominalTerbesar => 'Nominal terbesar',
+    TransactionSort.nominalTerkecil => 'Nominal terkecil',
+    TransactionSort.namaAZ => 'Nama A-Z',
+    TransactionSort.namaZA => 'Nama Z-A',
+    TransactionSort.kategoriAZ => 'Kategori A-Z',
+  };
+
   Widget _body() {
     final state = _controller.state.value;
     switch (state.status) {
@@ -127,52 +150,65 @@ class _TransactionListPageState extends State<TransactionListPage> {
           );
         }
         final expandedId = _expanded.value;
-        return ListView(
+        final entries = <_TransactionEntry>[];
+        if (result.isGrouped) {
+          for (final group in result.groups) {
+            entries.add(_TransactionEntry.header(group.date));
+            entries.addAll(
+              group.items.map(_TransactionEntry.item),
+            );
+          }
+        } else {
+          entries.addAll(result.items.map(_TransactionEntry.item));
+        }
+        return ListView.builder(
+          controller: _scroll,
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.page,
             4,
             AppSpacing.page,
             130,
           ),
-          children: [
-            _SummaryRow(income: result.income, expense: result.expense),
-            for (final group in result.groups) ...[
-              Padding(
+          itemCount: entries.length + 1 +
+              (_controller.isLoadingMore.value ? 1 : 0),
+          itemBuilder: (context, index) {
+            if (index == entries.length + 1) {
+              return const Padding(
+                padding: EdgeInsets.all(16),
+                child: Center(child: CircularProgressIndicator()),
+              );
+            }
+            if (index == 0) {
+              return _SummaryRow(income: result.income, expense: result.expense);
+            }
+            final entry = entries[index - 1];
+            if (entry.date != null) {
+              return Padding(
                 padding: const EdgeInsets.only(top: 14, bottom: 6, left: 2),
                 child: Text(
-                  _groupLabel(group.date),
+                  _groupLabel(entry.date!),
                   style: const TextStyle(
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                     color: AppColors.muted,
                   ),
                 ),
+              );
+            }
+            final item = entry.item!;
+            return AppCard(
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              margin: const EdgeInsets.only(bottom: 4),
+              child: TransactionTile(
+                item: item,
+                expanded: expandedId == item.id,
+                onTap: () => _toggle(item.id),
+                onEdit: () => _edit(item.id),
+                onDuplicate: () => _duplicate(item.id),
+                onDelete: () => _delete(item.id),
               ),
-              AppCard(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 4,
-                ),
-                margin: const EdgeInsets.only(bottom: 4),
-                child: Column(
-                  children: [
-                    for (var i = 0; i < group.items.length; i++) ...[
-                      if (i > 0)
-                        const Divider(height: 1, color: Color(0xFFF1F5F9)),
-                      TransactionTile(
-                        item: group.items[i],
-                        expanded: expandedId == group.items[i].id,
-                        onTap: () => _toggle(group.items[i].id),
-                        onEdit: () => _edit(group.items[i].id),
-                        onDuplicate: () => _duplicate(group.items[i].id),
-                        onDelete: () => _delete(group.items[i].id),
-                      ),
-                    ],
-                  ],
-                ),
-              ),
-            ],
-          ],
+            );
+          },
         );
     }
   }
@@ -189,9 +225,33 @@ class _TransactionListPageState extends State<TransactionListPage> {
             AppSpacing.page,
             0,
           ),
-          child: Text(
-            'Transaksi',
-            style: Theme.of(context).textTheme.titleLarge,
+          child: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  'Transaksi',
+                  style: Theme.of(context).textTheme.titleLarge,
+                ),
+              ),
+              Obx(
+                () {
+                  final selectedSort = _controller.sort.value;
+                  return PopupMenuButton<TransactionSort>(
+                    tooltip: 'Urutkan transaksi',
+                    icon: const Icon(Icons.sort_rounded),
+                    onSelected: _controller.setSort,
+                    itemBuilder: (context) => [
+                      for (final sort in TransactionSort.values)
+                        CheckedPopupMenuItem(
+                          value: sort,
+                          checked: selectedSort == sort,
+                          child: Text(_sortLabel(sort)),
+                        ),
+                    ],
+                  );
+                },
+              ),
+            ],
           ),
         ),
         Padding(
@@ -241,6 +301,18 @@ class _TransactionListPageState extends State<TransactionListPage> {
       ],
     );
   }
+}
+
+class _TransactionEntry {
+  const _TransactionEntry._({this.date, this.item});
+
+  const _TransactionEntry.header(DateTime date) : this._(date: date);
+
+  const _TransactionEntry.item(RecentTransactionItem item)
+    : this._(item: item);
+
+  final DateTime? date;
+  final RecentTransactionItem? item;
 }
 
 /// Ringkasan satu kartu: pemasukan dan pengeluaran berdampingan.

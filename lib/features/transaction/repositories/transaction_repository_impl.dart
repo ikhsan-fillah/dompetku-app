@@ -4,8 +4,10 @@ import 'package:dompetku_app/core/utils/date_range.dart';
 import '../data/transaction_local_data_source.dart';
 import '../models/transaction_model.dart';
 import 'transaction_repository.dart';
+import '../services/transaction_list_service.dart';
 
-class TransactionRepositoryImpl implements TransactionRepository {
+class TransactionRepositoryImpl
+  implements TransactionRepository, TransactionPageRepository {
   TransactionRepositoryImpl(this._dataSource);
 
   final TransactionLocalDataSource _dataSource;
@@ -38,4 +40,16 @@ class TransactionRepositoryImpl implements TransactionRepository {
   Future<int> getTotal({required TransactionType type, DateRange? range}) {
     return _dataSource.getTotal(type: type, range: range);
   }
+
+  @override
+  Future<List<TransactionModel>> getPage(TransactionPageRequest request) =>
+      _dataSource.getPage(request);
+
+  @override
+  Future<TransactionSummary> getSummary({
+    DateRange? range,
+    TransactionTypeFilter filter = TransactionTypeFilter.all,
+    String query = '',
+  }) =>
+      _dataSource.getSummary(range: range, filter: filter, query: query);
 }

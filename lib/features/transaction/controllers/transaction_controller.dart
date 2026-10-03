@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 
 import '../../../core/services/data_refresh_service.dart';
@@ -22,7 +24,14 @@ class TransactionController extends GetxController {
   final state = const ResourceState<List<TransactionModel>>.idle().obs;
   final categories = <CategoryModel>[].obs;
   final filter = TransactionTypeFilter.all.obs;
+  final sort = TransactionSort.terbaru.obs;
   final query = ''.obs;
+  final hasMore = true.obs;
+  final isLoadingMore = false.obs;
+
+  static const pageSize = 25;
+  Timer? _queryDebounce;
+  int _loadedCount = 0;
 
   Worker? _refreshWorker;
   int _requestId = 0;
@@ -33,12 +42,18 @@ class TransactionController extends GetxController {
           ? Get.find<CategoryRepository>()
           : null);
 
+  TransactionPageRepository? get _pageRepository =>
+      _repository is TransactionPageRepository
+          ? _repository as TransactionPageRepository
+          : null;
+
   /// Daftar yang sudah difilter, dicari, dan dikelompokkan per hari.
   TransactionListResult get list => _listService.build(
     transactions: state.value.data ?? const <TransactionModel>[],
     categories: categories.toList(),
     filter: filter.value,
     query: query.value,
+    sort: sort.value,
   );
 
   @override
@@ -56,12 +71,30 @@ class TransactionController extends GetxController {
   @override
   void onClose() {
     _refreshWorker?.dispose();
+    _queryDebounce?.cancel();
     super.onClose();
   }
 
-  void setFilter(TransactionTypeFilter value) => filter.value = value;
+  void setFilter(TransactionTypeFilter value) {
+    if (filter.value == value) return;
+    filter.value = value;
+    _resetPagedLoad();
+  }
 
-  void setQuery(String value) => query.value = value;
+  void setSort(TransactionSort value) {
+    if (sort.value == value) return;
+    sort.value = value;
+    _resetPagedLoad();
+  }
+
+  void setQuery(String value) {
+    query.value = value;
+    if (_pageRepository == null) return;
+    _queryDebounce?.cancel();
+    _queryDebounce = Timer(const Duration(milliseconds: 300), () {
+      load();
+    });
+  }
 
   TransactionModel? findById(int id) {
     for (final item in state.value.data ?? const <TransactionModel>[]) {
@@ -77,6 +110,30 @@ class TransactionController extends GetxController {
       state.value = const ResourceState.loading();
     }
     try {
+      final pageRepository = _pageRepository;
+      if (pageRepository != null) {
+        final page = await pageRepository.getPage(
+          TransactionPageRequest(
+            range: range.value,
+            filter: filter.value,
+            query: query.value,
+            sort: sort.value,
+            limit: pageSize,
+          ),
+        );
+        final categoryRepository = _categoryRepository;
+        final loadedCategories = categoryRepository == null
+            ? <CategoryModel>[]
+            : await categoryRepository.getAll(includeArchived: true);
+        if (requestId != _requestId) return;
+        _loadedCount = page.length;
+        hasMore.value = page.length == pageSize;
+        categories.assignAll(loadedCategories);
+        state.value = page.isEmpty
+            ? const ResourceState.empty()
+            : ResourceState.success(page);
+        return;
+      }
       final transactions = await _repository.getAll(range: range.value);
       final categoryRepository = _categoryRepository;
       final loadedCategories = categoryRepository == null
@@ -91,6 +148,43 @@ class TransactionController extends GetxController {
       if (requestId != _requestId) return;
       state.value = const ResourceState.error('Gagal memuat transaksi.');
     }
+  }
+
+  Future<void> loadNextPage() async {
+    final pageRepository = _pageRepository;
+    if (pageRepository == null ||
+        !hasMore.value ||
+        isLoadingMore.value ||
+        state.value.status != ResourceStatus.success) {
+      return;
+    }
+    isLoadingMore.value = true;
+    try {
+      final page = await pageRepository.getPage(
+        TransactionPageRequest(
+          range: range.value,
+          filter: filter.value,
+          query: query.value,
+          sort: sort.value,
+          limit: pageSize,
+          offset: _loadedCount,
+        ),
+      );
+      final current = state.value.data ?? const <TransactionModel>[];
+      final combined = [...current, ...page];
+      _loadedCount = combined.length;
+      hasMore.value = page.length == pageSize;
+      state.value = ResourceState.success(combined);
+    } catch (_) {
+      // Halaman yang sudah tampil tetap dipertahankan saat halaman berikutnya gagal.
+    } finally {
+      isLoadingMore.value = false;
+    }
+  }
+
+  void _resetPagedLoad() {
+    if (_pageRepository == null) return;
+    load(silent: true);
   }
 
   Future<void> _afterMutation() async {

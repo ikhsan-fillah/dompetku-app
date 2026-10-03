@@ -4,8 +4,10 @@ import 'package:dompetku_app/core/database/database_constants.dart';
 import 'package:dompetku_app/core/utils/date_range.dart';
 
 import '../models/transaction_model.dart';
+import '../repositories/transaction_repository.dart';
+import '../services/transaction_list_service.dart';
 
-class TransactionLocalDataSource {
+class TransactionLocalDataSource implements TransactionPageRepository {
   TransactionLocalDataSource(this._appDatabase);
 
   final AppDatabase _appDatabase;
@@ -96,4 +98,95 @@ class TransactionLocalDataSource {
     );
     return (result.first['total'] as num).toInt();
   }
+
+  @override
+  Future<List<TransactionModel>> getPage(TransactionPageRequest request) async {
+    final database = await _appDatabase.database;
+    final filter = _where(request);
+    final rows = await database.rawQuery(
+      '''SELECT t.* FROM ${DatabaseTables.transactions} t
+         LEFT JOIN ${DatabaseTables.categories} c
+           ON c.${DatabaseColumns.id} = t.${DatabaseColumns.categoryId}
+         WHERE ${filter.sql}
+         ORDER BY ${_orderBy(request.sort)}
+         LIMIT ? OFFSET ?''',
+      [...filter.args, request.limit, request.offset],
+    );
+    return rows.map(TransactionModel.fromMap).toList();
+  }
+
+  @override
+  Future<TransactionSummary> getSummary({
+    DateRange? range,
+    TransactionTypeFilter filter = TransactionTypeFilter.all,
+    String query = '',
+  }) async {
+    final database = await _appDatabase.database;
+    final where = _where(
+      TransactionPageRequest(range: range, filter: filter, query: query),
+    );
+    final rows = await database.rawQuery(
+      '''SELECT
+         COALESCE(SUM(CASE WHEN t.${DatabaseColumns.type} = 'income' THEN t.${DatabaseColumns.amount} ELSE 0 END), 0) AS income,
+         COALESCE(SUM(CASE WHEN t.${DatabaseColumns.type} = 'expense' THEN t.${DatabaseColumns.amount} ELSE 0 END), 0) AS expense
+         FROM ${DatabaseTables.transactions} t
+         LEFT JOIN ${DatabaseTables.categories} c
+           ON c.${DatabaseColumns.id} = t.${DatabaseColumns.categoryId}
+         WHERE ${where.sql}''',
+      where.args,
+    );
+    final row = rows.first;
+    return TransactionSummary(
+      income: (row['income'] as num).toInt(),
+      expense: (row['expense'] as num).toInt(),
+    );
+  }
+
+  ({String sql, List<Object?> args}) _where(TransactionPageRequest request) {
+    final clauses = <String>['1 = 1'];
+    final args = <Object?>[];
+    if (request.filter != TransactionTypeFilter.all) {
+      clauses.add('t.${DatabaseColumns.type} = ?');
+      args.add(
+        request.filter == TransactionTypeFilter.income ? 'income' : 'expense',
+      );
+    }
+    if (request.range != null) {
+      clauses.add(
+        'date(t.${DatabaseColumns.transactionDate}) BETWEEN date(?) AND date(?)',
+      );
+      args.addAll([
+        request.range!.start.toIso8601String(),
+        request.range!.end.toIso8601String(),
+      ]);
+    }
+    final query = request.query.trim().toLowerCase();
+    if (query.isNotEmpty) {
+      clauses.add('''lower(
+        t.${DatabaseColumns.title} || ' ' ||
+        coalesce(t.${DatabaseColumns.note}, '') || ' ' ||
+        coalesce(t.${DatabaseColumns.merchantOrSource}, '') || ' ' ||
+        coalesce(c.${DatabaseColumns.name}, '')
+      ) LIKE ?''');
+      args.add('%$query%');
+    }
+    return (sql: clauses.join(' AND '), args: args);
+  }
+
+  String _orderBy(TransactionSort sort) => switch (sort) {
+    TransactionSort.terbaru =>
+      't.${DatabaseColumns.transactionDate} DESC, t.${DatabaseColumns.id} DESC',
+    TransactionSort.terlama =>
+      't.${DatabaseColumns.transactionDate} ASC, t.${DatabaseColumns.id} ASC',
+    TransactionSort.nominalTerbesar =>
+      't.${DatabaseColumns.amount} DESC, t.${DatabaseColumns.transactionDate} DESC, t.${DatabaseColumns.id} DESC',
+    TransactionSort.nominalTerkecil =>
+      't.${DatabaseColumns.amount} ASC, t.${DatabaseColumns.transactionDate} DESC, t.${DatabaseColumns.id} DESC',
+    TransactionSort.namaAZ =>
+      'lower(t.${DatabaseColumns.title}) ASC, t.${DatabaseColumns.transactionDate} DESC, t.${DatabaseColumns.id} DESC',
+    TransactionSort.namaZA =>
+      'lower(t.${DatabaseColumns.title}) DESC, t.${DatabaseColumns.transactionDate} DESC, t.${DatabaseColumns.id} DESC',
+    TransactionSort.kategoriAZ =>
+      'lower(coalesce(c.${DatabaseColumns.name}, \'Tanpa kategori\')) ASC, t.${DatabaseColumns.transactionDate} DESC, t.${DatabaseColumns.id} DESC',
+  };
 }

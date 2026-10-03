@@ -112,4 +112,39 @@ void main() {
     expect(result.isEmpty, isTrue);
     expect(result.expense, 0);
   });
+
+  test('semua opsi sort menghasilkan urutan yang diharapkan dan stabil', () {
+    List<int> ids(TransactionSort sort) => _service
+        .build(
+          transactions: _data,
+          categories: categories,
+          sort: sort,
+        )
+        .items
+        .map((item) => item.id)
+        .toList();
+
+    expect(ids(TransactionSort.nominalTerbesar), [3, 4, 2, 1]);
+    expect(ids(TransactionSort.nominalTerkecil), [1, 2, 4, 3]);
+    expect(ids(TransactionSort.namaAZ), [4, 2, 1, 3]);
+    expect(ids(TransactionSort.namaZA), [2, 1, 3, 4]);
+    expect(ids(TransactionSort.kategoriAZ), [2, 1, 4, 3]);
+    final oldest = _service.build(
+      transactions: _data,
+      categories: categories,
+      sort: TransactionSort.terlama,
+    );
+    expect(oldest.groups.expand((group) => group.items).map((item) => item.id), [3, 1, 2, 4]);
+
+    final ties = [
+      _tx(9, TransactionType.expense, 1, 10, DateTime(2026, 9, 20)),
+      _tx(8, TransactionType.expense, 1, 10, DateTime(2026, 9, 21)),
+    ];
+    final result = _service.build(
+      transactions: ties,
+      categories: categories,
+      sort: TransactionSort.nominalTerbesar,
+    );
+    expect(result.items.map((item) => item.id), [8, 9]);
+  });
 }
