@@ -8,6 +8,8 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/budget_status.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_bar_icon_button.dart';
+import '../../../core/widgets/app_page_header.dart';
 import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
@@ -132,58 +134,32 @@ class _Header extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.fromLTRB(
-        AppSpacing.page,
-        12,
-        AppSpacing.page,
-        10,
-      ),
-      child: Row(
-        children: [
-          Expanded(
-            child: Text(
-              'Anggaran',
-              style: Theme.of(context).textTheme.titleLarge,
-            ),
-          ),
-          Obx(() {
-            final selected = controller.sort.value;
-            return PopupMenuButton<BudgetSort>(
-              tooltip: 'Urutkan anggaran',
-              icon: const Icon(Icons.sort_rounded),
-              onSelected: controller.setSort,
-              itemBuilder: (_) => [
-                for (final sort in BudgetSort.values)
-                  CheckedPopupMenuItem(
-                    value: sort,
-                    checked: selected == sort,
-                    child: Text(_sortLabel(sort)),
-                  ),
-              ],
-            );
-          }),
-          Tooltip(
-            message: 'Anggaran terarsip',
-            child: Material(
-              color: AppColors.mint,
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: onArchive,
-                child: const Padding(
-                  padding: EdgeInsets.all(10),
-                  child: Icon(
-                    Icons.inventory_2_outlined,
-                    size: 20,
-                    color: AppColors.teal,
-                  ),
+    return AppPageHeader(
+      title: 'Anggaran',
+      actions: [
+        Obx(() {
+          final selected = controller.sort.value;
+          return PopupMenuButton<BudgetSort>(
+            tooltip: 'Urutkan anggaran',
+            icon: const Icon(Icons.sort_rounded),
+            onSelected: controller.setSort,
+            itemBuilder: (_) => [
+              for (final sort in BudgetSort.values)
+                CheckedPopupMenuItem(
+                  value: sort,
+                  checked: selected == sort,
+                  child: Text(_sortLabel(sort)),
                 ),
-              ),
-            ),
-          ),
-        ],
-      ),
+            ],
+          );
+        }),
+        AppBarIconButton(
+          tooltip: 'Anggaran terarsip',
+          icon: Icons.inventory_2_outlined,
+          background: AppColors.mint,
+          onPressed: onArchive,
+        ),
+      ],
     );
   }
 }

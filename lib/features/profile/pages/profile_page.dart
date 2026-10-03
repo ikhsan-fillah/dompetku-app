@@ -173,8 +173,6 @@ class _ProfilePageState extends State<ProfilePage> {
         130,
       ),
       children: [
-        Text('Profil', style: textTheme.titleLarge),
-        const SizedBox(height: 14),
         AppCard(
           gradient: AppColors.heroGradient,
           radius: AppRadius.hero,

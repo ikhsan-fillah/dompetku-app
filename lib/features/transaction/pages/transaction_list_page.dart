@@ -8,6 +8,7 @@ import '../../../core/utils/date_label.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_chip.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/app_text_field.dart';
@@ -154,9 +155,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
         if (result.isGrouped) {
           for (final group in result.groups) {
             entries.add(_TransactionEntry.header(group.date));
-            entries.addAll(
-              group.items.map(_TransactionEntry.item),
-            );
+            entries.addAll(group.items.map(_TransactionEntry.item));
           }
         } else {
           entries.addAll(result.items.map(_TransactionEntry.item));
@@ -169,8 +168,8 @@ class _TransactionListPageState extends State<TransactionListPage> {
             AppSpacing.page,
             130,
           ),
-          itemCount: entries.length + 1 +
-              (_controller.isLoadingMore.value ? 1 : 0),
+          itemCount:
+              entries.length + 1 + (_controller.isLoadingMore.value ? 1 : 0),
           itemBuilder: (context, index) {
             if (index == entries.length + 1) {
               return const Padding(
@@ -179,7 +178,10 @@ class _TransactionListPageState extends State<TransactionListPage> {
               );
             }
             if (index == 0) {
-              return _SummaryRow(income: result.income, expense: result.expense);
+              return _SummaryRow(
+                income: result.income,
+                expense: result.expense,
+              );
             }
             final entry = entries[index - 1];
             if (entry.date != null) {
@@ -218,46 +220,31 @@ class _TransactionListPageState extends State<TransactionListPage> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.page,
-            12,
-            AppSpacing.page,
-            0,
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Transaksi',
-                  style: Theme.of(context).textTheme.titleLarge,
-                ),
-              ),
-              Obx(
-                () {
-                  final selectedSort = _controller.sort.value;
-                  return PopupMenuButton<TransactionSort>(
-                    tooltip: 'Urutkan transaksi',
-                    icon: const Icon(Icons.sort_rounded),
-                    onSelected: _controller.setSort,
-                    itemBuilder: (context) => [
-                      for (final sort in TransactionSort.values)
-                        CheckedPopupMenuItem(
-                          value: sort,
-                          checked: selectedSort == sort,
-                          child: Text(_sortLabel(sort)),
-                        ),
-                    ],
-                  );
-                },
-              ),
-            ],
-          ),
+        AppPageHeader(
+          title: 'Transaksi',
+          actions: [
+            Obx(() {
+              final selectedSort = _controller.sort.value;
+              return PopupMenuButton<TransactionSort>(
+                tooltip: 'Urutkan transaksi',
+                icon: const Icon(Icons.sort_rounded),
+                onSelected: _controller.setSort,
+                itemBuilder: (context) => [
+                  for (final sort in TransactionSort.values)
+                    CheckedPopupMenuItem(
+                      value: sort,
+                      checked: selectedSort == sort,
+                      child: Text(_sortLabel(sort)),
+                    ),
+                ],
+              );
+            }),
+          ],
         ),
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.page,
-            12,
+            4,
             AppSpacing.page,
             0,
           ),
@@ -308,8 +295,7 @@ class _TransactionEntry {
 
   const _TransactionEntry.header(DateTime date) : this._(date: date);
 
-  const _TransactionEntry.item(RecentTransactionItem item)
-    : this._(item: item);
+  const _TransactionEntry.item(RecentTransactionItem item) : this._(item: item);
 
   final DateTime? date;
   final RecentTransactionItem? item;
