@@ -11,6 +11,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
+import '../services/budget_list_service.dart';
 
 class BudgetPage extends GetView<BudgetController> {
   const BudgetPage({super.key});
@@ -68,7 +69,10 @@ class BudgetPage extends GetView<BudgetController> {
     body: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _Header(onArchive: () => Get.toNamed(AppRoutes.budgetArchive)),
+        _Header(
+          controller: controller,
+          onArchive: () => Get.toNamed(AppRoutes.budgetArchive),
+        ),
         Expanded(
           child: Obx(() {
             final current = controller.state.value;
@@ -92,13 +96,16 @@ class BudgetPage extends GetView<BudgetController> {
                     AppSpacing.page,
                     160,
                   ),
-                  itemCount: current.data!.length + 1,
+                  itemCount: controller.visibleItems.length + 1,
                   separatorBuilder: (_, _) => const SizedBox(height: 14),
                   itemBuilder: (itemContext, index) {
                     if (index == 0) {
-                      return _SummaryHero(items: current.data!, money: _money);
+                      return _SummaryHero(
+                        items: controller.visibleItems,
+                        money: _money,
+                      );
                     }
-                    final item = current.data![index - 1];
+                    final item = controller.visibleItems[index - 1];
                     return _BudgetCard(
                       item: item,
                       money: _money,
@@ -118,8 +125,9 @@ class BudgetPage extends GetView<BudgetController> {
 
 /// Judul halaman di dalam body (sama seperti tab Profil dan Transaksi).
 class _Header extends StatelessWidget {
-  const _Header({required this.onArchive});
+  const _Header({required this.controller, required this.onArchive});
 
+  final BudgetController controller;
   final VoidCallback onArchive;
 
   @override
@@ -139,6 +147,22 @@ class _Header extends StatelessWidget {
               style: Theme.of(context).textTheme.titleLarge,
             ),
           ),
+          Obx(() {
+            final selected = controller.sort.value;
+            return PopupMenuButton<BudgetSort>(
+              tooltip: 'Urutkan anggaran',
+              icon: const Icon(Icons.sort_rounded),
+              onSelected: controller.setSort,
+              itemBuilder: (_) => [
+                for (final sort in BudgetSort.values)
+                  CheckedPopupMenuItem(
+                    value: sort,
+                    checked: selected == sort,
+                    child: Text(_sortLabel(sort)),
+                  ),
+              ],
+            );
+          }),
           Tooltip(
             message: 'Anggaran terarsip',
             child: Material(
@@ -163,6 +187,13 @@ class _Header extends StatelessWidget {
     );
   }
 }
+
+String _sortLabel(BudgetSort sort) => switch (sort) {
+  BudgetSort.persentaseTerpakaiTertinggi => 'Terpakai tertinggi',
+  BudgetSort.sisaTerkecil => 'Sisa terkecil',
+  BudgetSort.limitTerbesar => 'Limit terbesar',
+  BudgetSort.namaAZ => 'Nama A-Z',
+};
 
 /// Kartu ringkasan bergradasi (gaya sama dengan kartu saldo di Beranda).
 class _SummaryHero extends StatelessWidget {
