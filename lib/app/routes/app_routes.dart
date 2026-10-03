@@ -4,6 +4,7 @@ abstract class AppRoutes {
   static const login = '/login';
   static const home = '/home';
   static const categories = '/categories';
+  static const categoryDetail = '/category-detail';
   static const biometricSetup = '/biometric-setup';
   static const biometricUnlock = '/biometric-unlock';
   static const budgetArchive = '/budget-archive';

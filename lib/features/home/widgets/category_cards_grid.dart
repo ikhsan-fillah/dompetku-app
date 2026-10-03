@@ -10,9 +10,10 @@ import '../../dashboard/models/dashboard_view_models.dart';
 
 /// Kartu kategori dua kolom (favorit atau pengeluaran terbesar).
 class CategoryCardsGrid extends StatelessWidget {
-  const CategoryCardsGrid({super.key, required this.items});
+  const CategoryCardsGrid({super.key, required this.items, this.onTap});
 
   final List<CategoryCardData> items;
+  final ValueChanged<int>? onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -25,11 +26,13 @@ class CategoryCardsGrid extends StatelessWidget {
               child: Row(
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
-                  Expanded(child: _CategoryCard(item: items[i])),
+                  Expanded(
+                    child: _CategoryCard(item: items[i], onTap: onTap),
+                  ),
                   const SizedBox(width: 12),
                   Expanded(
                     child: i + 1 < items.length
-                        ? _CategoryCard(item: items[i + 1])
+                        ? _CategoryCard(item: items[i + 1], onTap: onTap)
                         : const SizedBox.shrink(),
                   ),
                 ],
@@ -42,17 +45,21 @@ class CategoryCardsGrid extends StatelessWidget {
 }
 
 class _CategoryCard extends StatelessWidget {
-  const _CategoryCard({required this.item});
+  const _CategoryCard({required this.item, this.onTap});
 
   final CategoryCardData item;
+  final ValueChanged<int>? onTap;
 
   @override
   Widget build(BuildContext context) {
     final color = CategoryStyle.color(item.colorValue);
-    return AppCard(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.all(14),
-      child: Column(
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap == null ? null : () => onTap!(item.categoryId),
+      child: AppCard(
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.all(14),
+        child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           CategoryIconBox(
@@ -86,6 +93,7 @@ class _CategoryCard extends StatelessWidget {
                 : LinearGradient(colors: [color, color.withValues(alpha: 0.6)]),
           ),
         ],
+        ),
       ),
     );
   }
