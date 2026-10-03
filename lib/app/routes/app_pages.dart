@@ -8,6 +8,8 @@ import '../../features/auth/pages/login_page.dart';
 import '../../features/budget/bindings/budget_binding.dart';
 import '../../features/budget/views/budget_archive_page.dart';
 import '../../features/category/controllers/category_controller.dart';
+import '../../features/category/controllers/category_detail_controller.dart';
+import '../../features/category/pages/category_detail_page.dart';
 import '../../features/category/pages/category_manage_page.dart';
 import '../../features/receipt/services/ml_kit_receipt_text_recognizer.dart';
 import '../../features/receipt/services/receipt_ocr_service.dart';
@@ -56,6 +58,16 @@ class AppPages {
         if (!Get.isRegistered<CategoryController>()) {
           Get.put(CategoryController(Get.find()));
         }
+      }),
+    ),
+    GetPage(
+      name: AppRoutes.categoryDetail,
+      page: () => const CategoryDetailPage(),
+      middlewares: [FinancialRouteGuard()],
+      binding: BindingsBuilder(() {
+        Get.put(
+          CategoryDetailController(Get.find(), Get.find(), Get.find()),
+        );
       }),
     ),
     GetPage(

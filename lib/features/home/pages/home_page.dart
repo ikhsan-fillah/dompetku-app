@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../app/routes/app_routes.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
@@ -131,7 +132,13 @@ class HomePage extends StatelessWidget {
           ),
           if (data.favorites.isNotEmpty) ...[
             const SectionHeader(title: 'Kategori favorit'),
-            CategoryCardsGrid(items: data.favorites),
+            CategoryCardsGrid(
+              items: data.favorites,
+              onTap: (categoryId) => Get.toNamed(
+                AppRoutes.categoryDetail,
+                arguments: {'categoryId': categoryId},
+              ),
+            ),
           ],
           RecentTransactionsCard(
             items: data.recent,
