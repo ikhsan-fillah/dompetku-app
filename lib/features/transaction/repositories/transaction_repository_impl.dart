@@ -52,4 +52,10 @@ class TransactionRepositoryImpl
     String query = '',
   }) =>
       _dataSource.getSummary(range: range, filter: filter, query: query);
+
+  @override
+  Future<CategoryTransactionSummary> getCategorySummary({
+    required int categoryId,
+    DateRange? range,
+  }) => _dataSource.getCategorySummary(categoryId: categoryId, range: range);
 }

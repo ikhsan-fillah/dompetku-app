@@ -66,7 +66,7 @@ class AppPages {
       middlewares: [FinancialRouteGuard()],
       binding: BindingsBuilder(() {
         Get.put(
-          CategoryDetailController(Get.find(), Get.find(), Get.find()),
+          CategoryDetailController(Get.find(), Get.find()),
         );
       }),
     ),

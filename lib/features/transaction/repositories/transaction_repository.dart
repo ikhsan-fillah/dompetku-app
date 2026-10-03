@@ -12,6 +12,8 @@ class TransactionPageRequest {
     this.sort = TransactionSort.terbaru,
     this.limit = 25,
     this.offset = 0,
+    this.categoryId,
+    this.dateSort = TransactionDateSort.newest,
   });
 
   final DateRange? range;
@@ -20,6 +22,17 @@ class TransactionPageRequest {
   final TransactionSort sort;
   final int limit;
   final int offset;
+  final int? categoryId;
+  final TransactionDateSort dateSort;
+}
+
+enum TransactionDateSort { newest, oldest }
+
+class CategoryTransactionSummary {
+  const CategoryTransactionSummary({required this.total, required this.count});
+
+  final int total;
+  final int count;
 }
 
 class TransactionSummary {
@@ -36,6 +49,11 @@ abstract interface class TransactionPageRepository {
     DateRange? range,
     TransactionTypeFilter filter = TransactionTypeFilter.all,
     String query = '',
+  });
+
+  Future<CategoryTransactionSummary> getCategorySummary({
+    required int categoryId,
+    DateRange? range,
   });
 }
 
