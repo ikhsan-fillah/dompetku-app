@@ -8,6 +8,7 @@ import '../../transaction/repositories/transaction_repository.dart';
 import '../models/budget_model.dart';
 import '../models/budget_view_model.dart';
 import '../repositories/budget_repository.dart';
+import '../services/budget_list_service.dart';
 
 class BudgetController extends GetxController {
   BudgetController(this._repository, {TransactionRepository? transactions})
@@ -17,6 +18,13 @@ class BudgetController extends GetxController {
   final TransactionRepository? _transactions;
   final state = const ResourceState<List<BudgetViewModel>>.idle().obs;
   final archived = const ResourceState<List<BudgetViewModel>>.idle().obs;
+  final sort = BudgetSort.persentaseTerpakaiTertinggi.obs;
+  final _listService = const BudgetListService();
+
+  List<BudgetViewModel> get visibleItems => _listService.sort(
+    state.value.data ?? const <BudgetViewModel>[],
+    sort.value,
+  );
 
   Worker? _refreshWorker;
   int _requestId = 0;
@@ -44,6 +52,8 @@ class BudgetController extends GetxController {
     _refreshWorker?.dispose();
     super.onClose();
   }
+
+  void setSort(BudgetSort value) => sort.value = value;
 
   Future<void> load({bool silent = false}) async {
     final requestId = ++_requestId;
