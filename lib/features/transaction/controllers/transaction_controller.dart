@@ -44,8 +44,8 @@ class TransactionController extends GetxController {
 
   TransactionPageRepository? get _pageRepository =>
       _repository is TransactionPageRepository
-          ? _repository as TransactionPageRepository
-          : null;
+      ? _repository as TransactionPageRepository
+      : null;
 
   /// Daftar yang sudah difilter, dicari, dan dikelompokkan per hari.
   TransactionListResult get list => _listService.build(
@@ -104,7 +104,10 @@ class TransactionController extends GetxController {
   }
 
   Future<void> load({DateRange? selectedRange, bool silent = false}) async {
-    if (selectedRange != null) range.value = selectedRange;
+    if (selectedRange != null) {
+      DateRange.validateHistory(selectedRange);
+      range.value = selectedRange;
+    }
     final requestId = ++_requestId;
     if (!silent || state.value.status != ResourceStatus.success) {
       state.value = const ResourceState.loading();

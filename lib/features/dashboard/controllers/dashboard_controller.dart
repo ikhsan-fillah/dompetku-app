@@ -54,8 +54,8 @@ class DashboardController extends GetxController {
   final BudgetRepository? _budgets;
   final _breakdown = const ExpenseBreakdownService();
   final _insights = const DashboardInsightsService();
-  final range = DateRange.fromPreset(DateRangePreset.month).obs;
-  final preset = DateRangePreset.month.obs;
+  final range = DateRange.fromPreset(DateRangePreset.currentMonth).obs;
+  final preset = DateRangePreset.currentMonth.obs;
   final state = const ResourceState<DashboardData>.idle().obs;
 
   /// True bila pengguna pernah mencatat setidaknya satu transaksi (periode apa pun).
@@ -98,6 +98,7 @@ class DashboardController extends GetxController {
   }
 
   Future<void> setRange(DateRange value) async {
+    DateRange.validateHistory(value);
     preset.value = DateRangePreset.custom;
     range.value = value;
     await refreshDashboard();

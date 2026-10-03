@@ -17,7 +17,7 @@ class CategoryDetailController extends GetxController {
   final state = const ResourceState<List<TransactionModel>>.idle().obs;
   final summary = Rxn<CategoryTransactionSummary>();
   final category = Rxn<CategoryModel>();
-  final range = DateRange.fromPreset(DateRangePreset.month).obs;
+  final range = DateRange.fromPreset(DateRangePreset.currentMonth).obs;
   final sort = CategoryTransactionSort.newest.obs;
   final hasMore = true.obs;
   final isLoadingMore = false.obs;
@@ -42,7 +42,10 @@ class CategoryDetailController extends GetxController {
     final arguments = Get.arguments as Map<String, Object?>? ?? const {};
     categoryId = arguments['categoryId'] as int;
     final selectedRange = arguments['range'];
-    if (selectedRange is DateRange) range.value = selectedRange;
+    if (selectedRange is DateRange) {
+      DateRange.validateHistory(selectedRange);
+      range.value = selectedRange;
+    }
     if (Get.isRegistered<DataRefreshService>()) {
       _refreshWorker = ever<int>(
         Get.find<DataRefreshService>().version,
@@ -66,6 +69,7 @@ class CategoryDetailController extends GetxController {
 
   Future<void> load({DateRange? selectedRange, bool silent = false}) async {
     if (selectedRange != null) {
+      DateRange.validateHistory(selectedRange);
       range.value = selectedRange;
     }
     final requestId = ++_requestId;
@@ -74,14 +78,16 @@ class CategoryDetailController extends GetxController {
     }
     try {
       final results = await Future.wait([
-        _pageRepository.getPage(TransactionPageRequest(
-          categoryId: categoryId,
-          range: range.value,
-          dateSort: sort.value == CategoryTransactionSort.newest
-              ? TransactionDateSort.newest
-              : TransactionDateSort.oldest,
-          limit: pageSize,
-        )),
+        _pageRepository.getPage(
+          TransactionPageRequest(
+            categoryId: categoryId,
+            range: range.value,
+            dateSort: sort.value == CategoryTransactionSort.newest
+                ? TransactionDateSort.newest
+                : TransactionDateSort.oldest,
+            limit: pageSize,
+          ),
+        ),
         _pageRepository.getCategorySummary(
           categoryId: categoryId,
           range: range.value,
@@ -101,27 +107,32 @@ class CategoryDetailController extends GetxController {
           : ResourceState.success(page);
     } catch (_) {
       if (requestId == _requestId) {
-        state.value = const ResourceState.error('Gagal memuat transaksi kategori.');
+        state.value = const ResourceState.error(
+          'Gagal memuat transaksi kategori.',
+        );
       }
     }
   }
 
   Future<void> loadNextPage() async {
-    if (!hasMore.value || isLoadingMore.value ||
+    if (!hasMore.value ||
+        isLoadingMore.value ||
         state.value.status != ResourceStatus.success) {
       return;
     }
     isLoadingMore.value = true;
     try {
-      final page = await _pageRepository.getPage(TransactionPageRequest(
-        categoryId: categoryId,
-        range: range.value,
-        dateSort: sort.value == CategoryTransactionSort.newest
-            ? TransactionDateSort.newest
-            : TransactionDateSort.oldest,
-        limit: pageSize,
-        offset: _loadedCount,
-      ));
+      final page = await _pageRepository.getPage(
+        TransactionPageRequest(
+          categoryId: categoryId,
+          range: range.value,
+          dateSort: sort.value == CategoryTransactionSort.newest
+              ? TransactionDateSort.newest
+              : TransactionDateSort.oldest,
+          limit: pageSize,
+          offset: _loadedCount,
+        ),
+      );
       final current = state.value.data ?? const <TransactionModel>[];
       state.value = ResourceState.success([...current, ...page]);
       _loadedCount += page.length;
