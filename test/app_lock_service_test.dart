@@ -10,10 +10,14 @@ void main() {
     expect(service.shouldLock(start), isFalse);
   });
 
-  test('durasi default mengunci langsung', () {
+  test('durasi default mengunci setelah lima menit', () {
     final service = AppLockService()..onBackgrounded(start);
 
-    expect(service.shouldLock(start), isTrue);
+    expect(
+      service.shouldLock(start.add(const Duration(minutes: 4, seconds: 59))),
+      isFalse,
+    );
+    expect(service.shouldLock(start.add(const Duration(minutes: 5))), isTrue);
   });
 
   test('durasi belum tercapai tidak mengunci', () {

@@ -47,31 +47,41 @@ class CategoryDetailService {
     required List<CategoryModel> categories,
     Iterable<BudgetModel> budgets = const [],
   }) {
-    final current = transactions.where((item) =>
-        item.categoryId == categoryId && range.contains(item.transactionDate));
+    final current = transactions.where(
+      (item) =>
+          item.categoryId == categoryId && range.contains(item.transactionDate),
+    );
     final list = current.toList();
     final total = list.fold<int>(0, (sum, item) => sum + item.amount);
     final previousRange = range.previousEquivalentPeriod;
     final previousTotal = transactions
-      .where((item) => item.categoryId == categoryId &&
-        previousRange.contains(item.transactionDate))
-      .fold<int>(0, (sum, item) => sum + item.amount);
+        .where(
+          (item) =>
+              item.categoryId == categoryId &&
+              previousRange.contains(item.transactionDate),
+        )
+        .fold<int>(0, (sum, item) => sum + item.amount);
     final periodExpenses = transactions
-      .where((item) => item.type == TransactionType.expense &&
-        range.contains(item.transactionDate))
-      .fold<int>(0, (sum, item) => sum + item.amount);
+        .where(
+          (item) =>
+              item.type == TransactionType.expense &&
+              range.contains(item.transactionDate),
+        )
+        .fold<int>(0, (sum, item) => sum + item.amount);
     return CategoryDetailData(
       category: categories.where((item) => item.id == categoryId).firstOrNull,
       transactions: list,
       total: total,
       transactionCount: list.length,
       average: list.isEmpty ? 0 : total ~/ list.length,
-        percentOfExpenses: periodExpenses == 0 ? 0 : total * 100 / periodExpenses,
-        previousTotal: previousTotal,
-        changePercent: previousTotal == 0
+      percentOfExpenses: periodExpenses == 0 ? 0 : total * 100 / periodExpenses,
+      previousTotal: previousTotal,
+      changePercent: previousTotal == 0
           ? (total == 0 ? 0 : 100)
           : (total - previousTotal) * 100 / previousTotal,
-      budget: budgets.where((item) => item.categoryId == categoryId).firstOrNull,
+      budget: budgets
+          .where((item) => item.categoryId == categoryId)
+          .firstOrNull,
     );
   }
 

@@ -30,10 +30,8 @@ void main() {
   ];
 
   test('mengurutkan seluruh opsi budget', () {
-    List<int> ids(BudgetSort sort) => service
-        .sort(items, sort)
-        .map((item) => item.budget.id!)
-        .toList();
+    List<int> ids(BudgetSort sort) =>
+        service.sort(items, sort).map((item) => item.budget.id!).toList();
 
     expect(ids(BudgetSort.persentaseTerpakaiTertinggi), [1, 3, 2]);
     expect(ids(BudgetSort.sisaTerkecil), [1, 3, 2]);

@@ -115,11 +115,7 @@ void main() {
 
   test('semua opsi sort menghasilkan urutan yang diharapkan dan stabil', () {
     List<int> ids(TransactionSort sort) => _service
-        .build(
-          transactions: _data,
-          categories: categories,
-          sort: sort,
-        )
+        .build(transactions: _data, categories: categories, sort: sort)
         .items
         .map((item) => item.id)
         .toList();
@@ -134,7 +130,10 @@ void main() {
       categories: categories,
       sort: TransactionSort.terlama,
     );
-    expect(oldest.groups.expand((group) => group.items).map((item) => item.id), [3, 1, 2, 4]);
+    expect(
+      oldest.groups.expand((group) => group.items).map((item) => item.id),
+      [3, 1, 2, 4],
+    );
 
     final ties = [
       _tx(9, TransactionType.expense, 1, 10, DateTime(2026, 9, 20)),

@@ -125,16 +125,13 @@ class TransactionLocalDataSource implements TransactionPageRepository {
     final where = _where(
       TransactionPageRequest(range: range, filter: filter, query: query),
     );
-    final rows = await database.rawQuery(
-      '''SELECT
+    final rows = await database.rawQuery('''SELECT
          COALESCE(SUM(CASE WHEN t.${DatabaseColumns.type} = 'income' THEN t.${DatabaseColumns.amount} ELSE 0 END), 0) AS income,
          COALESCE(SUM(CASE WHEN t.${DatabaseColumns.type} = 'expense' THEN t.${DatabaseColumns.amount} ELSE 0 END), 0) AS expense
          FROM ${DatabaseTables.transactions} t
          LEFT JOIN ${DatabaseTables.categories} c
            ON c.${DatabaseColumns.id} = t.${DatabaseColumns.categoryId}
-         WHERE ${where.sql}''',
-      where.args,
-    );
+         WHERE ${where.sql}''', where.args);
     final row = rows.first;
     return TransactionSummary(
       income: (row['income'] as num).toInt(),
@@ -219,7 +216,8 @@ class TransactionLocalDataSource implements TransactionPageRepository {
       'lower(coalesce(c.${DatabaseColumns.name}, \'Tanpa kategori\')) ASC, t.${DatabaseColumns.transactionDate} DESC, t.${DatabaseColumns.id} DESC',
   };
 
-  String _categoryOrderBy(TransactionDateSort sort) => sort == TransactionDateSort.newest
+  String _categoryOrderBy(TransactionDateSort sort) =>
+      sort == TransactionDateSort.newest
       ? 't.${DatabaseColumns.transactionDate} DESC, t.${DatabaseColumns.createdAt} DESC, t.${DatabaseColumns.id} DESC'
       : 't.${DatabaseColumns.transactionDate} ASC, t.${DatabaseColumns.createdAt} ASC, t.${DatabaseColumns.id} ASC';
 }

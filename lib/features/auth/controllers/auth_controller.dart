@@ -39,8 +39,7 @@ class AuthController extends GetxController {
       biometricStatus.value = BiometricStatus.required;
       await _sessionRepository.saveBiometricFailureState(count: 0);
     }
-    // Aplikasi pribadi: pengguna yang sudah pernah login langsung masuk.
-    if (isRegistered.value) {
+    if (isRegistered.value && !biometricEnabled.value) {
       unlock();
     }
   }

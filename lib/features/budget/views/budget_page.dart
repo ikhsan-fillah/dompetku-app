@@ -156,7 +156,7 @@ class _Header extends StatelessWidget {
         AppBarIconButton(
           tooltip: 'Anggaran terarsip',
           icon: Icons.inventory_2_outlined,
-          background: AppColors.mint,
+          gradient: AppColors.primaryGradient,
           onPressed: onArchive,
         ),
       ],

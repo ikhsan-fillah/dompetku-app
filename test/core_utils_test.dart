@@ -43,23 +43,26 @@ void main() {
       );
     });
 
-    test('supports current month, year to date, and all time through today', () {
-      final today = DateTime(2026, 10, 3, 18, 30);
-      final currentMonth = DateRange.fromPreset(
-        DateRangePreset.currentMonth,
-        now: today,
-      );
-      expect(currentMonth.start, DateTime(2026, 10, 1));
-      expect(currentMonth.end, DateTime(2026, 10, 3));
-      expect(
-        DateRange.fromPreset(DateRangePreset.yearToDate, now: today).start,
-        DateTime(2026, 1, 1),
-      );
-      expect(
-        DateRange.fromPreset(DateRangePreset.allTime, now: today).end,
-        DateTime(2026, 10, 3),
-      );
-    });
+    test(
+      'supports current month, year to date, and all time through today',
+      () {
+        final today = DateTime(2026, 10, 3, 18, 30);
+        final currentMonth = DateRange.fromPreset(
+          DateRangePreset.currentMonth,
+          now: today,
+        );
+        expect(currentMonth.start, DateTime(2026, 10, 1));
+        expect(currentMonth.end, DateTime(2026, 10, 3));
+        expect(
+          DateRange.fromPreset(DateRangePreset.yearToDate, now: today).start,
+          DateTime(2026, 1, 1),
+        );
+        expect(
+          DateRange.fromPreset(DateRangePreset.allTime, now: today).end,
+          DateTime(2026, 10, 3),
+        );
+      },
+    );
 
     test('history ranges reject a future end date', () {
       expect(

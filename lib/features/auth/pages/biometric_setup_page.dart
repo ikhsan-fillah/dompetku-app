@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/constant/domain_enums.dart';
+import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/auth_scaffold.dart';
 import '../controllers/auth_controller.dart';
 
@@ -33,7 +34,8 @@ class BiometricSetupPage extends StatelessWidget {
           children: [
             Text(message),
             const SizedBox(height: 24),
-            FilledButton.icon(
+            AppButton(
+              expand: true,
               onPressed: busy || locked
                   ? null
                   : () async {
@@ -41,8 +43,8 @@ class BiometricSetupPage extends StatelessWidget {
                         Get.offAllNamed(AppRoutes.home);
                       }
                     },
-              icon: const Icon(Icons.verified_user_outlined),
-              label: Text(busy ? 'Memverifikasi…' : 'Verifikasi biometrik'),
+              icon: Icons.verified_user_outlined,
+              label: busy ? 'Memverifikasi…' : 'Verifikasi biometrik',
             ),
           ],
         );

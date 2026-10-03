@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import 'app/bindings/initial_binding.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
+import 'core/services/app_lock_service.dart';
 import 'core/services/data_refresh_service.dart';
 import 'core/services/shared_prefs_service.dart';
 import 'core/theme/app_theme.dart';
@@ -46,14 +47,30 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state != AppLifecycleState.resumed) return;
-    // Aplikasi pribadi: tidak ada kunci ulang saat kembali dari background.
-    // Cukup muat ulang data agar tampilan selalu terbaru.
     if (!Get.isRegistered<AuthController>() ||
-        !Get.isRegistered<DataRefreshService>()) {
+        !Get.isRegistered<AppLockService>()) {
       return;
     }
-    if (Get.find<AuthController>().isUnlocked.value) {
+    final lockService = Get.find<AppLockService>();
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.hidden ||
+        state == AppLifecycleState.detached) {
+      lockService.onBackgrounded(DateTime.now());
+      return;
+    }
+    if (state != AppLifecycleState.resumed) return;
+
+    final auth = Get.find<AuthController>();
+    if (auth.biometricEnabled.value && lockService.shouldLock(DateTime.now())) {
+      auth.lock();
+      lockService.onForegrounded();
+      if (Get.currentRoute != AppRoutes.biometricUnlock) {
+        Get.offAllNamed(AppRoutes.biometricUnlock);
+      }
+      return;
+    }
+    lockService.onForegrounded();
+    if (auth.isUnlocked.value && Get.isRegistered<DataRefreshService>()) {
       Get.find<DataRefreshService>().bump();
     }
   }

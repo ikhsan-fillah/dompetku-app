@@ -6,6 +6,8 @@ import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_bar_icon_button.dart';
+import '../../../core/widgets/app_back_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../controllers/category_controller.dart';
 import '../models/category_model.dart';
@@ -256,29 +258,15 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
             children: [
               Row(
                 children: [
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      color: AppColors.surface,
-                      borderRadius: BorderRadius.circular(14),
-                      boxShadow: AppColors.softShadow,
-                    ),
-                    child: IconButton(
-                      tooltip: 'Kembali',
-                      onPressed: () => Get.back(),
-                      icon: const Icon(
-                        Icons.arrow_back_rounded,
-                        color: AppColors.teal,
-                      ),
-                    ),
-                  ),
+                  const AppBackButton(),
                   const SizedBox(width: 12),
                   Expanded(
                     child: Text('Kategori', style: textTheme.titleLarge),
                   ),
-                  AppButton(
-                    label: 'Tambah',
-                    expand: false,
+                  AppBarIconButton(
+                    tooltip: 'Tambah kategori',
                     icon: Icons.add_rounded,
+                    gradient: AppColors.primaryGradient,
                     onPressed: () => _showAddOrEditForm(),
                   ),
                 ],

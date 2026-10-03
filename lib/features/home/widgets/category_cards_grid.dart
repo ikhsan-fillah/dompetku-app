@@ -60,39 +60,44 @@ class _CategoryCard extends StatelessWidget {
         margin: EdgeInsets.zero,
         padding: const EdgeInsets.all(14),
         child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CategoryIconBox(
-            icon: CategoryStyle.icon(item.iconKey),
-            color: color,
-            size: 38,
-          ),
-          const SizedBox(height: 10),
-          Text(
-            item.name,
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: const TextStyle(fontSize: 11.5, color: AppColors.muted),
-          ),
-          FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerLeft,
-            child: Text(
-              formatIdr(item.amount),
-              style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            CategoryIconBox(
+              icon: CategoryStyle.icon(item.iconKey),
+              color: color,
+              size: 38,
             ),
-          ),
-          const SizedBox(height: 8),
-          AppProgressBar(
-            value: item.sharePercent / 100,
-            height: 6,
-            gradient: item.amount == 0
-                ? const LinearGradient(
-                    colors: [AppColors.track, AppColors.track],
-                  )
-                : LinearGradient(colors: [color, color.withValues(alpha: 0.6)]),
-          ),
-        ],
+            const SizedBox(height: 10),
+            Text(
+              item.name,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(fontSize: 11.5, color: AppColors.muted),
+            ),
+            FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerLeft,
+              child: Text(
+                formatIdr(item.amount),
+                style: const TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
+            ),
+            const SizedBox(height: 8),
+            AppProgressBar(
+              value: item.sharePercent / 100,
+              height: 6,
+              gradient: item.amount == 0
+                  ? const LinearGradient(
+                      colors: [AppColors.track, AppColors.track],
+                    )
+                  : LinearGradient(
+                      colors: [color, color.withValues(alpha: 0.6)],
+                    ),
+            ),
+          ],
         ),
       ),
     );

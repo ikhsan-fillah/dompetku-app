@@ -7,7 +7,7 @@ import 'transaction_repository.dart';
 import '../services/transaction_list_service.dart';
 
 class TransactionRepositoryImpl
-  implements TransactionRepository, TransactionPageRepository {
+    implements TransactionRepository, TransactionPageRepository {
   TransactionRepositoryImpl(this._dataSource);
 
   final TransactionLocalDataSource _dataSource;
@@ -50,8 +50,7 @@ class TransactionRepositoryImpl
     DateRange? range,
     TransactionTypeFilter filter = TransactionTypeFilter.all,
     String query = '',
-  }) =>
-      _dataSource.getSummary(range: range, filter: filter, query: query);
+  }) => _dataSource.getSummary(range: range, filter: filter, query: query);
 
   @override
   Future<CategoryTransactionSummary> getCategorySummary({
