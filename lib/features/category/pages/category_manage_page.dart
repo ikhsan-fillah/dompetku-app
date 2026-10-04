@@ -54,13 +54,6 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
   Future<void> _showAddOrEditForm([CategoryModel? category]) async {
     final ok = await showCategorySheet(context, category: category);
     if (!mounted || !ok) return;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          category == null ? 'Kategori ditambahkan.' : 'Kategori diperbarui.',
-        ),
-      ),
-    );
   }
 
   Future<void> _confirmArchive(CategoryModel category) async {
@@ -93,9 +86,6 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
       _showError();
       return;
     }
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Kategori diarsipkan.')));
   }
 
   Widget _message(String text, {bool retry = false}) {

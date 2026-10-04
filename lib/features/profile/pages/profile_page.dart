@@ -10,7 +10,6 @@ import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/settings_tile.dart';
 import '../../../app/routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
-import '../../shell/controllers/main_shell_controller.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -55,9 +54,6 @@ class _ProfilePageState extends State<ProfilePage> {
     await _controller.setDisplayName(_nameField.text);
     if (!mounted) return;
     FocusScope.of(context).unfocus();
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(const SnackBar(content: Text('Nama tersimpan.')));
   }
 
   void _showDarkModeMaintenance() {
@@ -83,12 +79,6 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _openCategories() => Get.toNamed(AppRoutes.categories);
-
-  void _openBudgetTab() {
-    if (Get.isRegistered<MainShellController>()) {
-      Get.find<MainShellController>().select(2);
-    }
-  }
 
   Future<void> _confirmReset() async {
     final confirmationController = TextEditingController();
@@ -266,13 +256,6 @@ class _ProfilePageState extends State<ProfilePage> {
                 subtitle: 'Ikon, warna, urutan, favorit',
                 trailing: _chevron,
                 onTap: _openCategories,
-              ),
-              SettingsTile(
-                icon: Icons.track_changes_rounded,
-                title: 'Anggaran',
-                subtitle: 'Batas bulanan & peringatan',
-                trailing: _chevron,
-                onTap: _openBudgetTab,
               ),
               SettingsTile(
                 icon: Icons.pie_chart_outline_rounded,

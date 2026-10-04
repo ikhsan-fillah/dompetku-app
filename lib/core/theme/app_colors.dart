@@ -24,6 +24,7 @@ abstract final class AppColors {
   static const muted = Color(0xFF64748B);
   static const line = Color(0xFFE2E8F0);
   static const track = Color(0xFFEEF2F5);
+  static const trackOutline = Color(0xFFD7E7E3);
 
   static const primaryGradient = LinearGradient(
     begin: Alignment.topLeft,

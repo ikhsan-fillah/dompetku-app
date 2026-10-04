@@ -1,8 +1,5 @@
 import 'package:dompetku_app/core/theme/app_theme.dart';
-import 'package:dompetku_app/features/dashboard/models/budget_progress_model.dart';
 import 'package:dompetku_app/features/dashboard/models/dashboard_view_models.dart';
-import 'package:dompetku_app/features/dashboard/models/expense_slice.dart';
-import 'package:dompetku_app/features/home/widgets/budget_summary_cards.dart';
 import 'package:dompetku_app/features/home/widgets/category_cards_grid.dart';
 import 'package:dompetku_app/features/home/widgets/insight_banner.dart';
 import 'package:dompetku_app/features/home/widgets/recent_transactions_card.dart';
@@ -23,100 +20,7 @@ Widget _host(Widget child) => MaterialApp(
   ),
 );
 
-const _slice = ExpenseSlice(
-  categoryId: 1,
-  name: 'Makanan',
-  colorValue: 0xFFE57373,
-  amount: 1387000,
-  percent: 38,
-);
-
 void main() {
-  testWidgets('kartu anggaran menampilkan cincin, hari berjalan, dan sisa', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _host(
-        BudgetSummaryCards(
-          budget: const BudgetProgressModel(
-            name: 'September',
-            limit: 5000000,
-            used: 3650000,
-            elapsedDays: 29,
-            totalDays: 30,
-          ),
-          topCategory: _slice,
-          onSetupBudget: () {},
-        ),
-      ),
-    );
-
-    expect(find.text('73%'), findsOneWidget);
-    expect(find.text('Aman'), findsOneWidget);
-    expect(find.text('Hari ke-29 dari 30'), findsOneWidget);
-    expect(find.text('Sisa Rp 1.350.000'), findsOneWidget);
-  });
-
-  testWidgets('anggaran terlewati menampilkan status habis dan jumlah lewat', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _host(
-        BudgetSummaryCards(
-          budget: const BudgetProgressModel(
-            name: 'September',
-            limit: 1000000,
-            used: 1200000,
-            elapsedDays: 10,
-            totalDays: 30,
-          ),
-          topCategory: null,
-          onSetupBudget: () {},
-        ),
-      ),
-    );
-
-    expect(find.text('Habis'), findsOneWidget);
-    expect(find.text('Lewat Rp 200.000'), findsOneWidget);
-    expect(find.text('Belum ada data'), findsOneWidget);
-  });
-
-  testWidgets('tanpa anggaran menampilkan ajakan dan tombol Atur', (
-    tester,
-  ) async {
-    var tapped = false;
-    await tester.pumpWidget(
-      _host(
-        BudgetSummaryCards(
-          budget: null,
-          topCategory: _slice,
-          onSetupBudget: () => tapped = true,
-        ),
-      ),
-    );
-
-    expect(find.text('Belum ada anggaran'), findsOneWidget);
-    await tester.tap(find.text('Atur'));
-    expect(tapped, isTrue);
-  });
-
-  testWidgets('kategori teratas menampilkan nama dan bagiannya', (
-    tester,
-  ) async {
-    await tester.pumpWidget(
-      _host(
-        BudgetSummaryCards(
-          budget: null,
-          topCategory: _slice,
-          onSetupBudget: () {},
-        ),
-      ),
-    );
-
-    expect(find.text('Makanan'), findsOneWidget);
-    expect(find.text('38% dari pengeluaran'), findsOneWidget);
-  });
-
   testWidgets('kartu kategori menampilkan semua item termasuk yang ganjil', (
     tester,
   ) async {

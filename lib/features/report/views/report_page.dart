@@ -5,6 +5,8 @@ import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/utils/date_range.dart';
 import '../../../core/widgets/app_back_button.dart';
+import '../../../core/widgets/app_chip.dart';
+import '../../../core/widgets/app_progress_bar.dart';
 import '../controllers/report_controller.dart';
 
 class ReportPage extends StatefulWidget {
@@ -131,26 +133,10 @@ class _ReportPageState extends State<ReportPage> {
               itemBuilder: (_, index) {
                 final (preset, label) = _presets[index];
                 final selected = preset == _preset;
-                return ChoiceChip(
-                  label: Text(label),
+                return AppChip(
+                  label: label,
                   selected: selected,
-                  showCheckmark: false,
-                  onSelected: (_) => _selectPreset(preset),
-                  backgroundColor: Colors.white,
-                  selectedColor: const Color(0xFFCCFBF1),
-                  shape: const StadiumBorder(),
-                  side: BorderSide(
-                    color: selected
-                        ? const Color(0xFF0F766E)
-                        : const Color(0xFFE2E8F0),
-                  ),
-                  labelStyle: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: selected
-                        ? const Color(0xFF0F766E)
-                        : const Color(0xFF64748B),
-                  ),
+                  onTap: () => _selectPreset(preset),
                 );
               },
             ),
@@ -577,21 +563,11 @@ class _CategoryRow extends StatelessWidget {
           ],
         ),
         const SizedBox(height: 7),
-        ClipRRect(
-          borderRadius: BorderRadius.circular(9),
-          child: SizedBox(
-            height: 8,
-            child: Stack(
-              children: [
-                const Positioned.fill(
-                  child: ColoredBox(color: Color(0xFFEEF2F5)),
-                ),
-                FractionallySizedBox(
-                  widthFactor: share.clamp(0.0, 1.0),
-                  child: ColoredBox(color: color),
-                ),
-              ],
-            ),
+        AppProgressBar(
+          value: share,
+          height: 8,
+          gradient: LinearGradient(
+            colors: [color, color.withValues(alpha: 0.65)],
           ),
         ),
         const SizedBox(height: 5),

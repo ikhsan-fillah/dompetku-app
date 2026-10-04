@@ -73,7 +73,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
     final ok = await _controller.duplicate(model);
     if (!mounted) return;
     _expanded.value = null;
-    _snack(ok ? 'Transaksi digandakan ke hari ini.' : 'Gagal menggandakan.');
+    if (!ok) _snack('Gagal menggandakan.');
   }
 
   Future<void> _delete(int id) async {
@@ -99,7 +99,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
     final ok = await _controller.delete(id);
     if (!mounted) return;
     _expanded.value = null;
-    _snack(ok ? 'Transaksi dihapus.' : 'Gagal menghapus transaksi.');
+    if (!ok) _snack('Gagal menghapus transaksi.');
   }
 
   String _groupLabel(DateTime date) {
