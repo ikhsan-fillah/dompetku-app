@@ -35,9 +35,7 @@ class BudgetModel {
       startDate: DateTime.parse(
         map[DatabaseColumns.startDate] as String,
       ).toLocal(),
-      endDate: DateTime.parse(
-        map[DatabaseColumns.endDate] as String,
-      ).toLocal(),
+      endDate: DateTime.parse(map[DatabaseColumns.endDate] as String).toLocal(),
       isArchived: (map[DatabaseColumns.isArchived] as int) == 1,
       createdAt: DateTime.parse(map[DatabaseColumns.createdAt] as String),
       updatedAt: DateTime.parse(map[DatabaseColumns.updatedAt] as String),

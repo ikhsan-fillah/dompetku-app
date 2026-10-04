@@ -36,11 +36,7 @@ class DashboardData {
 }
 
 class DashboardController extends GetxController {
-  DashboardController(
-    this._transactions,
-    this._calculations,
-    this._categories,
-  );
+  DashboardController(this._transactions, this._calculations, this._categories);
 
   final TransactionRepository _transactions;
   final FinancialCalculationService _calculations;
