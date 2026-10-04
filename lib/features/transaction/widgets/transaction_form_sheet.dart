@@ -436,30 +436,33 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                 () => Wrap(
                   spacing: 8,
                   children: [
-                  AppChip(
-                    label: 'Bulan ini',
-                    selected: _budgetController.selectedPreset.value ==
+                    AppChip(
+                      label: 'Bulan ini',
+                      selected:
+                          _budgetController.selectedPreset.value ==
+                          BudgetPeriodPreset.currentMonth,
+                      onTap: () => _budgetController.setPreset(
                         BudgetPeriodPreset.currentMonth,
-                    onTap: () => _budgetController.setPreset(
-                      BudgetPeriodPreset.currentMonth,
+                      ),
                     ),
-                  ),
-                  AppChip(
-                    label: 'Bulan depan',
-                    selected: _budgetController.selectedPreset.value ==
+                    AppChip(
+                      label: 'Bulan depan',
+                      selected:
+                          _budgetController.selectedPreset.value ==
+                          BudgetPeriodPreset.nextMonth,
+                      onTap: () => _budgetController.setPreset(
                         BudgetPeriodPreset.nextMonth,
-                    onTap: () => _budgetController.setPreset(
-                      BudgetPeriodPreset.nextMonth,
+                      ),
                     ),
-                  ),
-                  AppChip(
-                    label: '30 hari',
-                    selected: _budgetController.selectedPreset.value ==
+                    AppChip(
+                      label: '30 hari',
+                      selected:
+                          _budgetController.selectedPreset.value ==
+                          BudgetPeriodPreset.thirtyDays,
+                      onTap: () => _budgetController.setPreset(
                         BudgetPeriodPreset.thirtyDays,
-                    onTap: () => _budgetController.setPreset(
-                      BudgetPeriodPreset.thirtyDays,
+                      ),
                     ),
-                  ),
                   ],
                 ),
               ),

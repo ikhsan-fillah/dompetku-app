@@ -2,17 +2,17 @@ import 'package:dompetku_app/features/budget/models/budget_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 BudgetModel _budget(DateTime start, DateTime end) => BudgetModel(
-      id: 1,
-      name: 'Anggaran tes',
-      amountLimit: 1000000,
-      categoryId: 2,
-      note: null,
-      startDate: start,
-      endDate: end,
-      isArchived: false,
-      createdAt: start,
-      updatedAt: start,
-    );
+  id: 1,
+  name: 'Anggaran tes',
+  amountLimit: 1000000,
+  categoryId: 2,
+  note: null,
+  startDate: start,
+  endDate: end,
+  isArchived: false,
+  createdAt: start,
+  updatedAt: start,
+);
 
 void main() {
   test('round-trip mempertahankan tanggal awal dan akhir bulan', () {
