@@ -1,8 +1,6 @@
 import 'package:dompetku_app/core/constant/domain_enums.dart';
 import 'package:dompetku_app/core/state/resource_state.dart';
 import 'package:dompetku_app/core/utils/date_range.dart';
-import 'package:dompetku_app/features/budget/models/budget_model.dart';
-import 'package:dompetku_app/features/budget/repositories/budget_repository.dart';
 import 'package:dompetku_app/features/category/models/category_model.dart';
 import 'package:dompetku_app/features/category/repositories/category_repository.dart';
 import 'package:dompetku_app/features/dashboard/controllers/dashboard_controller.dart';
@@ -33,28 +31,13 @@ class _Categories implements CategoryRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-class _Budgets implements BudgetRepository {
-  _Budgets(this.items);
-
-  final List<BudgetModel> items;
-
-  @override
-  Future<List<BudgetModel>> getAll({bool includeArchived = false}) async =>
-      items;
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
-
 DashboardController _controller({
   List<TransactionModel> transactions = const [],
-  List<BudgetModel> budgets = const [],
 }) {
   return DashboardController(
     _Transactions(transactions),
     const FinancialCalculationService(),
     _Categories(),
-    budgets: _Budgets(budgets),
   );
 }
 
@@ -85,7 +68,7 @@ void main() {
     expect(controller.range.value.dayCount, 11);
   });
 
-  test('anggaran keseluruhan yang aktif muncul di data dashboard', () async {
+  test('transaksi pada periode muncul di data dashboard', () async {
     final now = DateTime.now();
     final controller = Get.put(
       _controller(
@@ -101,26 +84,11 @@ void main() {
             updatedAt: now,
           ),
         ],
-        budgets: [
-          BudgetModel(
-            id: 1,
-            name: 'Bulan ini',
-            amountLimit: 1000000,
-            startDate: DateTime(now.year, now.month, 1),
-            endDate: DateTime(now.year, now.month + 1, 0),
-            isArchived: false,
-            createdAt: now,
-            updatedAt: now,
-          ),
-        ],
       ),
     );
     await pumpEventQueue();
 
     expect(controller.state.value.status, ResourceStatus.success);
-    final budget = controller.state.value.data!.budget;
-    expect(budget, isNotNull);
-    expect(budget!.percent, 25);
     expect(controller.state.value.data!.recent.length, 1);
   });
 }

@@ -74,23 +74,6 @@ Future<bool> showTransactionSheet(
       ),
     ),
   );
-  if (saved == true && context.mounted) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          editBudget != null
-              ? 'Anggaran diperbarui.'
-              : edit != null
-              ? 'Perubahan transaksi tersimpan.'
-              : requestedMode == FinancialInputMode.budget
-              ? 'Anggaran tersimpan.'
-              : requestedMode == FinancialInputMode.income
-              ? 'Pemasukan tersimpan.'
-              : 'Pengeluaran tersimpan.',
-        ),
-      ),
-    );
-  }
   if (saved == true && edit == null && editBudget == null) {
     _lastInputMode = requestedMode;
   }
@@ -449,31 +432,36 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
             }),
             const SizedBox(height: 12),
             if (_isBudget && _budgetController != null) ...[
-              Wrap(
-                spacing: 8,
-                children: [
+              Obx(
+                () => Wrap(
+                  spacing: 8,
+                  children: [
                   AppChip(
                     label: 'Bulan ini',
-                    selected: false,
+                    selected: _budgetController.selectedPreset.value ==
+                        BudgetPeriodPreset.currentMonth,
                     onTap: () => _budgetController.setPreset(
                       BudgetPeriodPreset.currentMonth,
                     ),
                   ),
                   AppChip(
                     label: 'Bulan depan',
-                    selected: false,
+                    selected: _budgetController.selectedPreset.value ==
+                        BudgetPeriodPreset.nextMonth,
                     onTap: () => _budgetController.setPreset(
                       BudgetPeriodPreset.nextMonth,
                     ),
                   ),
                   AppChip(
                     label: '30 hari',
-                    selected: false,
+                    selected: _budgetController.selectedPreset.value ==
+                        BudgetPeriodPreset.thirtyDays,
                     onTap: () => _budgetController.setPreset(
                       BudgetPeriodPreset.thirtyDays,
                     ),
                   ),
-                ],
+                  ],
+                ),
               ),
               const SizedBox(height: 10),
               Obx(
@@ -483,6 +471,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                       child: _DateRow(
                         date: _budgetController.startDate.value,
                         label: 'Mulai',
+                        showRelativeLabel: false,
                         onTap: () => _pickBudgetDate(true),
                       ),
                     ),
@@ -491,6 +480,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                       child: _DateRow(
                         date: _budgetController.endDate.value,
                         label: 'Selesai',
+                        showRelativeLabel: false,
                         onTap: () => _pickBudgetDate(false),
                       ),
                     ),
@@ -718,7 +708,8 @@ class _ToggleButton extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 13),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              color: selected ? color : Colors.transparent,
+              gradient: selected ? AppColors.primaryGradient : null,
+              color: selected ? null : Colors.transparent,
               borderRadius: BorderRadius.circular(13),
               boxShadow: selected
                   ? [
@@ -746,17 +737,23 @@ class _ToggleButton extends StatelessWidget {
 }
 
 class _DateRow extends StatelessWidget {
-  const _DateRow({required this.date, required this.onTap, this.label});
+  const _DateRow({
+    required this.date,
+    required this.onTap,
+    this.label,
+    this.showRelativeLabel = true,
+  });
 
   final DateTime date;
   final VoidCallback onTap;
   final String? label;
+  final bool showRelativeLabel;
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final dateLabel = date == today
+    final dateLabel = showRelativeLabel && date == today
         ? 'Hari ini · ${DateLabel.day(date)}'
         : DateLabel.day(date);
     return Align(

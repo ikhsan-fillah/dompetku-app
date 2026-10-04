@@ -32,8 +32,12 @@ class BudgetModel {
       amountLimit: map[DatabaseColumns.amountLimit] as int,
       categoryId: map[DatabaseColumns.categoryId] as int?,
       note: map[DatabaseColumns.note] as String?,
-      startDate: DateTime.parse(map[DatabaseColumns.startDate] as String),
-      endDate: DateTime.parse(map[DatabaseColumns.endDate] as String),
+      startDate: DateTime.parse(
+        map[DatabaseColumns.startDate] as String,
+      ).toLocal(),
+      endDate: DateTime.parse(
+        map[DatabaseColumns.endDate] as String,
+      ).toLocal(),
       isArchived: (map[DatabaseColumns.isArchived] as int) == 1,
       createdAt: DateTime.parse(map[DatabaseColumns.createdAt] as String),
       updatedAt: DateTime.parse(map[DatabaseColumns.updatedAt] as String),

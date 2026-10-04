@@ -10,6 +10,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_bar_icon_button.dart';
 import '../../../core/widgets/app_page_header.dart';
+import '../../../core/widgets/app_progress_bar.dart';
 import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
@@ -214,24 +215,13 @@ class _SummaryHero extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 14),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(8),
-            child: SizedBox(
-              height: 8,
-              child: Stack(
-                children: [
-                  Positioned.fill(
-                    child: ColoredBox(
-                      color: Colors.white.withValues(alpha: 0.25),
-                    ),
-                  ),
-                  FractionallySizedBox(
-                    widthFactor: ratio,
-                    child: const ColoredBox(color: Colors.white),
-                  ),
-                ],
-              ),
+          AppProgressBar(
+            value: ratio,
+            height: 8,
+            gradient: const LinearGradient(
+              colors: [Colors.white, Colors.white],
             ),
+            trackBorderColor: Colors.white54,
           ),
           const SizedBox(height: 12),
           Row(
@@ -293,6 +283,13 @@ class _HeroStat extends StatelessWidget {
 String _date(DateTime value) =>
     '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}';
 
+String _categoryLabel(BudgetViewModel item) {
+  if (item.isOverall) return 'Total';
+  const prefix = 'Anggaran ';
+  final name = item.budget.name;
+  return name.startsWith(prefix) ? name.substring(prefix.length) : name;
+}
+
 class _BudgetCard extends StatelessWidget {
   const _BudgetCard({
     required this.item,
@@ -332,18 +329,18 @@ class _BudgetCard extends StatelessWidget {
         ],
       ),
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Row(
               children: [
                 Container(
-                  width: 44,
-                  height: 44,
+                  width: 36,
+                  height: 36,
                   decoration: BoxDecoration(
                     color: AppColors.mint,
-                    borderRadius: BorderRadius.circular(14),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                   child: Icon(
                     item.isOverall
@@ -352,7 +349,7 @@ class _BudgetCard extends StatelessWidget {
                     color: AppColors.teal,
                   ),
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -369,7 +366,7 @@ class _BudgetCard extends StatelessWidget {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${item.isOverall ? 'Anggaran lama' : 'Per kategori'} · $period',
+                        '${_categoryLabel(item)} · $period',
                         style: const TextStyle(
                           color: Color(0xFF64748B),
                           fontSize: 11.5,
@@ -390,7 +387,7 @@ class _BudgetCard extends StatelessWidget {
                 ),
               ],
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 10),
             Row(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -402,7 +399,7 @@ class _BudgetCard extends StatelessWidget {
                       money(item.used),
                       style: const TextStyle(
                         color: Color(0xFF1F2937),
-                        fontSize: 22,
+                        fontSize: 20,
                         fontWeight: FontWeight.w700,
                       ),
                     ),
@@ -420,7 +417,7 @@ class _BudgetCard extends StatelessWidget {
             ),
             const SizedBox(height: 2),
             if (item.budget.note?.trim().isNotEmpty == true) ...[
-              const SizedBox(height: 8),
+              const SizedBox(height: 6),
               Text(
                 item.budget.note!,
                 maxLines: 2,
@@ -432,29 +429,13 @@ class _BudgetCard extends StatelessWidget {
               'dari ${money(item.budget.amountLimit)}',
               style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
             ),
-            const SizedBox(height: 12),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(10),
-              child: SizedBox(
-                height: 10,
-                child: Stack(
-                  children: [
-                    const Positioned.fill(
-                      child: ColoredBox(color: Color(0xFFEEF2F5)),
-                    ),
-                    FractionallySizedBox(
-                      widthFactor: (item.percent / 100)
-                          .clamp(0.0, 1.0)
-                          .toDouble(),
-                      child: DecoratedBox(
-                        decoration: BoxDecoration(gradient: visual.gradient),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
+            const SizedBox(height: 8),
+            AppProgressBar(
+              value: item.percent / 100,
+              height: 10,
+              gradient: visual.gradient,
             ),
-            const SizedBox(height: 10),
+            const SizedBox(height: 8),
             Row(
               children: [
                 Expanded(

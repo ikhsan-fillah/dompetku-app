@@ -3,11 +3,8 @@ import 'package:get/get.dart';
 import '../../../core/services/data_refresh_service.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/utils/date_range.dart';
-import '../../budget/models/budget_model.dart';
-import '../../budget/repositories/budget_repository.dart';
 import '../../category/repositories/category_repository.dart';
 import '../../transaction/repositories/transaction_repository.dart';
-import '../models/budget_progress_model.dart';
 import '../models/dashboard_summary_model.dart';
 import '../models/dashboard_view_models.dart';
 import '../models/expense_slice.dart';
@@ -23,7 +20,6 @@ class DashboardData {
     required this.previousPeriodExpenseChange,
     required this.expenses,
     this.trendBuckets = const [],
-    this.budget,
     this.favorites = const [],
     this.recent = const [],
     this.insight,
@@ -34,7 +30,6 @@ class DashboardData {
   final double previousPeriodExpenseChange;
   final List<ExpenseSlice> expenses;
   final List<TrendBucket> trendBuckets;
-  final BudgetProgressModel? budget;
   final List<CategoryCardData> favorites;
   final List<RecentTransactionItem> recent;
   final DashboardInsight? insight;
@@ -44,14 +39,12 @@ class DashboardController extends GetxController {
   DashboardController(
     this._transactions,
     this._calculations,
-    this._categories, {
-    BudgetRepository? budgets,
-  }) : _budgets = budgets;
+    this._categories,
+  );
 
   final TransactionRepository _transactions;
   final FinancialCalculationService _calculations;
   final CategoryRepository _categories;
-  final BudgetRepository? _budgets;
   final _breakdown = const ExpenseBreakdownService();
   final _insights = const DashboardInsightsService();
   final range = DateRange.fromPreset(DateRangePreset.currentMonth).obs;
@@ -64,12 +57,6 @@ class DashboardController extends GetxController {
 
   Worker? _refreshWorker;
   int _requestId = 0;
-
-  BudgetRepository? get _budgetRepository =>
-      _budgets ??
-      (Get.isRegistered<BudgetRepository>()
-          ? Get.find<BudgetRepository>()
-          : null);
 
   @override
   void onInit() {
@@ -121,10 +108,6 @@ class DashboardController extends GetxController {
           .toList();
       hasTransactionsInPeriod.value = current.isNotEmpty;
       final categories = await _categories.getAll(includeArchived: true);
-      final budgetRepository = _budgetRepository;
-      final budgets = budgetRepository == null
-          ? <BudgetModel>[]
-          : await budgetRepository.getAll();
       if (requestId != _requestId) return;
 
       if (current.isEmpty) {
@@ -149,7 +132,6 @@ class DashboardController extends GetxController {
                   percent: 0,
                 ),
             ],
-            budget: null,
             favorites: cards,
             recent: const [],
             insight: null,
@@ -164,8 +146,6 @@ class DashboardController extends GetxController {
         selected.previousEquivalentPeriod,
       );
       final trend = _calculations.dailyExpenses(transactions, selected);
-      final activeBudget = _calculations.activeOverallBudget(budgets);
-
       state.value = ResourceState.success(
         DashboardData(
           summary: _calculations.summary(transactions, selected),
@@ -174,9 +154,6 @@ class DashboardController extends GetxController {
           previousPeriodExpenseChange: _calculations
               .previousPeriodExpenseChange(transactions, selected),
           expenses: _breakdown.build(totals, categories),
-          budget: activeBudget == null
-              ? null
-              : _calculations.budgetProgress(transactions, activeBudget),
           favorites: _insights.favoriteCards(
             totals: totals,
             categories: categories,

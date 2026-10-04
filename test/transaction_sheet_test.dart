@@ -135,7 +135,7 @@ void main() {
     expect(repository.inserted.single.amount, 5000);
     expect(repository.inserted.single.title, 'Makanan');
     expect(find.text('Tambah transaksi'), findsNothing);
-    expect(find.text('Pengeluaran tersimpan.'), findsOneWidget);
+    expect(find.text('Pengeluaran tersimpan.'), findsNothing);
   });
 
   testWidgets(

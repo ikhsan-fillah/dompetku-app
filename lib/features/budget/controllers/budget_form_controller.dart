@@ -20,6 +20,7 @@ class BudgetFormController extends GetxController {
   final startDate = _day(DateTime.now()).obs;
   final endDate = _monthEnd(DateTime.now()).obs;
   final availableCategories = <CategoryModel>[].obs;
+  final selectedPreset = Rxn<BudgetPeriodPreset>();
   final saving = false.obs;
   final error = Rxn<String>();
   BudgetModel? _editing;
@@ -63,6 +64,7 @@ class BudgetFormController extends GetxController {
     endDate.value = _monthEnd(today);
     error.value = null;
     saving.value = false;
+    selectedPreset.value = BudgetPeriodPreset.currentMonth;
     await _loadCategories();
     if (availableCategories.isNotEmpty) {
       categoryId.value = availableCategories.first.id;
@@ -79,6 +81,7 @@ class BudgetFormController extends GetxController {
     endDate.value = _day(budget.endDate);
     error.value = null;
     saving.value = false;
+    selectedPreset.value = null;
     await _loadCategories();
   }
 
@@ -101,6 +104,7 @@ class BudgetFormController extends GetxController {
   }
 
   void setPreset(BudgetPeriodPreset preset, {DateTime? now}) {
+    selectedPreset.value = preset;
     final today = _day(now ?? DateTime.now());
     switch (preset) {
       case BudgetPeriodPreset.currentMonth:

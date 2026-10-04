@@ -9,11 +9,13 @@ class AppProgressBar extends StatelessWidget {
     required this.value,
     this.gradient = AppColors.primaryGradient,
     this.height = 9,
+    this.trackBorderColor = AppColors.trackOutline,
   });
 
   final double value;
   final Gradient gradient;
   final double height;
+  final Color trackBorderColor;
 
   @override
   Widget build(BuildContext context) {
@@ -24,7 +26,11 @@ class AppProgressBar extends StatelessWidget {
         borderRadius: BorderRadius.circular(height),
         child: Container(
           height: height,
-          color: AppColors.track,
+          decoration: BoxDecoration(
+            color: AppColors.track,
+            border: Border.all(color: trackBorderColor),
+            borderRadius: BorderRadius.circular(height),
+          ),
           alignment: Alignment.centerLeft,
           child: TweenAnimationBuilder<double>(
             tween: Tween<double>(begin: 0, end: target),

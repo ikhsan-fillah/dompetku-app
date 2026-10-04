@@ -43,8 +43,7 @@ class BudgetArchivePage extends GetView<BudgetController> {
       ),
     );
     if (confirmed != true) return;
-    final ok = await controller.restore(item.budget.id!);
-    if (ok) Get.rawSnackbar(message: 'Anggaran dipulihkan.');
+    await controller.restore(item.budget.id!);
   }
 
   @override
