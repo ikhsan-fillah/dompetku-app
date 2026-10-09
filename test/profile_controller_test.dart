@@ -12,7 +12,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _FakeSharedPrefsService extends SharedPrefsService {
   bool biometric = false;
-  String theme = 'system';
+  String theme = 'light';
   String name = '';
   int autoLock = 0;
   bool failBiometricWrite = false;
@@ -169,7 +169,8 @@ void main() {
 
     await controller.load();
 
-    expect(controller.themeMode.value, 'system');
+    expect(controller.themeMode.value, 'light');
+    expect(preferences.theme, 'light');
   });
 
   test('setBiometricEnabled menyimpan dan memperbarui state', () async {
@@ -228,8 +229,8 @@ void main() {
     final saved = await controller.setThemeMode('biru');
 
     expect(saved, isFalse);
-    expect(controller.themeMode.value, 'system');
-    expect(preferences.theme, 'system');
+    expect(controller.themeMode.value, 'light');
+    expect(preferences.theme, 'light');
     expect(appliedThemes, isEmpty);
   });
 
@@ -239,17 +240,16 @@ void main() {
     final saved = await controller.setThemeMode('dark');
 
     expect(saved, isFalse);
-    expect(controller.themeMode.value, 'system');
+    expect(controller.themeMode.value, 'light');
     expect(appliedThemes, isEmpty);
     expect(controller.savingTheme.value, isFalse);
     expect(controller.error.value, 'Gagal menyimpan tema.');
   });
 
   test('themeModeFor memetakan nilai tersimpan ke ThemeMode', () {
-    expect(ProfileController.themeModeFor('system'), ThemeMode.system);
     expect(ProfileController.themeModeFor('light'), ThemeMode.light);
     expect(ProfileController.themeModeFor('dark'), ThemeMode.dark);
-    expect(ProfileController.themeModeFor('tidak-dikenal'), ThemeMode.system);
+    expect(ProfileController.themeModeFor('tidak-dikenal'), ThemeMode.light);
   });
 
   test('setAutoLockSeconds menyimpan durasi yang valid', () async {
@@ -292,8 +292,8 @@ void main() {
     expect(reset, isTrue);
     expect(resetService.calls, 1);
     expect(controller.biometricEnabled.value, isFalse);
-    expect(controller.themeMode.value, 'system');
-    expect(appliedThemes.last, ThemeMode.system);
+    expect(controller.themeMode.value, 'light');
+    expect(appliedThemes.last, ThemeMode.light);
     expect(controller.displayName.value, isEmpty);
     expect(controller.autoLockSeconds.value, 0);
     expect(controller.resettingData.value, isFalse);

@@ -48,13 +48,30 @@ Implemented budget rules:
 - Archiving a budget never deletes transaction history.
 - Changing a budget or a transaction triggers a refresh through `DataRefreshService`.
 
+### Stage 13: Release identity and update safety
+
+| Step | Content | Status |
+|---|---|---|
+| 13-1 | Application ID and namespace set to `com.fillah.dompetku` | Done |
+| 13-2 | `MainActivity` moved to `com.fillah.dompetku` package | Done |
+| 13-3 | Release keystore (`upload-keystore.jks`) and `android/key.properties`, wired to `buildTypes.release` | Done |
+| 13-4 | Release APK built and verified (applicationId and signer) | Done |
+| 13-5 | Upgrade test: install new APK over previous install, data still present | Pending |
+| 13-6 | Build AAB and publish to Play Store | Pending |
+
+Rules are in [docs/UPDATE_LOG.md](docs/UPDATE_LOG.md). Keystore and `key.properties` must never be lost or committed.
+
+### Removed
+
+- Local JSON export and Excel spike (feature dropped by request). Dependencies `share_plus` and `excel` removed.
+
 ### Next Steps
 
 All planned phases are complete. Remaining ideas for future iterations:
 
 1. Line-item extraction for OCR receipts.
 2. Merchant statistics across reports and dashboards.
-3. Additional export formats (CSV).
+3. CSV export (only if needed later).
 
 ## 1. Development Rules
 

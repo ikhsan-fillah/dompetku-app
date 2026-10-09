@@ -1,4 +1,4 @@
-package com.example.dompetku_app
+package com.fillah.dompetku
 
 import io.flutter.embedding.android.FlutterFragmentActivity
 

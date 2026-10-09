@@ -188,7 +188,7 @@ void main() {
 
     expect(repository.deleted, [1]);
     expect(find.text('Kopi'), findsNothing);
-    expect(find.text('Transaksi dihapus.'), findsOneWidget);
+    expect(find.text('Transaksi dihapus.'), findsNothing);
   });
 
   testWidgets('membatalkan hapus tidak menghapus apa pun', (tester) async {

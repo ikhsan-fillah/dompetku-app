@@ -1,8 +1,6 @@
 import 'package:dompetku_app/core/database/app_database.dart';
 import 'package:dompetku_app/core/services/app_lock_service.dart';
 import 'package:dompetku_app/core/services/biometric_service.dart';
-import 'package:dompetku_app/core/services/local_data_export_service.dart';
-import 'package:dompetku_app/core/services/local_export_file_service.dart';
 import 'package:dompetku_app/core/services/local_data_reset_service.dart';
 import 'package:dompetku_app/core/services/secure_storage_service.dart';
 import 'package:dompetku_app/core/services/shared_prefs_service.dart';
@@ -58,14 +56,6 @@ class InitialBinding extends Bindings {
       SessionRepositoryImpl(Get.find()),
       permanent: true,
     );
-    Get.put(
-      LocalDataExportService(Get.find(), Get.find(), Get.find()),
-      permanent: true,
-    );
-    Get.put<LocalExportFileService>(
-      const SharePlusExportFileService(),
-      permanent: true,
-    );
     Get.put(const FinancialCalculationService(), permanent: true);
     Get.put(AuthController(Get.find(), Get.find()), permanent: true);
     Get.lazyPut(() => CategoryController(Get.find()), fenix: true);
@@ -86,8 +76,6 @@ class InitialBinding extends Bindings {
         Get.find<SharedPrefsService>(),
         resetService: Get.find<LocalDataResetService>(),
         authController: Get.find<AuthController>(),
-        exportService: Get.find<LocalDataExportService>(),
-        exportFileService: Get.find<LocalExportFileService>(),
       ),
       fenix: true,
     );
