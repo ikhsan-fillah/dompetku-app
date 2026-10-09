@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import 'app_colors.dart';
 import 'app_spacing.dart';
@@ -159,6 +160,16 @@ class AppTheme {
         backgroundColor: background,
         foregroundColor: ink,
         surfaceTintColor: Colors.transparent,
+        systemOverlayStyle: SystemUiOverlayStyle(
+          statusBarColor: Colors.transparent,
+          statusBarIconBrightness: brightness == Brightness.light
+              ? Brightness.dark
+              : Brightness.light,
+          statusBarBrightness: brightness == Brightness.light
+              ? Brightness.light
+              : Brightness.dark,
+          systemStatusBarContrastEnforced: false,
+        ),
       ),
       cardTheme: CardThemeData(
         color: surface,
