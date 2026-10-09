@@ -66,18 +66,6 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  Future<void> _exportData() async {
-    final exported = await _controller.exportData();
-    if (!mounted) return;
-
-    final message = exported
-        ? _controller.exportSuccess.value ?? 'Data berhasil diekspor.'
-        : _controller.exportError.value ?? 'Gagal mengekspor data. Coba lagi.';
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
-  }
-
   void _openCategories() => Get.toNamed(AppRoutes.categories);
 
   Future<void> _confirmReset() async {
@@ -303,48 +291,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 12),
               const Divider(height: 1, color: Color(0xFFF1F5F9)),
-              Obx(
-                () => SettingsTile(
-                  icon: Icons.file_download_outlined,
-                  title: 'Ekspor data',
-                  subtitle: 'Simpan cadangan di perangkat',
-                  trailing: _controller.exportingData.value
-                      ? _spinner
-                      : _chevron,
-                  onTap: _controller.exportingData.value ? null : _exportData,
-                ),
-              ),
-              Obx(() {
-                final success = _controller.exportSuccess.value;
-                final exportError = _controller.exportError.value;
-                if (success == null && exportError == null) {
-                  return const SizedBox.shrink();
-                }
-                final isSuccess = success != null;
-                return Padding(
-                  padding: const EdgeInsets.only(top: 12, bottom: 4),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Icon(
-                        isSuccess
-                            ? Icons.check_circle_outline_rounded
-                            : Icons.error_outline_rounded,
-                        color: isSuccess ? AppColors.emerald : AppColors.coral,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          success ?? exportError!,
-                          style: textTheme.bodySmall?.copyWith(
-                            color: isSuccess ? AppColors.teal : AppColors.coral,
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                );
-              }),
               Obx(
                 () => SettingsTile(
                   icon: Icons.delete_forever_rounded,

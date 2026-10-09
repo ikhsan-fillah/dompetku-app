@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:get/get.dart';
 
-import '../../../core/services/local_data_export_service.dart';
-import '../../../core/services/local_export_file_service.dart';
 import '../../../core/services/local_data_reset_service.dart';
 import '../../../core/services/shared_prefs_service.dart';
 import '../../../core/utils/display_name.dart';
@@ -13,13 +11,9 @@ class ProfileController extends GetxController {
     this._preferences, {
     LocalDataResetService? resetService,
     AuthController? authController,
-    LocalDataExportService? exportService,
-    LocalExportFileService? exportFileService,
     void Function(ThemeMode mode)? themeApplier,
   }) : _resetService = resetService,
        _authController = authController,
-       _exportService = exportService,
-       _exportFileService = exportFileService,
        _themeApplier = themeApplier ?? Get.changeThemeMode;
 
   static const autoLockOptions = [0, 60, 300, 900];
@@ -29,8 +23,6 @@ class ProfileController extends GetxController {
   final SharedPrefsService _preferences;
   final LocalDataResetService? _resetService;
   final AuthController? _authController;
-  final LocalDataExportService? _exportService;
-  final LocalExportFileService? _exportFileService;
   final void Function(ThemeMode mode) _themeApplier;
   final biometricEnabled = false.obs;
   final themeMode = defaultThemeMode.obs;
@@ -40,10 +32,7 @@ class ProfileController extends GetxController {
   final savingAutoLock = false.obs;
   final savingTheme = false.obs;
   final resettingData = false.obs;
-  final exportingData = false.obs;
   final lockingApp = false.obs;
-  final exportSuccess = Rxn<String>();
-  final exportError = Rxn<String>();
   final error = Rxn<String>();
 
   String get greetingName => DisplayName.greeting(displayName.value);
@@ -135,34 +124,6 @@ class ProfileController extends GetxController {
     }
   }
 
-  Future<bool> exportData() async {
-    final exportService = _exportService;
-    final exportFileService = _exportFileService;
-    if (exportService == null ||
-        exportFileService == null ||
-        exportingData.value) {
-      return false;
-    }
-
-    exportingData.value = true;
-    exportSuccess.value = null;
-    exportError.value = null;
-    try {
-      final export = await exportService.createExport();
-      final result = await exportFileService.shareJson(
-        export.json,
-        exportedAt: export.exportedAt,
-      );
-      exportSuccess.value = 'Ekspor berhasil: ${result.fileName}';
-      return true;
-    } catch (_) {
-      exportError.value = 'Gagal mengekspor data. Coba lagi.';
-      return false;
-    } finally {
-      exportingData.value = false;
-    }
-  }
-
   Future<bool> lockApp() async {
     final authController = _authController;
     if (authController == null || lockingApp.value) return false;
@@ -194,8 +155,6 @@ class ProfileController extends GetxController {
       _themeApplier(ThemeMode.light);
       displayName.value = '';
       autoLockSeconds.value = 0;
-      exportSuccess.value = null;
-      exportError.value = null;
       return true;
     } catch (_) {
       error.value = 'Gagal menghapus semua data. Coba lagi.';

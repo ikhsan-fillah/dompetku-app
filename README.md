@@ -270,4 +270,11 @@ Quality gate: `flutter analyze` reports no issues and `flutter test` passes.
 - Budgets with 75%, 90%, and 100% warning levels, archive, and restore.
 - Reports with category breakdown, previous-period comparison, daily average, highest spending day, and top merchant.
 - Category management with custom icons, colors, favorites, ordering, and archive.
-- Profile settings: display name, theme, auto-lock, manual lock, local export, and safe full reset.
+- Profile settings: display name, theme, auto-lock, manual lock, and safe full reset.
+
+### 8.1 Release Identity
+
+- Application ID: `com.fillah.dompetku` (permanent after first public release).
+- Release builds are signed with the `upload-keystore.jks` keystore. Keep the keystore and `android/key.properties` backed up outside the repository; losing them blocks future updates.
+- Updates must be installed over the previous version (not uninstalled) to keep local data. Schema changes require a database version bump and migration.
+- Operational notes and build commands: [docs/UPDATE_LOG.md](docs/UPDATE_LOG.md).
