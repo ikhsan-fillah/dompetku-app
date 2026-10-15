@@ -2,8 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_text.dart';
 
-/// Chip berbentuk pil untuk pilihan periode dan filter.
+/// Chip periode dan filter (spec §3.6): kotak 6 dp, aktif berlatar tinta.
 class AppChip extends StatelessWidget {
   const AppChip({
     super.key,
@@ -20,8 +21,8 @@ class AppChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(AppRadius.pill);
-    final foreground = selected ? Colors.white : AppColors.muted;
+    final radius = BorderRadius.circular(AppRadius.chip);
+    final foreground = selected ? AppColors.paper : AppColors.ink2;
     return Semantics(
       button: true,
       selected: selected,
@@ -29,24 +30,11 @@ class AppChip extends StatelessWidget {
         duration: const Duration(milliseconds: 200),
         curve: Curves.easeOut,
         decoration: BoxDecoration(
-          gradient: selected ? AppColors.primaryGradient : null,
-          color: selected ? null : AppColors.surface,
+          color: selected ? AppColors.ink : Colors.transparent,
           borderRadius: radius,
-          boxShadow: selected
-              ? const [
-                  BoxShadow(
-                    color: Color(0x4D0F766E),
-                    blurRadius: 14,
-                    offset: Offset(0, 6),
-                  ),
-                ]
-              : const [
-                  BoxShadow(
-                    color: Color(0x120F766E),
-                    blurRadius: 8,
-                    offset: Offset(0, 2),
-                  ),
-                ],
+          border: Border.all(
+            color: selected ? AppColors.ink : AppColors.line,
+          ),
         ),
         child: Material(
           type: MaterialType.transparency,
@@ -54,19 +42,19 @@ class AppChip extends StatelessWidget {
             borderRadius: radius,
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   if (icon != null) ...[
-                    Icon(icon, size: 16, color: foreground),
+                    Icon(icon, size: 14, color: foreground),
                     const SizedBox(width: 6),
                   ],
                   Text(
                     label,
-                    style: TextStyle(
-                      fontSize: 12.5,
-                      fontWeight: FontWeight.w500,
+                    style: AppText.body(
+                      size: 12,
+                      weight: FontWeight.w600,
                       color: foreground,
                     ),
                   ),
@@ -80,7 +68,7 @@ class AppChip extends StatelessWidget {
   }
 }
 
-/// Label kecil berwarna, misalnya status anggaran.
+/// Badge status kecil (spec §3.24): padding 3/7, radius 4, 10 px/700.
 class StatusPill extends StatelessWidget {
   const StatusPill({
     super.key,
@@ -96,17 +84,18 @@ class StatusPill extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(AppRadius.pill),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         label,
-        style: TextStyle(
-          fontSize: 10.5,
-          fontWeight: FontWeight.w600,
+        style: AppText.body(
+          size: 10,
+          weight: FontWeight.w700,
           color: foreground,
+          letterSpacing: 0.2,
         ),
       ),
     );

@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_text.dart';
 import 'app_button.dart';
 
 class AppLoadingView extends StatelessWidget {
   const AppLoadingView({super.key});
 
   @override
-  Widget build(BuildContext context) =>
-      const Center(child: CircularProgressIndicator());
+  Widget build(BuildContext context) => const Center(
+    child: CircularProgressIndicator(color: AppColors.ink, strokeWidth: 2),
+  );
 }
 
 class AppEmptyView extends StatelessWidget {
@@ -16,7 +19,7 @@ class AppEmptyView extends StatelessWidget {
     super.key,
     required this.message,
     this.title,
-    this.icon = Icons.inbox_outlined,
+    this.icon = LucideIcons.inbox,
     this.action,
   });
 
@@ -27,7 +30,6 @@ class AppEmptyView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final theme = Theme.of(context);
     return Center(
       child: Padding(
         padding: const EdgeInsets.all(24),
@@ -35,29 +37,27 @@ class AppEmptyView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             Container(
-              width: 72,
-              height: 72,
+              width: 64,
+              height: 64,
               decoration: BoxDecoration(
-                color: AppColors.mint,
-                borderRadius: BorderRadius.circular(24),
+                color: AppColors.paper2,
+                borderRadius: BorderRadius.circular(12),
               ),
-              child: Icon(icon, color: AppColors.teal, size: 32),
+              child: Icon(icon, color: AppColors.ink, size: 28),
             ),
             const SizedBox(height: 14),
             if (title != null) ...[
               Text(
                 title!,
                 textAlign: TextAlign.center,
-                style: theme.textTheme.titleSmall,
+                style: AppText.body(size: 14, weight: FontWeight.w700),
               ),
               const SizedBox(height: 4),
             ],
             Text(
               message,
               textAlign: TextAlign.center,
-              style: theme.textTheme.bodyMedium?.copyWith(
-                color: AppColors.muted,
-              ),
+              style: AppText.body(size: 12.5, color: AppColors.ink2),
             ),
             if (action != null) ...[const SizedBox(height: 14), action!],
           ],
@@ -75,12 +75,12 @@ class AppErrorView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => AppEmptyView(
-    icon: Icons.error_outline_rounded,
+    icon: LucideIcons.triangleAlert,
     title: 'Terjadi kendala',
     message: message,
     action: AppButton(
       label: 'Coba lagi',
-      icon: Icons.refresh_rounded,
+      icon: LucideIcons.download,
       kind: AppButtonKind.soft,
       expand: false,
       onPressed: onRetry,

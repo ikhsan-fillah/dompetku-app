@@ -1,8 +1,9 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text.dart';
 import '../controllers/splash_controller.dart';
 
 /// Layar pembuka DompetKu. Menentukan halaman berikutnya lewat SplashController.
@@ -14,20 +15,15 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage>
-    with TickerProviderStateMixin {
-  late final AnimationController _pulse;
-  late final AnimationController _dots;
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _loader;
 
   @override
   void initState() {
     super.initState();
-    _pulse = AnimationController(
+    _loader = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 1400),
-    )..repeat(reverse: true);
-    _dots = AnimationController(
-      vsync: this,
-      duration: const Duration(milliseconds: 1500),
+      duration: const Duration(milliseconds: 1300),
     )..repeat();
 
     final controller = Get.isRegistered<SplashController>()
@@ -40,82 +36,125 @@ class _SplashPageState extends State<SplashPage>
 
   @override
   void dispose() {
-    _pulse.dispose();
-    _dots.dispose();
+    _loader.dispose();
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
+    final paper = AppColors.paper;
     return Scaffold(
-      body: Container(
-        width: double.infinity,
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-            colors: [Color(0xFF0F766E), Color(0xFF10B981)],
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              child: TweenAnimationBuilder<double>(
-                tween: Tween(begin: 0, end: 1),
-                duration: const Duration(milliseconds: 700),
-                curve: Curves.easeOut,
-                builder: (context, value, child) => Opacity(
-                  opacity: value,
-                  child: Transform.translate(
-                    offset: Offset(0, (1 - value) * 16),
-                    child: child,
+      backgroundColor: AppColors.ink,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 22),
+          child: Column(
+            children: [
+              Container(
+                padding: const EdgeInsets.only(top: 12),
+                decoration: BoxDecoration(
+                  border: Border(
+                    top: BorderSide(color: paper.withValues(alpha: 0.2)),
                   ),
                 ),
-                child: Column(
-                  mainAxisSize: MainAxisSize.min,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    _PulseWallet(animation: _pulse),
-                    const SizedBox(height: 12),
-                    const Text(
-                      'DompetKu',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 30,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
                     Text(
-                      'Catat uang, tenangkan pikiran',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.85),
-                        fontSize: 13,
+                      'PENCATAT KEUANGAN',
+                      style: AppText.monoLabel(
+                        color: paper.withValues(alpha: 0.7),
                       ),
                     ),
-                    const SizedBox(height: 40),
-                    Semantics(
-                      label: 'Menyiapkan DompetKu',
-                      child: Column(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Text(
-                            'Menyiapkan DompetKu',
-                            style: TextStyle(
-                              color: Colors.white.withValues(alpha: 0.75),
-                              fontSize: 12,
-                              letterSpacing: 0.4,
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          _LoadingDots(animation: _dots),
-                        ],
+                    Text(
+                      'v1.0.0',
+                      style: AppText.monoLabel(
+                        color: paper.withValues(alpha: 0.7),
                       ),
                     ),
                   ],
                 ),
               ),
-            ),
+              Expanded(
+                child: Center(
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: 1),
+                    duration: const Duration(milliseconds: 700),
+                    curve: Curves.easeOut,
+                    builder: (context, value, child) => Opacity(
+                      opacity: value,
+                      child: Transform.translate(
+                        offset: Offset(0, (1 - value) * 16),
+                        child: child,
+                      ),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Container(
+                          width: 84,
+                          height: 84,
+                          decoration: BoxDecoration(
+                            color: paper,
+                            borderRadius: BorderRadius.circular(20),
+                          ),
+                          child: const Icon(
+                            LucideIcons.wallet,
+                            size: 40,
+                            color: AppColors.ink,
+                          ),
+                        ),
+                        const SizedBox(height: 22),
+                        Text.rich(
+                          TextSpan(
+                            children: [
+                              const TextSpan(text: 'Dompet'),
+                              TextSpan(
+                                text: 'Ku',
+                                style: AppText.display(
+                                  size: 40,
+                                  weight: FontWeight.w300,
+                                  fontStyle: FontStyle.italic,
+                                  color: paper,
+                                ),
+                              ),
+                            ],
+                          ),
+                          style: AppText.display(size: 40, color: paper),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'Uangmu, catatanmu, tetap di ponselmu.',
+                          textAlign: TextAlign.center,
+                          style: AppText.body(
+                            size: 13,
+                            color: paper.withValues(alpha: 0.75),
+                          ),
+                        ),
+                        const SizedBox(height: 40),
+                        Semantics(
+                          label: 'Menyiapkan DompetKu',
+                          child: Column(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                'Menyiapkan DompetKu',
+                                style: AppText.monoLabel(
+                                  color: paper.withValues(alpha: 0.6),
+                                ),
+                              ),
+                              const SizedBox(height: 12),
+                              _Loader(animation: _loader),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 24),
+            ],
           ),
         ),
       ),
@@ -123,115 +162,43 @@ class _SplashPageState extends State<SplashPage>
   }
 }
 
-/// Ikon dompet dengan dua lingkaran transparan yang "bernapas" di belakangnya.
-class _PulseWallet extends StatelessWidget {
-  const _PulseWallet({required this.animation});
+class _Loader extends StatelessWidget {
+  const _Loader({required this.animation});
 
   final Animation<double> animation;
+
+  static const double _width = 120;
+  static const double _segment = 48;
 
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      width: 180,
-      height: 180,
-      child: AnimatedBuilder(
-        animation: animation,
-        builder: (context, child) {
-          final t = Curves.easeInOut.transform(animation.value);
-          return Stack(
-            alignment: Alignment.center,
-            clipBehavior: Clip.none,
-            children: [
-              Transform.scale(
-                scale: 1.0 + 0.15 * t,
-                child: _Disc(size: 150, alpha: 0.12 - 0.06 * t),
-              ),
-              Transform.scale(
-                scale: 1.0 + 0.10 * t,
-                child: _Disc(size: 122, alpha: 0.10 + 0.06 * t),
-              ),
-              child!,
-            ],
-          );
-        },
-        child: Container(
-          width: 96,
-          height: 96,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.18),
-          ),
-          child: const Icon(
-            Icons.account_balance_wallet_rounded,
-            size: 48,
-            color: Colors.white,
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _Disc extends StatelessWidget {
-  const _Disc({required this.size, required this.alpha});
-
-  final double size;
-  final double alpha;
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: size,
-      height: size,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        color: Colors.white.withValues(alpha: alpha),
-      ),
-    );
-  }
-}
-
-/// Tiga titik yang menyala bergantian (tanpa spinner dan tanpa garis progres).
-class _LoadingDots extends StatelessWidget {
-  const _LoadingDots({required this.animation});
-
-  final Animation<double> animation;
-
-  double _intensity(int index) {
-    final phase = (animation.value * 3 - index) % 3;
-    return phase < 1 ? math.sin(phase * math.pi) : 0;
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return AnimatedBuilder(
-      animation: animation,
-      builder: (context, _) {
-        return Row(
-          mainAxisSize: MainAxisSize.min,
+      width: _width,
+      height: 2,
+      child: ClipRect(
+        child: Stack(
           children: [
-            for (var i = 0; i < 3; i++) ...[
-              if (i > 0) const SizedBox(width: 8),
-              _dot(_intensity(i)),
-            ],
+            Container(
+              width: _width,
+              height: 2,
+              color: AppColors.paper.withValues(alpha: 0.2),
+            ),
+            AnimatedBuilder(
+              animation: animation,
+              builder: (context, child) => Transform.translate(
+                offset: Offset(
+                  -_segment + (_width + _segment) * animation.value,
+                  0,
+                ),
+                child: child,
+              ),
+              child: Container(
+                width: _segment,
+                height: 2,
+                color: AppColors.paper,
+              ),
+            ),
           ],
-        );
-      },
-    );
-  }
-
-  Widget _dot(double intensity) {
-    return SizedBox(
-      width: 12,
-      height: 12,
-      child: Center(
-        child: Container(
-          width: 6 + 4 * intensity,
-          height: 6 + 4 * intensity,
-          decoration: BoxDecoration(
-            shape: BoxShape.circle,
-            color: Colors.white.withValues(alpha: 0.4 + 0.6 * intensity),
-          ),
         ),
       ),
     );

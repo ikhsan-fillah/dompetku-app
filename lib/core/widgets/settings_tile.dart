@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
+import '../theme/app_spacing.dart';
+import '../theme/app_text.dart';
 
-/// Baris pengaturan bergaya mockup: kotak ikon, judul, subjudul, dan aksi kanan.
+/// Baris pengaturan (spec §3.25): kotak ikon 34, judul 13/700, sub 10.5 mut.
 class SettingsTile extends StatelessWidget {
   const SettingsTile({
     super.key,
@@ -11,8 +13,8 @@ class SettingsTile extends StatelessWidget {
     required this.subtitle,
     this.trailing,
     this.onTap,
-    this.iconBackground = AppColors.mint,
-    this.iconColor = AppColors.teal,
+    this.iconBackground = AppColors.paper2,
+    this.iconColor = AppColors.ink,
     this.titleColor,
     this.showDivider = true,
   });
@@ -27,29 +29,26 @@ class SettingsTile extends StatelessWidget {
   final Color? titleColor;
   final bool showDivider;
 
-  static const _divider = Color(0xFFF1F5F9);
-
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     return Column(
       mainAxisSize: MainAxisSize.min,
       children: [
         InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadius.smallButton),
           onTap: onTap,
           child: Padding(
             padding: const EdgeInsets.symmetric(vertical: 12),
             child: Row(
               children: [
                 Container(
-                  width: 36,
-                  height: 36,
+                  width: 34,
+                  height: 34,
                   decoration: BoxDecoration(
                     color: iconBackground,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(AppRadius.smallButton),
                   ),
-                  child: Icon(icon, size: 19, color: iconColor),
+                  child: Icon(icon, size: 17, color: iconColor),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -58,17 +57,16 @@ class SettingsTile extends StatelessWidget {
                     children: [
                       Text(
                         title,
-                        style: textTheme.titleSmall?.copyWith(
-                          color: titleColor,
+                        style: AppText.body(
+                          size: 13,
+                          weight: FontWeight.w700,
+                          color: titleColor ?? AppColors.ink,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         subtitle,
-                        style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                          fontSize: 10.5,
-                        ),
+                        style: AppText.body(size: 10.5, color: AppColors.mut),
                       ),
                     ],
                   ),
@@ -78,7 +76,8 @@ class SettingsTile extends StatelessWidget {
             ),
           ),
         ),
-        if (showDivider) const Divider(height: 1, color: _divider),
+        if (showDivider)
+          const Divider(height: 1, thickness: 1, color: AppColors.line2),
       ],
     );
   }
@@ -89,8 +88,8 @@ class SettingsBadge extends StatelessWidget {
   const SettingsBadge({
     super.key,
     required this.label,
-    this.background = AppColors.mint,
-    this.foreground = AppColors.teal,
+    this.background = AppColors.earnSoft,
+    this.foreground = AppColors.earn,
   });
 
   final String label;
@@ -100,17 +99,18 @@ class SettingsBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(99),
+        borderRadius: BorderRadius.circular(4),
       ),
       child: Text(
         label,
-        style: TextStyle(
+        style: AppText.body(
+          size: 10,
+          weight: FontWeight.w700,
           color: foreground,
-          fontSize: 10,
-          fontWeight: FontWeight.w600,
+          letterSpacing: 0.2,
         ),
       ),
     );

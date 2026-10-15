@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/constant/domain_enums.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_bar_icon_button.dart';
 import '../../../core/widgets/app_back_button.dart';
 import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/category_icon_box.dart';
 import '../controllers/category_controller.dart';
 import '../models/category_model.dart';
 import '../utils/category_icons.dart';
@@ -31,6 +34,18 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
     super.initState();
     _controller.load();
   }
+
+  static final _segmentStyle = SegmentedButton.styleFrom(
+    backgroundColor: AppColors.paper2,
+    foregroundColor: AppColors.mut,
+    selectedBackgroundColor: AppColors.card,
+    selectedForegroundColor: AppColors.ink,
+    side: const BorderSide(color: AppColors.line),
+    textStyle: AppText.body(size: 12.5, weight: FontWeight.w700),
+    shape: RoundedRectangleBorder(
+      borderRadius: BorderRadius.circular(AppRadius.smallButton),
+    ),
+  );
 
   void _showError() {
     final message = _controller.state.value.message ?? 'Terjadi kesalahan.';
@@ -62,19 +77,52 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: const Text('Arsipkan kategori?'),
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.hero),
+          side: const BorderSide(color: AppColors.line),
+        ),
+        title: Text('Arsipkan kategori?', style: AppText.display(size: 20)),
         content: Text(
           '"${category.name}" tidak muncul lagi untuk transaksi baru. Transaksi lama tetap aman.',
+          style: AppText.body(size: 13, color: AppColors.mut, height: 1.45),
         ),
         actions: [
-          TextButton(
+          OutlinedButton(
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.ink,
+              side: const BorderSide(color: AppColors.line),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.button),
+              ),
+            ),
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Batal'),
+            child: Text(
+              'Batal',
+              style: AppText.body(
+                size: 13,
+                weight: FontWeight.w700,
+                color: AppColors.ink,
+              ),
+            ),
           ),
           FilledButton(
+            style: FilledButton.styleFrom(
+              backgroundColor: AppColors.ink,
+              foregroundColor: AppColors.paper,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.button),
+              ),
+            ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Arsipkan'),
+            child: Text(
+              'Arsipkan',
+              style: AppText.body(
+                size: 13,
+                weight: FontWeight.w700,
+                color: AppColors.paper,
+              ),
+            ),
           ),
         ],
       ),
@@ -96,9 +144,7 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
           Text(
             text,
             textAlign: TextAlign.center,
-            style: Theme.of(
-              context,
-            ).textTheme.bodyMedium?.copyWith(color: AppColors.muted),
+            style: AppText.body(size: 13, color: AppColors.ink2),
           ),
           if (retry) ...[
             const SizedBox(height: 14),
@@ -116,7 +162,6 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
   Widget _buildList() {
     final state = _controller.state.value;
     final items = _controller.visibleCategories;
-    final textTheme = Theme.of(context).textTheme;
 
     if (state.status == ResourceStatus.loading ||
         state.status == ResourceStatus.idle) {
@@ -141,27 +186,30 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
         return AppCard(
           key: ValueKey(category.id),
           margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
           child: InkWell(
-            borderRadius: BorderRadius.circular(18),
+            borderRadius: BorderRadius.circular(AppRadius.card),
             onTap: () => Get.toNamed(
               AppRoutes.categoryDetail,
               arguments: {'categoryId': category.id},
             ),
             child: Row(
               children: [
-                Container(
-                  width: 40,
-                  height: 40,
-                  decoration: BoxDecoration(
-                    color: Color(category.colorValue),
-                    borderRadius: BorderRadius.circular(14),
+                ReorderableDragStartListener(
+                  index: index,
+                  child: const Padding(
+                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 2),
+                    child: Icon(
+                      LucideIcons.gripVertical,
+                      color: AppColors.line,
+                      size: 18,
+                    ),
                   ),
-                  child: Icon(
-                    CategoryIcons.of(category.iconKey),
-                    size: 20,
-                    color: Colors.white,
-                  ),
+                ),
+                const SizedBox(width: 10),
+                CategoryIconBox(
+                  icon: CategoryIcons.of(category.iconKey),
+                  color: Color(category.colorValue),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -172,13 +220,14 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                         category.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: textTheme.titleSmall,
+                        style: AppText.body(size: 13, weight: FontWeight.w700),
                       ),
+                      const SizedBox(height: 2),
                       Text(
-                        category.isDefault ? 'Bawaan' : 'Kustom',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: AppColors.muted,
-                        ),
+                        category.isDefault
+                            ? 'Bawaan · tidak bisa dihapus bila dipakai'
+                            : 'Kustom',
+                        style: AppText.body(size: 10.5, color: AppColors.mut),
                       ),
                     ],
                   ),
@@ -189,15 +238,19 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                       : 'Jadikan favorit',
                   onPressed: () => _toggleFavorite(category),
                   icon: Icon(
-                    category.isFavorite
-                        ? Icons.star_rounded
-                        : Icons.star_outline_rounded,
+                    LucideIcons.star,
+                    size: 20,
                     color: category.isFavorite
-                        ? AppColors.amber
-                        : AppColors.muted,
+                        ? AppColors.ink
+                        : AppColors.line,
                   ),
                 ),
                 PopupMenuButton<String>(
+                  icon: const Icon(
+                    LucideIcons.ellipsis,
+                    color: AppColors.mut,
+                    size: 18,
+                  ),
                   onSelected: (value) {
                     if (value == 'edit') {
                       _showAddOrEditForm(category);
@@ -213,16 +266,6 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                     ),
                   ],
                 ),
-                ReorderableDragStartListener(
-                  index: index,
-                  child: const Padding(
-                    padding: EdgeInsets.all(8),
-                    child: Icon(
-                      Icons.drag_indicator_rounded,
-                      color: AppColors.muted,
-                    ),
-                  ),
-                ),
               ],
             ),
           ),
@@ -233,7 +276,6 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     return Scaffold(
       body: SafeArea(
         child: Padding(
@@ -251,12 +293,11 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                   const AppBackButton(),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: Text('Kategori', style: textTheme.titleLarge),
+                    child: Text('Kategori', style: AppText.display(size: 26)),
                   ),
                   AppBarIconButton(
                     tooltip: 'Tambah kategori',
-                    icon: Icons.add_rounded,
-                    gradient: AppColors.primaryGradient,
+                    icon: LucideIcons.plus,
                     onPressed: () => _showAddOrEditForm(),
                   ),
                 ],
@@ -267,6 +308,7 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                   width: double.infinity,
                   child: SegmentedButton<TransactionType>(
                     showSelectedIcon: false,
+                    style: _segmentStyle,
                     segments: const [
                       ButtonSegment<TransactionType>(
                         value: TransactionType.expense,

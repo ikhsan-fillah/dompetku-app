@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text.dart';
 
 /// Cincin persen pemakaian anggaran. Busur berhenti di 100 persen.
 class BudgetRing extends StatelessWidget {
@@ -34,9 +35,9 @@ class BudgetRing extends StatelessWidget {
             ),
             Text(
               '${percent.round()}%',
-              style: TextStyle(
-                fontSize: size * 0.21,
-                fontWeight: FontWeight.w700,
+              style: AppText.mono(
+                size: size * 0.21,
+                weight: FontWeight.w500,
                 color: color,
               ),
             ),
@@ -68,7 +69,7 @@ class _RingPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = stroke
-        ..color = AppColors.track,
+        ..color = AppColors.paper2,
     );
     final fraction = (percent / 100).clamp(0.0, 1.0).toDouble();
     if (fraction <= 0) return;

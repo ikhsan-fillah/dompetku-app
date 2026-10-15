@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/utils/date_label.dart';
 import '../../../core/utils/date_range.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
@@ -34,7 +36,6 @@ class HomeAppBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final profile = Get.find<ProfileController>();
     final dashboard = Get.find<DashboardController>();
-    final textTheme = Theme.of(context).textTheme;
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.page,
@@ -55,22 +56,15 @@ class HomeAppBar extends StatelessWidget {
                     'Halo, ${profile.greetingName}',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: textTheme.labelMedium?.copyWith(
-                      color: AppColors.muted,
-                    ),
+                    style: AppText.body(size: 11, color: AppColors.mut),
                   ),
                 ),
-                ShaderMask(
-                  shaderCallback: (bounds) =>
-                      AppColors.primaryGradient.createShader(bounds),
-                  child: const Text(
-                    'DompetKu',
-                    style: TextStyle(
-                      fontSize: 19,
-                      fontWeight: FontWeight.w700,
-                      color: Colors.white,
-                      height: 1.2,
-                    ),
+                Text(
+                  'DompetKu',
+                  style: AppText.display(
+                    size: 21,
+                    height: 1.2,
+                    letterSpacing: -0.21,
                   ),
                 ),
               ],
@@ -97,26 +91,18 @@ class _Avatar extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 42,
-      height: 42,
+      width: 40,
+      height: 40,
       alignment: Alignment.center,
       decoration: const BoxDecoration(
         shape: BoxShape.circle,
-        gradient: LinearGradient(colors: [AppColors.amber, AppColors.coral]),
-        boxShadow: [
-          BoxShadow(
-            color: Color(0x4DF43F5E),
-            blurRadius: 12,
-            offset: Offset(0, 4),
-          ),
-        ],
+        color: AppColors.ink,
       ),
       child: Text(
         initial,
-        style: const TextStyle(
-          color: Colors.white,
-          fontSize: 15,
-          fontWeight: FontWeight.w700,
+        style: AppText.display(
+          size: 16,
+          color: AppColors.paper,
         ),
       ),
     );
@@ -131,45 +117,50 @@ class _DateChip extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final radius = BorderRadius.circular(AppRadius.pill);
+    final radius = BorderRadius.circular(AppRadius.chip);
     return Semantics(
       button: true,
       label: 'Pilih periode, $label',
-      child: Material(
-        color: AppColors.mint,
-        borderRadius: radius,
-        child: InkWell(
+      child: DecoratedBox(
+        decoration: BoxDecoration(
           borderRadius: radius,
-          onTap: onTap,
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(
-              minHeight: AppSpacing.minTap,
-              maxWidth: 190,
-            ),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(
-                    Icons.calendar_month_outlined,
-                    size: 16,
-                    color: AppColors.teal,
-                  ),
-                  const SizedBox(width: 6),
-                  Flexible(
-                    child: Text(
-                      label,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.teal,
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Material(
+          type: MaterialType.transparency,
+          child: InkWell(
+            borderRadius: radius,
+            onTap: onTap,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(
+                minHeight: AppSpacing.minTap,
+                maxWidth: 190,
+              ),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(
+                      LucideIcons.calendar,
+                      size: 15,
+                      color: AppColors.ink,
+                    ),
+                    const SizedBox(width: 6),
+                    Flexible(
+                      child: Text(
+                        label,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: AppText.mono(
+                          size: 11.5,
+                          weight: FontWeight.w600,
+                          letterSpacing: 0,
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),

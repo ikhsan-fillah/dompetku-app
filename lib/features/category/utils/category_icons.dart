@@ -1,25 +1,26 @@
-import 'package:flutter/material.dart';
+import 'package:flutter/widgets.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-/// Memetakan `icon_key` di database ke ikon Material.
+/// Memetakan `icon_key` di database ke ikon Lucide (monoline).
 abstract final class CategoryIcons {
-  static const fallback = Icons.category_rounded;
+  static const fallback = LucideIcons.layoutGrid;
 
   static const _icons = <String, IconData>{
-    'restaurant': Icons.restaurant_rounded,
-    'directions_car': Icons.directions_car_rounded,
-    'shopping_bag': Icons.shopping_bag_rounded,
-    'receipt_long': Icons.receipt_long_rounded,
-    'health_and_safety': Icons.health_and_safety_rounded,
-    'school': Icons.school_rounded,
-    'fitness_center': Icons.fitness_center_rounded,
-    'movie': Icons.movie_rounded,
-    'family_restroom': Icons.family_restroom_rounded,
-    'more_horiz': Icons.more_horiz_rounded,
-    'payments': Icons.payments_rounded,
-    'work': Icons.work_rounded,
-    'business_center': Icons.business_center_rounded,
-    'trending_up': Icons.trending_up_rounded,
-    'card_giftcard': Icons.card_giftcard_rounded,
+    'restaurant': LucideIcons.utensils,
+    'directions_car': LucideIcons.bus,
+    'shopping_bag': LucideIcons.shoppingBag,
+    'receipt_long': LucideIcons.receiptText,
+    'health_and_safety': LucideIcons.heart,
+    'school': LucideIcons.bookOpen,
+    'fitness_center': LucideIcons.dumbbell,
+    'movie': LucideIcons.star,
+    'family_restroom': LucideIcons.users,
+    'more_horiz': LucideIcons.ellipsis,
+    'payments': LucideIcons.wallet,
+    'work': LucideIcons.briefcase,
+    'business_center': LucideIcons.briefcase,
+    'trending_up': LucideIcons.trendingUp,
+    'card_giftcard': LucideIcons.gift,
   };
 
   static IconData of(String key) => _icons[key] ?? fallback;

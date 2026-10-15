@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_text.dart';
 
-/// Bottom navigation melayang dengan tombol tambah di tengah.
+/// Bottom navigation melayang dengan tombol tambah di tengah (spec §3.14).
 /// Indeks tab: 0 Beranda, 1 Transaksi, 2 Anggaran, 3 Profil.
 class AppBottomNav extends StatelessWidget {
   const AppBottomNav({
@@ -17,29 +19,28 @@ class AppBottomNav extends StatelessWidget {
   final ValueChanged<int> onSelect;
   final VoidCallback onAdd;
 
-  static const double _fabOverflow = 30;
-
   @override
   Widget build(BuildContext context) {
     return SizedBox(
-      height: AppSpacing.navHeight + _fabOverflow,
+      height: AppSpacing.navHeight + AppSpacing.fabOverflow,
       child: Stack(
         alignment: Alignment.bottomCenter,
         children: [
           Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
+            left: AppSpacing.navInset,
+            right: AppSpacing.navInset,
+            bottom: AppSpacing.navInset,
             height: AppSpacing.navHeight,
             child: DecoratedBox(
               decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.97),
-                borderRadius: BorderRadius.circular(26),
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(AppRadius.nav),
+                border: Border.all(color: AppColors.line),
                 boxShadow: const [
                   BoxShadow(
-                    color: Color(0x380F766E),
+                    color: Color(0x241A2724),
                     blurRadius: 30,
-                    offset: Offset(0, 10),
+                    offset: Offset(0, 14),
                   ),
                 ],
               ),
@@ -47,30 +48,26 @@ class AppBottomNav extends StatelessWidget {
                 children: [
                   _NavButton(
                     label: 'Beranda',
-                    icon: Icons.home_outlined,
-                    activeIcon: Icons.home_rounded,
+                    icon: LucideIcons.house,
                     selected: currentIndex == 0,
                     onTap: () => onSelect(0),
                   ),
                   _NavButton(
                     label: 'Transaksi',
-                    icon: Icons.receipt_long_outlined,
-                    activeIcon: Icons.receipt_long_rounded,
+                    icon: LucideIcons.listOrdered,
                     selected: currentIndex == 1,
                     onTap: () => onSelect(1),
                   ),
-                  const SizedBox(width: 78),
+                  const SizedBox(width: 74),
                   _NavButton(
                     label: 'Anggaran',
-                    icon: Icons.pie_chart_outline_rounded,
-                    activeIcon: Icons.pie_chart_rounded,
+                    icon: LucideIcons.chartPie,
                     selected: currentIndex == 2,
                     onTap: () => onSelect(2),
                   ),
                   _NavButton(
                     label: 'Profil',
-                    icon: Icons.person_outline_rounded,
-                    activeIcon: Icons.person_rounded,
+                    icon: LucideIcons.user,
                     selected: currentIndex == 3,
                     onTap: () => onSelect(3),
                   ),
@@ -78,7 +75,10 @@ class AppBottomNav extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(top: 0, child: _AddButton(onTap: onAdd)),
+          Positioned(
+            top: 0,
+            child: _AddButton(onTap: onAdd),
+          ),
         ],
       ),
     );
@@ -89,26 +89,24 @@ class _NavButton extends StatelessWidget {
   const _NavButton({
     required this.label,
     required this.icon,
-    required this.activeIcon,
     required this.selected,
     required this.onTap,
   });
 
   final String label;
   final IconData icon;
-  final IconData activeIcon;
   final bool selected;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
-    final color = selected ? AppColors.teal : const Color(0xFF94A3B8);
+    final color = selected ? AppColors.ink : AppColors.mut;
     return Expanded(
       child: Semantics(
         button: true,
         selected: selected,
         child: InkWell(
-          borderRadius: BorderRadius.circular(20),
+          borderRadius: BorderRadius.circular(AppRadius.smallButton),
           onTap: onTap,
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
@@ -117,25 +115,21 @@ class _NavButton extends StatelessWidget {
                 duration: const Duration(milliseconds: 250),
                 padding: const EdgeInsets.symmetric(
                   horizontal: 14,
-                  vertical: 5,
+                  vertical: 4,
                 ),
                 decoration: BoxDecoration(
-                  color: selected ? AppColors.mint : Colors.transparent,
-                  borderRadius: BorderRadius.circular(14),
+                  color: selected ? AppColors.paper2 : Colors.transparent,
+                  borderRadius: BorderRadius.circular(AppRadius.smallButton),
                 ),
-                child: Icon(
-                  selected ? activeIcon : icon,
-                  size: 22,
-                  color: color,
-                ),
+                child: Icon(icon, size: 20, color: color),
               ),
               const SizedBox(height: 2),
               Text(
                 label,
                 maxLines: 1,
-                style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w500,
+                style: AppText.body(
+                  size: 10,
+                  weight: selected ? FontWeight.w800 : FontWeight.w600,
                   color: color,
                 ),
               ),
@@ -161,24 +155,27 @@ class _AddButton extends StatelessWidget {
         width: AppSpacing.fabSize,
         height: AppSpacing.fabSize,
         decoration: BoxDecoration(
-          shape: BoxShape.circle,
-          gradient: AppColors.primaryGradient,
-          border: Border.all(color: AppColors.background, width: 4),
+          color: AppColors.accent,
+          borderRadius: BorderRadius.circular(AppRadius.fab),
+          border: Border.all(color: AppColors.paper, width: 4),
           boxShadow: const [
             BoxShadow(
-              color: Color(0x730F766E),
-              blurRadius: 24,
+              color: Color(0x590E5E55),
+              blurRadius: 22,
               offset: Offset(0, 10),
             ),
           ],
         ),
         child: Material(
           type: MaterialType.transparency,
-          shape: const CircleBorder(),
           child: InkWell(
-            customBorder: const CircleBorder(),
+            borderRadius: BorderRadius.circular(AppRadius.fab),
             onTap: onTap,
-            child: const Icon(Icons.add_rounded, color: Colors.white, size: 30),
+            child: const Icon(
+              LucideIcons.plus,
+              color: Colors.white,
+              size: 24,
+            ),
           ),
         ),
       ),

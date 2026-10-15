@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_text.dart';
 
 enum AppButtonKind { primary, soft, outline, danger }
 
-/// Tombol utama aplikasi. Bila [expand] true, letakkan di parent yang lebarnya terbatas.
+/// Tombol utama aplikasi (spec §3.21). Bila [expand] true, letakkan di parent yang lebarnya terbatas.
 class AppButton extends StatelessWidget {
   const AppButton({
     super.key,
@@ -38,21 +39,21 @@ class AppButton extends StatelessWidget {
             width: 18,
             height: 18,
             child: CircularProgressIndicator(
-              strokeWidth: 2.4,
+              strokeWidth: 2,
               color: look.foreground,
             ),
           )
         else if (icon != null)
-          Icon(icon, size: 20, color: look.foreground),
+          Icon(icon, size: 18, color: look.foreground),
         if (loading || icon != null) const SizedBox(width: 8),
         Flexible(
           child: Text(
             label,
             maxLines: 1,
             overflow: TextOverflow.ellipsis,
-            style: TextStyle(
-              fontWeight: FontWeight.w600,
-              fontSize: 14,
+            style: AppText.body(
+              size: 14,
+              weight: FontWeight.w700,
               color: look.foreground,
             ),
           ),
@@ -66,11 +67,9 @@ class AppButton extends StatelessWidget {
         opacity: enabled ? 1 : 0.55,
         child: DecoratedBox(
           decoration: BoxDecoration(
-            gradient: look.gradient,
-            color: look.gradient == null ? look.background : null,
+            color: look.background,
             borderRadius: radius,
             border: look.border,
-            boxShadow: look.shadow,
           ),
           child: Material(
             type: MaterialType.transparency,
@@ -84,8 +83,8 @@ class AppButton extends StatelessWidget {
                 ),
                 child: Padding(
                   padding: const EdgeInsets.symmetric(
-                    horizontal: 20,
-                    vertical: 12,
+                    horizontal: 14,
+                    vertical: 14,
                   ),
                   child: content,
                 ),
@@ -101,51 +100,31 @@ class AppButton extends StatelessWidget {
 class _Look {
   const _Look({
     required this.foreground,
-    this.gradient,
-    this.background,
+    required this.background,
     this.border,
-    this.shadow,
   });
 
   final Color foreground;
-  final Gradient? gradient;
-  final Color? background;
+  final Color background;
   final BoxBorder? border;
-  final List<BoxShadow>? shadow;
 
   static _Look of(AppButtonKind kind) => switch (kind) {
     AppButtonKind.primary => const _Look(
-      foreground: Colors.white,
-      gradient: AppColors.primaryGradient,
-      shadow: [
-        BoxShadow(
-          color: Color(0x590F766E),
-          blurRadius: 22,
-          offset: Offset(0, 10),
-        ),
-      ],
+      foreground: AppColors.paper,
+      background: AppColors.ink,
     ),
     AppButtonKind.soft => const _Look(
-      foreground: AppColors.teal,
-      background: AppColors.mint,
+      foreground: AppColors.ink,
+      background: AppColors.paper2,
     ),
     AppButtonKind.outline => const _Look(
-      foreground: AppColors.teal,
-      background: AppColors.surface,
-      border: Border.fromBorderSide(
-        BorderSide(color: AppColors.tealLight, width: 1.5),
-      ),
+      foreground: AppColors.ink,
+      background: Colors.transparent,
+      border: Border.fromBorderSide(BorderSide(color: AppColors.ink)),
     ),
     AppButtonKind.danger => const _Look(
       foreground: Colors.white,
-      gradient: LinearGradient(colors: [Color(0xFFE11D48), AppColors.coral]),
-      shadow: [
-        BoxShadow(
-          color: Color(0x59F43F5E),
-          blurRadius: 22,
-          offset: Offset(0, 10),
-        ),
-      ],
+      background: AppColors.spend,
     ),
   };
 }

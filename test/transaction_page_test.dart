@@ -134,8 +134,8 @@ void main() {
       find.descendant(of: _incomeTile(), matching: find.text('Gaji')),
       findsAtLeastNWidgets(1),
     );
-    expect(find.textContaining('Hari ini'), findsOneWidget);
-    expect(find.textContaining('Kemarin'), findsOneWidget);
+    expect(find.textContaining('HARI INI'), findsOneWidget);
+    expect(find.textContaining('KEMARIN'), findsOneWidget);
     expect(find.text('Rp 5.000.000'), findsOneWidget);
     expect(find.text('Rp 75.000'), findsOneWidget);
   });

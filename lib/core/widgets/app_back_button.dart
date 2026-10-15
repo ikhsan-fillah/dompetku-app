@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'app_bar_icon_button.dart';
 
@@ -13,7 +14,7 @@ class AppBackButton extends StatelessWidget {
       child: AppBarIconButton(
         tooltip: 'Kembali',
         onPressed: Get.back,
-        icon: Icons.arrow_back_rounded,
+        icon: LucideIcons.arrowLeft,
       ),
     );
   }

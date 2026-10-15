@@ -9,8 +9,7 @@ class AppCard extends StatelessWidget {
     required this.child,
     this.padding = const EdgeInsets.all(AppSpacing.card),
     this.margin = const EdgeInsets.only(bottom: AppSpacing.gap),
-    this.color = AppColors.surface,
-    this.gradient,
+    this.color = AppColors.card,
     this.radius = AppRadius.card,
     this.onTap,
   });
@@ -19,7 +18,6 @@ class AppCard extends StatelessWidget {
   final EdgeInsetsGeometry padding;
   final EdgeInsetsGeometry margin;
   final Color color;
-  final Gradient? gradient;
   final double radius;
   final VoidCallback? onTap;
 
@@ -29,10 +27,9 @@ class AppCard extends StatelessWidget {
     return Container(
       margin: margin,
       decoration: BoxDecoration(
-        color: gradient == null ? color : null,
-        gradient: gradient,
+        color: color,
         borderRadius: shape,
-        boxShadow: AppColors.softShadow,
+        border: Border.all(color: AppColors.line),
       ),
       child: Material(
         type: MaterialType.transparency,

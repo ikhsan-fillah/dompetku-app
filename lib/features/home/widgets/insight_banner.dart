@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/app_card.dart';
 
 /// Banner insight netral di bagian bawah Beranda.
@@ -12,34 +15,31 @@ class InsightBanner extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppCard(
-      padding: const EdgeInsets.all(14),
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [AppColors.mint, Color(0xFFA7F3D0)],
-      ),
+      padding: const EdgeInsets.all(12),
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 34,
+            height: 34,
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(12),
+              color: AppColors.card,
+              borderRadius: BorderRadius.circular(AppRadius.smallButton),
+              border: Border.all(color: AppColors.line),
             ),
             child: const Icon(
-              Icons.lightbulb_outline_rounded,
-              size: 20,
-              color: AppColors.teal,
+              LucideIcons.lightbulb,
+              size: 17,
+              color: AppColors.ink,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 11),
           Expanded(
             child: Text(
               message,
-              style: const TextStyle(
-                fontSize: 12.5,
-                fontWeight: FontWeight.w600,
+              style: AppText.body(
+                size: 12.5,
+                weight: FontWeight.w600,
+                height: 1.35,
               ),
             ),
           ),

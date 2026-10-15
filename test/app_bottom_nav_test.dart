@@ -2,6 +2,7 @@ import 'package:dompetku_app/core/theme/app_theme.dart';
 import 'package:dompetku_app/core/widgets/app_bottom_nav.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 Widget _host(AppBottomNav nav) => MaterialApp(
   theme: AppTheme.light,
@@ -47,7 +48,7 @@ void main() {
       ),
     );
 
-    await tester.tap(find.byIcon(Icons.add_rounded));
+    await tester.tap(find.byIcon(LucideIcons.plus));
     expect(added, isTrue);
   });
 }

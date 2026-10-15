@@ -13,9 +13,9 @@ class AppPageHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.page,
-        4,
+        6,
         AppSpacing.page,
-        0,
+        14,
       ),
       child: Row(
         children: [

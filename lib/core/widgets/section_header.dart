@@ -2,7 +2,9 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
+import '../theme/app_text.dart';
 
+/// Judul kartu (spec §3.4 `card h3`): Manrope 13/700, link kanan dengan underline.
 class SectionHeader extends StatelessWidget {
   const SectionHeader({
     super.key,
@@ -24,21 +26,35 @@ class SectionHeader extends StatelessWidget {
       child: Row(
         children: [
           Expanded(
-            child: Text(title, style: Theme.of(context).textTheme.titleSmall),
+            child: Text(
+              title,
+              style: AppText.body(
+                size: 13,
+                weight: FontWeight.w700,
+                letterSpacing: 0.13,
+              ),
+            ),
           ),
           if (actionLabel != null)
             TextButton(
               onPressed: onAction,
               style: TextButton.styleFrom(
-                foregroundColor: AppColors.teal,
+                foregroundColor: AppColors.ink2,
                 minimumSize: const Size(AppSpacing.minTap, 40),
                 padding: const EdgeInsets.symmetric(horizontal: 8),
-                textStyle: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
+              ),
+              child: Text(
+                actionLabel!,
+                style: AppText.body(
+                  size: 11.5,
+                  weight: FontWeight.w600,
+                  color: AppColors.ink2,
+                ).copyWith(
+                  decoration: TextDecoration.underline,
+                  decorationColor: AppColors.line,
+                  decorationThickness: 1,
                 ),
               ),
-              child: Text(actionLabel!),
             ),
         ],
       ),

@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_text_field.dart';
@@ -42,28 +44,22 @@ class _ProfilePageState extends State<ProfilePage> {
   static const _spinner = SizedBox(
     width: 20,
     height: 20,
-    child: CircularProgressIndicator(strokeWidth: 2),
+    child: CircularProgressIndicator(
+      strokeWidth: 2,
+      color: AppColors.ink,
+    ),
   );
 
   static const _chevron = Icon(
-    Icons.chevron_right_rounded,
-    color: AppColors.muted,
+    LucideIcons.chevronRight,
+    color: AppColors.mut,
+    size: 18,
   );
 
   Future<void> _save() async {
     await _controller.setDisplayName(_nameField.text);
     if (!mounted) return;
     FocusScope.of(context).unfocus();
-  }
-
-  void _showDarkModeMaintenance() {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text(
-          'Mode gelap sedang dalam perbaikan dan akan segera hadir.',
-        ),
-      ),
-    );
   }
 
   void _openCategories() => Get.toNamed(AppRoutes.categories);
@@ -76,24 +72,62 @@ class _ProfilePageState extends State<ProfilePage> {
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
+          backgroundColor: AppColors.card,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(22),
+            borderRadius: BorderRadius.circular(AppRadius.hero),
+            side: const BorderSide(color: AppColors.line),
           ),
-          title: const Text('Hapus semua data?'),
+          title: Text(
+            'Hapus semua data?',
+            style: AppText.display(size: 20),
+          ),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Container(
+                width: 56,
+                height: 56,
+                alignment: Alignment.center,
+                decoration: BoxDecoration(
+                  color: AppColors.spendSoft,
+                  borderRadius: BorderRadius.circular(AppRadius.field),
+                ),
+                child: const Icon(
+                  LucideIcons.trash2,
+                  color: AppColors.spend,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
                 'Tindakan ini menghapus seluruh data keuangan, pengaturan, dan kunci aman dari perangkat ini. Tindakan tidak dapat dibatalkan.',
+                style: AppText.body(
+                  size: 13,
+                  color: AppColors.mut,
+                  height: 1.45,
+                ),
               ),
               const SizedBox(height: 16),
               TextField(
                 controller: confirmationController,
                 autofocus: true,
-                decoration: const InputDecoration(
+                style: AppText.body(size: 13),
+                decoration: InputDecoration(
                   labelText: 'Ketik HAPUS untuk melanjutkan',
-                  border: OutlineInputBorder(),
+                  labelStyle: AppText.body(size: 12, color: AppColors.ink2),
+                  border: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.field),
+                    borderSide: const BorderSide(color: AppColors.line),
+                  ),
+                  enabledBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.field),
+                    borderSide: const BorderSide(color: AppColors.line),
+                  ),
+                  focusedBorder: OutlineInputBorder(
+                    borderRadius: BorderRadius.circular(AppRadius.field),
+                    borderSide: const BorderSide(color: AppColors.ink),
+                  ),
                 ),
                 onChanged: (value) =>
                     setDialogState(() => canDelete = value == 'HAPUS'),
@@ -101,22 +135,45 @@ class _ProfilePageState extends State<ProfilePage> {
             ],
           ),
           actions: [
-            TextButton(
+            OutlinedButton(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.ink,
+                side: const BorderSide(color: AppColors.line),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(AppRadius.button),
+                ),
+              ),
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Batal'),
+              child: Text(
+                'Batal',
+                style: AppText.body(
+                  size: 13,
+                  weight: FontWeight.w700,
+                  color: AppColors.ink,
+                ),
+              ),
             ),
             FilledButton(
               style: FilledButton.styleFrom(
-                backgroundColor: const Color(0xFFF43F5E),
-                disabledBackgroundColor: const Color(0xFFE2E8F0),
+                backgroundColor: AppColors.spend,
+                foregroundColor: Colors.white,
+                disabledBackgroundColor: AppColors.paper2,
+                disabledForegroundColor: AppColors.mut,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(18),
+                  borderRadius: BorderRadius.circular(AppRadius.button),
                 ),
               ),
               onPressed: canDelete
                   ? () => Navigator.of(dialogContext).pop(true)
                   : null,
-              child: const Text('Hapus semua data'),
+              child: Text(
+                'Hapus semua data',
+                style: AppText.body(
+                  size: 13,
+                  weight: FontWeight.w700,
+                  color: canDelete ? Colors.white : AppColors.mut,
+                ),
+              ),
             ),
           ],
         ),
@@ -142,7 +199,6 @@ class _ProfilePageState extends State<ProfilePage> {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
     return ListView(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.page,
@@ -151,29 +207,30 @@ class _ProfilePageState extends State<ProfilePage> {
         130,
       ),
       children: [
-        AppCard(
-          gradient: AppColors.heroGradient,
-          radius: AppRadius.hero,
-          padding: const EdgeInsets.all(20),
+        Container(
+          margin: const EdgeInsets.only(bottom: AppSpacing.gap),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: AppColors.ink,
+            borderRadius: BorderRadius.circular(AppRadius.hero),
+          ),
           child: Obx(
             () => Row(
               children: [
                 Container(
-                  width: 58,
-                  height: 58,
+                  width: 54,
+                  height: 54,
                   alignment: Alignment.center,
                   decoration: const BoxDecoration(
+                    color: AppColors.paper,
                     shape: BoxShape.circle,
-                    gradient: LinearGradient(
-                      colors: [AppColors.amber, AppColors.coral],
-                    ),
                   ),
                   child: Text(
                     _controller.initial,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 19,
-                      fontWeight: FontWeight.w700,
+                    style: AppText.display(
+                      size: 20,
+                      weight: FontWeight.w500,
+                      color: AppColors.ink,
                     ),
                   ),
                 ),
@@ -186,18 +243,17 @@ class _ProfilePageState extends State<ProfilePage> {
                         _controller.greetingName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontSize: 17,
-                          fontWeight: FontWeight.w700,
+                        style: AppText.display(
+                          size: 18,
+                          color: AppColors.paper,
                         ),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '1 dompet · data tersimpan di perangkat ini',
-                        style: textTheme.bodySmall?.copyWith(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          fontSize: 11.5,
+                        style: AppText.body(
+                          size: 11,
+                          color: AppColors.paper.withValues(alpha: 0.75),
                         ),
                       ),
                     ],
@@ -216,18 +272,18 @@ class _ProfilePageState extends State<ProfilePage> {
                 controller: _nameField,
                 label: 'Nama',
                 hint: 'Friend',
-                prefixIcon: Icons.person_outline_rounded,
+                prefixIcon: LucideIcons.user,
                 textInputAction: TextInputAction.done,
               ),
               const SizedBox(height: 6),
               Text(
                 'Dipakai pada sapaan di Beranda. Kosongkan untuk memakai "Friend".',
-                style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                style: AppText.body(size: 10.5, color: AppColors.mut),
               ),
               const SizedBox(height: 14),
               AppButton(
                 label: 'Simpan nama',
-                icon: Icons.check_rounded,
+                icon: LucideIcons.check,
                 onPressed: _save,
               ),
             ],
@@ -239,16 +295,20 @@ class _ProfilePageState extends State<ProfilePage> {
             children: [
               const SectionHeader(title: 'Kelola'),
               SettingsTile(
-                icon: Icons.label_outline_rounded,
+                icon: LucideIcons.tag,
                 title: 'Kategori',
                 subtitle: 'Ikon, warna, urutan, favorit',
+                iconBackground: AppColors.paper2,
+                iconColor: AppColors.ink,
                 trailing: _chevron,
                 onTap: _openCategories,
               ),
               SettingsTile(
-                icon: Icons.pie_chart_outline_rounded,
+                icon: LucideIcons.chartPie,
                 title: 'Laporan',
                 subtitle: 'Perbandingan & insight',
+                iconBackground: AppColors.paper2,
+                iconColor: AppColors.ink,
                 showDivider: false,
                 trailing: _chevron,
                 onTap: () => Get.toNamed(AppRoutes.report),
@@ -261,42 +321,24 @@ class _ProfilePageState extends State<ProfilePage> {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               const SectionHeader(title: 'Tampilan & data'),
-              const SettingsTile(
-                icon: Icons.palette_outlined,
+              SettingsTile(
+                icon: LucideIcons.palette,
                 title: 'Tema',
-                subtitle:
-                    'Tema terang aktif. Mode gelap masih dalam maintenance.',
-                showDivider: false,
-              ),
-              const SizedBox(height: 8),
-              SizedBox(
-                width: double.infinity,
-                child: SegmentedButton<String>(
-                  showSelectedIcon: false,
-                  segments: const [
-                    ButtonSegment<String>(
-                      value: 'light',
-                      label: Text('Terang'),
-                      icon: Icon(Icons.light_mode_outlined),
-                    ),
-                    ButtonSegment<String>(
-                      value: 'dark',
-                      label: Text('Gelap'),
-                      icon: Icon(Icons.dark_mode_outlined),
-                    ),
-                  ],
-                  selected: const {'light'},
-                  onSelectionChanged: (_) => _showDarkModeMaintenance(),
+                subtitle: 'Terang (mode gelap tidak dipakai)',
+                iconBackground: AppColors.paper2,
+                iconColor: AppColors.ink,
+                trailing: const SettingsBadge(
+                  label: 'Terang',
+                  background: AppColors.paper2,
+                  foreground: AppColors.ink,
                 ),
               ),
-              const SizedBox(height: 12),
-              const Divider(height: 1, color: Color(0xFFF1F5F9)),
               Obx(
                 () => SettingsTile(
-                  icon: Icons.delete_forever_rounded,
-                  iconBackground: AppColors.coralSoft,
-                  iconColor: AppColors.coral,
-                  titleColor: AppColors.coral,
+                  icon: LucideIcons.trash2,
+                  iconBackground: AppColors.spendSoft,
+                  iconColor: AppColors.spend,
+                  titleColor: AppColors.spend,
                   title: 'Hapus semua data',
                   subtitle: 'Tidak dapat dibatalkan',
                   showDivider: false,
@@ -308,9 +350,17 @@ class _ProfilePageState extends State<ProfilePage> {
           ),
         ),
         Center(
-          child: Text(
-            'DompetKu 1.0.0 · Privasi: tanpa cloud',
-            style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
+          child: Padding(
+            padding: const EdgeInsets.only(top: 4),
+            child: Text(
+              'DompetKu 1.0.0 · tanpa akun · tanpa cloud',
+              style: AppText.mono(
+                size: 10.5,
+                weight: FontWeight.w400,
+                color: AppColors.mut,
+                letterSpacing: 0,
+              ),
+            ),
           ),
         ),
       ],

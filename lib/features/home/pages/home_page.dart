@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/utils/date_range.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_card.dart';
@@ -105,9 +107,9 @@ class HomePage extends StatelessWidget {
                 ExpenseDonut(slices: data.expenses),
                 if (data.expenses.isNotEmpty) ...[
                   const SizedBox(height: 8),
-                  const Text(
+                  Text(
                     'Urut dari terbesar ke terkecil · ketuk untuk detail',
-                    style: TextStyle(fontSize: 10.5, color: AppColors.muted),
+                    style: AppText.body(size: 10.5, color: AppColors.mut),
                   ),
                 ],
               ],
@@ -197,17 +199,17 @@ class _EmptyPeriodNote extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 14),
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: AppColors.mintSoft,
-        borderRadius: BorderRadius.circular(14),
+        color: AppColors.paper2,
+        borderRadius: BorderRadius.circular(AppRadius.card),
       ),
-      child: const Row(
+      child: Row(
         children: [
-          Icon(Icons.info_outline_rounded, size: 18, color: AppColors.teal),
-          SizedBox(width: 10),
+          const Icon(LucideIcons.info, size: 18, color: AppColors.ink),
+          const SizedBox(width: 10),
           Expanded(
             child: Text(
               'Tidak ada transaksi pada periode ini. Coba pilih periode lain.',
-              style: TextStyle(fontSize: 12, color: AppColors.muted),
+              style: AppText.body(size: 12, color: AppColors.mut),
             ),
           ),
         ],
@@ -224,50 +226,100 @@ class _BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final summary = data.summary;
-    final textTheme = Theme.of(context).textTheme;
-    return AppCard(
-      gradient: AppColors.heroGradient,
-      radius: AppRadius.hero,
-      padding: const EdgeInsets.all(20),
+    final amount = formatIdr(summary.balance);
+    final prefixAt = amount.indexOf('Rp');
+    return Container(
+      margin: const EdgeInsets.only(bottom: AppSpacing.gap),
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+      decoration: BoxDecoration(
+        color: AppColors.ink,
+        borderRadius: BorderRadius.circular(AppRadius.hero),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Saldo periode ini',
-            style: textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.85),
+            'Saldo periode ini'.toUpperCase(),
+            style: AppText.body(
+              size: 11.5,
+              weight: FontWeight.w700,
+              color: AppColors.paper.withValues(alpha: 0.7),
+              letterSpacing: 0.6,
             ),
           ),
           const SizedBox(height: 4),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(
-              formatIdr(summary.balance),
-              style: textTheme.headlineMedium?.copyWith(color: Colors.white),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  if (prefixAt >= 0) ...[
+                    if (prefixAt > 0)
+                      TextSpan(text: amount.substring(0, prefixAt)),
+                    TextSpan(
+                      text: 'Rp ',
+                      style: AppText.mono(
+                        size: 13,
+                        color: AppColors.paper.withValues(alpha: 0.7),
+                        letterSpacing: 0,
+                      ),
+                    ),
+                    TextSpan(text: amount.substring(prefixAt + 3)),
+                  ] else
+                    TextSpan(text: amount),
+                ],
+                style: AppText.display(
+                  size: 38,
+                  color: AppColors.paper,
+                  height: 1.05,
+                  letterSpacing: -0.38,
+                ),
+              ),
+              maxLines: 1,
             ),
           ),
           const SizedBox(height: 14),
-          Row(
-            children: [
-              Expanded(
-                child: _MiniPill(
-                  icon: Icons.arrow_upward_rounded,
-                  label: 'Pemasukan',
-                  amount: summary.income,
-                  color: AppColors.income,
+          Container(
+            padding: const EdgeInsets.only(top: 12),
+            decoration: BoxDecoration(
+              border: Border(
+                top: BorderSide(
+                  color: AppColors.paper.withValues(alpha: 0.18),
                 ),
               ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: _MiniPill(
-                  icon: Icons.arrow_downward_rounded,
-                  label: 'Pengeluaran',
-                  amount: summary.expense,
-                  color: AppColors.coral,
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _MiniPill(
+                    icon: LucideIcons.arrowUp,
+                    label: 'Pemasukan',
+                    amount: summary.income,
+                    color: AppColors.earn,
+                  ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Container(
+                    padding: const EdgeInsets.only(left: 12),
+                    decoration: BoxDecoration(
+                      border: Border(
+                        left: BorderSide(
+                          color: AppColors.paper.withValues(alpha: 0.18),
+                        ),
+                      ),
+                    ),
+                    child: _MiniPill(
+                      icon: LucideIcons.arrowDown,
+                      label: 'Pengeluaran',
+                      amount: summary.expense,
+                      color: AppColors.spend,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -290,46 +342,41 @@ class _MiniPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 9),
-      decoration: BoxDecoration(
-        color: Colors.white.withValues(alpha: 0.96),
-        borderRadius: BorderRadius.circular(16),
-      ),
-      child: Row(
-        children: [
-          Container(
-            width: 28,
-            height: 28,
-            decoration: BoxDecoration(color: color, shape: BoxShape.circle),
-            child: Icon(icon, color: Colors.white, size: 16),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  label,
-                  style: const TextStyle(fontSize: 10, color: AppColors.muted),
+    return Row(
+      children: [
+        Container(
+          width: 22,
+          height: 22,
+          decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+          child: Icon(icon, color: AppColors.paper, size: 12),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: AppText.body(
+                  size: 10,
+                  color: AppColors.paper.withValues(alpha: 0.7),
                 ),
-                FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerLeft,
-                  child: Text(
-                    formatIdr(amount),
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.ink,
-                    ),
+              ),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  formatIdr(amount),
+                  style: AppText.mono(
+                    size: 12.5,
+                    color: AppColors.paper,
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 }

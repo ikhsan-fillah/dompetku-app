@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/constant/domain_enums.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/theme/category_style.dart';
 import '../../../core/utils/date_label.dart';
 import '../../../core/widgets/app_button.dart';
@@ -57,6 +60,12 @@ Future<bool> showTransactionSheet(
     isScrollControlled: true,
     useSafeArea: true,
     showDragHandle: true,
+    backgroundColor: AppColors.card,
+    elevation: 0,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+      side: BorderSide(color: AppColors.line),
+    ),
     builder: (sheetContext) => Padding(
       padding: EdgeInsets.only(
         bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
@@ -250,6 +259,8 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
     final source = await showModalBottomSheet<ReceiptImageSource>(
       context: context,
       showDragHandle: true,
+      backgroundColor: AppColors.card,
+      elevation: 0,
       builder: (context) => SafeArea(
         child: Padding(
           padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
@@ -257,24 +268,36 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Scan struk', style: Theme.of(context).textTheme.titleLarge),
+              Text('Scan struk', style: AppText.display(size: 19)),
               const SizedBox(height: 8),
-              const Text(
+              Text(
                 'Data hasil scan adalah usulan. Periksa kembali sebelum menyimpan.',
-                style: TextStyle(fontSize: 12, color: AppColors.muted),
+                style: AppText.body(size: 12, color: AppColors.mut),
               ),
               const SizedBox(height: 14),
               ListTile(
-                leading: const Icon(Icons.photo_camera_outlined),
-                title: const Text('Ambil foto'),
-                subtitle: const Text('Gunakan kamera untuk memotret struk'),
+                leading: const Icon(LucideIcons.camera, color: AppColors.ink),
+                title: Text(
+                  'Ambil foto',
+                  style: AppText.body(size: 13, weight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  'Gunakan kamera untuk memotret struk',
+                  style: AppText.body(size: 10.5, color: AppColors.mut),
+                ),
                 onTap: () =>
                     Navigator.of(context).pop(ReceiptImageSource.camera),
               ),
               ListTile(
-                leading: const Icon(Icons.photo_library_outlined),
-                title: const Text('Pilih dari galeri'),
-                subtitle: const Text('Pilih foto struk yang sudah ada'),
+                leading: const Icon(LucideIcons.image, color: AppColors.ink),
+                title: Text(
+                  'Pilih dari galeri',
+                  style: AppText.body(size: 13, weight: FontWeight.w700),
+                ),
+                subtitle: Text(
+                  'Pilih foto struk yang sudah ada',
+                  style: AppText.body(size: 10.5, color: AppColors.mut),
+                ),
                 onTap: () =>
                     Navigator.of(context).pop(ReceiptImageSource.gallery),
               ),
@@ -319,7 +342,6 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
   @override
   Widget build(BuildContext context) {
     final c = _controller;
-    final textTheme = Theme.of(context).textTheme;
     return ConstrainedBox(
       constraints: BoxConstraints(
         maxHeight: MediaQuery.sizeOf(context).height * 0.94,
@@ -340,7 +362,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                               ? 'Edit pemasukan'
                               : 'Edit pengeluaran'
                         : 'Catat Keuangan',
-                    style: textTheme.titleLarge,
+                    style: AppText.display(size: 19),
                   ),
                 ),
                 if (!_isEditing)
@@ -356,13 +378,15 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                               height: 20,
                               child: CircularProgressIndicator(strokeWidth: 2),
                             )
-                          : const Icon(Icons.document_scanner_outlined),
+                          : const Icon(LucideIcons.scanLine, size: 18),
+                      color: AppColors.ink,
                     ),
                   ),
                 IconButton(
                   tooltip: 'Tutup',
                   onPressed: () => Navigator.of(context).pop(false),
-                  icon: const Icon(Icons.close_rounded),
+                  icon: const Icon(LucideIcons.x, size: 18),
+                  color: AppColors.ink,
                 ),
               ],
             ),
@@ -372,19 +396,15 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
             Obx(() {
               final color = _isBudget
                   ? (_budgetController?.error.value == null
-                        ? AppColors.teal
-                        : AppColors.coral)
+                        ? AppColors.ink
+                        : AppColors.spend)
                   : c.type.value == TransactionType.expense
-                  ? AppColors.coral
-                  : AppColors.income;
+                  ? AppColors.spend
+                  : AppColors.earn;
               return Container(
                 padding: const EdgeInsets.symmetric(
                   horizontal: 16,
                   vertical: 8,
-                ),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF8FAFC),
-                  borderRadius: BorderRadius.circular(20),
                 ),
                 child: TextField(
                   controller: _amountField,
@@ -401,28 +421,18 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                       c.error.value = null;
                     }
                   },
-                  style: TextStyle(
-                    fontSize: 32,
-                    fontWeight: FontWeight.w700,
-                    color: color,
-                  ),
+                  style: AppText.display(size: 36, color: color),
                   decoration: InputDecoration(
                     labelText: _isBudget
                         ? 'Batas anggaran (IDR)'
                         : 'Jumlah (IDR)',
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     floatingLabelAlignment: FloatingLabelAlignment.center,
-                    labelStyle: const TextStyle(
-                      fontSize: 12,
-                      color: AppColors.muted,
-                    ),
+                    labelStyle: AppText.body(size: 11, color: AppColors.mut),
                     hintText: '0',
+                    hintStyle: AppText.display(size: 36, color: AppColors.line),
                     prefixText: 'Rp ',
-                    prefixStyle: TextStyle(
-                      fontSize: 32,
-                      fontWeight: FontWeight.w700,
-                      color: color,
-                    ),
+                    prefixStyle: AppText.display(size: 36, color: color),
                     border: InputBorder.none,
                     enabledBorder: InputBorder.none,
                     focusedBorder: InputBorder.none,
@@ -520,15 +530,15 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                 tilePadding: EdgeInsets.zero,
                 childrenPadding: EdgeInsets.zero,
                 initiallyExpanded: _isEditing,
-                title: const Text(
+                title: Text(
                   'Detail tambahan',
-                  style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+                  style: AppText.body(size: 13, weight: FontWeight.w700),
                 ),
                 subtitle: Text(
                   _isBudget
                       ? 'Nama dan catatan anggaran'
                       : 'Metode pembayaran, nama, catatan',
-                  style: TextStyle(fontSize: 11, color: AppColors.muted),
+                  style: AppText.body(size: 10.5, color: AppColors.mut),
                 ),
                 children: [
                   if (!_isBudget) ...[
@@ -563,7 +573,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                     hint: _isBudget
                         ? 'Nama anggaran (opsional)'
                         : 'Nama (opsional), contoh: Makan siang',
-                    prefixIcon: Icons.edit_outlined,
+                    prefixIcon: LucideIcons.pencil,
                     textInputAction: TextInputAction.next,
                     onChanged: (value) => _isBudget
                         ? _budgetController?.name.value = value
@@ -573,7 +583,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                   AppTextField(
                     controller: _noteField,
                     hint: 'Catatan (opsional)',
-                    prefixIcon: Icons.notes_rounded,
+                    prefixIcon: LucideIcons.fileText,
                     textInputAction: TextInputAction.done,
                     onChanged: (value) => _isBudget
                         ? _budgetController?.note.value = value
@@ -591,10 +601,10 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                 padding: const EdgeInsets.only(top: 6, bottom: 2),
                 child: Text(
                   message,
-                  style: const TextStyle(
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.coral,
+                  style: AppText.body(
+                    size: 12,
+                    weight: FontWeight.w700,
+                    color: AppColors.spend,
                   ),
                 ),
               );
@@ -605,7 +615,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                 label: _isBudget
                     ? (_isEditing ? 'Simpan perubahan' : 'Simpan anggaran')
                     : (_isEditing ? 'Simpan perubahan' : 'Simpan transaksi'),
-                icon: Icons.check_rounded,
+                icon: LucideIcons.check,
                 loading: _isBudget
                     ? _budgetController?.saving.value ?? false
                     : c.saving.value,
@@ -633,12 +643,8 @@ class _Label extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.only(top: 12, bottom: 6),
       child: Text(
-        text,
-        style: const TextStyle(
-          fontSize: 11.5,
-          fontWeight: FontWeight.w500,
-          color: AppColors.muted,
-        ),
+        text.toUpperCase(),
+        style: AppText.label(),
       ),
     );
   }
@@ -653,29 +659,29 @@ class _ModeToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.all(4),
+      padding: const EdgeInsets.all(3),
       decoration: BoxDecoration(
-        color: const Color(0xFFF1F5F9),
-        borderRadius: BorderRadius.circular(16),
+        color: AppColors.paper2,
+        borderRadius: BorderRadius.circular(AppRadius.field),
       ),
       child: Row(
         children: [
           _ToggleButton(
             label: 'Pengeluaran',
             selected: mode == FinancialInputMode.expense,
-            color: AppColors.coral,
+            color: AppColors.spend,
             onTap: () => onChanged(FinancialInputMode.expense),
           ),
           _ToggleButton(
             label: 'Pemasukan',
             selected: mode == FinancialInputMode.income,
-            color: AppColors.income,
+            color: AppColors.earn,
             onTap: () => onChanged(FinancialInputMode.income),
           ),
           _ToggleButton(
             label: 'Anggaran',
             selected: mode == FinancialInputMode.budget,
-            color: AppColors.teal,
+            color: AppColors.ink,
             onTap: () => onChanged(FinancialInputMode.budget),
           ),
         ],
@@ -708,28 +714,18 @@ class _ToggleButton extends StatelessWidget {
           onTap: onTap,
           child: AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            padding: const EdgeInsets.symmetric(vertical: 13),
+            padding: const EdgeInsets.symmetric(vertical: 9),
             alignment: Alignment.center,
             decoration: BoxDecoration(
-              gradient: selected ? AppColors.primaryGradient : null,
-              color: selected ? null : Colors.transparent,
-              borderRadius: BorderRadius.circular(13),
-              boxShadow: selected
-                  ? [
-                      BoxShadow(
-                        color: color.withValues(alpha: 0.35),
-                        blurRadius: 12,
-                        offset: const Offset(0, 5),
-                      ),
-                    ]
-                  : null,
+              color: selected ? color : Colors.transparent,
+              borderRadius: BorderRadius.circular(AppRadius.chip),
             ),
             child: Text(
               label,
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                color: selected ? Colors.white : AppColors.muted,
+              style: AppText.body(
+                size: 12.5,
+                weight: FontWeight.w700,
+                color: selected ? Colors.white : AppColors.mut,
               ),
             ),
           ),
@@ -765,28 +761,31 @@ class _DateRow extends StatelessWidget {
         button: true,
         label: 'Pilih tanggal, ${label ?? dateLabel}',
         child: Material(
-          color: AppColors.mint,
-          borderRadius: BorderRadius.circular(99),
+          color: Colors.transparent,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(AppRadius.chip),
+            side: const BorderSide(color: AppColors.line),
+          ),
           child: InkWell(
-            borderRadius: BorderRadius.circular(99),
+            borderRadius: BorderRadius.circular(AppRadius.chip),
             onTap: onTap,
             child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+              padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
               child: Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
                   const Icon(
-                    Icons.calendar_month_outlined,
-                    size: 16,
-                    color: AppColors.teal,
+                    LucideIcons.calendar,
+                    size: 14,
+                    color: AppColors.ink,
                   ),
                   const SizedBox(width: 6),
                   Text(
                     label == null ? dateLabel : '$label · $dateLabel',
-                    style: const TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: AppColors.teal,
+                    style: AppText.body(
+                      size: 11.5,
+                      weight: FontWeight.w600,
+                      color: AppColors.ink,
                     ),
                   ),
                 ],
@@ -813,11 +812,11 @@ class _CategoryRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (options.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Text(
           'Belum ada kategori untuk jenis ini.',
-          style: TextStyle(fontSize: 12, color: AppColors.muted),
+          style: AppText.body(size: 12, color: AppColors.mut),
         ),
       );
     }
@@ -857,18 +856,17 @@ class _CategoryChoice extends StatelessWidget {
       button: true,
       selected: selected,
       child: InkWell(
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(AppRadius.smallButton),
         onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
-          width: 72,
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          width: 60,
+          padding: const EdgeInsets.symmetric(vertical: 6),
           decoration: BoxDecoration(
-            color: selected ? AppColors.mintSoft : Colors.transparent,
-            borderRadius: BorderRadius.circular(16),
+            color: selected ? AppColors.paper2 : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.smallButton),
             border: Border.all(
-              color: selected ? AppColors.tealLight : Colors.transparent,
-              width: 1.5,
+              color: selected ? AppColors.ink : Colors.transparent,
             ),
           ),
           child: Column(
@@ -876,17 +874,16 @@ class _CategoryChoice extends StatelessWidget {
               CategoryIconBox(
                 icon: CategoryStyle.icon(category.iconKey),
                 color: CategoryStyle.color(category.colorValue),
-                size: 40,
               ),
               const SizedBox(height: 4),
               Text(
                 category.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  fontSize: 10.5,
-                  fontWeight: selected ? FontWeight.w600 : FontWeight.w400,
-                  color: selected ? AppColors.ink : AppColors.muted,
+                style: AppText.body(
+                  size: 10,
+                  weight: selected ? FontWeight.w700 : FontWeight.w400,
+                  color: selected ? AppColors.ink : AppColors.mut,
                 ),
               ),
             ],
