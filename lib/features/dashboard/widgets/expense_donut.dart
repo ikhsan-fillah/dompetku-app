@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/theme/category_style.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/utils/percent_rounding.dart';
@@ -120,7 +121,7 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
             padding: const EdgeInsets.only(left: 6, top: 4),
             child: Text(
               '+${slices.length - _legendLimit} kategori lain',
-              style: const TextStyle(fontSize: 10.5, color: AppColors.muted),
+              style: AppText.body(size: 11, color: AppColors.mut),
             ),
           ),
       ],
@@ -145,11 +146,11 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
       children: [
         layout,
         if (isZeroState)
-          const Padding(
-            padding: EdgeInsets.only(top: 8),
+          Padding(
+            padding: const EdgeInsets.only(top: 8),
             child: Text(
               'Belum ada pengeluaran pada periode ini.',
-              style: TextStyle(fontSize: 10.5, color: AppColors.muted),
+              style: AppText.body(size: 10.5, color: AppColors.mut),
             ),
           ),
       ],
@@ -179,21 +180,21 @@ class _CenterText extends StatelessWidget {
           top,
           maxLines: 1,
           overflow: TextOverflow.ellipsis,
-          style: const TextStyle(fontSize: 9.5, color: AppColors.muted),
+          style: AppText.body(size: 9.5, color: AppColors.mut),
         ),
         FittedBox(
           fit: BoxFit.scaleDown,
           child: Text(
             formatIdr(amount),
-            style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w700),
+            style: AppText.mono(size: 12, weight: FontWeight.w500),
           ),
         ),
         if (bottom != null)
           Text(
             bottom!,
-            style: TextStyle(
-              fontSize: 10.5,
-              fontWeight: FontWeight.w600,
+            style: AppText.mono(
+              size: 10.5,
+              weight: FontWeight.w500,
               color: color,
             ),
           ),
@@ -226,19 +227,21 @@ class _LegendRow extends StatelessWidget {
         borderRadius: BorderRadius.circular(10),
         onTap: onTap,
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 5),
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
           decoration: BoxDecoration(
-            color: selected ? AppColors.mintSoft : Colors.transparent,
-            borderRadius: BorderRadius.circular(10),
+            color: selected ? AppColors.paper2 : Colors.transparent,
+            border: const Border(
+              bottom: BorderSide(color: AppColors.line2),
+            ),
           ),
           child: Row(
             children: [
               Container(
-                width: 10,
-                height: 10,
+                width: 8,
+                height: 8,
                 decoration: BoxDecoration(
                   color: color,
-                  borderRadius: BorderRadius.circular(3),
+                  borderRadius: BorderRadius.circular(2),
                 ),
               ),
               const SizedBox(width: 8),
@@ -250,15 +253,16 @@ class _LegendRow extends StatelessWidget {
                       slice.name,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(fontSize: 11.5),
+                      style: AppText.body(size: 11.5, color: AppColors.ink),
                     ),
                     Text(
                       formatIdr(slice.amount),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 10,
-                        color: AppColors.muted,
+                      style: AppText.mono(
+                        size: 10,
+                        color: AppColors.mut,
+                        letterSpacing: 0,
                       ),
                     ),
                   ],
@@ -267,10 +271,7 @@ class _LegendRow extends StatelessWidget {
               const SizedBox(width: 6),
               Text(
                 '$percent%',
-                style: const TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: AppText.mono(size: 11, weight: FontWeight.w500),
               ),
             ],
           ),
@@ -301,7 +302,7 @@ class _DonutPainter extends CustomPainter {
       Paint()
         ..style = PaintingStyle.stroke
         ..strokeWidth = 18
-        ..color = AppColors.track,
+        ..color = AppColors.paper2,
     );
     const gap = 0.045;
     var start = -math.pi / 2;

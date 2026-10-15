@@ -1,9 +1,13 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
+import '../../../core/widgets/app_card.dart';
+import '../../../core/widgets/category_icon_box.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
 
@@ -24,11 +28,16 @@ class BudgetArchivePage extends GetView<BudgetController> {
   Future<void> _confirmRestore(BudgetViewModel item) async {
     final confirmed = await Get.dialog<bool>(
       AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-        title: const Text('Pulihkan anggaran?'),
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.hero),
+          side: const BorderSide(color: AppColors.line),
+        ),
+        title: Text('Pulihkan anggaran?', style: AppText.display(size: 20)),
         content: Text(
           '"${item.budget.name}" akan kembali muncul di daftar anggaran aktif. '
           'Histori transaksi tidak berubah.',
+          style: AppText.body(size: 13, color: AppColors.ink2),
         ),
         actions: [
           TextButton(
@@ -48,10 +57,10 @@ class BudgetArchivePage extends GetView<BudgetController> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFFF6FAF9),
+    backgroundColor: AppColors.paper,
     appBar: AppBar(
-      title: const Text('Anggaran terarsip'),
-      backgroundColor: const Color(0xFFF6FAF9),
+      title: Text('Anggaran terarsip', style: AppText.display(size: 26)),
+      backgroundColor: AppColors.paper,
       surfaceTintColor: Colors.transparent,
     ),
     body: Obx(() {
@@ -64,7 +73,10 @@ class BudgetArchivePage extends GetView<BudgetController> {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Text(current.message ?? 'Gagal memuat anggaran terarsip.'),
+              Text(
+                current.message ?? 'Gagal memuat anggaran terarsip.',
+                style: AppText.body(color: AppColors.ink2),
+              ),
               TextButton(
                 onPressed: controller.loadArchived,
                 child: const Text('Coba lagi'),
@@ -72,23 +84,38 @@ class BudgetArchivePage extends GetView<BudgetController> {
             ],
           ),
         ),
-        ResourceStatus.empty => const Center(
+        ResourceStatus.empty => Center(
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(Icons.inventory_2_outlined, size: 56, color: AppColors.teal),
-              SizedBox(height: 12),
-              Text('Tidak ada anggaran terarsip'),
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: AppColors.paper2,
+                  borderRadius: BorderRadius.circular(AppRadius.hero - 2),
+                ),
+                child: const Icon(
+                  LucideIcons.archive,
+                  size: 28,
+                  color: AppColors.ink,
+                ),
+              ),
+              const SizedBox(height: 12),
+              Text(
+                'Tidak ada anggaran terarsip',
+                style: AppText.body(size: 14, weight: FontWeight.w700),
+              ),
             ],
           ),
         ),
         ResourceStatus.success => RefreshIndicator(
-          color: AppColors.teal,
+          color: AppColors.ink,
           onRefresh: controller.loadArchived,
           child: ListView.separated(
             padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
             itemCount: current.data!.length,
-            separatorBuilder: (_, _) => const SizedBox(height: 14),
+            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.gap),
             itemBuilder: (_, index) => _ArchivedCard(
               item: current.data![index],
               money: _money,
@@ -114,28 +141,14 @@ class _ArchivedCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textTheme = Theme.of(context).textTheme;
-    return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        boxShadow: AppColors.softShadow,
-      ),
+    return AppCard(
+      margin: EdgeInsets.zero,
       child: Row(
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: const BoxDecoration(
-              color: Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.all(Radius.circular(14)),
-            ),
-            child: const Icon(
-              Icons.inventory_2_outlined,
-              size: 20,
-              color: AppColors.muted,
-            ),
+          CategoryIconBox(
+            icon: LucideIcons.package,
+            color: AppColors.mut,
+            size: 40,
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -146,22 +159,27 @@ class _ArchivedCard extends StatelessWidget {
                   item.budget.name,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: textTheme.titleSmall,
+                  style: AppText.body(size: 13, weight: FontWeight.w700),
                 ),
                 const SizedBox(height: 3),
                 Text(
                   item.isOverall
                       ? '${money(item.used)} dari ${money(item.budget.amountLimit)} · keseluruhan'
                       : '${money(item.used)} dari ${money(item.budget.amountLimit)}',
-                  style: textTheme.bodySmall?.copyWith(color: AppColors.muted),
+                  style: AppText.mono(
+                    size: 11,
+                    weight: FontWeight.w400,
+                    color: AppColors.mut,
+                  ),
                 ),
               ],
             ),
           ),
           TextButton.icon(
             onPressed: onRestore,
-            icon: const Icon(Icons.restore_rounded, size: 18),
+            icon: const Icon(LucideIcons.undo2, size: 16),
             label: const Text('Pulihkan'),
+            style: TextButton.styleFrom(foregroundColor: AppColors.ink),
           ),
         ],
       ),

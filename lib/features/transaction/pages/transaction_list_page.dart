@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/utils/date_label.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_button.dart';
@@ -89,7 +91,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.coral),
+            style: TextButton.styleFrom(foregroundColor: AppColors.spend),
             child: const Text('Hapus'),
           ),
         ],
@@ -131,12 +133,12 @@ class _TransactionListPageState extends State<TransactionListPage> {
         );
       case ResourceStatus.empty:
         return AppEmptyView(
-          icon: Icons.receipt_long_outlined,
+          icon: LucideIcons.receiptText,
           title: 'Belum ada transaksi',
           message: 'Catat pengeluaran atau pemasukan pertamamu.',
           action: AppButton(
             label: 'Tambah transaksi',
-            icon: Icons.add_rounded,
+            icon: LucideIcons.plus,
             expand: false,
             onPressed: () => showTransactionSheet(context),
           ),
@@ -145,7 +147,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
         final result = _controller.list;
         if (result.isEmpty) {
           return const AppEmptyView(
-            icon: Icons.search_off_rounded,
+            icon: LucideIcons.search,
             title: 'Tidak ada hasil',
             message: 'Coba kata kunci atau filter lain.',
           );
@@ -188,12 +190,8 @@ class _TransactionListPageState extends State<TransactionListPage> {
               return Padding(
                 padding: const EdgeInsets.only(top: 14, bottom: 6, left: 2),
                 child: Text(
-                  _groupLabel(entry.date!),
-                  style: const TextStyle(
-                    fontSize: 11.5,
-                    fontWeight: FontWeight.w600,
-                    color: AppColors.muted,
-                  ),
+                  _groupLabel(entry.date!).toUpperCase(),
+                  style: AppText.monoLabel(),
                 ),
               );
             }
@@ -227,7 +225,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
               final selectedSort = _controller.sort.value;
               return PopupMenuButton<TransactionSort>(
                 tooltip: 'Urutkan transaksi',
-                icon: const Icon(Icons.sort_rounded),
+                icon: const Icon(LucideIcons.arrowUpDown, size: 20),
                 onSelected: _controller.setSort,
                 itemBuilder: (context) => [
                   for (final sort in TransactionSort.values)
@@ -251,7 +249,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
           child: AppTextField(
             controller: _search,
             hint: 'Cari transaksi…',
-            prefixIcon: Icons.search_rounded,
+            prefixIcon: LucideIcons.search,
             onChanged: _controller.setQuery,
           ),
         ),
@@ -319,17 +317,17 @@ class _SummaryRow extends StatelessWidget {
             child: _SummaryItem(
               label: 'Pemasukan',
               amount: income,
-              color: AppColors.income,
+              color: AppColors.earn,
             ),
           ),
           const SizedBox(width: 16),
-          Container(width: 1, height: 34, color: const Color(0xFFE2E8F0)),
+          Container(width: 1, height: 34, color: AppColors.line),
           const SizedBox(width: 16),
           Expanded(
             child: _SummaryItem(
               label: 'Pengeluaran',
               amount: expense,
-              color: AppColors.coral,
+              color: AppColors.spend,
             ),
           ),
         ],
@@ -356,7 +354,7 @@ class _SummaryItem extends StatelessWidget {
       children: [
         Text(
           label,
-          style: const TextStyle(fontSize: 11, color: AppColors.muted),
+          style: AppText.body(size: 10.5, color: AppColors.mut),
         ),
         const SizedBox(height: 2),
         FittedBox(
@@ -364,9 +362,9 @@ class _SummaryItem extends StatelessWidget {
           alignment: Alignment.centerLeft,
           child: Text(
             formatIdr(amount),
-            style: TextStyle(
-              fontSize: 15,
-              fontWeight: FontWeight.w700,
+            style: AppText.mono(
+              size: 15,
+              weight: FontWeight.w500,
               color: color,
             ),
           ),

@@ -1,23 +1,15 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
+import '../../../core/widgets/app_bar_icon_button.dart';
+import '../../../core/widgets/app_button.dart';
 import '../controllers/budget_form_controller.dart';
 import '../models/budget_model.dart';
-
-const _bg = Color(0xFFF6FAF9);
-const _teal = Color(0xFF0F766E);
-const _emerald = Color(0xFF10B981);
-const _mint = Color(0xFFCCFBF1);
-const _coral = Color(0xFFF43F5E);
-const _coralSoft = Color(0xFFFFE4E9);
-const _ink = Color(0xFF1F2937);
-const _muted = Color(0xFF64748B);
-const _border = Color(0xFFE2E8F0);
-
-const _shadow = [
-  BoxShadow(color: Color(0x170F766E), blurRadius: 22, offset: Offset(0, 6)),
-];
 
 class BudgetFormPage extends StatefulWidget {
   const BudgetFormPage({super.key, this.budget});
@@ -82,36 +74,30 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
   InputDecoration _decoration(String label, IconData icon) {
     OutlineInputBorder border(Color color, [double width = 1]) =>
         OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadius.field),
           borderSide: BorderSide(color: color, width: width),
         );
     return InputDecoration(
       labelText: label,
-      labelStyle: const TextStyle(color: _muted),
-      floatingLabelStyle: const TextStyle(
-        color: _teal,
-        fontWeight: FontWeight.w600,
+      labelStyle: AppText.body(size: 13, color: AppColors.mut),
+      floatingLabelStyle: AppText.body(
+        size: 12,
+        weight: FontWeight.w700,
+        color: AppColors.ink,
       ),
-      prefixIcon: Icon(icon, color: _teal),
+      prefixIcon: Icon(icon, size: 18, color: AppColors.ink2),
       filled: true,
-      fillColor: Colors.white,
-      contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
-      border: border(_border),
-      enabledBorder: border(_border),
-      focusedBorder: border(_teal, 1.6),
+      fillColor: AppColors.card,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+      border: border(AppColors.line),
+      enabledBorder: border(AppColors.line),
+      focusedBorder: border(AppColors.ink, 1.2),
     );
   }
 
   Widget _sectionLabel(String text) => Padding(
     padding: const EdgeInsets.only(bottom: 8, left: 2),
-    child: Text(
-      text,
-      style: const TextStyle(
-        color: _muted,
-        fontSize: 12,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
+    child: Text(text, style: AppText.label()),
   );
 
   Widget _segment({
@@ -125,24 +111,29 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
       behavior: HitTestBehavior.opaque,
       child: AnimatedContainer(
         duration: const Duration(milliseconds: 180),
-        padding: const EdgeInsets.symmetric(vertical: 13),
+        padding: const EdgeInsets.symmetric(vertical: 9),
         decoration: BoxDecoration(
-          gradient: active
-              ? const LinearGradient(colors: [_teal, _emerald])
-              : null,
-          borderRadius: BorderRadius.circular(12),
+          color: active ? AppColors.card : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.chip),
+          border: Border.all(
+            color: active ? AppColors.line : Colors.transparent,
+          ),
         ),
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(icon, size: 18, color: active ? Colors.white : _muted),
+            Icon(
+              icon,
+              size: 16,
+              color: active ? AppColors.ink : AppColors.mut,
+            ),
             const SizedBox(width: 6),
             Text(
               label,
-              style: TextStyle(
-                color: active ? Colors.white : _muted,
-                fontSize: 13.5,
-                fontWeight: active ? FontWeight.w700 : FontWeight.w500,
+              style: AppText.body(
+                size: 12.5,
+                weight: FontWeight.w700,
+                color: active ? AppColors.ink : AppColors.mut,
               ),
             ),
           ],
@@ -157,16 +148,16 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
     required bool start,
   }) => Expanded(
     child: Material(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(14),
+      color: AppColors.card,
+      borderRadius: BorderRadius.circular(AppRadius.card),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(AppRadius.card),
         onTap: () => _pickDate(start),
         child: Ink(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(14),
-            border: Border.all(color: _border),
+            borderRadius: BorderRadius.circular(AppRadius.card),
+            border: Border.all(color: AppColors.line),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -176,34 +167,23 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
                   Container(
                     padding: const EdgeInsets.all(6),
                     decoration: BoxDecoration(
-                      color: _mint,
-                      borderRadius: BorderRadius.circular(9),
+                      color: AppColors.paper2,
+                      borderRadius: BorderRadius.circular(AppRadius.chip),
                     ),
                     child: const Icon(
-                      Icons.calendar_today_outlined,
-                      size: 15,
-                      color: _teal,
+                      LucideIcons.calendar,
+                      size: 14,
+                      color: AppColors.ink,
                     ),
                   ),
                   const SizedBox(width: 8),
-                  Text(
-                    label,
-                    style: const TextStyle(
-                      color: _muted,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+                  Text(label, style: AppText.label()),
                 ],
               ),
               const SizedBox(height: 10),
               Text(
                 _date(value),
-                style: const TextStyle(
-                  color: _ink,
-                  fontSize: 15,
-                  fontWeight: FontWeight.w700,
-                ),
+                style: AppText.mono(size: 13.5, weight: FontWeight.w500),
               ),
             ],
           ),
@@ -214,24 +194,23 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
 
   Widget _errorPanel(String message) => Container(
     margin: const EdgeInsets.only(top: 16),
-    padding: const EdgeInsets.all(14),
+    padding: const EdgeInsets.all(12),
     decoration: BoxDecoration(
-      color: _coralSoft,
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(color: const Color(0x33F43F5E)),
+      color: AppColors.spendSoft,
+      borderRadius: BorderRadius.circular(AppRadius.card),
     ),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Icon(Icons.error_outline_rounded, color: _coral, size: 20),
+        const Icon(LucideIcons.circleAlert, color: AppColors.spend, size: 18),
         const SizedBox(width: 10),
         Expanded(
           child: Text(
             message,
-            style: const TextStyle(
-              color: _coral,
-              fontSize: 13,
-              fontWeight: FontWeight.w600,
+            style: AppText.body(
+              size: 12.5,
+              weight: FontWeight.w700,
+              color: AppColors.spend,
             ),
           ),
         ),
@@ -239,91 +218,26 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
     ),
   );
 
-  Widget _saveButton(bool saving) => Opacity(
-    opacity: saving ? 0.7 : 1,
-    child: Material(
-      color: Colors.transparent,
-      child: Ink(
-        decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
-            colors: [_teal, _emerald],
-          ),
-          borderRadius: BorderRadius.circular(18),
-          boxShadow: const [
-            BoxShadow(
-              color: Color(0x330F766E),
-              blurRadius: 18,
-              offset: Offset(0, 6),
-            ),
-          ],
-        ),
-        child: InkWell(
-          borderRadius: BorderRadius.circular(18),
-          onTap: saving
-              ? null
-              : () async {
-                  if (await controller.save() && mounted) {
-                    Get.back(result: true);
-                  }
-                },
-          child: SizedBox(
-            height: 54,
-            child: Center(
-              child: saving
-                  ? const SizedBox.square(
-                      dimension: 22,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Colors.white,
-                      ),
-                    )
-                  : const Text(
-                      'Simpan',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700,
-                      ),
-                    ),
-            ),
-          ),
-        ),
-      ),
-    ),
-  );
-
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: _bg,
+    backgroundColor: AppColors.paper,
     appBar: AppBar(
-      backgroundColor: _bg,
+      backgroundColor: AppColors.paper,
       surfaceTintColor: Colors.transparent,
       elevation: 0,
       centerTitle: false,
       leadingWidth: 64,
       leading: Padding(
         padding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
-        child: Material(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(14),
-          elevation: 0,
-          shadowColor: const Color(0x170F766E),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(14),
-            onTap: () => Get.back(),
-            child: const Icon(
-              Icons.arrow_back_ios_new_rounded,
-              size: 18,
-              color: _teal,
-            ),
-          ),
+        child: AppBarIconButton(
+          tooltip: 'Kembali',
+          onPressed: () => Get.back(),
+          icon: LucideIcons.arrowLeft,
         ),
       ),
       title: Text(
         widget.budget == null ? 'Buat anggaran' : 'Edit anggaran',
-        style: const TextStyle(color: _ink, fontWeight: FontWeight.w700),
+        style: AppText.display(size: 26),
       ),
     ),
     body: Obx(() {
@@ -344,7 +258,8 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
           TextField(
             controller: _name,
             onChanged: (value) => controller.name.value = value,
-            decoration: _decoration('Nama anggaran', Icons.edit_note_rounded),
+            style: AppText.body(size: 13.5),
+            decoration: _decoration('Nama anggaran', LucideIcons.pencilLine),
           ),
           const SizedBox(height: 16),
           TextField(
@@ -352,31 +267,31 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
             onChanged: (value) => controller.amountDigits.value = value,
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            style: AppText.mono(size: 13.5),
             decoration: _decoration(
               'Batas anggaran (Rp)',
-              Icons.payments_outlined,
+              LucideIcons.banknote,
             ),
           ),
           const SizedBox(height: 20),
           _sectionLabel('Jenis anggaran'),
           Container(
-            padding: const EdgeInsets.all(5),
+            padding: const EdgeInsets.all(3),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(16),
-              boxShadow: _shadow,
+              color: AppColors.paper2,
+              borderRadius: BorderRadius.circular(AppRadius.field),
             ),
             child: Row(
               children: [
                 _segment(
                   label: 'Keseluruhan',
-                  icon: Icons.account_balance_wallet_outlined,
+                  icon: LucideIcons.wallet,
                   active: overall,
                   onTap: () => controller.setOverall(true),
                 ),
                 _segment(
                   label: 'Kategori',
-                  icon: Icons.category_outlined,
+                  icon: LucideIcons.layers,
                   active: !overall,
                   onTap: () => controller.setOverall(false),
                 ),
@@ -390,7 +305,7 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
               overall
                   ? 'Mencakup semua pengeluaran'
                   : 'Hanya pengeluaran pada kategori terpilih',
-              style: const TextStyle(color: _muted, fontSize: 12),
+              style: AppText.body(size: 11, color: AppColors.mut),
             ),
           ),
           if (!overall) ...[
@@ -398,11 +313,12 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
             DropdownButtonFormField<int>(
               key: ValueKey(selected),
               initialValue: selected,
-              borderRadius: BorderRadius.circular(14),
-              dropdownColor: Colors.white,
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              dropdownColor: AppColors.card,
+              style: AppText.body(size: 13.5),
               decoration: _decoration(
                 'Kategori pengeluaran',
-                Icons.sell_outlined,
+                LucideIcons.tag,
               ),
               items: [
                 for (final category in controller.availableCategories)
@@ -425,7 +341,17 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
           ),
           if (error != null) _errorPanel(error),
           const SizedBox(height: 28),
-          _saveButton(saving),
+          AppButton(
+            label: 'Simpan',
+            loading: saving,
+            onPressed: saving
+                ? null
+                : () async {
+                    if (await controller.save() && mounted) {
+                      Get.back(result: true);
+                    }
+                  },
+          ),
         ],
       );
     }),

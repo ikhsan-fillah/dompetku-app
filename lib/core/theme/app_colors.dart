@@ -1,45 +1,43 @@
 import 'package:flutter/material.dart';
 
+/// Token warna "Paper & Ink" (DOMPETKU_DESIGN_SPEC_v3 §2.1). Hanya light mode.
 abstract final class AppColors {
-  static const teal = Color(0xFF0F766E);
-  static const tealDeep = Color(0xFF0B5F58);
-  static const tealLight = Color(0xFF14B8A6);
-  static const emerald = Color(0xFF10B981);
-  static const mint = Color(0xFFCCFBF1);
-  static const mintSoft = Color(0xFFECFDF5);
-  static const amber = Color(0xFFF59E0B);
-  static const amberDeep = Color(0xFFB45309);
-  static const amberSoft = Color(0xFFFEF3C7);
-  static const orange = Color(0xFFEA580C);
-  static const orangeSoft = Color(0xFFFFEDD5);
-  static const coral = Color(0xFFF43F5E);
-  static const coralSoft = Color(0xFFFFE4E9);
-  static const income = Color(0xFF15803D);
-  static const incomeSoft = Color(0xFFDCFCE7);
-  static const violet = Color(0xFF8B5CF6);
-  static const sky = Color(0xFF38BDF8);
-  static const background = Color(0xFFF6FAF9);
-  static const surface = Color(0xFFFFFFFF);
-  static const ink = Color(0xFF1F2937);
-  static const muted = Color(0xFF64748B);
-  static const line = Color(0xFFE2E8F0);
-  static const track = Color(0xFFEEF2F5);
-  static const trackOutline = Color(0xFFD7E7E3);
+  static const paper = Color(0xFFF4EFE4);
+  static const paper2 = Color(0xFFEBE4D4);
+  static const card = Color(0xFFFFFCF5);
+  static const ink = Color(0xFF1A2724);
+  static const ink2 = Color(0xFF44524E);
+  static const mut = Color(0xFF7C847F);
+  static const line = Color(0xFFD8D0BF);
+  static const line2 = Color(0xFFE8E1D1);
+  static const accent = Color(0xFF0E5E55);
+  static const accentSoft = Color(0xFFDCEBE6);
+  static const spend = Color(0xFFA8432F);
+  static const spendSoft = Color(0xFFF3E1DA);
+  static const earn = Color(0xFF2E6B3C);
+  static const earnSoft = Color(0xFFE0EDDD);
+  static const warn = Color(0xFF9A6A12);
+  static const warnSoft = Color(0xFFF4E8CB);
+  static const crit = Color(0xFF9C3B12);
+  static const critSoft = Color(0xFFF3DDD0);
 
-  static const primaryGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [teal, emerald],
-  );
+  static const receiptPaper = Color(0xFFFFFEFA);
+  static const receiptText = Color(0xFF3A3A3A);
+  static const receiptDash = Color(0xFFB9B2A3);
+  static const scrim = Color(0x801A2724);
 
-  static const heroGradient = LinearGradient(
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-    colors: [tealDeep, teal, emerald],
-    stops: [0.0, 0.4, 1.0],
-  );
+  static const catFood = Color(0xFFC4892A);
+  static const catTransport = Color(0xFF3F7A9E);
+  static const catShopping = Color(0xFF8A5A3B);
+  static const catBills = Color(0xFF5B7B6A);
+  static const catOther = Color(0xFF8A8F8B);
+  static const catHealth = Color(0xFFB2556A);
+  static const catEducation = Color(0xFF4E6A8F);
+  static const catEntertainment = Color(0xFFC9743A);
 
-  static const softShadow = [
-    BoxShadow(color: Color(0x170F766E), blurRadius: 22, offset: Offset(0, 6)),
-  ];
+  static const incomeSalary = Color(0xFF2E6B3C);
+  static const incomeFreelance = Color(0xFF4C7A3F);
+  static const incomeBusiness = Color(0xFF0E5E55);
+  static const incomeInvestment = Color(0xFF6F8A2E);
+  static const incomeGift = Color(0xFF9A5A6A);
 }

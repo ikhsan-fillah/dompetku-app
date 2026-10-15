@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/app_state_view.dart';
 
 /// Penanda sementara untuk tab yang dibangun pada tahap berikutnya.
@@ -22,7 +23,7 @@ class ComingSoonTab extends StatelessWidget {
             AppSpacing.page,
             0,
           ),
-          child: Text(title, style: Theme.of(context).textTheme.titleLarge),
+          child: Text(title, style: AppText.display(size: 26)),
         ),
         Expanded(
           child: AppEmptyView(

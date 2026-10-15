@@ -1,10 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/state/resource_state.dart';
+import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/utils/date_range.dart';
 import '../../../core/widgets/app_back_button.dart';
+import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_chip.dart';
 import '../../../core/widgets/app_progress_bar.dart';
 import '../controllers/report_controller.dart';
@@ -100,7 +104,6 @@ class _ReportPageState extends State<ReportPage> {
 
   @override
   Widget build(BuildContext context) => Scaffold(
-    backgroundColor: const Color(0xFFF6FAF9),
     body: SafeArea(
       child: Column(
         children: [
@@ -113,7 +116,7 @@ class _ReportPageState extends State<ReportPage> {
                 Expanded(
                   child: Text(
                     'Laporan',
-                    style: Theme.of(context).textTheme.titleLarge,
+                    style: AppText.display(size: 26),
                   ),
                 ),
               ],
@@ -154,10 +157,11 @@ class _ReportPageState extends State<ReportPage> {
                 final range = controller.range.value;
                 return Text(
                   '${_date(range.start)} - ${_date(range.end)}',
-                  style: const TextStyle(
-                    color: Color(0xFF64748B),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w500,
+                  style: AppText.mono(
+                    size: 11.5,
+                    weight: FontWeight.w500,
+                    color: AppColors.mut,
+                    letterSpacing: 0,
                   ),
                 );
               }),
@@ -168,22 +172,22 @@ class _ReportPageState extends State<ReportPage> {
               final current = controller.state.value;
               return switch (current.status) {
                 ResourceStatus.idle || ResourceStatus.loading => const Center(
-                  child: CircularProgressIndicator(),
+                  child: CircularProgressIndicator(color: AppColors.ink),
                 ),
                 ResourceStatus.empty => _Message(
-                  icon: Icons.insert_chart_outlined_rounded,
+                  icon: LucideIcons.chartColumn,
                   text: 'Belum ada transaksi pada periode ini',
                   action: 'Muat ulang',
                   onTap: _reload,
                 ),
                 ResourceStatus.error => _Message(
-                  icon: Icons.error_outline_rounded,
+                  icon: LucideIcons.circleAlert,
                   text: current.message ?? 'Gagal memuat laporan.',
                   action: 'Coba lagi',
                   onTap: _reload,
                 ),
                 ResourceStatus.success => RefreshIndicator(
-                  color: const Color(0xFF0F766E),
+                  color: AppColors.ink,
                   onRefresh: _reload,
                   child: _Summary(data: current.data!, money: _money),
                 ),
@@ -195,10 +199,6 @@ class _ReportPageState extends State<ReportPage> {
     ),
   );
 }
-
-const _cardShadow = [
-  BoxShadow(color: Color(0x170F766E), blurRadius: 22, offset: Offset(0, 6)),
-];
 
 class _Summary extends StatelessWidget {
   const _Summary({required this.data, required this.money});
@@ -215,34 +215,31 @@ class _Summary extends StatelessWidget {
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
       children: [
         Container(
-          padding: const EdgeInsets.all(20),
+          padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              begin: Alignment.centerLeft,
-              end: Alignment.centerRight,
-              colors: [Color(0xFF0F766E), Color(0xFF10B981)],
-            ),
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: _cardShadow,
+            color: AppColors.ink,
+            borderRadius: BorderRadius.circular(AppRadius.hero),
           ),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
+              Text(
                 'Saldo periode ini',
-                style: TextStyle(
-                  color: Color(0xE6FFFFFF),
-                  fontSize: 12.5,
-                  fontWeight: FontWeight.w500,
+                style: AppText.body(
+                  size: 11.5,
+                  weight: FontWeight.w700,
+                  color: AppColors.paper.withValues(alpha: 0.7),
+                  letterSpacing: 0.7,
                 ),
               ),
               const SizedBox(height: 6),
               Text(
                 money(summary.balance),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 26,
-                  fontWeight: FontWeight.w600,
+                style: AppText.mono(
+                  size: 26,
+                  weight: FontWeight.w500,
+                  color: AppColors.paper,
+                  letterSpacing: -0.01 * 26,
                 ),
               ),
             ],
@@ -254,21 +251,21 @@ class _Summary extends StatelessWidget {
           children: [
             Expanded(
               child: _StatCard(
-                icon: Icons.arrow_downward_rounded,
+                icon: LucideIcons.arrowDown,
                 label: 'Pemasukan',
                 value: money(summary.income),
-                background: const Color(0xFFCCFBF1),
-                foreground: const Color(0xFF0F766E),
+                background: AppColors.earnSoft,
+                foreground: AppColors.earn,
               ),
             ),
             const SizedBox(width: 12),
             Expanded(
               child: _StatCard(
-                icon: Icons.arrow_upward_rounded,
+                icon: LucideIcons.arrowUp,
                 label: 'Pengeluaran',
                 value: money(summary.expense),
-                background: const Color(0xFFFFE4E9),
-                foreground: const Color(0xFFF43F5E),
+                background: AppColors.spendSoft,
+                foreground: AppColors.spend,
               ),
             ),
           ],
@@ -276,15 +273,11 @@ class _Summary extends StatelessWidget {
         if (remaining != null) ...[
           const SizedBox(height: 12),
           _StatCard(
-            icon: Icons.pie_chart_outline_rounded,
+            icon: LucideIcons.chartPie,
             label: 'Sisa anggaran',
             value: money(remaining),
-            background: remaining < 0
-                ? const Color(0xFFFFE4E9)
-                : const Color(0xFFCCFBF1),
-            foreground: remaining < 0
-                ? const Color(0xFFF43F5E)
-                : const Color(0xFF0F766E),
+            background: remaining < 0 ? AppColors.spendSoft : AppColors.earnSoft,
+            foreground: remaining < 0 ? AppColors.spend : AppColors.earn,
           ),
         ],
         const SizedBox(height: 14),
@@ -318,21 +311,15 @@ class _ChangeInsight extends StatelessWidget {
     final unchanged = change.abs() < 0.005;
     final decreased = change < 0;
     final percent = (change.abs() * 100).round();
-    final background = unchanged
-        ? const Color(0xFFCCFBF1)
-        : decreased
-        ? const Color(0xFFCCFBF1)
-        : const Color(0xFFFFE4E9);
-    final foreground = unchanged
-        ? const Color(0xFF0F766E)
-        : decreased
-        ? const Color(0xFF0F766E)
-        : const Color(0xFFF43F5E);
+    final background = unchanged || decreased
+        ? AppColors.earnSoft
+        : AppColors.spendSoft;
+    final foreground = unchanged || decreased ? AppColors.earn : AppColors.spend;
     final icon = unchanged
-        ? Icons.trending_flat_rounded
+        ? LucideIcons.minus
         : decreased
-        ? Icons.trending_down_rounded
-        : Icons.trending_up_rounded;
+        ? LucideIcons.trendingDown
+        : LucideIcons.trendingUp;
     final message = unchanged
         ? 'Pengeluaran sama dengan periode sebelumnya.'
         : decreased
@@ -342,19 +329,19 @@ class _ChangeInsight extends StatelessWidget {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(AppRadius.card),
       ),
       child: Row(
         children: [
-          Icon(icon, color: foreground),
+          Icon(icon, color: foreground, size: 20),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
               message,
-              style: TextStyle(
+              style: AppText.body(
+                size: 13,
+                weight: FontWeight.w700,
                 color: foreground,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
               ),
             ),
           ),
@@ -371,35 +358,27 @@ class _SpendingStats extends StatelessWidget {
   final String Function(int) money;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => AppCard(
+    margin: EdgeInsets.zero,
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(22),
-      boxShadow: _cardShadow,
-    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Statistik belanja',
-          style: TextStyle(
-            color: Color(0xFF1F2937),
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppText.body(size: 13, weight: FontWeight.w700),
         ),
         const SizedBox(height: 14),
         if (data.dailyAverage > 0)
           _StatRow(
-            icon: Icons.calculate_outlined,
+            icon: LucideIcons.calculator,
             label: 'Rata-rata harian',
             value: '${money(data.dailyAverage.round())} / hari',
           ),
         if (data.highestSpendingDay != null) ...[
           if (data.dailyAverage > 0) const SizedBox(height: 12),
           _StatRow(
-            icon: Icons.event_busy_rounded,
+            icon: LucideIcons.calendarX,
             label: 'Hari belanja terbesar',
             value:
                 '${_dayLabel(data.highestSpendingDay!)} · ${money(data.highestSpendingDayAmount)}',
@@ -408,7 +387,7 @@ class _SpendingStats extends StatelessWidget {
         if (data.topMerchant != null) ...[
           const SizedBox(height: 12),
           _StatRow(
-            icon: Icons.storefront_outlined,
+            icon: LucideIcons.store,
             label: 'Merchant teratas',
             value: '${data.topMerchant} · ${data.topMerchantCount}x',
           ),
@@ -438,11 +417,12 @@ class _StatRow extends StatelessWidget {
       Container(
         width: 34,
         height: 34,
-        decoration: const BoxDecoration(
-          color: Color(0xFFCCFBF1),
-          shape: BoxShape.circle,
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: AppColors.paper2,
+          borderRadius: BorderRadius.circular(AppRadius.smallButton),
         ),
-        child: Icon(icon, size: 18, color: const Color(0xFF0F766E)),
+        child: Icon(icon, size: 17, color: AppColors.ink),
       ),
       const SizedBox(width: 10),
       Expanded(
@@ -451,20 +431,16 @@ class _StatRow extends StatelessWidget {
           children: [
             Text(
               label,
-              style: const TextStyle(
-                color: Color(0xFF64748B),
-                fontSize: 11,
-                fontWeight: FontWeight.w500,
-              ),
+              style: AppText.body(size: 10.5, color: AppColors.mut),
             ),
             Text(
               value,
               maxLines: 1,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: Color(0xFF1F2937),
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
+              style: AppText.mono(
+                size: 12.5,
+                weight: FontWeight.w500,
+                letterSpacing: 0,
               ),
             ),
           ],
@@ -486,23 +462,15 @@ class _CategoryBreakdown extends StatelessWidget {
   final String Function(int) money;
 
   @override
-  Widget build(BuildContext context) => Container(
+  Widget build(BuildContext context) => AppCard(
+    margin: EdgeInsets.zero,
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(22),
-      boxShadow: _cardShadow,
-    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        const Text(
+        Text(
           'Rincian pengeluaran',
-          style: TextStyle(
-            color: Color(0xFF1F2937),
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
-          ),
+          style: AppText.body(size: 13, weight: FontWeight.w700),
         ),
         const SizedBox(height: 14),
         for (var index = 0; index < items.length; index++) ...[
@@ -537,7 +505,10 @@ class _CategoryRow extends StatelessWidget {
             Container(
               width: 10,
               height: 10,
-              decoration: BoxDecoration(color: color, shape: BoxShape.circle),
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(2),
+              ),
             ),
             const SizedBox(width: 8),
             Expanded(
@@ -545,35 +516,25 @@ class _CategoryRow extends StatelessWidget {
                 item.name,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Color(0xFF1F2937),
-                  fontSize: 13,
-                  fontWeight: FontWeight.w600,
-                ),
+                style: AppText.body(size: 12, weight: FontWeight.w600),
               ),
             ),
             Text(
               money(item.amount),
-              style: const TextStyle(
-                color: Color(0xFF1F2937),
-                fontSize: 12,
-                fontWeight: FontWeight.w600,
+              style: AppText.mono(
+                size: 12,
+                weight: FontWeight.w700,
+                letterSpacing: 0,
               ),
             ),
           ],
         ),
         const SizedBox(height: 7),
-        AppProgressBar(
-          value: share,
-          height: 8,
-          gradient: LinearGradient(
-            colors: [color, color.withValues(alpha: 0.65)],
-          ),
-        ),
+        AppProgressBar(value: share, color: color),
         const SizedBox(height: 5),
         Text(
           '${(share * 100).round()}% dari pengeluaran',
-          style: const TextStyle(color: Color(0xFF64748B), fontSize: 11),
+          style: AppText.body(size: 10.5, color: AppColors.mut),
         ),
       ],
     );
@@ -596,39 +557,34 @@ class _StatCard extends StatelessWidget {
   final Color foreground;
 
   @override
-  Widget build(BuildContext context) => Container(
-    width: double.infinity,
+  Widget build(BuildContext context) => AppCard(
+    margin: EdgeInsets.zero,
     padding: const EdgeInsets.all(16),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(22),
-      boxShadow: _cardShadow,
-    ),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
           width: 36,
           height: 36,
-          decoration: BoxDecoration(color: background, shape: BoxShape.circle),
-          child: Icon(icon, size: 20, color: foreground),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: background,
+            borderRadius: BorderRadius.circular(AppRadius.smallButton),
+          ),
+          child: Icon(icon, size: 18, color: foreground),
         ),
         const SizedBox(height: 12),
         Text(
           label,
-          style: const TextStyle(
-            color: Color(0xFF64748B),
-            fontSize: 12,
-            fontWeight: FontWeight.w500,
-          ),
+          style: AppText.body(size: 10.5, color: AppColors.mut),
         ),
         const SizedBox(height: 4),
         Text(
           value,
-          style: const TextStyle(
-            color: Color(0xFF1F2937),
-            fontSize: 16,
-            fontWeight: FontWeight.w600,
+          style: AppText.mono(
+            size: 14,
+            weight: FontWeight.w500,
+            letterSpacing: 0,
           ),
         ),
       ],
@@ -654,10 +610,25 @@ class _Message extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Icon(icon, size: 56, color: const Color(0xFF0F766E)),
+        Icon(icon, size: 40, color: AppColors.ink),
         const SizedBox(height: 12),
-        Text(text),
-        TextButton(onPressed: onTap, child: Text(action)),
+        Text(
+          text,
+          textAlign: TextAlign.center,
+          style: AppText.body(size: 13, color: AppColors.ink2),
+        ),
+        TextButton(
+          onPressed: onTap,
+          style: TextButton.styleFrom(foregroundColor: AppColors.ink),
+          child: Text(
+            action,
+            style: AppText.body(
+              size: 13,
+              weight: FontWeight.w700,
+              color: AppColors.ink,
+            ),
+          ),
+        ),
       ],
     ),
   );

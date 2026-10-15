@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/utils/date_label.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_card.dart';
@@ -67,7 +69,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                     child: Obx(
                       () => Text(
                         controller.category.value?.name ?? 'Detail kategori',
-                        style: Theme.of(context).textTheme.titleLarge,
+                        style: AppText.display(size: 26),
                       ),
                     ),
                   ),
@@ -75,7 +77,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                     final selectedSort = controller.sort.value;
                     return PopupMenuButton<CategoryTransactionSort>(
                       tooltip: 'Urutkan transaksi',
-                      icon: const Icon(Icons.sort_rounded),
+                      icon: const Icon(LucideIcons.arrowUpDown, size: 20),
                       onSelected: controller.setSort,
                       itemBuilder: (context) => [
                         CheckedPopupMenuItem(
@@ -109,7 +111,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                     onRetry: controller.load,
                   ),
                   ResourceStatus.empty => const AppEmptyView(
-                    icon: Icons.receipt_long_outlined,
+                    icon: LucideIcons.receipt,
                     title: 'Belum ada transaksi pada kategori ini',
                     message:
                         'Transaksi dengan kategori ini akan tampil di sini.',
@@ -154,12 +156,17 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                     children: [
                       Text(
                         category?.name ?? 'Kategori',
-                        style: Theme.of(context).textTheme.titleMedium,
+                        style: AppText.body(size: 14, weight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
                       Text(
                         '${formatIdr(summary?.total ?? 0)} · ${summary?.count ?? 0} transaksi',
-                        style: const TextStyle(color: AppColors.muted),
+                        style: AppText.mono(
+                          size: 11.5,
+                          weight: FontWeight.w500,
+                          color: AppColors.mut,
+                          letterSpacing: 0,
+                        ),
                       ),
                     ],
                   ),
@@ -180,13 +187,10 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 18, bottom: 7, left: 2),
-              child: Text(
-                _dateLabel(group.date),
-                style: const TextStyle(
-                  fontWeight: FontWeight.w600,
-                  color: AppColors.muted,
+                child: Text(
+                  _dateLabel(group.date),
+                  style: AppText.monoLabel(color: AppColors.mut),
                 ),
-              ),
             ),
             for (final transaction in group.transactions)
               _TransactionRow(transaction: transaction),
@@ -210,7 +214,10 @@ class _TransactionRow extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       child: ListTile(
         contentPadding: EdgeInsets.zero,
-        title: Text(transaction.title),
+        title: Text(
+          transaction.title,
+          style: AppText.body(size: 13, weight: FontWeight.w700),
+        ),
         subtitle: Text(
           [
             '${transaction.transactionDate.toLocal().hour.toString().padLeft(2, '0')}:${transaction.transactionDate.toLocal().minute.toString().padLeft(2, '0')}',
@@ -219,6 +226,7 @@ class _TransactionRow extends StatelessWidget {
             if (transaction.paymentMethod != null)
               transaction.paymentMethod!.name,
           ].join(' · '),
+          style: AppText.body(size: 10.5, color: AppColors.mut),
         ),
         trailing: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 132),
@@ -227,9 +235,10 @@ class _TransactionRow extends StatelessWidget {
             alignment: Alignment.centerRight,
             child: Text(
               '${isIncome ? '+' : '-'}${formatIdr(transaction.amount)}',
-              style: TextStyle(
-                color: isIncome ? AppColors.income : AppColors.coral,
-                fontWeight: FontWeight.w600,
+              style: AppText.mono(
+                size: 12.5,
+                weight: FontWeight.w500,
+                color: isIncome ? AppColors.earn : AppColors.spend,
               ),
             ),
           ),

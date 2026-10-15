@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/theme/category_style.dart';
 import '../../../core/utils/date_label.dart';
 import '../../../core/utils/formatter.dart';
@@ -33,7 +35,7 @@ class RecentTransactionsCard extends StatelessWidget {
           ),
           if (items.isNotEmpty)
             for (var i = 0; i < items.length; i++) ...[
-              if (i > 0) const Divider(height: 1, color: Color(0xFFF1F5F9)),
+              if (i > 0) const Divider(height: 1, color: AppColors.line2),
               _Row(item: items[i]),
             ],
         ],
@@ -51,19 +53,19 @@ class _Row extends StatelessWidget {
   Widget build(BuildContext context) {
     final income = item.isIncome;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 10),
+      padding: const EdgeInsets.symmetric(vertical: 9),
       child: Row(
         children: [
           CategoryIconBox(
             icon: income
-                ? Icons.south_west_rounded
+                ? LucideIcons.arrowDown
                 : CategoryStyle.icon(item.iconKey),
             color: income
-                ? AppColors.income
+                ? AppColors.earn
                 : CategoryStyle.color(item.colorValue),
-            size: 40,
+            size: 36,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 11),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -72,19 +74,13 @@ class _Row extends StatelessWidget {
                   item.title,
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 13,
-                    fontWeight: FontWeight.w600,
-                  ),
+                  style: AppText.body(size: 13, weight: FontWeight.w700),
                 ),
                 Text(
                   '${item.categoryName} · ${DateLabel.day(item.date)}',
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10.5,
-                    color: AppColors.muted,
-                  ),
+                  style: AppText.body(size: 10.5, color: AppColors.mut),
                 ),
               ],
             ),
@@ -92,10 +88,9 @@ class _Row extends StatelessWidget {
           const SizedBox(width: 8),
           Text(
             '${income ? '+' : '−'} ${formatIdr(item.amount)}',
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: FontWeight.w600,
-              color: income ? AppColors.income : AppColors.coral,
+            style: AppText.mono(
+              size: 12.5,
+              color: income ? AppColors.earn : AppColors.spend,
             ),
           ),
         ],

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:flutter/material.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/utils/formatter.dart';
 import '../models/dashboard_view_models.dart';
 
@@ -17,7 +18,7 @@ class SpendingBars extends StatefulWidget {
 }
 
 class _SpendingBarsState extends State<SpendingBars> {
-  static const double _chartHeight = 110;
+  static const double _chartHeight = 118;
   int? _selected;
 
   String _rangeLabel(TrendBucket bucket) {
@@ -56,15 +57,19 @@ class _SpendingBarsState extends State<SpendingBars> {
                   : selected == null
                   ? 'Ketuk batang untuk melihat nilai'
                   : '${_rangeLabel(buckets[selected])} · ${formatIdr(buckets[selected].amount)}',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: selected == null
-                    ? FontWeight.w400
-                    : FontWeight.w600,
-                color: isZeroState || selected == null
-                    ? AppColors.muted
-                    : AppColors.ink,
-              ),
+              style: selected == null || isZeroState
+                  ? AppText.mono(
+                      size: 11,
+                      weight: FontWeight.w400,
+                      color: AppColors.mut,
+                      letterSpacing: 0,
+                    )
+                  : AppText.mono(
+                      size: 11,
+                      weight: FontWeight.w500,
+                      color: AppColors.ink,
+                      letterSpacing: 0,
+                    ),
             ),
           ),
         ),
@@ -103,21 +108,19 @@ class _SpendingBarsState extends State<SpendingBars> {
                                         _chartHeight,
                                   ),
                             decoration: BoxDecoration(
+                              color: isZeroState || selected != i
+                                  ? AppColors.paper2
+                                  : AppColors.ink,
                               borderRadius: const BorderRadius.vertical(
-                                top: Radius.circular(7),
-                                bottom: Radius.circular(3),
+                                top: Radius.circular(2),
                               ),
-                              gradient: LinearGradient(
-                                begin: Alignment.topCenter,
-                                end: Alignment.bottomCenter,
-                                colors: isZeroState
-                                    ? const [
-                                        Color(0xFFD7E9E5),
-                                        Color(0xFFB9DAD3),
-                                      ]
-                                    : selected == i
-                                    ? const [AppColors.amber, AppColors.coral]
-                                    : const [Color(0xFF99E6DA), AppColors.mint],
+                              border: Border(
+                                top: BorderSide(
+                                  width: 2,
+                                  color: isZeroState || selected != i
+                                      ? AppColors.line
+                                      : AppColors.ink,
+                                ),
                               ),
                             ),
                           ),
@@ -139,7 +142,11 @@ class _SpendingBarsState extends State<SpendingBars> {
                     (compactLabels || i.isEven) ? buckets[i].label : '',
                     maxLines: 1,
                     overflow: TextOverflow.clip,
-                    style: const TextStyle(fontSize: 9, color: AppColors.muted),
+                    style: AppText.mono(
+                      size: 9,
+                      color: AppColors.mut,
+                      letterSpacing: 0,
+                    ),
                   ),
                 ),
               ),

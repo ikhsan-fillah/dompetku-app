@@ -1,20 +1,40 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/utils/budget_status.dart';
+import '../../../core/widgets/app_bar_icon_button.dart';
+import '../../../core/widgets/app_chip.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_bar_icon_button.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_progress_bar.dart';
+import '../../../core/widgets/budget_level_style.dart';
+import '../../../core/widgets/category_icon_box.dart';
 import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
 import '../services/budget_list_service.dart';
+
+const _monthNames = [
+  'Januari',
+  'Februari',
+  'Maret',
+  'April',
+  'Mei',
+  'Juni',
+  'Juli',
+  'Agustus',
+  'September',
+  'Oktober',
+  'November',
+  'Desember',
+];
 
 class BudgetPage extends GetView<BudgetController> {
   const BudgetPage({super.key});
@@ -45,9 +65,18 @@ class BudgetPage extends GetView<BudgetController> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Arsipkan anggaran?'),
+        backgroundColor: AppColors.card,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.hero),
+          side: const BorderSide(color: AppColors.line),
+        ),
+        title: Text(
+          'Arsipkan anggaran?',
+          style: AppText.display(size: 20),
+        ),
         content: Text(
           '"${item.budget.name}" dipindahkan ke arsip. Riwayat transaksi tidak ikut terhapus.',
+          style: AppText.body(size: 13, color: AppColors.ink2),
         ),
         actions: [
           TextButton(
@@ -89,9 +118,9 @@ class BudgetPage extends GetView<BudgetController> {
                 onRetry: controller.load,
               ),
               ResourceStatus.success => RefreshIndicator(
-                color: AppColors.teal,
+                color: AppColors.ink,
                 onRefresh: controller.load,
-                child: ListView.separated(
+                child: ListView(
                   physics: const AlwaysScrollableScrollPhysics(),
                   padding: const EdgeInsets.fromLTRB(
                     AppSpacing.page,
@@ -99,23 +128,7 @@ class BudgetPage extends GetView<BudgetController> {
                     AppSpacing.page,
                     160,
                   ),
-                  itemCount: controller.visibleItems.length + 1,
-                  separatorBuilder: (_, _) => const SizedBox(height: 14),
-                  itemBuilder: (itemContext, index) {
-                    if (index == 0) {
-                      return _SummaryHero(
-                        items: controller.visibleItems,
-                        money: _money,
-                      );
-                    }
-                    final item = controller.visibleItems[index - 1];
-                    return _BudgetCard(
-                      item: item,
-                      money: _money,
-                      onEdit: () => _openForm(item),
-                      onArchive: () => _confirmArchive(itemContext, item),
-                    );
-                  },
+                  children: _sections(context),
                 ),
               ),
             };
@@ -124,7 +137,75 @@ class BudgetPage extends GetView<BudgetController> {
       ],
     ),
   );
+
+  List<Widget> _sections(BuildContext context) {
+    final items = controller.visibleItems;
+    final totals = _totals(items);
+    final level = BudgetStatus.levelFor(
+      BudgetStatus.percentUsed(used: totals.used, limit: totals.limit),
+    );
+    final banner = _thresholdBanner(level);
+    return [
+      _SummaryHero(
+        limit: totals.limit,
+        used: totals.used,
+        money: _money,
+      ),
+      if (banner != null) ...[const SizedBox(height: 14), banner],
+      const SizedBox(height: 14),
+      AppCard(
+        margin: EdgeInsets.zero,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'Per kategori',
+              style: AppText.body(size: 13, weight: FontWeight.w700),
+            ),
+            for (var i = 0; i < items.length; i++)
+              _BudgetRow(
+                item: items[i],
+                money: _money,
+                last: i == items.length - 1,
+                onEdit: () => _openForm(items[i]),
+                onArchive: () => _confirmArchive(context, items[i]),
+              ),
+          ],
+        ),
+      ),
+    ];
+  }
 }
+
+({int limit, int used}) _totals(List<BudgetViewModel> items) {
+  final scoped = items.where((item) => !item.isOverall).toList();
+  final basis = scoped.isEmpty ? items : scoped;
+  final limit = basis.fold<int>(
+    0,
+    (sum, item) => sum + item.budget.amountLimit,
+  );
+  final used = basis.fold<int>(0, (sum, item) => sum + item.used);
+  return (limit: limit, used: used);
+}
+
+Widget? _thresholdBanner(BudgetLevel level) => switch (level) {
+  BudgetLevel.safe => null,
+  BudgetLevel.warning => const _ThresholdBanner(
+    level: BudgetLevel.warning,
+    title: 'Sudah 75% terpakai',
+    subtitle: 'Masih ada waktu untuk mengatur ritme',
+  ),
+  BudgetLevel.critical => const _ThresholdBanner(
+    level: BudgetLevel.critical,
+    title: 'Hampir habis (90%)',
+    subtitle: 'Kurangi pengeluaran non-esensial',
+  ),
+  BudgetLevel.exceeded => const _ThresholdBanner(
+    level: BudgetLevel.exceeded,
+    title: 'Batas terlewati',
+    subtitle: 'Pengeluaran melewati batas bulan ini',
+  ),
+};
 
 /// Judul halaman di dalam body (sama seperti tab Profil dan Transaksi).
 class _Header extends StatelessWidget {
@@ -142,22 +223,29 @@ class _Header extends StatelessWidget {
           final selected = controller.sort.value;
           return PopupMenuButton<BudgetSort>(
             tooltip: 'Urutkan anggaran',
-            icon: const Icon(Icons.sort_rounded),
+            icon: const Icon(
+              LucideIcons.arrowUpDown,
+              size: 18,
+              color: AppColors.ink,
+            ),
+            color: AppColors.card,
             onSelected: controller.setSort,
             itemBuilder: (_) => [
               for (final sort in BudgetSort.values)
                 CheckedPopupMenuItem(
                   value: sort,
                   checked: selected == sort,
-                  child: Text(_sortLabel(sort)),
+                  child: Text(
+                    _sortLabel(sort),
+                    style: AppText.body(size: 13),
+                  ),
                 ),
             ],
           );
         }),
         AppBarIconButton(
           tooltip: 'Anggaran terarsip',
-          icon: Icons.inventory_2_outlined,
-          gradient: AppColors.primaryGradient,
+          icon: LucideIcons.archive,
           onPressed: onArchive,
         ),
       ],
@@ -172,68 +260,94 @@ String _sortLabel(BudgetSort sort) => switch (sort) {
   BudgetSort.namaAZ => 'Nama A-Z',
 };
 
-/// Kartu ringkasan bergradasi (gaya sama dengan kartu saldo di Beranda).
+/// Blok tinta ringkasan anggaran (spec §3.5 varian Anggaran).
 class _SummaryHero extends StatelessWidget {
-  const _SummaryHero({required this.items, required this.money});
+  const _SummaryHero({
+    required this.limit,
+    required this.used,
+    required this.money,
+  });
 
-  final List<BudgetViewModel> items;
+  final int limit;
+  final int used;
   final String Function(int) money;
 
   @override
   Widget build(BuildContext context) {
-    final scoped = items.where((item) => !item.isOverall).toList();
-    final basis = scoped.isEmpty ? items : scoped;
-    final limit = basis.fold<int>(
-      0,
-      (sum, item) => sum + item.budget.amountLimit,
-    );
-    final used = basis.fold<int>(0, (sum, item) => sum + item.used);
     final remaining = limit - used;
-    final ratio = limit <= 0 ? 0.0 : (used / limit).clamp(0.0, 1.0).toDouble();
-    final textTheme = Theme.of(context).textTheme;
+    final percent = BudgetStatus.percentUsed(used: used, limit: limit);
+    final level = BudgetStatus.levelFor(percent);
+    final muted = AppColors.paper.withValues(alpha: 0.7);
 
-    return AppCard(
-      gradient: AppColors.heroGradient,
-      radius: AppRadius.hero,
-      padding: const EdgeInsets.all(20),
+    return Container(
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
+      decoration: BoxDecoration(
+        color: AppColors.ink,
+        borderRadius: BorderRadius.circular(AppRadius.hero),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Total anggaran aktif',
-            style: textTheme.bodySmall?.copyWith(
-              color: Colors.white.withValues(alpha: 0.85),
-            ),
+            'BATAS ${_monthNames[DateTime.now().month - 1].toUpperCase()}',
+            style: AppText.label(color: muted, size: 11.5),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 6),
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(
-              money(limit),
-              style: textTheme.headlineMedium?.copyWith(color: Colors.white),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: money(used),
+                    style: AppText.display(
+                      size: 30,
+                      color: AppColors.paper,
+                      letterSpacing: -0.3,
+                    ),
+                  ),
+                  TextSpan(
+                    text: ' / ${money(limit)}',
+                    style: AppText.mono(
+                      size: 12,
+                      weight: FontWeight.w400,
+                      color: muted,
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
           const SizedBox(height: 14),
           AppProgressBar(
-            value: ratio,
+            value: (percent / 100).clamp(0.0, 1.0).toDouble(),
+            color: level.solid,
             height: 8,
-            gradient: const LinearGradient(
-              colors: [Colors.white, Colors.white],
-            ),
-            trackBorderColor: Colors.white54,
+            trackColor: AppColors.paper.withValues(alpha: 0.18),
           ),
           const SizedBox(height: 12),
           Row(
             children: [
               Expanded(
-                child: _HeroStat(label: 'Terpakai', value: money(used)),
+                child: Text(
+                  '${remaining < 0 ? 'Melebihi' : 'Sisa'} ${money(remaining < 0 ? -remaining : remaining)}',
+                  style: AppText.mono(size: 12.5, color: AppColors.paper),
+                ),
               ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: _HeroStat(
-                  label: remaining < 0 ? 'Melebihi' : 'Sisa',
-                  value: money(remaining < 0 ? -remaining : remaining),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                decoration: BoxDecoration(
+                  color: AppColors.paper,
+                  borderRadius: BorderRadius.circular(4),
+                ),
+                child: Text(
+                  level.label,
+                  style: AppText.body(
+                    size: 11,
+                    weight: FontWeight.w700,
+                    color: level.foreground,
+                  ),
                 ),
               ),
             ],
@@ -244,38 +358,52 @@ class _SummaryHero extends StatelessWidget {
   }
 }
 
-class _HeroStat extends StatelessWidget {
-  const _HeroStat({required this.label, required this.value});
+class _ThresholdBanner extends StatelessWidget {
+  const _ThresholdBanner({
+    required this.level,
+    required this.title,
+    required this.subtitle,
+  });
 
-  final String label;
-  final String value;
+  final BudgetLevel level;
+  final String title;
+  final String subtitle;
 
   @override
   Widget build(BuildContext context) {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Text(
-          label,
-          style: TextStyle(
-            color: Colors.white.withValues(alpha: 0.85),
-            fontSize: 11,
-          ),
-        ),
-        const SizedBox(height: 2),
-        FittedBox(
-          fit: BoxFit.scaleDown,
-          alignment: Alignment.centerLeft,
-          child: Text(
-            value,
-            style: const TextStyle(
-              color: Colors.white,
-              fontSize: 14,
-              fontWeight: FontWeight.w700,
+    return Container(
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: level.background,
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(LucideIcons.triangleAlert, size: 18, color: level.foreground),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: AppText.body(
+                    size: 12.5,
+                    weight: FontWeight.w700,
+                    color: level.foreground,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  subtitle,
+                  style: AppText.body(size: 10.5, color: AppColors.ink2),
+                ),
+              ],
             ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
@@ -290,22 +418,25 @@ String _categoryLabel(BudgetViewModel item) {
   return name.startsWith(prefix) ? name.substring(prefix.length) : name;
 }
 
-class _BudgetCard extends StatelessWidget {
-  const _BudgetCard({
+/// Baris anggaran di dalam kartu "Per kategori" (spec §3.26).
+class _BudgetRow extends StatelessWidget {
+  const _BudgetRow({
     required this.item,
     required this.money,
+    required this.last,
     required this.onEdit,
     required this.onArchive,
   });
 
   final BudgetViewModel item;
   final String Function(int) money;
+  final bool last;
   final VoidCallback onEdit;
   final VoidCallback onArchive;
 
   @override
   Widget build(BuildContext context) {
-    final visual = _BudgetVisual.forLevel(item.level);
+    final level = item.level;
     final percentText = item.percent.toStringAsFixed(0);
     final status = switch (item.level) {
       BudgetLevel.safe => 'Sisa ${money(item.remaining)}',
@@ -315,211 +446,121 @@ class _BudgetCard extends StatelessWidget {
     };
     final period =
         '${_date(item.budget.startDate)} – ${_date(item.budget.endDate)}';
+    final note = item.budget.note?.trim();
 
     return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: const [
-          BoxShadow(
-            color: Color(0x170F766E),
-            blurRadius: 22,
-            offset: Offset(0, 6),
+      padding: const EdgeInsets.symmetric(vertical: 12),
+      decoration: last
+          ? null
+          : const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.line2)),
+            ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          CategoryIconBox(
+            icon: item.isOverall ? LucideIcons.wallet : LucideIcons.layers,
+            color: AppColors.ink,
           ),
-        ],
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
+          const SizedBox(width: 12),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Container(
-                  width: 36,
-                  height: 36,
-                  decoration: BoxDecoration(
-                    color: AppColors.mint,
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: Icon(
-                    item.isOverall
-                        ? Icons.account_balance_wallet_outlined
-                        : Icons.category_outlined,
-                    color: AppColors.teal,
-                  ),
-                ),
-                const SizedBox(width: 10),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
                         item.budget.name,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleMedium
-                            ?.copyWith(
-                              fontWeight: FontWeight.w600,
-                              color: const Color(0xFF1F2937),
-                            ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '${_categoryLabel(item)} · $period',
-                        style: const TextStyle(
-                          color: Color(0xFF64748B),
-                          fontSize: 11.5,
+                        style: AppText.body(
+                          size: 12.5,
+                          weight: FontWeight.w700,
                         ),
                       ),
-                    ],
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  icon: const Icon(Icons.more_horiz_rounded),
-                  color: Colors.white,
-                  onSelected: (value) =>
-                      value == 'edit' ? onEdit() : onArchive(),
-                  itemBuilder: (_) => const [
-                    PopupMenuItem(value: 'edit', child: Text('Edit')),
-                    PopupMenuItem(value: 'archive', child: Text('Arsipkan')),
+                    ),
+                    const SizedBox(width: 8),
+                    StatusPill(
+                      label: level.label,
+                      background: level.background,
+                      foreground: level.foreground,
+                    ),
                   ],
                 ),
-              ],
-            ),
-            const SizedBox(height: 10),
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                Expanded(
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      money(item.used),
-                      style: const TextStyle(
-                        color: Color(0xFF1F2937),
-                        fontSize: 20,
-                        fontWeight: FontWeight.w700,
+                const SizedBox(height: 2),
+                Text(
+                  '${_categoryLabel(item)} · $period',
+                  style: AppText.body(size: 10.5, color: AppColors.mut),
+                ),
+                const SizedBox(height: 8),
+                AppProgressBar(
+                  value: item.percent / 100,
+                  color: level.solid,
+                  height: 6,
+                ),
+                const SizedBox(height: 6),
+                Row(
+                  children: [
+                    Expanded(
+                      child: Text(
+                        '${money(item.used)} dari ${money(item.budget.amountLimit)}',
+                        style: AppText.mono(
+                          size: 11,
+                          weight: FontWeight.w400,
+                          color: AppColors.mut,
+                        ),
                       ),
                     ),
-                  ),
+                    Text(
+                      '$percentText%',
+                      style: AppText.mono(
+                        size: 11,
+                        color: level.foreground,
+                      ),
+                    ),
+                  ],
                 ),
+                const SizedBox(height: 2),
                 Text(
-                  '$percentText%',
-                  style: TextStyle(
-                    color: visual.foreground,
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                  ),
+                  status,
+                  style: AppText.body(size: 10.5, color: AppColors.ink2),
                 ),
+                if (note != null && note.isNotEmpty) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    item.budget.note!,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: AppText.body(size: 11, color: AppColors.mut),
+                  ),
+                ],
               ],
             ),
-            const SizedBox(height: 2),
-            if (item.budget.note?.trim().isNotEmpty == true) ...[
-              const SizedBox(height: 6),
-              Text(
-                item.budget.note!,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
+          ),
+          PopupMenuButton<String>(
+            icon: const Icon(
+              LucideIcons.ellipsis,
+              size: 18,
+              color: AppColors.mut,
+            ),
+            color: AppColors.card,
+            onSelected: (value) => value == 'edit' ? onEdit() : onArchive(),
+            itemBuilder: (_) => [
+              PopupMenuItem(
+                value: 'edit',
+                child: Text('Edit', style: AppText.body(size: 13)),
+              ),
+              PopupMenuItem(
+                value: 'archive',
+                child: Text('Arsipkan', style: AppText.body(size: 13)),
               ),
             ],
-            Text(
-              'dari ${money(item.budget.amountLimit)}',
-              style: const TextStyle(color: Color(0xFF64748B), fontSize: 12),
-            ),
-            const SizedBox(height: 8),
-            AppProgressBar(
-              value: item.percent / 100,
-              height: 10,
-              gradient: visual.gradient,
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    status,
-                    style: TextStyle(
-                      color: visual.foreground,
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                _StatusChip(visual: visual),
-              ],
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
-}
-
-class _StatusChip extends StatelessWidget {
-  const _StatusChip({required this.visual});
-  final _BudgetVisual visual;
-
-  @override
-  Widget build(BuildContext context) => Container(
-    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-    decoration: BoxDecoration(
-      color: visual.background,
-      borderRadius: BorderRadius.circular(99),
-    ),
-    child: Text(
-      visual.label,
-      style: TextStyle(
-        color: visual.foreground,
-        fontSize: 10,
-        fontWeight: FontWeight.w600,
-      ),
-    ),
-  );
-}
-
-class _BudgetVisual {
-  const _BudgetVisual({
-    required this.label,
-    required this.background,
-    required this.foreground,
-    required this.gradient,
-  });
-
-  final String label;
-  final Color background;
-  final Color foreground;
-  final LinearGradient gradient;
-
-  factory _BudgetVisual.forLevel(BudgetLevel level) => switch (level) {
-    BudgetLevel.safe => const _BudgetVisual(
-      label: 'Aman < 75%',
-      background: Color(0xFFCCFBF1),
-      foreground: Color(0xFF0F766E),
-      gradient: LinearGradient(colors: [Color(0xFF14B8A6), Color(0xFF10B981)]),
-    ),
-    BudgetLevel.warning => const _BudgetVisual(
-      label: 'Waspada 75%',
-      background: Color(0xFFFEF3C7),
-      foreground: Color(0xFFB45309),
-      gradient: LinearGradient(colors: [Color(0xFFFBBF24), Color(0xFFF59E0B)]),
-    ),
-    BudgetLevel.critical => const _BudgetVisual(
-      label: 'Kritis 90%',
-      background: Color(0xFFFFEDD5),
-      foreground: Color(0xFFC2410C),
-      gradient: LinearGradient(colors: [Color(0xFFFB923C), Color(0xFFEA580C)]),
-    ),
-    BudgetLevel.exceeded => const _BudgetVisual(
-      label: 'Habis 100%',
-      background: Color(0xFFFFE4E9),
-      foreground: Color(0xFFF43F5E),
-      gradient: LinearGradient(colors: [Color(0xFFFB7185), Color(0xFFF43F5E)]),
-    ),
-  };
 }
 
 class _Empty extends StatelessWidget {
@@ -534,35 +575,35 @@ class _Empty extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           Container(
-            width: 72,
-            height: 72,
+            width: 64,
+            height: 64,
             decoration: BoxDecoration(
-              color: AppColors.mint,
-              borderRadius: BorderRadius.circular(24),
+              color: AppColors.paper2,
+              borderRadius: BorderRadius.circular(AppRadius.hero - 2),
             ),
             child: const Icon(
-              Icons.account_balance_wallet_outlined,
-              size: 36,
-              color: AppColors.teal,
+              LucideIcons.wallet,
+              size: 28,
+              color: AppColors.ink,
             ),
           ),
           const SizedBox(height: 14),
-          const Text(
+          Text(
             'Belum ada anggaran',
-            style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+            style: AppText.body(size: 14, weight: FontWeight.w700),
           ),
           const SizedBox(height: 6),
-          const Text(
+          Text(
             'Atur batas pengeluaran bulanan agar keuangan lebih terkendali.',
             textAlign: TextAlign.center,
-            style: TextStyle(color: Color(0xFF64748B), fontSize: 13),
+            style: AppText.body(size: 13, color: AppColors.ink2),
           ),
           const SizedBox(height: 16),
           AppButton(
             expand: false,
             kind: AppButtonKind.primary,
             onPressed: onCreate,
-            icon: Icons.add,
+            icon: LucideIcons.plus,
             label: 'Buat anggaran',
           ),
         ],
@@ -581,7 +622,7 @@ class _Error extends StatelessWidget {
     child: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        Text(message),
+        Text(message, style: AppText.body(color: AppColors.ink2)),
         TextButton(onPressed: onRetry, child: const Text('Coba lagi')),
       ],
     ),

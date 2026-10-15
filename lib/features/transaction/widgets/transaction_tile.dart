@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
 import '../../../core/theme/category_style.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/category_icon_box.dart';
@@ -32,22 +35,21 @@ class TransactionTile extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         InkWell(
-          borderRadius: BorderRadius.circular(14),
+          borderRadius: BorderRadius.circular(AppRadius.smallButton),
           onTap: onTap,
           child: Padding(
-            padding: const EdgeInsets.symmetric(vertical: 10),
+            padding: const EdgeInsets.symmetric(vertical: 9),
             child: Row(
               children: [
                 CategoryIconBox(
                   icon: income
-                      ? Icons.south_west_rounded
+                      ? LucideIcons.arrowDownLeft
                       : CategoryStyle.icon(item.iconKey),
                   color: income
-                      ? AppColors.income
+                      ? AppColors.earn
                       : CategoryStyle.color(item.colorValue),
-                  size: 40,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 11),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -56,18 +58,15 @@ class TransactionTile extends StatelessWidget {
                         item.title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                        ),
+                        style: AppText.body(size: 13, weight: FontWeight.w700),
                       ),
                       Text(
                         item.categoryName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          fontSize: 10.5,
-                          color: AppColors.muted,
+                        style: AppText.body(
+                          size: 10.5,
+                          color: AppColors.mut,
                         ),
                       ),
                     ],
@@ -75,11 +74,11 @@ class TransactionTile extends StatelessWidget {
                 ),
                 const SizedBox(width: 8),
                 Text(
-                  '${income ? '+' : '−'} ${formatIdr(item.amount)}',
-                  style: TextStyle(
-                    fontSize: 12.5,
-                    fontWeight: FontWeight.w600,
-                    color: income ? AppColors.income : AppColors.coral,
+                  '${income ? '+' : '\u2212'} ${formatIdr(item.amount)}',
+                  style: AppText.mono(
+                    size: 12.5,
+                    weight: FontWeight.w500,
+                    color: income ? AppColors.earn : AppColors.spend,
                   ),
                 ),
               ],
@@ -91,27 +90,30 @@ class TransactionTile extends StatelessWidget {
           alignment: Alignment.topCenter,
           child: expanded
               ? Padding(
-                  padding: const EdgeInsets.only(left: 52, bottom: 10),
+                  padding: const EdgeInsets.only(left: 47, bottom: 10),
                   child: Wrap(
-                    spacing: 8,
+                    spacing: 6,
                     runSpacing: 6,
                     children: [
                       _ActionButton(
                         label: 'Edit',
-                        icon: Icons.edit_outlined,
-                        color: AppColors.teal,
+                        icon: LucideIcons.pencil,
+                        background: AppColors.paper2,
+                        foreground: AppColors.ink,
                         onTap: onEdit,
                       ),
                       _ActionButton(
                         label: 'Duplikat',
-                        icon: Icons.copy_rounded,
-                        color: AppColors.teal,
+                        icon: LucideIcons.copy,
+                        background: AppColors.paper2,
+                        foreground: AppColors.ink,
                         onTap: onDuplicate,
                       ),
                       _ActionButton(
                         label: 'Hapus',
-                        icon: Icons.delete_outline_rounded,
-                        color: AppColors.coral,
+                        icon: LucideIcons.trash2,
+                        background: AppColors.spendSoft,
+                        foreground: AppColors.spend,
                         onTap: onDelete,
                       ),
                     ],
@@ -128,28 +130,32 @@ class _ActionButton extends StatelessWidget {
   const _ActionButton({
     required this.label,
     required this.icon,
-    required this.color,
+    required this.background,
+    required this.foreground,
     required this.onTap,
   });
 
   final String label;
   final IconData icon;
-  final Color color;
+  final Color background;
+  final Color foreground;
   final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
     return TextButton.icon(
       onPressed: onTap,
-      icon: Icon(icon, size: 18),
+      icon: Icon(icon, size: 13, color: foreground),
       label: Text(label),
       style: TextButton.styleFrom(
-        foregroundColor: color,
-        backgroundColor: color.withValues(alpha: 0.1),
-        minimumSize: const Size(48, 40),
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-        textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.w600),
+        foregroundColor: foreground,
+        backgroundColor: background,
+        minimumSize: const Size(48, 32),
+        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(AppRadius.chip),
+        ),
+        textStyle: AppText.body(size: 11, weight: FontWeight.w700),
       ),
     );
   }
