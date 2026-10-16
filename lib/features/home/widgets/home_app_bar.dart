@@ -9,6 +9,7 @@ import '../../../core/utils/date_label.dart';
 import '../../../core/utils/date_range.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../profile/controllers/profile_controller.dart';
+import 'period_picker_sheet.dart';
 
 /// App bar Beranda: sapaan di kiri, rentang tanggal di kanan.
 class HomeAppBar extends StatelessWidget {
@@ -18,18 +19,7 @@ class HomeAppBar extends StatelessWidget {
     BuildContext context,
     DashboardController dashboard,
   ) async {
-    final current = dashboard.range.value;
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(1970),
-      lastDate: DateTime.now(),
-      initialDateRange: DateTimeRange(start: current.start, end: current.end),
-    );
-    if (picked != null) {
-      await dashboard.setRange(
-        DateRange.history(start: picked.start, end: picked.end),
-      );
-    }
+    await PeriodPickerSheet.show(context, dashboard);
   }
 
   @override

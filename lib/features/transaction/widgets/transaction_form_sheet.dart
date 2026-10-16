@@ -18,6 +18,7 @@ import '../../budget/controllers/budget_form_controller.dart';
 import '../../budget/models/budget_model.dart';
 import '../../receipt/services/receipt_image_picker.dart';
 import '../../receipt/services/receipt_ocr_service.dart';
+import '../../receipt/views/receipt_review_page.dart';
 import '../controllers/transaction_form_controller.dart';
 import '../models/transaction_model.dart';
 
@@ -255,61 +256,23 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
     }
   }
 
-  Future<void> _scanReceipt() async {
-    final source = await showModalBottomSheet<ReceiptImageSource>(
-      context: context,
-      showDragHandle: true,
-      backgroundColor: AppColors.card,
-      elevation: 0,
-      builder: (context) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Text('Scan struk', style: AppText.display(size: 19)),
-              const SizedBox(height: 8),
-              Text(
-                'Data hasil scan adalah usulan. Periksa kembali sebelum menyimpan.',
-                style: AppText.body(size: 12, color: AppColors.mut),
-              ),
-              const SizedBox(height: 14),
-              ListTile(
-                leading: const Icon(LucideIcons.camera, color: AppColors.ink),
-                title: Text(
-                  'Ambil foto',
-                  style: AppText.body(size: 13, weight: FontWeight.w700),
-                ),
-                subtitle: Text(
-                  'Gunakan kamera untuk memotret struk',
-                  style: AppText.body(size: 10.5, color: AppColors.mut),
-                ),
-                onTap: () =>
-                    Navigator.of(context).pop(ReceiptImageSource.camera),
-              ),
-              ListTile(
-                leading: const Icon(LucideIcons.image, color: AppColors.ink),
-                title: Text(
-                  'Pilih dari galeri',
-                  style: AppText.body(size: 13, weight: FontWeight.w700),
-                ),
-                subtitle: Text(
-                  'Pilih foto struk yang sudah ada',
-                  style: AppText.body(size: 10.5, color: AppColors.mut),
-                ),
-                onTap: () =>
-                    Navigator.of(context).pop(ReceiptImageSource.gallery),
-              ),
-            ],
-          ),
+  Future<void> _scanReceipt(ReceiptImageSource source) async {
+    final result = await _controller.scanReceipt(source);
+    if (!mounted || result == null) return;
+    final saved = await Navigator.of(context).push<bool>(
+      MaterialPageRoute(
+        builder: (_) => ReceiptReviewPage(
+          scanResult: result,
+          initialMerchant: result.receipt?.merchant,
+          initialDate: result.receipt?.date,
+          initialTotal: result.receipt?.total,
+          onRetake: () => _scanReceipt(ReceiptImageSource.camera),
         ),
       ),
     );
-    if (!mounted || source == null) return;
-    final result = await _controller.scanReceipt(source);
-    if (!mounted || result == null) return;
-    _applyOcrResult(result);
+    if (saved == true && mounted) {
+      Navigator.of(context).pop(true);
+    }
   }
 
   void _applyOcrResult(ReceiptScanResult result) {
@@ -365,13 +328,24 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                     style: AppText.display(size: 19),
                   ),
                 ),
-                if (!_isEditing)
+                if (!_isEditing && !_isBudget)
+                  Obx(
+                    () => IconButton(
+                      tooltip: 'Dari galeri',
+                      onPressed: c.scanning.value || c.saving.value
+                          ? null
+                          : () => _scanReceipt(ReceiptImageSource.gallery),
+                      icon: const Icon(LucideIcons.image, size: 18),
+                      color: AppColors.ink,
+                    ),
+                  ),
+                if (!_isEditing && !_isBudget)
                   Obx(
                     () => IconButton(
                       tooltip: 'Scan struk',
                       onPressed: c.scanning.value || c.saving.value
                           ? null
-                          : _scanReceipt,
+                          : () => _scanReceipt(ReceiptImageSource.camera),
                       icon: c.scanning.value
                           ? const SizedBox(
                               width: 20,

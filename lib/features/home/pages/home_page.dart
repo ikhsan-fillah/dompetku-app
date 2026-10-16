@@ -21,6 +21,7 @@ import '../widgets/category_cards_grid.dart';
 import '../widgets/home_app_bar.dart';
 import '../widgets/insight_banner.dart';
 import '../widgets/period_chips.dart';
+import '../widgets/period_picker_sheet.dart';
 import '../widgets/recent_transactions_card.dart';
 
 /// Isi tab Beranda. Data dimuat ulang otomatis; tidak ada tombol refresh.
@@ -37,18 +38,7 @@ class HomePage extends StatelessWidget {
     BuildContext context,
     DashboardController controller,
   ) async {
-    final current = controller.range.value;
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: DateTime(1970),
-      lastDate: DateTime.now(),
-      initialDateRange: DateTimeRange(start: current.start, end: current.end),
-    );
-    if (picked != null) {
-      await controller.setRange(
-        DateRange.history(start: picked.start, end: picked.end),
-      );
-    }
+    await PeriodPickerSheet.show(context, controller);
   }
 
   /// Data yang ditampilkan: data asli atau data nol pada periode kosong.

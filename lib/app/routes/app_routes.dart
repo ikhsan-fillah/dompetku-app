@@ -9,4 +9,5 @@ abstract class AppRoutes {
   static const biometricUnlock = '/biometric-unlock';
   static const budgetArchive = '/budget-archive';
   static const report = '/report';
+  static const receiptReview = '/receipt-review';
 }

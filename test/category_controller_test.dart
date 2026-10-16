@@ -252,6 +252,20 @@ void main() {
     expect(repository.lastReorder, [3, 2, 4, 1]);
   });
 
+  test('moveWithinType bisa geser ke atas ke posisi mana pun', () async {
+    repository.items.addAll([
+      _category(1, 'A', TransactionType.expense),
+      _category(2, 'B', TransactionType.expense),
+      _category(3, 'C', TransactionType.expense),
+    ]);
+    await controller.load();
+
+    final moved = await controller.moveWithinType(2, 0);
+
+    expect(moved, isTrue);
+    expect(repository.lastReorder, [3, 1, 2]);
+  });
+
   test('moveWithinType menolak indeks di luar daftar', () async {
     repository.items.add(_category(1, 'A', TransactionType.expense));
     await controller.load();
