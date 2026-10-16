@@ -2,7 +2,6 @@ import '../../core/services/data_refresh_service.dart';
 import '../../features/transaction/repositories/transaction_repository.dart';
 import 'package:get/get.dart';
 
-import '../../core/services/data_refresh_service.dart';
 import '../../features/auth/controllers/auth_controller.dart';
 import '../../features/auth/pages/biometric_setup_page.dart';
 import '../../features/auth/pages/biometric_unlock_page.dart';
@@ -15,6 +14,7 @@ import '../../features/category/controllers/category_controller.dart';
 import '../../features/category/controllers/category_detail_controller.dart';
 import '../../features/category/pages/category_detail_page.dart';
 import '../../features/category/pages/category_manage_page.dart';
+import '../../features/autodetect/pages/auto_detect_page.dart';
 import '../../features/drafts/controllers/draft_controller.dart';
 import '../../features/drafts/pages/drafts_page.dart';
 import '../../features/drafts/repositories/draft_repository.dart';
@@ -101,6 +101,11 @@ class AppPages {
       ),
     ),
     GetPage(name: AppRoutes.pinUnlock, page: () => const PinUnlockPage()),
+    GetPage(
+      name: AppRoutes.autoDetect,
+      page: () => const AutoDetectPage(),
+      middlewares: [FinancialRouteGuard()],
+    ),
     GetPage(
       name: AppRoutes.drafts,
       page: () => const DraftsPage(),

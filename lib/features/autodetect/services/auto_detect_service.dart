@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/services.dart';
 
 import '../../../core/constant/domain_enums.dart';
@@ -19,6 +21,7 @@ class AutoDetectService {
 
   Stream<dynamic>? _subscription;
 
+
   Future<bool> isAccessEnabled() async {
     try {
       return (await _access.invokeMethod<bool>('isEnabled')) ?? false;
@@ -29,9 +32,12 @@ class AutoDetectService {
 
   Future<void> openAccessSettings() => _access.invokeMethod('openSettings');
 
+  StreamSubscription<dynamic>? _listener;
+
   void start() {
+    if (_listener != null) return;
     _subscription ??= _events.receiveBroadcastStream();
-    _subscription!.listen((event) => _onEvent(event));
+    _listener = _subscription!.listen((event) => _onEvent(event));
   }
 
   Future<void> _onEvent(dynamic event) async {

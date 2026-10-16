@@ -322,6 +322,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 onTap: () => Get.toNamed(AppRoutes.recurring),
               ),
               SettingsTile(
+                icon: LucideIcons.scanEye,
+                title: 'Auto-detect',
+                subtitle: 'Baca notifikasi pembayaran (Android)',
+                iconBackground: AppColors.paper2,
+                iconColor: AppColors.ink,
+                trailing: _chevron,
+                onTap: () => Get.toNamed(AppRoutes.autoDetect),
+              ),
+              SettingsTile(
                 icon: LucideIcons.bell,
                 title: 'Drafts',
                 subtitle: 'Detected from payment notifications',

@@ -14,4 +14,5 @@ abstract class AppRoutes {
   static const receiptReview = '/receipt-review';
   static const recurring = '/recurring';
   static const drafts = '/drafts';
+  static const autoDetect = '/auto-detect';
 }
