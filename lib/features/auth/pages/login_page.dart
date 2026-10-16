@@ -46,7 +46,7 @@ class _LoginPageState extends State<LoginPage> {
     step: '01 / 02',
     title: 'Mulai kelola uangmu',
     description:
-        'DompetKu mencatat pemasukan dan pengeluaran secara pribadi di perangkat ini. Tidak perlu akun atau koneksi internet.',
+        'Tally mencatat pemasukan dan pengeluaran secara pribadi di perangkat ini. Tidak perlu akun atau koneksi internet.',
     hero: const _SampleLedger(),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,

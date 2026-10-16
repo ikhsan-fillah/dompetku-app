@@ -353,7 +353,7 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'DompetKu 1.0.0 · tanpa akun · tanpa cloud',
+              'Tally 1.0.0 · tanpa akun · tanpa cloud',
               style: AppText.mono(
                 size: 10.5,
                 weight: FontWeight.w400,

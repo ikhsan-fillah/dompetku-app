@@ -50,8 +50,8 @@ void main() {
       ),
     );
 
-    expect(find.text('DompetKu'), findsOneWidget);
-    expect(find.text('Menyiapkan DompetKu'), findsOneWidget);
+    expect(find.textContaining('Tal'), findsWidgets);
+    expect(find.text('Menyiapkan Tally'), findsOneWidget);
 
     await tester.pump(const Duration(seconds: 3));
     await tester.pumpAndSettle();

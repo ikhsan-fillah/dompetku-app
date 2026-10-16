@@ -25,7 +25,7 @@ class LocalAuthBiometricService implements BiometricService {
   Future<bool> authenticate() async {
     try {
       return await _localAuthentication.authenticate(
-        localizedReason: 'Autentikasi untuk membuka DompetKu',
+        localizedReason: 'Autentikasi untuk membuka Tally',
         biometricOnly: true,
         persistAcrossBackgrounding: true,
       );

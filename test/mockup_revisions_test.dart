@@ -252,7 +252,7 @@ void main() {
         // Teks judul & privasi
         expect(find.text('Pasang kunci dulu.'), findsOneWidget);
         expect(
-          find.textContaining('DompetKu tidak menyimpan data sidik jari/wajah'),
+          find.textContaining('Tally tidak menyimpan data sidik jari/wajah'),
           findsOneWidget,
         );
         expect(find.text('Verifikasi biometrik'), findsOneWidget);

@@ -1,6 +1,6 @@
-# DompetKu
+# Tally (DompetKu)
 
-DompetKu is an offline-first personal finance application for one user on one device. It helps the user record income and expenses, understand spending patterns, manage a monthly budget, and review financial activity without cloud synchronization.
+Tally is an offline-first personal finance application for one user on one device. It helps the user record income and expenses, understand spending patterns, manage a monthly budget, and review financial activity without cloud synchronization.
 
 This README is the product brainstorming and feature specification. The development workflow, architecture, database preparation, implementation phases, and testing strategy are documented separately in [DEV_PLAN.md](DEV_PLAN.md).
 
