@@ -5,6 +5,7 @@ import '../../../core/constant/domain_enums.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/utils/date_label.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_chip.dart';
@@ -83,6 +84,17 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
       type == RecurringType.income
       ? TransactionType.income
       : TransactionType.expense;
+
+  Future<void> _pickStartDate() async {
+    final now = DateTime.now();
+    final picked = await showDatePicker(
+      context: context,
+      initialDate: _form.startDate.value ?? now,
+      firstDate: DateTime(now.year - 1),
+      lastDate: DateTime(now.year + 5),
+    );
+    if (picked != null) _form.startDate.value = picked;
+  }
 
   void _select(VoidCallback change) {
     change();
@@ -178,6 +190,16 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
                 onTap: () => _select(() => _form.mode.value = RecurringMode.auto),
               ),
             ],
+          ),
+          const SizedBox(height: 14),
+          Obx(
+            () => OutlinedButton.icon(
+              onPressed: _pickStartDate,
+              icon: const Icon(Icons.calendar_today_outlined, size: 16),
+              label: Text(
+                'Starts ${DateLabel.day(_form.startDate.value ?? DateTime.now())}',
+              ),
+            ),
           ),
           Obx(() {
             final message = _form.error.value;

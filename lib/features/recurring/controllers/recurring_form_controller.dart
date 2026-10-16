@@ -18,6 +18,7 @@ class RecurringFormController extends GetxController {
   final frequency = RecurringFrequency.monthly.obs;
   final mode = RecurringMode.ask.obs;
   final amountVaries = false.obs;
+  final startDate = Rxn<DateTime>();
   final saving = false.obs;
   final error = Rxn<String>();
 
@@ -40,8 +41,8 @@ class RecurringFormController extends GetxController {
       return false;
     }
 
-    final today = _now();
-    final start = DateTime(today.year, today.month, today.day);
+    final picked = startDate.value ?? _now();
+    final start = DateTime(picked.year, picked.month, picked.day);
     final isMonthly = frequency.value == RecurringFrequency.monthly;
     final isWeekly = frequency.value == RecurringFrequency.weekly;
 
