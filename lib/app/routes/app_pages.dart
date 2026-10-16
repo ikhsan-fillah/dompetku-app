@@ -13,6 +13,9 @@ import '../../features/category/controllers/category_controller.dart';
 import '../../features/category/controllers/category_detail_controller.dart';
 import '../../features/category/pages/category_detail_page.dart';
 import '../../features/category/pages/category_manage_page.dart';
+import '../../features/drafts/controllers/draft_controller.dart';
+import '../../features/drafts/pages/drafts_page.dart';
+import '../../features/drafts/repositories/draft_repository.dart';
 import '../../features/recurring/controllers/recurring_controller.dart';
 import '../../features/recurring/controllers/recurring_form_controller.dart';
 import '../../features/recurring/pages/recurring_page.dart';
@@ -96,6 +99,19 @@ class AppPages {
       ),
     ),
     GetPage(name: AppRoutes.pinUnlock, page: () => const PinUnlockPage()),
+    GetPage(
+      name: AppRoutes.drafts,
+      page: () => const DraftsPage(),
+      middlewares: [FinancialRouteGuard()],
+      binding: BindingsBuilder(() {
+        Get.put(
+          DraftController(
+            Get.find<DraftRepository>(),
+            Get.find<TransactionRepository>(),
+          ),
+        );
+      }),
+    ),
     GetPage(
       name: AppRoutes.recurring,
       page: () => const RecurringPage(),

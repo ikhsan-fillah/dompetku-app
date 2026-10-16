@@ -11,19 +11,24 @@ class RecurringRunner {
     required this.rules,
     required this.transactions,
     required this.generator,
+    this.drafts,
   });
 
   final RecurringRuleStore rules;
   final TransactionRepository transactions;
   final RecurringGenerator generator;
+  final DraftSink? drafts;
 
   Future<void> runDue(DateTime today) async {
     for (final rule in await rules.getAll()) {
-      if (rule.mode != RecurringMode.auto) continue;
       final id = rule.id;
       if (id == null) continue;
       for (final due in generator.dueOn(rule, today)) {
-        await transactions.insert(_transactionFor(rule, due));
+        if (rule.mode == RecurringMode.auto) {
+          await transactions.insert(_transactionFor(rule, due));
+        } else {
+          await drafts?.addRecurring(rule, due);
+        }
         await rules.markGenerated(id, due);
       }
     }
@@ -44,6 +49,11 @@ class RecurringRunner {
       updatedAt: now,
     );
   }
+}
+
+/// Menyimpan tagihan mode ask sebagai draft (dedupe per aturan dan tanggal).
+abstract interface class DraftSink {
+  Future<void> addRecurring(RecurringRule rule, DateTime due);
 }
 
 /// Antarmuka penyimpanan aturan, dipisah agar runner tetap bisa di-test.
