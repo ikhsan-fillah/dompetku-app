@@ -130,12 +130,8 @@ class CategoryController extends GetxController {
     final visible = all.where((c) => c.type == selectedType.value).toList();
     if (oldIndex < 0 || oldIndex >= visible.length) return false;
 
-    var target = newIndex;
-    if (target > oldIndex) target -= 1;
-    target = target.clamp(0, visible.length - 1);
-
     final moved = visible.removeAt(oldIndex);
-    visible.insert(target, moved);
+    visible.insert(newIndex.clamp(0, visible.length), moved);
 
     final result = <CategoryModel>[...all];
     var cursor = 0;

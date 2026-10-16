@@ -67,6 +67,13 @@ class AuthController extends GetxController {
     now: DateTime.now(),
   );
 
+  Future<void> clearLockout() async {
+    biometricFailureCount.value = 0;
+    biometricLockedUntil.value = null;
+    biometricStatus.value = BiometricStatus.required;
+    await _sessionRepository.saveBiometricFailureState(count: 0);
+  }
+
   Future<bool> biometricAvailable() => _biometricService.isAvailable();
 
   Future<void> setBiometricEnabled(bool value) async {
