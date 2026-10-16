@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/formatter.dart';
 import '../controllers/recurring_controller.dart';
+import 'recurring_add_sheet.dart';
 import '../models/recurring_rule.dart';
 
 /// Daftar recurring: item aktif/nonaktif lewat sakelar. Nonaktif tidak dihapus.
@@ -22,6 +23,16 @@ class RecurringPage extends StatelessWidget {
         backgroundColor: AppColors.paper,
         elevation: 0,
         title: Text('Recurring', style: AppText.display(size: 26)),
+        actions: [
+          IconButton(
+            tooltip: 'Add recurring',
+            icon: const Icon(LucideIcons.plus, color: AppColors.ink),
+            onPressed: () async {
+              final saved = await showRecurringAddSheet(context);
+              if (saved) await controller.load();
+            },
+          ),
+        ],
       ),
       body: Obx(() {
         final state = controller.state.value;
@@ -129,13 +140,4 @@ class _RuleTile extends StatelessWidget {
       ),
     );
   }
-}
-
-/// Ikon tambah (tidak memakai `accent`, sesuai dokumen).
-class RecurringAddIcon extends StatelessWidget {
-  const RecurringAddIcon({super.key});
-
-  @override
-  Widget build(BuildContext context) =>
-      const Icon(LucideIcons.plus, color: AppColors.ink);
 }

@@ -14,6 +14,7 @@ import '../../features/category/controllers/category_detail_controller.dart';
 import '../../features/category/pages/category_detail_page.dart';
 import '../../features/category/pages/category_manage_page.dart';
 import '../../features/recurring/controllers/recurring_controller.dart';
+import '../../features/recurring/controllers/recurring_form_controller.dart';
 import '../../features/recurring/pages/recurring_page.dart';
 import '../../features/recurring/repositories/recurring_repository_impl.dart';
 import '../../features/receipt/services/ml_kit_receipt_text_recognizer.dart';
@@ -103,6 +104,7 @@ class AppPages {
         Get.put(
           RecurringController(Get.find<RecurringRepositoryImpl>()),
         );
+        Get.put(RecurringFormController(Get.find<RecurringRepositoryImpl>()));
       }),
     ),
     GetPage(
