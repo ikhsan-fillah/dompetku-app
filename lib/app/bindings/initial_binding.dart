@@ -2,6 +2,7 @@ import 'package:dompetku_app/core/database/app_database.dart';
 import 'package:dompetku_app/core/services/app_lock_service.dart';
 import 'package:dompetku_app/core/services/biometric_service.dart';
 import 'package:dompetku_app/core/services/local_data_reset_service.dart';
+import 'package:dompetku_app/core/services/pin_service.dart';
 import 'package:dompetku_app/core/services/secure_storage_service.dart';
 import 'package:dompetku_app/core/services/shared_prefs_service.dart';
 import 'package:dompetku_app/features/auth/controllers/auth_controller.dart';
@@ -57,7 +58,14 @@ class InitialBinding extends Bindings {
       permanent: true,
     );
     Get.put(const FinancialCalculationService(), permanent: true);
-    Get.put(AuthController(Get.find(), Get.find()), permanent: true);
+    Get.put(
+      AuthController(
+        Get.find(),
+        Get.find(),
+        pinService: PinService(Get.find<SecureStorageService>()),
+      ),
+      permanent: true,
+    );
     Get.lazyPut(() => CategoryController(Get.find()), fenix: true);
     Get.lazyPut(() => TransactionController(Get.find()), fenix: true);
     Get.lazyPut(() => BudgetController(Get.find()), fenix: true);

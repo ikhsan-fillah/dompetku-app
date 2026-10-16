@@ -209,6 +209,23 @@ class _UnlockView extends StatelessWidget {
                       textAlign: TextAlign.center,
                       style: AppText.body(size: 12.5, color: AppColors.mut),
                     ),
+                    FutureBuilder<bool>(
+                      future: auth.hasPin(),
+                      builder: (context, snapshot) {
+                        if (snapshot.data != true) return const SizedBox.shrink();
+                        return TextButton(
+                          onPressed: () => Get.offAllNamed(AppRoutes.pinUnlock),
+                          child: Text(
+                            'Use PIN instead',
+                            style: AppText.body(
+                              size: 13,
+                              weight: FontWeight.w700,
+                              color: AppColors.ink,
+                            ),
+                          ),
+                        );
+                      },
+                    ),
                   ],
                 ),
 
