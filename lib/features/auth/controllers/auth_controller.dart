@@ -2,14 +2,22 @@ import 'package:get/get.dart';
 
 import '../../../core/constant/domain_enums.dart';
 import '../../../core/services/biometric_service.dart';
+import '../../../core/services/pin_service.dart';
 import '../../../core/utils/biometric_lockout.dart';
 import '../repositories/session_repository.dart';
 
 class AuthController extends GetxController {
-  AuthController(this._sessionRepository, this._biometricService);
+  AuthController(
+    this._sessionRepository,
+    this._biometricService, {
+    PinService? pinService,
+  }) : _pinService = pinService;
 
   final SessionRepository _sessionRepository;
   final BiometricService _biometricService;
+  final PinService? _pinService;
+
+  PinService get pinService => _pinService!;
   late final Future<void> initialization;
 
   final isRegistered = false.obs;
@@ -87,6 +95,50 @@ class AuthController extends GetxController {
 
   Future<bool> unlockWithBiometric() =>
       _authenticate(enableAfterSuccess: false);
+
+  Future<bool> hasPin() async => (await _pinService?.hasPin()) ?? false;
+
+  Future<bool> canUseBiometric() => biometricAvailable();
+
+  Future<bool> unlockWithPin(String pin) async {
+    final pins = _pinService;
+    if (pins == null || !isRegistered.value || !await pins.hasPin()) {
+      return false;
+    }
+    final previousLockout = biometricLockedUntil.value;
+    if (previousLockout != null && !isLockedOut) {
+      biometricFailureCount.value = 0;
+      biometricLockedUntil.value = null;
+      await _sessionRepository.saveBiometricFailureState(count: 0);
+    }
+    if (isLockedOut) {
+      biometricStatus.value = BiometricStatus.lockedOut;
+      return false;
+    }
+    if (await pins.verify(pin)) {
+      await _sessionRepository.saveBiometricFailureState(count: 0);
+      biometricFailureCount.value = 0;
+      biometricLockedUntil.value = null;
+      biometricStatus.value = BiometricStatus.authenticated;
+      unlock();
+      return true;
+    }
+    final count = biometricFailureCount.value + 1;
+    final until = BiometricLockout.lockedUntil(
+      failureCount: count,
+      now: DateTime.now(),
+    );
+    await _sessionRepository.saveBiometricFailureState(
+      count: count,
+      lockedUntil: until,
+    );
+    biometricFailureCount.value = count;
+    biometricLockedUntil.value = until;
+    biometricStatus.value = until == null
+        ? BiometricStatus.failed
+        : BiometricStatus.lockedOut;
+    return false;
+  }
 
   Future<bool> _authenticate({required bool enableAfterSuccess}) async {
     if (!isRegistered.value ||

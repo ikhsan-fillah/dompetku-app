@@ -7,6 +7,8 @@ abstract class AppRoutes {
   static const categoryDetail = '/category-detail';
   static const biometricSetup = '/biometric-setup';
   static const biometricUnlock = '/biometric-unlock';
+  static const pinCreate = '/pin-create';
+  static const pinUnlock = '/pin-unlock';
   static const budgetArchive = '/budget-archive';
   static const report = '/report';
   static const receiptReview = '/receipt-review';

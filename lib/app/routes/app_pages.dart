@@ -4,6 +4,8 @@ import '../../core/services/data_refresh_service.dart';
 import '../../features/auth/controllers/auth_controller.dart';
 import '../../features/auth/pages/biometric_setup_page.dart';
 import '../../features/auth/pages/biometric_unlock_page.dart';
+import '../../features/auth/pages/pin_create_page.dart';
+import '../../features/auth/pages/pin_unlock_page.dart';
 import '../../features/auth/pages/login_page.dart';
 import '../../features/budget/bindings/budget_binding.dart';
 import '../../features/budget/views/budget_archive_page.dart';
@@ -82,6 +84,14 @@ class AppPages {
       name: AppRoutes.biometricUnlock,
       page: () => const BiometricUnlockPage(),
     ),
+    GetPage(
+      name: AppRoutes.pinCreate,
+      page: () => PinCreatePage(
+        pinService: Get.find<AuthController>().pinService,
+        onCreated: () => Get.offAllNamed(AppRoutes.home),
+      ),
+    ),
+    GetPage(name: AppRoutes.pinUnlock, page: () => const PinUnlockPage()),
     GetPage(
       name: AppRoutes.receiptReview,
       page: () => const ReceiptReviewPage(),

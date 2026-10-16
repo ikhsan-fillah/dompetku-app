@@ -173,10 +173,10 @@ class BiometricSetupPage extends StatelessWidget {
                         onPressed: busy
                             ? null
                             : () async {
-                                // Biometrik tidak diaktifkan bila memilih PIN / lewati
+                                // Biometrik tidak diaktifkan bila memilih PIN
                                 await auth.setBiometricEnabled(false);
                                 if (context.mounted) {
-                                  Get.offAllNamed(AppRoutes.home);
+                                  Get.offAllNamed(AppRoutes.pinCreate);
                                 }
                               },
                         style: OutlinedButton.styleFrom(
