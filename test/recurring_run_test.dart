@@ -51,6 +51,7 @@ RecurringRule _auto({int id = 1}) => RecurringRule(
 );
 
 void main() {
+  _askRunnerTest();
   test('aturan auto membuat transaksi sekali per tagihan', () async {
     final rules = _Rules()..items.add(_auto());
     final transactions = _Transactions();
@@ -136,4 +137,49 @@ extension on RecurringRule {
       updatedAt: updatedAt,
     );
   }
+}
+
+class _Sink implements DraftSink {
+  final List<DateTime> dues = [];
+
+  @override
+  Future<void> addRecurring(RecurringRule rule, DateTime due) async {
+    dues.add(due);
+  }
+}
+
+void _askRunnerTest() {
+  test('aturan ask dikirim sebagai draft, bukan transaksi', () async {
+    final rules = _Rules()
+      ..items.add(
+        RecurringRule(
+          id: 5,
+          name: 'Langganan',
+          type: RecurringType.expense,
+          categoryId: 3,
+          amount: 50000,
+          frequency: RecurringFrequency.monthly,
+          dayOfMonth: 5,
+          startDate: DateTime(2026, 9, 5),
+          mode: RecurringMode.ask,
+          isActive: true,
+          createdAt: DateTime(2026),
+          updatedAt: DateTime(2026),
+        ),
+      );
+    final transactions = _Transactions();
+    final sink = _Sink();
+    final runner = RecurringRunner(
+      rules: rules,
+      transactions: transactions,
+      generator: const RecurringGenerator(),
+      drafts: sink,
+    );
+
+    await runner.runDue(DateTime(2026, 9, 6));
+    await runner.runDue(DateTime(2026, 9, 6));
+
+    expect(transactions.inserted, isEmpty);
+    expect(sink.dues, [DateTime(2026, 9, 5)]);
+  });
 }

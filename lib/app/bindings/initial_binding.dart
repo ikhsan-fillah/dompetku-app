@@ -3,10 +3,12 @@ import 'package:dompetku_app/core/services/app_lock_service.dart';
 import 'package:dompetku_app/core/services/biometric_service.dart';
 import 'package:dompetku_app/core/services/local_data_reset_service.dart';
 import 'package:dompetku_app/core/services/pin_service.dart';
+import 'package:dompetku_app/features/drafts/data/draft_local_data_source.dart';
+import 'package:dompetku_app/features/drafts/repositories/draft_repository.dart';
+import 'package:dompetku_app/features/recurring/services/recurring_runner.dart';
 import 'package:dompetku_app/features/recurring/data/recurring_local_data_source.dart';
 import 'package:dompetku_app/features/recurring/repositories/recurring_repository_impl.dart';
 import 'package:dompetku_app/features/recurring/services/recurring_generator.dart';
-import 'package:dompetku_app/features/recurring/services/recurring_runner.dart';
 import 'package:dompetku_app/core/services/secure_storage_service.dart';
 import 'package:dompetku_app/core/services/shared_prefs_service.dart';
 import 'package:dompetku_app/features/auth/controllers/auth_controller.dart';
@@ -62,6 +64,10 @@ class InitialBinding extends Bindings {
       permanent: true,
     );
     Get.put(const FinancialCalculationService(), permanent: true);
+    Get.put<DraftRepository>(
+      DraftRepositoryImpl(DraftLocalDataSource(Get.find<AppDatabase>())),
+      permanent: true,
+    );
     Get.put(
       RecurringRepositoryImpl(
         RecurringLocalDataSource(Get.find<AppDatabase>()),
@@ -78,6 +84,7 @@ class InitialBinding extends Bindings {
         rules: Get.find<RecurringRepositoryImpl>(),
         transactions: Get.find<TransactionRepository>(),
         generator: const RecurringGenerator(),
+        drafts: RecurringDraftSink(Get.find<DraftRepository>()),
       ).runDue(DateTime.now());
       if (Get.isRegistered<DataRefreshService>()) {
         Get.find<DataRefreshService>().bump();
