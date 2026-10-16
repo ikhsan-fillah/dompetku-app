@@ -2,6 +2,8 @@ class DatabaseTables {
   static const categories = 'categories';
   static const transactions = 'transactions';
   static const budgets = 'budgets';
+  static const recurringRules = 'recurring_rules';
+  static const drafts = 'drafts';
 
   const DatabaseTables._();
 }
