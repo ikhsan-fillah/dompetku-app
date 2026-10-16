@@ -9,6 +9,7 @@ import '../services/recap_calculation_service.dart';
 import '../services/recap_data_loader.dart';
 import '../widgets/recap_widgets.dart';
 import '../widgets/story_frame.dart';
+import '../widgets/story_share.dart';
 
 /// Recap satu tahun dalam bentuk story: 7 kartu, auto-advance 6 detik.
 class YearlyRecapPage extends StatelessWidget {
@@ -621,45 +622,89 @@ class _BudgetGrid extends StatelessWidget {
   }
 }
 
-class _Closing extends StatelessWidget {
+class _Closing extends StatefulWidget {
   const _Closing({required this.recap});
 
   final YearlyRecap recap;
 
   @override
+  State<_Closing> createState() => _ClosingState();
+}
+
+class _ClosingState extends State<_Closing> {
+  final _shareKey = GlobalKey();
+
+  @override
   Widget build(BuildContext context) {
     final fg = AppColors.paper;
+    final recap = widget.recap;
     final monthsToGo = 12 - recap.monthsSoFar;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('${recap.year}, net${recap.isSoFar ? ' so far' : ''}', color: fg.withValues(alpha: 0.8)),
-        const Spacer(),
-        Text('You kept', style: AppText.body(size: 16, color: fg)),
-        const SizedBox(height: 4),
-        CountUpText(
-          value: recap.net,
-          style: AppText.display(size: 48, color: fg),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          recap.isSoFar
-              ? '$monthsToGo months to go. Your yearly recap refreshes on 31 Dec.'
-              : 'That is the whole year.',
-          style: AppText.body(size: 15, color: fg),
-        ),
-        const Spacer(),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: fg,
-              side: BorderSide(color: fg),
-              padding: const EdgeInsets.symmetric(vertical: 14),
+        Expanded(
+          child: RepaintBoundary(
+            key: _shareKey,
+            child: Container(
+              color: AppColors.earn,
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  StoryLabel(
+                    '${recap.year}, net${recap.isSoFar ? ' so far' : ''}',
+                    color: fg.withValues(alpha: 0.8),
+                  ),
+                  const Spacer(),
+                  Text('You kept', style: AppText.body(size: 16, color: fg)),
+                  const SizedBox(height: 4),
+                  CountUpText(
+                    value: recap.net,
+                    style: AppText.display(size: 48, color: fg),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    recap.isSoFar
+                        ? '$monthsToGo months to go. Your yearly recap refreshes on 31 Dec.'
+                        : 'That is the whole year.',
+                    style: AppText.body(size: 15, color: fg),
+                  ),
+                  const Spacer(),
+                ],
+              ),
             ),
-            onPressed: () => Navigator.of(context).maybePop(),
-            child: const Text('Back to Tally'),
           ),
+        ),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: fg,
+                  side: BorderSide(color: fg),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () => StoryShare.shareImage(
+                  key: _shareKey,
+                  fileName: 'tally-recap-${recap.year}',
+                  text: 'Tally · ${recap.year}',
+                ),
+                child: const Text('Save as image'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: fg,
+                  side: BorderSide(color: fg),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () => Navigator.of(context).maybePop(),
+                child: const Text('Back to Tally'),
+              ),
+            ),
+          ],
         ),
       ],
     );
