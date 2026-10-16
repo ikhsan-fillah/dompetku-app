@@ -59,7 +59,15 @@ class AuthController extends GetxController {
   }
 
   void lock() => isUnlocked.value = false;
-  void unlock() => isUnlocked.value = true;
+
+  /// Dipanggil setiap sesi terbuka (startup tanpa biometrik, unlock berhasil).
+  Future<void> Function()? onUnlocked;
+
+  void unlock() {
+    isUnlocked.value = true;
+    final hook = onUnlocked;
+    if (hook != null) hook();
+  }
 
   void resetSessionState() {
     isRegistered.value = false;
