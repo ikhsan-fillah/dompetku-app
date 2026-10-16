@@ -10,6 +10,7 @@ import '../services/recap_calculation_service.dart';
 import '../services/recap_data_loader.dart';
 import '../widgets/recap_widgets.dart';
 import '../widgets/story_frame.dart';
+import '../widgets/story_share.dart';
 import 'yearly_recap_page.dart';
 
 /// Recap satu bulan dalam bentuk story: 8 kartu, auto-advance 6 detik.
@@ -859,7 +860,7 @@ class _BudgetRow extends StatelessWidget {
   }
 }
 
-class _Closing extends StatelessWidget {
+class _Closing extends StatefulWidget {
   const _Closing({required this.recap, required this.name, required this.year});
 
   final MonthlyRecap recap;
@@ -867,42 +868,86 @@ class _Closing extends StatelessWidget {
   final int year;
 
   @override
+  State<_Closing> createState() => _ClosingState();
+}
+
+class _ClosingState extends State<_Closing> {
+  final _shareKey = GlobalKey();
+
+  @override
   Widget build(BuildContext context) {
     final fg = AppColors.paper;
+    final recap = widget.recap;
     final income = recap.income;
     final kept = income == 0 ? 0 : (recap.net * 100 / income).round();
+    final month = recap.month.toString().padLeft(2, '0');
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('$name, net${recap.isSoFar ? ' so far' : ''}', color: fg.withValues(alpha: 0.8)),
-        const Spacer(),
-        Text('You kept', style: AppText.body(size: 16, color: fg)),
-        const SizedBox(height: 4),
-        CountUpText(
-          value: recap.net,
-          style: AppText.display(size: 54, color: fg),
-        ),
-        const SizedBox(height: 12),
-        Text(
-          income == 0
-              ? 'Belum ada pemasukan tercatat bulan ini.'
-              : "That's $kept% of the ${formatIdr(income)} that came in.",
-          style: AppText.body(size: 15, color: fg),
-        ),
-        const SizedBox(height: 26),
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: fg,
-              side: BorderSide(color: fg),
-              padding: const EdgeInsets.symmetric(vertical: 14),
+        Expanded(
+          child: RepaintBoundary(
+            key: _shareKey,
+            child: Container(
+              color: AppColors.ink,
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  StoryLabel(
+                    '${widget.name}, net${recap.isSoFar ? ' so far' : ''}',
+                    color: fg.withValues(alpha: 0.8),
+                  ),
+                  const Spacer(),
+                  Text('You kept', style: AppText.body(size: 16, color: fg)),
+                  const SizedBox(height: 4),
+                  CountUpText(
+                    value: recap.net,
+                    style: AppText.display(size: 54, color: fg),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    income == 0
+                        ? 'Belum ada pemasukan tercatat bulan ini.'
+                        : "That's $kept% of the ${formatIdr(income)} that came in.",
+                    style: AppText.body(size: 15, color: fg),
+                  ),
+                  const Spacer(),
+                ],
+              ),
             ),
-            onPressed: () => Get.off(() => YearlyRecapPage(year: year)),
-            child: Text('Watch your $year recap'),
           ),
         ),
-        const Spacer(),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: fg,
+                  side: BorderSide(color: fg),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () => StoryShare.shareImage(
+                  key: _shareKey,
+                  fileName: 'tally-recap-${widget.year}-$month',
+                  text: 'Tally · ${widget.name} ${widget.year}',
+                ),
+                child: const Text('Save as image'),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton(
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: fg,
+                  side: BorderSide(color: fg),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                ),
+                onPressed: () => Get.off(() => YearlyRecapPage(year: widget.year)),
+                child: Text('Watch ${widget.year} recap'),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
