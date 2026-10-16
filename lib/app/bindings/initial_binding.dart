@@ -7,6 +7,7 @@ import 'package:dompetku_app/core/services/pin_service.dart';
 import 'package:dompetku_app/features/drafts/data/draft_local_data_source.dart';
 import 'package:dompetku_app/features/drafts/repositories/draft_repository.dart';
 import 'package:dompetku_app/features/recurring/services/recurring_runner.dart';
+import 'package:dompetku_app/features/autodetect/services/auto_detect_service.dart';
 import 'package:dompetku_app/features/recurring/data/recurring_local_data_source.dart';
 import 'package:dompetku_app/features/recurring/repositories/recurring_repository_impl.dart';
 import 'package:dompetku_app/features/recurring/services/recurring_generator.dart';
@@ -80,7 +81,14 @@ class InitialBinding extends Bindings {
       Get.find(),
       pinService: PinService(Get.find<SecureStorageService>()),
     );
+    Get.put(
+      AutoDetectService(Get.find<DraftRepository>()),
+      permanent: true,
+    );
     auth.onUnlocked = () async {
+      if (Get.isRegistered<AutoDetectService>()) {
+        Get.find<AutoDetectService>().start();
+      }
       await RecurringRunner(
         rules: Get.find<RecurringRepositoryImpl>(),
         transactions: Get.find<TransactionRepository>(),
