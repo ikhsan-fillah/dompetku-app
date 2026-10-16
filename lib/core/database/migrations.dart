@@ -71,7 +71,7 @@ class Migrations {
       'CREATE INDEX idx_transactions_created ON ${DatabaseTables.transactions} (${DatabaseColumns.createdAt})',
     );
 
-    await _createRecurringAndDrafts(db);
+    await createRecurringAndDrafts(db);
     await _seedCategories(db);
   }
 
@@ -86,11 +86,11 @@ class Migrations {
       );
     }
     if (oldVersion < 3) {
-      await _createRecurringAndDrafts(db);
+      await createRecurringAndDrafts(db);
     }
   }
 
-  static Future<void> _createRecurringAndDrafts(Database db) async {
+  static Future<void> createRecurringAndDrafts(Database db) async {
     await db.execute('''
       CREATE TABLE IF NOT EXISTS ${DatabaseTables.recurringRules} (
         id INTEGER PRIMARY KEY AUTOINCREMENT,
