@@ -8,6 +8,7 @@ import '../../transaction/models/transaction_model.dart';
 import '../../transaction/repositories/transaction_repository.dart';
 import '../services/recap_calculation_service.dart';
 import 'monthly_recap_page.dart';
+import 'yearly_recap_page.dart';
 
 /// Halaman Recaps: pilih tahun, lalu bulan. Bulan masa depan tidak ditampilkan.
 class RecapsPage extends StatefulWidget {
@@ -115,6 +116,8 @@ class _RecapsPageState extends State<RecapsPage> {
           ],
         ),
         const SizedBox(height: 14),
+        _yearRow(),
+        const SizedBox(height: 14),
         Text('Month · $_year', style: AppText.label()),
         const SizedBox(height: 8),
         _monthGrid(),
@@ -123,6 +126,40 @@ class _RecapsPageState extends State<RecapsPage> {
   }
 
   bool _hasData(int year) => _data.any((e) => e.transactionDate.year == year);
+
+  Widget _yearRow() {
+    final hasData = _hasData(_year);
+    return InkWell(
+      borderRadius: BorderRadius.circular(10),
+      onTap: hasData ? () => Get.to(() => YearlyRecapPage(year: _year)) : null,
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: hasData ? AppColors.card : Colors.transparent,
+          borderRadius: BorderRadius.circular(10),
+          border: Border.all(color: AppColors.line),
+        ),
+        child: Row(
+          children: [
+            Expanded(
+              child: Text(
+                '$_year recap${_year == _now.year ? ' · so far' : ''}',
+                style: AppText.body(
+                  size: 14,
+                  weight: FontWeight.w700,
+                  color: hasData ? AppColors.ink : AppColors.mut,
+                ),
+              ),
+            ),
+            Icon(
+              Icons.chevron_right,
+              color: hasData ? AppColors.ink : AppColors.mut,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 
   Widget _monthGrid() {
     final lastMonth = _year == _now.year ? _now.month : 12;

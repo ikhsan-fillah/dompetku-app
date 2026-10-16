@@ -13,6 +13,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
+import '../../recap/widgets/recap_home_line.dart';
 import '../../dashboard/models/dashboard_summary_model.dart';
 import '../../dashboard/widgets/expense_donut.dart';
 import '../../dashboard/widgets/spending_bars.dart';
@@ -168,6 +169,7 @@ class HomePage extends StatelessWidget {
                 ),
                 if (data != null) ...[_BalanceCard(data: data)],
                 const DraftsBanner(),
+                const RecapHomeLine(),
                 if (!controller.hasTransactionsInPeriod.value &&
                     controller.hasAnyTransactions.value)
                   const _EmptyPeriodNote(),
