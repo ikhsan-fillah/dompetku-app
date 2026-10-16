@@ -105,7 +105,7 @@ class BiometricSetupPage extends StatelessWidget {
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Verifikasi biometrik sekali. Angka tidak akan tampil sebelum kamu lolos. DompetKu tidak menyimpan data sidik jari/wajah — itu urusan sistem operasi.',
+                      'Verifikasi biometrik sekali. Angka tidak akan tampil sebelum kamu lolos. Tally tidak menyimpan data sidik jari/wajah — itu urusan sistem operasi.',
                       style: AppText.body(
                         size: 12,
                         color: AppColors.ink2,

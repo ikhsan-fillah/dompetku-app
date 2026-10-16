@@ -1,6 +1,6 @@
-# DompetKu Development Plan
+# Tally Development Plan
 
-This document contains the development workflow for DompetKu. The product decisions and feature brainstorming are documented in [README.md](README.md).
+This document contains the development workflow for Tally (sebelumnya DompetKu). The product decisions and feature brainstorming are documented in [README.md](README.md).
 
 The implementation order is intentional: stabilize the project, prepare the core logic and database, implement services and controllers, test the behavior, and only then build the UI.
 

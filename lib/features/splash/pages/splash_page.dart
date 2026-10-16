@@ -6,7 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../controllers/splash_controller.dart';
 
-/// Layar pembuka DompetKu. Menentukan halaman berikutnya lewat SplashController.
+/// Layar pembuka Tally. Menentukan halaman berikutnya lewat SplashController.
 class SplashPage extends StatefulWidget {
   const SplashPage({super.key});
 
@@ -108,9 +108,9 @@ class _SplashPageState extends State<SplashPage>
                         Text.rich(
                           TextSpan(
                             children: [
-                              const TextSpan(text: 'Dompet'),
+                              const TextSpan(text: 'Tal'),
                               TextSpan(
-                                text: 'Ku',
+                                text: 'ly',
                                 style: AppText.display(
                                   size: 40,
                                   weight: FontWeight.w300,
@@ -133,12 +133,12 @@ class _SplashPageState extends State<SplashPage>
                         ),
                         const SizedBox(height: 40),
                         Semantics(
-                          label: 'Menyiapkan DompetKu',
+                          label: 'Menyiapkan Tally',
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Menyiapkan DompetKu',
+                                'Menyiapkan Tally',
                                 style: AppText.monoLabel(
                                   color: paper.withValues(alpha: 0.6),
                                 ),

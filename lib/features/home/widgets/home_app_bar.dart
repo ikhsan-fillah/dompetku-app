@@ -50,7 +50,7 @@ class HomeAppBar extends StatelessWidget {
                   ),
                 ),
                 Text(
-                  'DompetKu',
+                  'Tally',
                   style: AppText.display(
                     size: 21,
                     height: 1.2,
