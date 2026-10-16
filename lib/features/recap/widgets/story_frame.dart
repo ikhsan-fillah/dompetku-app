@@ -23,6 +23,7 @@ class StoryFrame extends StatefulWidget {
   final String footer;
 
   static const cardDuration = Duration(seconds: 6);
+  static const _edgeWidth = 110.0;
 
   @override
   State<StoryFrame> createState() => _StoryFrameState();
@@ -110,24 +111,6 @@ class _StoryFrameState extends State<StoryFrame>
               child: Stack(
                 children: [
                   Positioned.fill(
-                    child: Row(
-                      children: [
-                        Expanded(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: _prev,
-                          ),
-                        ),
-                        Expanded(
-                          child: GestureDetector(
-                            behavior: HitTestBehavior.opaque,
-                            onTap: _next,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Positioned.fill(
                     child: Padding(
                       padding: const EdgeInsets.fromLTRB(24, 16, 24, 16),
                       child: TweenAnimationBuilder<double>(
@@ -144,6 +127,26 @@ class _StoryFrameState extends State<StoryFrame>
                           ),
                         ),
                       ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: StoryFrame._edgeWidth,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _prev,
+                    ),
+                  ),
+                  Positioned(
+                    right: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: StoryFrame._edgeWidth,
+                    child: GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: _next,
                     ),
                   ),
                 ],
