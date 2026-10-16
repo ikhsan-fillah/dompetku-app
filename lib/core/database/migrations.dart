@@ -71,6 +71,7 @@ class Migrations {
       'CREATE INDEX idx_transactions_created ON ${DatabaseTables.transactions} (${DatabaseColumns.createdAt})',
     );
 
+    await _createRecurringAndDrafts(db);
     await _seedCategories(db);
   }
 
@@ -84,6 +85,49 @@ class Migrations {
         'ALTER TABLE ${DatabaseTables.budgets} ADD COLUMN ${DatabaseColumns.note} TEXT',
       );
     }
+    if (oldVersion < 3) {
+      await _createRecurringAndDrafts(db);
+    }
+  }
+
+  static Future<void> _createRecurringAndDrafts(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS ${DatabaseTables.recurringRules} (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        type TEXT NOT NULL CHECK (type IN ('income', 'expense')),
+        category_id INTEGER NOT NULL,
+        amount INTEGER NOT NULL CHECK (amount > 0),
+        frequency TEXT NOT NULL CHECK (frequency IN ('weekly', 'monthly', 'yearly')),
+        day_of_month INTEGER,
+        weekday INTEGER,
+        start_date TEXT NOT NULL,
+        mode TEXT NOT NULL CHECK (mode IN ('ask', 'auto')),
+        is_active INTEGER NOT NULL DEFAULT 1,
+        last_generated_on TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL,
+        FOREIGN KEY (category_id) REFERENCES ${DatabaseTables.categories} (id)
+      )
+    ''');
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS ${DatabaseTables.drafts} (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        source TEXT NOT NULL,
+        kind TEXT NOT NULL CHECK (kind IN ('income', 'expense')),
+        amount INTEGER NOT NULL CHECK (amount > 0),
+        merchant TEXT,
+        category_id INTEGER,
+        payment_method TEXT,
+        detected_at TEXT NOT NULL,
+        status TEXT NOT NULL CHECK (status IN ('pending', 'confirmed', 'dismissed')),
+        dedupe_key TEXT NOT NULL UNIQUE,
+        needs_review INTEGER NOT NULL DEFAULT 0,
+        recurring_rule_id INTEGER,
+        FOREIGN KEY (category_id) REFERENCES ${DatabaseTables.categories} (id),
+        FOREIGN KEY (recurring_rule_id) REFERENCES ${DatabaseTables.recurringRules} (id)
+      )
+    ''');
   }
 
   static Future<void> _seedCategories(Database db) async {
