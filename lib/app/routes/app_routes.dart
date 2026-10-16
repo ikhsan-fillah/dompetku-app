@@ -15,4 +15,5 @@ abstract class AppRoutes {
   static const recurring = '/recurring';
   static const drafts = '/drafts';
   static const autoDetect = '/auto-detect';
+  static const recaps = '/recaps';
 }
