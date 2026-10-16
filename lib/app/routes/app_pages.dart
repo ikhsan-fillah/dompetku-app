@@ -13,6 +13,9 @@ import '../../features/category/controllers/category_controller.dart';
 import '../../features/category/controllers/category_detail_controller.dart';
 import '../../features/category/pages/category_detail_page.dart';
 import '../../features/category/pages/category_manage_page.dart';
+import '../../features/recurring/controllers/recurring_controller.dart';
+import '../../features/recurring/pages/recurring_page.dart';
+import '../../features/recurring/repositories/recurring_repository_impl.dart';
 import '../../features/receipt/services/ml_kit_receipt_text_recognizer.dart';
 import '../../features/receipt/services/receipt_ocr_service.dart';
 import '../../features/receipt/views/receipt_review_page.dart';
@@ -92,6 +95,16 @@ class AppPages {
       ),
     ),
     GetPage(name: AppRoutes.pinUnlock, page: () => const PinUnlockPage()),
+    GetPage(
+      name: AppRoutes.recurring,
+      page: () => const RecurringPage(),
+      middlewares: [FinancialRouteGuard()],
+      binding: BindingsBuilder(() {
+        Get.put(
+          RecurringController(Get.find<RecurringRepositoryImpl>()),
+        );
+      }),
+    ),
     GetPage(
       name: AppRoutes.receiptReview,
       page: () => const ReceiptReviewPage(),

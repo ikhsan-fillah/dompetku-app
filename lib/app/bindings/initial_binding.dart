@@ -3,6 +3,10 @@ import 'package:dompetku_app/core/services/app_lock_service.dart';
 import 'package:dompetku_app/core/services/biometric_service.dart';
 import 'package:dompetku_app/core/services/local_data_reset_service.dart';
 import 'package:dompetku_app/core/services/pin_service.dart';
+import 'package:dompetku_app/features/recurring/data/recurring_local_data_source.dart';
+import 'package:dompetku_app/features/recurring/repositories/recurring_repository_impl.dart';
+import 'package:dompetku_app/features/recurring/services/recurring_generator.dart';
+import 'package:dompetku_app/features/recurring/services/recurring_runner.dart';
 import 'package:dompetku_app/core/services/secure_storage_service.dart';
 import 'package:dompetku_app/core/services/shared_prefs_service.dart';
 import 'package:dompetku_app/features/auth/controllers/auth_controller.dart';
@@ -59,13 +63,27 @@ class InitialBinding extends Bindings {
     );
     Get.put(const FinancialCalculationService(), permanent: true);
     Get.put(
-      AuthController(
-        Get.find(),
-        Get.find(),
-        pinService: PinService(Get.find<SecureStorageService>()),
+      RecurringRepositoryImpl(
+        RecurringLocalDataSource(Get.find<AppDatabase>()),
       ),
       permanent: true,
     );
+    final auth = AuthController(
+      Get.find(),
+      Get.find(),
+      pinService: PinService(Get.find<SecureStorageService>()),
+    );
+    auth.onUnlocked = () async {
+      await RecurringRunner(
+        rules: Get.find<RecurringRepositoryImpl>(),
+        transactions: Get.find<TransactionRepository>(),
+        generator: const RecurringGenerator(),
+      ).runDue(DateTime.now());
+      if (Get.isRegistered<DataRefreshService>()) {
+        Get.find<DataRefreshService>().bump();
+      }
+    };
+    Get.put(auth, permanent: true);
     Get.lazyPut(() => CategoryController(Get.find()), fenix: true);
     Get.lazyPut(() => TransactionController(Get.find()), fenix: true);
     Get.lazyPut(() => BudgetController(Get.find()), fenix: true);
