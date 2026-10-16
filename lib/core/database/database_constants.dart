@@ -30,6 +30,8 @@ class DatabaseColumns {
   static const amountLimit = 'amount_limit';
   static const startDate = 'start_date';
   static const endDate = 'end_date';
+  static const isActive = 'is_active';
+  static const lastGeneratedOn = 'last_generated_on';
   static const createdAt = 'created_at';
   static const updatedAt = 'updated_at';
 
