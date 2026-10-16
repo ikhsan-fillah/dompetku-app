@@ -15,6 +15,7 @@ import '../../features/category/controllers/category_detail_controller.dart';
 import '../../features/category/pages/category_detail_page.dart';
 import '../../features/category/pages/category_manage_page.dart';
 import '../../features/autodetect/pages/auto_detect_page.dart';
+import '../../features/recap/pages/recaps_page.dart';
 import '../../features/drafts/controllers/draft_controller.dart';
 import '../../features/drafts/pages/drafts_page.dart';
 import '../../features/drafts/repositories/draft_repository.dart';
@@ -101,6 +102,11 @@ class AppPages {
       ),
     ),
     GetPage(name: AppRoutes.pinUnlock, page: () => const PinUnlockPage()),
+    GetPage(
+      name: AppRoutes.recaps,
+      page: () => const RecapsPage(),
+      middlewares: [FinancialRouteGuard()],
+    ),
     GetPage(
       name: AppRoutes.autoDetect,
       page: () => const AutoDetectPage(),

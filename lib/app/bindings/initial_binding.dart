@@ -1,3 +1,5 @@
+import 'package:dompetku_app/features/recap/services/recap_calculation_service.dart';
+import 'package:dompetku_app/features/dashboard/services/financial_calculation_service.dart';
 import 'package:dompetku_app/core/services/data_refresh_service.dart';
 import 'package:dompetku_app/core/database/app_database.dart';
 import 'package:dompetku_app/core/services/app_lock_service.dart';
@@ -66,6 +68,10 @@ class InitialBinding extends Bindings {
       permanent: true,
     );
     Get.put(const FinancialCalculationService(), permanent: true);
+    Get.put(
+      RecapCalculationService(Get.find<FinancialCalculationService>()),
+      permanent: true,
+    );
     Get.put<DraftRepository>(
       DraftRepositoryImpl(DraftLocalDataSource(Get.find<AppDatabase>())),
       permanent: true,
