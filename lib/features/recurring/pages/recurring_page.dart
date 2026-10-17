@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/formatter.dart';
 import '../controllers/recurring_controller.dart';
+import '../services/recurring_totals.dart';
 import 'recurring_add_sheet.dart';
 import '../models/recurring_rule.dart';
 
@@ -62,8 +63,11 @@ class RecurringPage extends StatelessWidget {
             final rules = state.data ?? const <RecurringRule>[];
             return ListView.builder(
               padding: const EdgeInsets.all(16),
-              itemCount: rules.length,
-              itemBuilder: (context, index) => Dismissible(
+              itemCount: rules.length + 1,
+              itemBuilder: (context, position) {
+                if (position == 0) return _TotalsRow(rules: rules);
+                final index = position - 1;
+                return Dismissible(
                 key: ValueKey(rules[index].id),
                 direction: DismissDirection.endToStart,
                 confirmDismiss: (_) async =>
@@ -100,10 +104,41 @@ class RecurringPage extends StatelessWidget {
                   onToggle: (value) =>
                       controller.setActive(rules[index].id!, value),
                 ),
-              ),
+                );
+              },
             );
         }
       }),
+    );
+  }
+}
+
+class _TotalsRow extends StatelessWidget {
+  const _TotalsRow({required this.rules});
+
+  final List<RecurringRule> rules;
+
+  @override
+  Widget build(BuildContext context) {
+    final totals = RecurringTotals.monthly(rules);
+    Widget cell(String label, int value) => Expanded(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(label.toUpperCase(), style: AppText.label()),
+          const SizedBox(height: 2),
+          Text(formatIdr(value), style: AppText.mono(size: 13, weight: FontWeight.w700)),
+        ],
+      ),
+    );
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 14),
+      child: Row(
+        children: [
+          cell('Out per month', totals.out),
+          cell('In per month', totals.income),
+        ],
+      ),
     );
   }
 }

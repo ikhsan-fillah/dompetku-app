@@ -85,7 +85,7 @@ class _PinCreatePageState extends State<PinCreatePage> {
               ),
               const SizedBox(height: 8),
               Text(
-                'Optional backup for when biometrics are not available.',
+                'Optional backup for when biometrics are not available. If you forget it, your data cannot be opened. You can only erase it.',
                 textAlign: TextAlign.center,
                 style: AppText.body(size: 13, color: AppColors.mut),
               ),

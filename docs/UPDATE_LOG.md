@@ -69,7 +69,7 @@ Hasil APK: `build\app\outputs\flutter-apk\app-release.apk`.
 - Auto-detect Android: parser BCA/GoPay/ShopeePay/DANA, OTP dan promo diabaikan, teks mentah tidak disimpan.
 - Recap bulanan dan tahunan, halaman Recaps, teks Beranda tanggal 1-3.
 
-Belum diputuskan (DOMPETKU_TALLY_DESIGN_V4_DEV.md §13): batas harian recap, quiet streak,
-total recurring per bulan, Forgot PIN, biggest single expense.
+Keputusan §13 (sudah diputuskan dan dikerjakan): batas harian recap = total budget keseluruhan / jumlah hari,
+quiet streak dihitung sejak transaksi pertama, total recurring (mingguan x52/12, tahunan /12), Forgot PIN hanya bisa menghapus data, biggest single expense ditampilkan.
 
 Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelumnya (tanpa uninstall).

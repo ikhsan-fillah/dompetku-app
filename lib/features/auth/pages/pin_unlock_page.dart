@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../app/routes/app_routes.dart';
 import '../../../core/constant/app_constant.dart';
+import '../../../core/services/local_data_reset_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../controllers/auth_controller.dart';
@@ -41,6 +42,60 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
     });
     if (_auth.isLockedOut) {
       Get.offAllNamed(AppRoutes.biometricUnlock);
+    }
+  }
+
+  Future<void> _forgotPin() async {
+    final confirmation = TextEditingController();
+    var canDelete = false;
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: const Text('Forgot your PIN?'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Your data cannot be opened without the PIN. You can only erase everything on this phone and start over. This cannot be undone.',
+              ),
+              const SizedBox(height: 12),
+              TextField(
+                controller: confirmation,
+                decoration: const InputDecoration(
+                  labelText: 'Type HAPUS to continue',
+                ),
+                onChanged: (value) =>
+                    setDialogState(() => canDelete = value == 'HAPUS'),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(false),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: canDelete
+                  ? () => Navigator.of(dialogContext).pop(true)
+                  : null,
+              child: const Text('Erase all data'),
+            ),
+          ],
+        ),
+      ),
+    );
+    confirmation.dispose();
+    if (confirmed != true || !mounted) return;
+    try {
+      await Get.find<LocalDataResetService>().resetAll();
+      _auth.resetSessionState();
+      if (mounted) Get.offAllNamed(AppRoutes.login);
+    } catch (_) {
+      if (!mounted) return;
+      setState(() => _error = 'Could not erase data. Try again.');
     }
   }
 
@@ -93,6 +148,13 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
                 onDelete: _onDelete,
               ),
               const Spacer(),
+              TextButton(
+                onPressed: _forgotPin,
+                child: Text(
+                  'Forgot PIN?',
+                  style: AppText.body(size: 13, color: AppColors.mut),
+                ),
+              ),
               FutureBuilder<bool>(
                 future: _auth.canUseBiometric(),
                 builder: (context, snapshot) {

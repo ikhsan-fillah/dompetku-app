@@ -66,7 +66,8 @@ void main() {
     await _open(tester, _Store([_rule()]));
 
     expect(find.text('Listrik'), findsOneWidget);
-    expect(find.text('Rp 438.000'), findsOneWidget);
+    expect(find.text('Rp 438.000'), findsNWidgets(2));
+    expect(find.text('OUT PER MONTH'), findsOneWidget);
     expect(
       find.text('Monthly · due 5th · Ask me first'),
       findsOneWidget,
