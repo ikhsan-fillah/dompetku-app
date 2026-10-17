@@ -20,6 +20,14 @@ class MerchantSpend {
   final int total;
 }
 
+class BiggestExpense {
+  const BiggestExpense({required this.name, required this.amount, required this.date});
+
+  final String name;
+  final int amount;
+  final DateTime date;
+}
+
 class BudgetSpend {
   const BudgetSpend({required this.budget, required this.used});
 
@@ -81,6 +89,15 @@ class MonthlyRecap {
     return index < 0 ? null : index + 1;
   }
 
+  /// Batas harian = total budget keseluruhan dibagi jumlah hari. Null bila tidak ada.
+  int? get dailyLimit => overallBudget <= 0 ? null : overallBudget ~/ daysInMonth;
+
+  int get daysUnderLimit {
+    final limit = dailyLimit;
+    if (limit == null) return 0;
+    return dailySpend.take(elapsedDays).where((value) => value <= limit).length;
+  }
+
   BudgetMonthStatus get budgetStatus {
     if (!hasData || overallBudget == 0) return BudgetMonthStatus.noData;
     return spent <= overallBudget ? BudgetMonthStatus.inside : BudgetMonthStatus.over;
@@ -99,9 +116,15 @@ class YearlyRecap {
     required this.months,
     required this.topCategories,
     required this.topMerchant,
+    required this.quietStreak,
+    required this.quietDays,
+    required this.biggestExpense,
   });
 
   final int year;
+  final int quietStreak;
+  final int quietDays;
+  final BiggestExpense? biggestExpense;
   final int totalSpent;
   final int totalIncome;
   final int activeMonths;
@@ -198,6 +221,11 @@ class RecapCalculationService {
             t.type == TransactionType.expense && yearRange.contains(t.transactionDate))
         .toList();
     final merchants = _merchants(yearExpenses);
+    final quiet = _quietDays(
+      list.where((t) => yearRange.contains(t.transactionDate)).toList(),
+      year,
+      now,
+    );
 
     MonthlyRecap? heaviest;
     MonthlyRecap? lightest;
@@ -217,7 +245,61 @@ class RecapCalculationService {
       months: months,
       topCategories: _categories(yearExpenses).take(5).toList(),
       topMerchant: merchants.isEmpty ? null : merchants.first,
+      quietStreak: quiet.longest,
+      quietDays: quiet.total,
+      biggestExpense: _biggest(yearExpenses),
     );
+  }
+
+  BiggestExpense? _biggest(List<TransactionModel> expenses) {
+    if (expenses.isEmpty) return null;
+    final top = expenses.reduce((a, b) => b.amount > a.amount ? b : a);
+    final merchant = top.merchantOrSource?.trim();
+    return BiggestExpense(
+      name: (merchant == null || merchant.isEmpty) ? top.title : merchant,
+      amount: top.amount,
+      date: top.transactionDate,
+    );
+  }
+
+  /// Hari tanpa pengeluaran dihitung sejak transaksi pertama tercatat di tahun
+  /// itu sampai hari terakhir periode (hari ini bila tahun berjalan).
+  ({int longest, int total}) _quietDays(
+    List<TransactionModel> yearTransactions,
+    int year,
+    DateTime now,
+  ) {
+    if (yearTransactions.isEmpty) return (longest: 0, total: 0);
+    DateTime day(DateTime v) => DateTime(v.year, v.month, v.day);
+    final first = yearTransactions
+        .map((t) => day(t.transactionDate.toLocal()))
+        .reduce((a, b) => a.isBefore(b) ? a : b);
+    final today = day(now);
+    final yearEnd = DateTime(year, 12, 31);
+    final end = today.isBefore(yearEnd) ? today : yearEnd;
+    if (first.isAfter(end)) return (longest: 0, total: 0);
+
+    final spendDays = {
+      for (final t in yearTransactions)
+        if (t.type == TransactionType.expense) day(t.transactionDate.toLocal()),
+    };
+    var longest = 0;
+    var current = 0;
+    var total = 0;
+    for (
+      var d = first;
+      !d.isAfter(end);
+      d = DateTime(d.year, d.month, d.day + 1)
+    ) {
+      if (spendDays.contains(d)) {
+        current = 0;
+      } else {
+        current++;
+        total++;
+        if (current > longest) longest = current;
+      }
+    }
+    return (longest: longest, total: total);
   }
 
   DateRange _monthRange(int year, int month) => DateRange(

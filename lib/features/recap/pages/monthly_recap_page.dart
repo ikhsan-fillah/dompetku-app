@@ -108,6 +108,12 @@ class MonthlyRecapPage extends StatelessWidget {
         foreground: ink.fg,
         child: _Merchants(recap: recap),
       ),
+      if (recap.dailyLimit != null)
+        StoryCard(
+          background: paper.bg,
+          foreground: paper.fg,
+          child: _DailyLimit(recap: recap),
+        ),
       StoryCard(
         background: paper2.bg,
         foreground: paper2.fg,
@@ -947,6 +953,73 @@ class _ClosingState extends State<_Closing> {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class _DailyLimit extends StatelessWidget {
+  const _DailyLimit({required this.recap});
+
+  final MonthlyRecap recap;
+
+  @override
+  Widget build(BuildContext context) {
+    final limit = recap.dailyLimit ?? 0;
+    final values = recap.dailySpend.take(recap.elapsedDays).toList();
+    final peak = values.fold<int>(limit, (a, b) => b > a ? b : a);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        StoryLabel('Daily limit', color: AppColors.mut),
+        const SizedBox(height: 6),
+        Text(
+          '${recap.daysUnderLimit} of ${recap.elapsedDays} days\nunder the line.',
+          style: AppText.display(size: 28, color: AppColors.ink, height: 1.1),
+        ),
+        const SizedBox(height: 18),
+        SizedBox(
+          height: 140,
+          child: LayoutBuilder(
+            builder: (context, box) {
+              final lineY = peak == 0 ? 0.0 : box.maxHeight * (1 - limit / peak);
+              return Stack(
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      for (final v in values)
+                        Expanded(
+                          child: Container(
+                            margin: const EdgeInsets.symmetric(horizontal: 1),
+                            height: peak == 0
+                                ? 2
+                                : (v / peak * box.maxHeight).clamp(2, box.maxHeight),
+                            color: v > limit ? AppColors.spend : AppColors.ink,
+                          ),
+                        ),
+                    ],
+                  ),
+                  Positioned(
+                    left: 0,
+                    right: 0,
+                    top: lineY,
+                    child: DashedBox(
+                      color: AppColors.mut,
+                      radius: 0,
+                      child: const SizedBox(height: 1),
+                    ),
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          'Limit ${formatIdr(limit)} a day (budget ÷ days).',
+          style: AppText.body(size: 12, color: AppColors.mut),
         ),
       ],
     );

@@ -96,6 +96,11 @@ class YearlyRecapPage extends StatelessWidget {
         child: _TopMerchant(recap: recap),
       ),
       StoryCard(
+        background: paper.bg,
+        foreground: paper.fg,
+        child: _QuietStreak(recap: recap),
+      ),
+      StoryCard(
         background: paper2.bg,
         foreground: paper2.fg,
         child: _BudgetMonths(recap: recap),
@@ -500,6 +505,19 @@ class _TopMerchant extends StatelessWidget {
             'spent there this year',
             style: AppText.body(size: 12, color: AppColors.mut),
           ),
+          if (recap.biggestExpense != null) ...[
+            const SizedBox(height: 18),
+            StoryLabel('Biggest single expense', color: AppColors.mut),
+            const SizedBox(height: 4),
+            Text(
+              formatIdr(recap.biggestExpense!.amount),
+              style: AppText.display(size: 24, color: fg),
+            ),
+            Text(
+              recap.biggestExpense!.name,
+              style: AppText.body(size: 12, color: AppColors.mut),
+            ),
+          ],
         ],
       ],
     );
@@ -705,6 +723,37 @@ class _ClosingState extends State<_Closing> {
               ),
             ),
           ],
+        ),
+      ],
+    );
+  }
+}
+
+class _QuietStreak extends StatelessWidget {
+  const _QuietStreak({required this.recap});
+
+  final YearlyRecap recap;
+
+  @override
+  Widget build(BuildContext context) {
+    final fg = AppColors.ink;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        StoryLabel('Quiet streak', color: AppColors.mut),
+        const SizedBox(height: 6),
+        Text(
+          '${recap.quietStreak}',
+          style: AppText.display(size: 72, color: fg, height: 1),
+        ),
+        Text(
+          'days in a row without spending.',
+          style: AppText.body(size: 13, color: AppColors.ink2),
+        ),
+        const SizedBox(height: 18),
+        Text(
+          '${recap.quietDays} no-spend days since your first entry.',
+          style: AppText.body(size: 12, color: AppColors.mut),
         ),
       ],
     );

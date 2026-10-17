@@ -36,6 +36,7 @@ BudgetModel _budget({int? categoryId, required int limit, required DateTime star
     );
 
 void main() {
+  _decisionTests();
   const service = RecapCalculationService(FinancialCalculationService());
   final now = DateTime(2026, 10, 17);
 
@@ -121,5 +122,118 @@ void main() {
     expect(yearly.budgetMonthsInside, 1);
     expect(yearly.net, 300000);
     expect(yearly.isSoFar, isTrue);
+  });
+}
+
+void _decisionTests() {
+  const service = RecapCalculationService(FinancialCalculationService());
+  final now = DateTime(2026, 11, 1);
+
+  group('batas harian', () {
+    test('total budget keseluruhan dibagi jumlah hari', () {
+      final recap = service.monthly(
+        [_tx(TransactionType.expense, 1000, DateTime(2026, 9, 3))],
+        year: 2026,
+        month: 9,
+        now: now,
+        budgets: [
+          _budget(
+            limit: 3000000,
+            start: DateTime(2026, 9, 1),
+            end: DateTime(2026, 9, 30),
+          ),
+        ],
+      );
+
+      expect(recap.dailyLimit, 100000);
+    });
+
+    test('tanpa budget keseluruhan batas harian null', () {
+      final recap = service.monthly(
+        [_tx(TransactionType.expense, 1000, DateTime(2026, 9, 3))],
+        year: 2026,
+        month: 9,
+        now: now,
+      );
+
+      expect(recap.dailyLimit, isNull);
+    });
+
+    test('hari di bawah batas dihitung', () {
+      final recap = service.monthly(
+        [
+          _tx(TransactionType.expense, 50000, DateTime(2026, 9, 3)),
+          _tx(TransactionType.expense, 200000, DateTime(2026, 9, 4)),
+        ],
+        year: 2026,
+        month: 9,
+        now: now,
+        budgets: [
+          _budget(
+            limit: 3000000,
+            start: DateTime(2026, 9, 1),
+            end: DateTime(2026, 9, 30),
+          ),
+        ],
+      );
+
+      expect(recap.daysUnderLimit, 29);
+    });
+  });
+
+  group('quiet streak', () {
+    test('hari tanpa catatan dihitung tanpa pengeluaran sejak transaksi pertama', () {
+      final yearly = service.yearly(
+        [
+          _tx(TransactionType.expense, 1000, DateTime(2026, 9, 1)),
+          _tx(TransactionType.expense, 1000, DateTime(2026, 9, 10)),
+        ],
+        year: 2026,
+        now: DateTime(2026, 9, 15),
+      );
+
+      expect(yearly.quietStreak, 8);
+      expect(yearly.quietDays, 13);
+    });
+
+    test('hari sebelum transaksi pertama tidak dihitung', () {
+      final yearly = service.yearly(
+        [_tx(TransactionType.expense, 1000, DateTime(2026, 6, 1))],
+        year: 2026,
+        now: DateTime(2026, 6, 4),
+      );
+
+      expect(yearly.quietDays, 3);
+    });
+
+    test('tahun tanpa transaksi punya streak nol', () {
+      final yearly = service.yearly(const [], year: 2026, now: DateTime(2026, 6, 4));
+
+      expect(yearly.quietStreak, 0);
+      expect(yearly.quietDays, 0);
+    });
+  });
+
+  group('pengeluaran tunggal terbesar', () {
+    test('mengambil transaksi expense terbesar di tahun itu', () {
+      final yearly = service.yearly(
+        [
+          _tx(TransactionType.expense, 1000, DateTime(2026, 2, 1), merchant: 'A'),
+          _tx(TransactionType.expense, 9000, DateTime(2026, 5, 1), merchant: 'B'),
+          _tx(TransactionType.income, 99999, DateTime(2026, 5, 2)),
+        ],
+        year: 2026,
+        now: now,
+      );
+
+      expect(yearly.biggestExpense!.amount, 9000);
+      expect(yearly.biggestExpense!.name, 'B');
+    });
+
+    test('tanpa pengeluaran hasilnya null', () {
+      final yearly = service.yearly(const [], year: 2026, now: now);
+
+      expect(yearly.biggestExpense, isNull);
+    });
   });
 }
