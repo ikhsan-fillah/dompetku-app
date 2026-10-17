@@ -58,3 +58,18 @@ Hasil APK: `build\app\outputs\flutter-apk\app-release.apk`.
 - Buat AAB untuk Play Store setelah fitur final.
 - Naikkan `version` di `pubspec.yaml` setiap rilis (`versionCode` harus selalu naik).
 - Pertimbangkan ubah keystore ke format PKCS12 (saran dari keytool, tidak wajib).
+
+### Tally v4 (Oktober 2026)
+
+- Nama tampilan Tally. Application ID tetap `com.fillah.dompetku`.
+- PIN cadangan opsional (hash + salt, secure storage), lockout dibagi dengan biometrik.
+- Skema database v3: tabel `recurring_rules` dan `drafts`. Migrasi diuji dari v2 dengan data.
+- Recurring: tambah, aktif/nonaktif, hapus (geser). Mode auto membuat transaksi, mode ask membuat draft.
+- Drafts: Confirm, Edit, Dismiss, Confirm all, banner Beranda. Dismiss tidak menghapus baris (dedupe_key).
+- Auto-detect Android: parser BCA/GoPay/ShopeePay/DANA, OTP dan promo diabaikan, teks mentah tidak disimpan.
+- Recap bulanan dan tahunan, halaman Recaps, teks Beranda tanggal 1-3.
+
+Belum diputuskan (DOMPETKU_TALLY_DESIGN_V4_DEV.md §13): batas harian recap, quiet streak,
+total recurring per bulan, Forgot PIN, biggest single expense.
+
+Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelumnya (tanpa uninstall).
