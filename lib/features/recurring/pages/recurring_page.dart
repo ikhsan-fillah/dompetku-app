@@ -63,10 +63,43 @@ class RecurringPage extends StatelessWidget {
             return ListView.builder(
               padding: const EdgeInsets.all(16),
               itemCount: rules.length,
-              itemBuilder: (context, index) => _RuleTile(
-                rule: rules[index],
-                onToggle: (value) =>
-                    controller.setActive(rules[index].id!, value),
+              itemBuilder: (context, index) => Dismissible(
+                key: ValueKey(rules[index].id),
+                direction: DismissDirection.endToStart,
+                confirmDismiss: (_) async =>
+                    await showDialog<bool>(
+                      context: context,
+                      builder: (dialogContext) => AlertDialog(
+                        title: const Text('Delete recurring?'),
+                        content: const Text(
+                          'Past transactions stay. Only the schedule is removed.',
+                        ),
+                        actions: [
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(false),
+                            child: const Text('Cancel'),
+                          ),
+                          TextButton(
+                            onPressed: () =>
+                                Navigator.of(dialogContext).pop(true),
+                            child: const Text('Delete'),
+                          ),
+                        ],
+                      ),
+                    ) ??
+                    false,
+                onDismissed: (_) => controller.remove(rules[index].id!),
+                background: Container(
+                  alignment: Alignment.centerRight,
+                  padding: const EdgeInsets.only(right: 20),
+                  child: const Icon(LucideIcons.trash2, color: AppColors.spend),
+                ),
+                child: _RuleTile(
+                  rule: rules[index],
+                  onToggle: (value) =>
+                      controller.setActive(rules[index].id!, value),
+                ),
               ),
             );
         }

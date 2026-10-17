@@ -64,6 +64,21 @@ class DraftsPage extends StatelessWidget {
             return ListView(
               padding: const EdgeInsets.all(16),
               children: [
+                if (items.length > 1)
+                  Align(
+                    alignment: Alignment.centerRight,
+                    child: TextButton(
+                      onPressed: controller.confirmAll,
+                      child: Text(
+                        'Confirm all',
+                        style: AppText.body(
+                          size: 12.5,
+                          weight: FontWeight.w700,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                    ),
+                  ),
                 for (final draft in items) _DraftCard(draft: draft),
                 const SizedBox(height: 12),
                 Text(
@@ -83,6 +98,50 @@ class _DraftCard extends StatelessWidget {
   const _DraftCard({required this.draft});
 
   final DraftModel draft;
+
+  Future<void> _edit(BuildContext context, DraftController controller) async {
+    final amount = TextEditingController(text: draft.amount.toString());
+    final name = TextEditingController(text: draft.merchant ?? '');
+    final ok = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Edit draft'),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: name,
+              decoration: const InputDecoration(labelText: 'Name'),
+            ),
+            TextField(
+              controller: amount,
+              keyboardType: TextInputType.number,
+              decoration: const InputDecoration(
+                labelText: 'Amount (IDR)',
+                prefixText: 'Rp ',
+              ),
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(false),
+            child: const Text('Cancel'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(dialogContext).pop(true),
+            child: const Text('Save & confirm'),
+          ),
+        ],
+      ),
+    );
+    final value = int.tryParse(amount.text.replaceAll(RegExp(r'[^0-9]'), ''));
+    final merchant = name.text;
+    amount.dispose();
+    name.dispose();
+    if (ok != true || value == null || value <= 0) return;
+    await controller.editAndConfirm(draft, amount: value, merchant: merchant);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -117,6 +176,13 @@ class _DraftCard extends StatelessWidget {
                   label: 'Confirm',
                   expand: true,
                   onPressed: () => controller.confirm(draft),
+                ),
+              ),
+              TextButton(
+                onPressed: () => _edit(context, controller),
+                child: Text(
+                  'Edit',
+                  style: AppText.body(size: 12.5, color: AppColors.ink),
                 ),
               ),
               TextButton(

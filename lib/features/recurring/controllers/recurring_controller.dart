@@ -36,6 +36,17 @@ class RecurringController extends GetxController {
     }
   }
 
+  Future<bool> remove(int id) async {
+    try {
+      await _store.delete(id);
+      await load();
+      return true;
+    } catch (_) {
+      state.value = const ResourceState.error('Gagal menghapus recurring.');
+      return false;
+    }
+  }
+
   Future<bool> setActive(int id, bool active) async {
     try {
       await _store.setActive(id, active);
