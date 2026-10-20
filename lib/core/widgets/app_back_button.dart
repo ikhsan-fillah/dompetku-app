@@ -9,13 +9,10 @@ class AppBackButton extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Padding(
-      padding: const EdgeInsets.only(left: 8),
-      child: AppBarIconButton(
-        tooltip: 'Kembali',
-        onPressed: Get.back,
-        icon: LucideIcons.arrowLeft,
-      ),
+    return AppBarIconButton(
+      tooltip: 'Kembali',
+      onPressed: Get.back,
+      icon: LucideIcons.arrowLeft,
     );
   }
 }

@@ -9,7 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_bar_icon_button.dart';
-import '../../../core/widgets/app_back_button.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/category_icon_box.dart';
 import '../controllers/category_controller.dart';
@@ -240,9 +240,7 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                   icon: Icon(
                     LucideIcons.star,
                     size: 20,
-                    color: category.isFavorite
-                        ? AppColors.ink
-                        : AppColors.line,
+                    color: category.isFavorite ? AppColors.ink : AppColors.line,
                   ),
                 ),
                 PopupMenuButton<String>(
@@ -278,32 +276,20 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.fromLTRB(
-            AppSpacing.page,
-            12,
-            AppSpacing.page,
-            0,
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  const AppBackButton(),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Text('Kategori', style: AppText.display(size: 26)),
-                  ),
-                  AppBarIconButton(
-                    tooltip: 'Tambah kategori',
-                    icon: LucideIcons.plus,
-                    onPressed: () => _showAddOrEditForm(),
-                  ),
-                ],
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            AppTitleBar(
+              title: 'Kategori',
+              action: AppBarIconButton(
+                tooltip: 'Tambah kategori',
+                icon: LucideIcons.plus,
+                onPressed: () => _showAddOrEditForm(),
               ),
-              const SizedBox(height: 14),
-              Obx(
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
+              child: Obx(
                 () => SizedBox(
                   width: double.infinity,
                   child: SegmentedButton<TransactionType>(
@@ -325,10 +311,17 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                   ),
                 ),
               ),
-              const SizedBox(height: 14),
-              Expanded(child: Obx(_buildList)),
-            ],
-          ),
+            ),
+            const SizedBox(height: 14),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: AppSpacing.page,
+                ),
+                child: Obx(_buildList),
+              ),
+            ),
+          ],
         ),
       ),
     );

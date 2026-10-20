@@ -9,7 +9,7 @@ import '../../../core/theme/app_text.dart';
 import '../../../core/utils/date_label.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_back_button.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/category_icon_box.dart';
 import '../../transaction/models/transaction_model.dart';
@@ -54,49 +54,33 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
       body: SafeArea(
         child: Column(
           children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(
-                AppSpacing.page,
-                12,
-                AppSpacing.page,
-                0,
+            AppTitleBar(
+              titleWidget: Obx(
+                () => Text(
+                  controller.category.value?.name ?? 'Detail kategori',
+                  style: AppText.display(size: 26),
+                ),
               ),
-              child: Row(
-                children: [
-                  const AppBackButton(),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Obx(
-                      () => Text(
-                        controller.category.value?.name ?? 'Detail kategori',
-                        style: AppText.display(size: 26),
-                      ),
+              action: Obx(() {
+                final selectedSort = controller.sort.value;
+                return PopupMenuButton<CategoryTransactionSort>(
+                  tooltip: 'Urutkan transaksi',
+                  icon: const Icon(LucideIcons.arrowUpDown, size: 20),
+                  onSelected: controller.setSort,
+                  itemBuilder: (context) => [
+                    CheckedPopupMenuItem(
+                      value: CategoryTransactionSort.newest,
+                      checked: selectedSort == CategoryTransactionSort.newest,
+                      child: const Text('Tanggal terbaru'),
                     ),
-                  ),
-                  Obx(() {
-                    final selectedSort = controller.sort.value;
-                    return PopupMenuButton<CategoryTransactionSort>(
-                      tooltip: 'Urutkan transaksi',
-                      icon: const Icon(LucideIcons.arrowUpDown, size: 20),
-                      onSelected: controller.setSort,
-                      itemBuilder: (context) => [
-                        CheckedPopupMenuItem(
-                          value: CategoryTransactionSort.newest,
-                          checked:
-                              selectedSort == CategoryTransactionSort.newest,
-                          child: const Text('Tanggal terbaru'),
-                        ),
-                        CheckedPopupMenuItem(
-                          value: CategoryTransactionSort.oldest,
-                          checked:
-                              selectedSort == CategoryTransactionSort.oldest,
-                          child: const Text('Tanggal terlama'),
-                        ),
-                      ],
-                    );
-                  }),
-                ],
-              ),
+                    CheckedPopupMenuItem(
+                      value: CategoryTransactionSort.oldest,
+                      checked: selectedSort == CategoryTransactionSort.oldest,
+                      child: const Text('Tanggal terlama'),
+                    ),
+                  ],
+                );
+              }),
             ),
             Expanded(
               child: Obx(() {
@@ -187,10 +171,10 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
           children: [
             Padding(
               padding: const EdgeInsets.only(top: 18, bottom: 7, left: 2),
-                child: Text(
-                  _dateLabel(group.date),
-                  style: AppText.monoLabel(color: AppColors.mut),
-                ),
+              child: Text(
+                _dateLabel(group.date),
+                style: AppText.monoLabel(color: AppColors.mut),
+              ),
             ),
             for (final transaction in group.transactions)
               _TransactionRow(transaction: transaction),

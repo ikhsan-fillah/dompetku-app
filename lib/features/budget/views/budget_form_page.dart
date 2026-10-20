@@ -6,7 +6,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
-import '../../../core/widgets/app_bar_icon_button.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../../../core/widgets/app_button.dart';
 import '../controllers/budget_form_controller.dart';
 import '../models/budget_model.dart';
@@ -122,11 +122,7 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
         child: Row(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              icon,
-              size: 16,
-              color: active ? AppColors.ink : AppColors.mut,
-            ),
+            Icon(icon, size: 16, color: active ? AppColors.ink : AppColors.mut),
             const SizedBox(width: 6),
             Text(
               label,
@@ -221,139 +217,134 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.paper,
-    appBar: AppBar(
-      backgroundColor: AppColors.paper,
-      surfaceTintColor: Colors.transparent,
-      elevation: 0,
-      centerTitle: false,
-      leadingWidth: 64,
-      leading: Padding(
-        padding: const EdgeInsets.only(left: 16, top: 8, bottom: 8),
-        child: AppBarIconButton(
-          tooltip: 'Kembali',
-          onPressed: () => Get.back(),
-          icon: LucideIcons.arrowLeft,
-        ),
-      ),
-      title: Text(
-        widget.budget == null ? 'Buat anggaran' : 'Edit anggaran',
-        style: AppText.display(size: 26),
-      ),
-    ),
-    body: Obx(() {
-      final selected =
-          controller.availableCategories.any(
-            (c) => c.id == controller.categoryId.value,
-          )
-          ? controller.categoryId.value
-          : null;
-      final overall = controller.isOverall;
-      final startDate = controller.startDate.value;
-      final endDate = controller.endDate.value;
-      final error = controller.error.value;
-      final saving = controller.saving.value;
-      return ListView(
-        padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+    body: SafeArea(
+      child: Column(
         children: [
-          TextField(
-            controller: _name,
-            onChanged: (value) => controller.name.value = value,
-            style: AppText.body(size: 13.5),
-            decoration: _decoration('Nama anggaran', LucideIcons.pencilLine),
+          AppTitleBar(
+            title: widget.budget == null ? 'Buat anggaran' : 'Edit anggaran',
           ),
-          const SizedBox(height: 16),
-          TextField(
-            controller: _amount,
-            onChanged: (value) => controller.amountDigits.value = value,
-            keyboardType: TextInputType.number,
-            inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-            style: AppText.mono(size: 13.5),
-            decoration: _decoration(
-              'Batas anggaran (Rp)',
-              LucideIcons.banknote,
-            ),
-          ),
-          const SizedBox(height: 20),
-          _sectionLabel('Jenis anggaran'),
-          Container(
-            padding: const EdgeInsets.all(3),
-            decoration: BoxDecoration(
-              color: AppColors.paper2,
-              borderRadius: BorderRadius.circular(AppRadius.field),
-            ),
-            child: Row(
-              children: [
-                _segment(
-                  label: 'Keseluruhan',
-                  icon: LucideIcons.wallet,
-                  active: overall,
-                  onTap: () => controller.setOverall(true),
-                ),
-                _segment(
-                  label: 'Kategori',
-                  icon: LucideIcons.layers,
-                  active: !overall,
-                  onTap: () => controller.setOverall(false),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 8),
-          Padding(
-            padding: const EdgeInsets.only(left: 2),
-            child: Text(
-              overall
-                  ? 'Mencakup semua pengeluaran'
-                  : 'Hanya pengeluaran pada kategori terpilih',
-              style: AppText.body(size: 11, color: AppColors.mut),
-            ),
-          ),
-          if (!overall) ...[
-            const SizedBox(height: 16),
-            DropdownButtonFormField<int>(
-              key: ValueKey(selected),
-              initialValue: selected,
-              borderRadius: BorderRadius.circular(AppRadius.card),
-              dropdownColor: AppColors.card,
-              style: AppText.body(size: 13.5),
-              decoration: _decoration(
-                'Kategori pengeluaran',
-                LucideIcons.tag,
-              ),
-              items: [
-                for (final category in controller.availableCategories)
-                  DropdownMenuItem(
-                    value: category.id,
-                    child: Text(category.name),
+          Expanded(
+            child: Obx(() {
+              final selected =
+                  controller.availableCategories.any(
+                    (c) => c.id == controller.categoryId.value,
+                  )
+                  ? controller.categoryId.value
+                  : null;
+              final overall = controller.isOverall;
+              final startDate = controller.startDate.value;
+              final endDate = controller.endDate.value;
+              final error = controller.error.value;
+              final saving = controller.saving.value;
+              return ListView(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+                children: [
+                  TextField(
+                    controller: _name,
+                    onChanged: (value) => controller.name.value = value,
+                    style: AppText.body(size: 13.5),
+                    decoration: _decoration(
+                      'Nama anggaran',
+                      LucideIcons.pencilLine,
+                    ),
                   ),
-              ],
-              onChanged: (value) => controller.categoryId.value = value,
-            ),
-          ],
-          const SizedBox(height: 20),
-          _sectionLabel('Periode'),
-          Row(
-            children: [
-              _dateCard(label: 'Mulai', value: startDate, start: true),
-              const SizedBox(width: 12),
-              _dateCard(label: 'Selesai', value: endDate, start: false),
-            ],
-          ),
-          if (error != null) _errorPanel(error),
-          const SizedBox(height: 28),
-          AppButton(
-            label: 'Simpan',
-            loading: saving,
-            onPressed: saving
-                ? null
-                : () async {
-                    if (await controller.save() && mounted) {
-                      Get.back(result: true);
-                    }
-                  },
+                  const SizedBox(height: 16),
+                  TextField(
+                    controller: _amount,
+                    onChanged: (value) => controller.amountDigits.value = value,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                    style: AppText.mono(size: 13.5),
+                    decoration: _decoration(
+                      'Batas anggaran (Rp)',
+                      LucideIcons.banknote,
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  _sectionLabel('Jenis anggaran'),
+                  Container(
+                    padding: const EdgeInsets.all(3),
+                    decoration: BoxDecoration(
+                      color: AppColors.paper2,
+                      borderRadius: BorderRadius.circular(AppRadius.field),
+                    ),
+                    child: Row(
+                      children: [
+                        _segment(
+                          label: 'Keseluruhan',
+                          icon: LucideIcons.wallet,
+                          active: overall,
+                          onTap: () => controller.setOverall(true),
+                        ),
+                        _segment(
+                          label: 'Kategori',
+                          icon: LucideIcons.layers,
+                          active: !overall,
+                          onTap: () => controller.setOverall(false),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  Padding(
+                    padding: const EdgeInsets.only(left: 2),
+                    child: Text(
+                      overall
+                          ? 'Mencakup semua pengeluaran'
+                          : 'Hanya pengeluaran pada kategori terpilih',
+                      style: AppText.body(size: 11, color: AppColors.mut),
+                    ),
+                  ),
+                  if (!overall) ...[
+                    const SizedBox(height: 16),
+                    DropdownButtonFormField<int>(
+                      key: ValueKey(selected),
+                      initialValue: selected,
+                      borderRadius: BorderRadius.circular(AppRadius.card),
+                      dropdownColor: AppColors.card,
+                      style: AppText.body(size: 13.5),
+                      decoration: _decoration(
+                        'Kategori pengeluaran',
+                        LucideIcons.tag,
+                      ),
+                      items: [
+                        for (final category in controller.availableCategories)
+                          DropdownMenuItem(
+                            value: category.id,
+                            child: Text(category.name),
+                          ),
+                      ],
+                      onChanged: (value) => controller.categoryId.value = value,
+                    ),
+                  ],
+                  const SizedBox(height: 20),
+                  _sectionLabel('Periode'),
+                  Row(
+                    children: [
+                      _dateCard(label: 'Mulai', value: startDate, start: true),
+                      const SizedBox(width: 12),
+                      _dateCard(label: 'Selesai', value: endDate, start: false),
+                    ],
+                  ),
+                  if (error != null) _errorPanel(error),
+                  const SizedBox(height: 28),
+                  AppButton(
+                    label: 'Simpan',
+                    loading: saving,
+                    onPressed: saving
+                        ? null
+                        : () async {
+                            if (await controller.save() && mounted) {
+                              Get.back(result: true);
+                            }
+                          },
+                  ),
+                ],
+              );
+            }),
           ),
         ],
-      );
-    }),
+      ),
+    ),
   );
 }

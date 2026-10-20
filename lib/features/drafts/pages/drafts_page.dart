@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../controllers/draft_controller.dart';
 import '../models/draft_model.dart';
 
@@ -19,12 +20,11 @@ class DraftsPage extends StatelessWidget {
     final controller = Get.find<DraftController>();
     return Scaffold(
       backgroundColor: AppColors.paper,
-      appBar: AppBar(
-        backgroundColor: AppColors.paper,
-        elevation: 0,
-        title: Text('Drafts', style: AppText.display(size: 26)),
-      ),
-      body: Obx(() {
+      body: SafeArea(
+        child: Column(
+          children: [
+            const AppTitleBar(title: 'Drafts'),
+            Expanded(child: Obx(() {
         final state = controller.state.value;
         switch (state.status) {
           case ResourceStatus.idle:
@@ -89,7 +89,10 @@ class DraftsPage extends StatelessWidget {
               ],
             );
         }
-      }),
+      })),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -98,6 +101,25 @@ class _DraftCard extends StatelessWidget {
   const _DraftCard({required this.draft});
 
   final DraftModel draft;
+
+  Future<void> _confirm(
+    BuildContext context,
+    DraftController controller,
+  ) async {
+    var target = draft;
+    if (draft.categoryId == null) {
+      final categoryId = await _pickCategory(context, controller);
+      if (categoryId == null) return;
+      target = draft.copyWith(categoryId: categoryId);
+    }
+    final ok = await controller.confirm(target);
+    if (!ok && context.mounted) {
+      final message = controller.error.value ?? 'Failed to confirm. Try again.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
 
   Future<void> _edit(BuildContext context, DraftController controller) async {
     final amount = TextEditingController(text: draft.amount.toString());
@@ -113,6 +135,7 @@ class _DraftCard extends StatelessWidget {
               controller: name,
               decoration: const InputDecoration(labelText: 'Name'),
             ),
+            const SizedBox(height: 12),
             TextField(
               controller: amount,
               keyboardType: TextInputType.number,
@@ -123,14 +146,24 @@ class _DraftCard extends StatelessWidget {
             ),
           ],
         ),
+        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Cancel'),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: const Text('Save & confirm'),
+          Row(
+            children: [
+              Expanded(
+                child: OutlinedButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: FilledButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Save & confirm'),
+                ),
+              ),
+            ],
           ),
         ],
       ),
@@ -140,7 +173,52 @@ class _DraftCard extends StatelessWidget {
     amount.dispose();
     name.dispose();
     if (ok != true || value == null || value <= 0) return;
-    await controller.editAndConfirm(draft, amount: value, merchant: merchant);
+    if (!context.mounted) return;
+    var target = draft;
+    if (draft.categoryId == null) {
+      final categoryId = await _pickCategory(context, controller);
+      if (categoryId == null) return;
+      target = draft.copyWith(categoryId: categoryId);
+    }
+    final saved = await controller.editAndConfirm(
+      target,
+      amount: value,
+      merchant: merchant,
+    );
+    if (!saved && context.mounted) {
+      final message = controller.error.value ?? 'Failed to save changes.';
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text(message)));
+    }
+  }
+
+  Future<int?> _pickCategory(
+    BuildContext context,
+    DraftController controller,
+  ) async {
+    final categories = await controller.expenseCategories(kind: draft.kind);
+    if (!context.mounted) return null;
+    return showModalBottomSheet<int>(
+      context: context,
+      backgroundColor: AppColors.card,
+      builder: (sheetContext) => SafeArea(
+        child: ListView(
+          shrinkWrap: true,
+          padding: const EdgeInsets.all(16),
+          children: [
+            Text('Pilih kategori', style: AppText.display(size: 20)),
+            const SizedBox(height: 8),
+            for (final category in categories)
+              ListTile(
+                contentPadding: EdgeInsets.zero,
+                title: Text(category.name),
+                onTap: () => Navigator.of(sheetContext).pop(category.id),
+              ),
+          ],
+        ),
+      ),
+    );
   }
 
   @override
@@ -158,7 +236,10 @@ class _DraftCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(draft.source, style: AppText.body(size: 11, color: AppColors.mut)),
+          Text(
+            draft.source,
+            style: AppText.body(size: 11, color: AppColors.mut),
+          ),
           const SizedBox(height: 4),
           Text(
             '$sign ${formatIdr(draft.amount)}',
@@ -175,7 +256,7 @@ class _DraftCard extends StatelessWidget {
                 child: AppButton(
                   label: 'Confirm',
                   expand: true,
-                  onPressed: () => controller.confirm(draft),
+                  onPressed: () => _confirm(context, controller),
                 ),
               ),
               TextButton(

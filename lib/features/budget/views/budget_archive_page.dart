@@ -6,6 +6,7 @@ import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/category_icon_box.dart';
 import '../controllers/budget_controller.dart';
@@ -58,73 +59,80 @@ class BudgetArchivePage extends GetView<BudgetController> {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: AppColors.paper,
-    appBar: AppBar(
-      title: Text('Anggaran terarsip', style: AppText.display(size: 26)),
-      backgroundColor: AppColors.paper,
-      surfaceTintColor: Colors.transparent,
-    ),
-    body: Obx(() {
-      final current = controller.archived.value;
-      return switch (current.status) {
-        ResourceStatus.idle || ResourceStatus.loading => const Center(
-          child: CircularProgressIndicator(),
-        ),
-        ResourceStatus.error => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                current.message ?? 'Gagal memuat anggaran terarsip.',
-                style: AppText.body(color: AppColors.ink2),
-              ),
-              TextButton(
-                onPressed: controller.loadArchived,
-                child: const Text('Coba lagi'),
-              ),
-            ],
-          ),
-        ),
-        ResourceStatus.empty => Center(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Container(
-                width: 64,
-                height: 64,
-                decoration: BoxDecoration(
-                  color: AppColors.paper2,
-                  borderRadius: BorderRadius.circular(AppRadius.hero - 2),
+    body: SafeArea(
+      child: Column(
+        children: [
+          const AppTitleBar(title: 'Anggaran terarsip'),
+          Expanded(
+            child: Obx(() {
+              final current = controller.archived.value;
+              return switch (current.status) {
+                ResourceStatus.idle || ResourceStatus.loading => const Center(
+                  child: CircularProgressIndicator(),
                 ),
-                child: const Icon(
-                  LucideIcons.archive,
-                  size: 28,
+                ResourceStatus.error => Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        current.message ?? 'Gagal memuat anggaran terarsip.',
+                        style: AppText.body(color: AppColors.ink2),
+                      ),
+                      TextButton(
+                        onPressed: controller.loadArchived,
+                        child: const Text('Coba lagi'),
+                      ),
+                    ],
+                  ),
+                ),
+                ResourceStatus.empty => Center(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: AppColors.paper2,
+                          borderRadius: BorderRadius.circular(
+                            AppRadius.hero - 2,
+                          ),
+                        ),
+                        child: const Icon(
+                          LucideIcons.archive,
+                          size: 28,
+                          color: AppColors.ink,
+                        ),
+                      ),
+                      const SizedBox(height: 12),
+                      Text(
+                        'Tidak ada anggaran terarsip',
+                        style: AppText.body(size: 14, weight: FontWeight.w700),
+                      ),
+                    ],
+                  ),
+                ),
+                ResourceStatus.success => RefreshIndicator(
                   color: AppColors.ink,
+                  onRefresh: controller.loadArchived,
+                  child: ListView.separated(
+                    padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                    itemCount: current.data!.length,
+                    separatorBuilder: (_, _) =>
+                        const SizedBox(height: AppSpacing.gap),
+                    itemBuilder: (_, index) => _ArchivedCard(
+                      item: current.data![index],
+                      money: _money,
+                      onRestore: () => _confirmRestore(current.data![index]),
+                    ),
+                  ),
                 ),
-              ),
-              const SizedBox(height: 12),
-              Text(
-                'Tidak ada anggaran terarsip',
-                style: AppText.body(size: 14, weight: FontWeight.w700),
-              ),
-            ],
+              };
+            }),
           ),
-        ),
-        ResourceStatus.success => RefreshIndicator(
-          color: AppColors.ink,
-          onRefresh: controller.loadArchived,
-          child: ListView.separated(
-            padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-            itemCount: current.data!.length,
-            separatorBuilder: (_, _) => const SizedBox(height: AppSpacing.gap),
-            itemBuilder: (_, index) => _ArchivedCard(
-              item: current.data![index],
-              money: _money,
-              onRestore: () => _confirmRestore(current.data![index]),
-            ),
-          ),
-        ),
-      };
-    }),
+        ],
+      ),
+    ),
   );
 }
 

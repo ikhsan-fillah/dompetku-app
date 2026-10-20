@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../../../core/theme/category_style.dart';
 import '../../../core/utils/budget_status.dart';
 import '../../../core/utils/formatter.dart';
@@ -28,14 +29,19 @@ class MonthlyRecapPage extends StatelessWidget {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
             backgroundColor: AppColors.ink,
-            body: Center(child: CircularProgressIndicator(color: AppColors.paper)),
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.paper),
+            ),
           );
         }
         if (snapshot.hasError || !snapshot.hasData) {
           return Scaffold(
             backgroundColor: AppColors.ink,
             body: Center(
-              child: Text('Gagal memuat recap.', style: AppText.body(color: AppColors.paper)),
+              child: Text(
+                'Gagal memuat recap.',
+                style: AppText.body(color: AppColors.paper),
+              ),
             ),
           );
         }
@@ -50,11 +56,19 @@ class MonthlyRecapPage extends StatelessWidget {
         if (!recap.hasData) {
           return Scaffold(
             backgroundColor: AppColors.ink,
-            appBar: AppBar(backgroundColor: AppColors.ink, foregroundColor: AppColors.paper),
-            body: Center(
-              child: Text(
-                'Belum ada transaksi di bulan ini.',
-                style: AppText.body(color: AppColors.paper),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  const AppTitleBar(title: 'Recap'),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'Belum ada transaksi di bulan ini.',
+                        style: AppText.body(color: AppColors.paper),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
@@ -101,7 +115,13 @@ class MonthlyRecapPage extends StatelessWidget {
       StoryCard(
         background: ink.bg,
         foreground: ink.fg,
-        child: _Receipt(recap: recap, data: data, name: name, short: short, nextName: nextName),
+        child: _Receipt(
+          recap: recap,
+          data: data,
+          name: name,
+          short: short,
+          nextName: nextName,
+        ),
       ),
       StoryCard(
         background: ink.bg,
@@ -243,7 +263,12 @@ class _Total extends StatelessWidget {
         ],
         const SizedBox(height: 34),
         if (prev != null) ...[
-          _Bar(label: prevName, value: prev, max: _max(prev, recap.spent), color: AppColors.mut),
+          _Bar(
+            label: prevName,
+            value: prev,
+            max: _max(prev, recap.spent),
+            color: AppColors.mut,
+          ),
           const SizedBox(height: 14),
         ],
         _Bar(
@@ -301,7 +326,11 @@ class _Bar extends StatelessWidget {
 }
 
 class _Heatmap extends StatelessWidget {
-  const _Heatmap({required this.recap, required this.name, required this.short});
+  const _Heatmap({
+    required this.recap,
+    required this.name,
+    required this.short,
+  });
 
   final MonthlyRecap recap;
   final String name;
@@ -366,7 +395,9 @@ class _Heatmap extends StatelessWidget {
               child: _Stat(
                 label: 'Priciest day',
                 value: heaviest == null ? '—' : '$heaviest $short',
-                sub: heaviest == null ? '' : formatIdr(recap.dailySpend[heaviest - 1]),
+                sub: heaviest == null
+                    ? ''
+                    : formatIdr(recap.dailySpend[heaviest - 1]),
               ),
             ),
             Expanded(
@@ -391,22 +422,29 @@ class _Heatmap extends StatelessWidget {
   }) {
     if (future) {
       return Center(
-        child: Text('$day', style: AppText.mono(size: 11, color: AppColors.line)),
+        child: Text(
+          '$day',
+          style: AppText.mono(size: 11, color: AppColors.line),
+        ),
       );
     }
     final ratio = maxDay == 0 ? 0.0 : value / maxDay;
     final alpha = ratio < 0.33
         ? 0.14
         : ratio < 0.66
-            ? 0.34
-            : ratio < 0.9
-                ? 0.6
-                : 0.92;
+        ? 0.34
+        : ratio < 0.9
+        ? 0.6
+        : 0.92;
     final cell = Container(
       decoration: BoxDecoration(
-        color: value == 0 ? Colors.transparent : AppColors.ink.withValues(alpha: alpha),
+        color: value == 0
+            ? Colors.transparent
+            : AppColors.ink.withValues(alpha: alpha),
         borderRadius: BorderRadius.circular(5),
-        border: isHeaviest ? Border.all(color: AppColors.spend, width: 2) : null,
+        border: isHeaviest
+            ? Border.all(color: AppColors.spend, width: 2)
+            : null,
       ),
       alignment: Alignment.center,
       child: Text(
@@ -456,7 +494,10 @@ class _TopCategory extends StatelessWidget {
     final fg = AppColors.paper;
     if (recap.topCategories.isEmpty) {
       return Center(
-        child: Text('Tidak ada pengeluaran bulan ini.', style: AppText.body(color: fg)),
+        child: Text(
+          'Tidak ada pengeluaran bulan ini.',
+          style: AppText.body(color: fg),
+        ),
       );
     }
     final top = recap.topCategories.first;
@@ -591,7 +632,10 @@ class _Receipt extends StatelessWidget {
             children: [
               Text(
                 'TALLY · MONTHLY',
-                style: mono.copyWith(fontWeight: FontWeight.w700, letterSpacing: 1.4),
+                style: mono.copyWith(
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.4,
+                ),
               ),
               Text('01/$mm – $lastDay/$mm/${recap.year}', style: mono),
               _Dashes(),
@@ -634,7 +678,9 @@ class _Row extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 2),
       child: Row(
         children: [
-          Expanded(child: Text(left, style: style, overflow: TextOverflow.ellipsis)),
+          Expanded(
+            child: Text(left, style: style, overflow: TextOverflow.ellipsis),
+          ),
           Text(right, style: style),
         ],
       ),
@@ -769,7 +815,10 @@ class _MerchantRow extends StatelessWidget {
     final fg = AppColors.paper;
     return Row(
       children: [
-        Text('$rank', style: AppText.mono(size: 13, color: fg.withValues(alpha: 0.6))),
+        Text(
+          '$rank',
+          style: AppText.mono(size: 13, color: fg.withValues(alpha: 0.6)),
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -894,7 +943,7 @@ class _ClosingState extends State<_Closing> {
           child: RepaintBoundary(
             key: _shareKey,
             child: Container(
-              color: AppColors.ink,
+              color: AppColors.earn,
               padding: const EdgeInsets.only(bottom: 12),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -948,7 +997,8 @@ class _ClosingState extends State<_Closing> {
                   side: BorderSide(color: fg),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                onPressed: () => Get.off(() => YearlyRecapPage(year: widget.year)),
+                onPressed: () =>
+                    Get.off(() => YearlyRecapPage(year: widget.year)),
                 child: Text('Watch ${widget.year} recap'),
               ),
             ),
@@ -983,7 +1033,9 @@ class _DailyLimit extends StatelessWidget {
           height: 140,
           child: LayoutBuilder(
             builder: (context, box) {
-              final lineY = peak == 0 ? 0.0 : box.maxHeight * (1 - limit / peak);
+              final lineY = peak == 0
+                  ? 0.0
+                  : box.maxHeight * (1 - limit / peak);
               return Stack(
                 children: [
                   Row(
@@ -995,7 +1047,10 @@ class _DailyLimit extends StatelessWidget {
                             margin: const EdgeInsets.symmetric(horizontal: 1),
                             height: peak == 0
                                 ? 2
-                                : (v / peak * box.maxHeight).clamp(2, box.maxHeight),
+                                : (v / peak * box.maxHeight).clamp(
+                                    2,
+                                    box.maxHeight,
+                                  ),
                             color: v > limit ? AppColors.spend : AppColors.ink,
                           ),
                         ),
