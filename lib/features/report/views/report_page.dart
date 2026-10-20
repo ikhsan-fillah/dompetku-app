@@ -7,7 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/date_range.dart';
-import '../../../core/widgets/app_back_button.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_chip.dart';
 import '../../../core/widgets/app_progress_bar.dart';
@@ -107,21 +107,7 @@ class _ReportPageState extends State<ReportPage> {
     body: SafeArea(
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-            child: Row(
-              children: [
-                const AppBackButton(),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Text(
-                    'Laporan',
-                    style: AppText.display(size: 26),
-                  ),
-                ),
-              ],
-            ),
-          ),
+          const AppTitleBar(title: 'Laporan'),
           const SizedBox(height: AppSpacing.gap),
           SizedBox(
             height: 48,
@@ -276,7 +262,9 @@ class _Summary extends StatelessWidget {
             icon: LucideIcons.chartPie,
             label: 'Sisa anggaran',
             value: money(remaining),
-            background: remaining < 0 ? AppColors.spendSoft : AppColors.earnSoft,
+            background: remaining < 0
+                ? AppColors.spendSoft
+                : AppColors.earnSoft,
             foreground: remaining < 0 ? AppColors.spend : AppColors.earn,
           ),
         ],
@@ -314,7 +302,9 @@ class _ChangeInsight extends StatelessWidget {
     final background = unchanged || decreased
         ? AppColors.earnSoft
         : AppColors.spendSoft;
-    final foreground = unchanged || decreased ? AppColors.earn : AppColors.spend;
+    final foreground = unchanged || decreased
+        ? AppColors.earn
+        : AppColors.spend;
     final icon = unchanged
         ? LucideIcons.minus
         : decreased
@@ -429,10 +419,7 @@ class _StatRow extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-              label,
-              style: AppText.body(size: 10.5, color: AppColors.mut),
-            ),
+            Text(label, style: AppText.body(size: 10.5, color: AppColors.mut)),
             Text(
               value,
               maxLines: 1,
@@ -574,10 +561,7 @@ class _StatCard extends StatelessWidget {
           child: Icon(icon, size: 18, color: foreground),
         ),
         const SizedBox(height: 12),
-        Text(
-          label,
-          style: AppText.body(size: 10.5, color: AppColors.mut),
-        ),
+        Text(label, style: AppText.body(size: 10.5, color: AppColors.mut)),
         const SizedBox(height: 4),
         Text(
           value,

@@ -8,6 +8,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/date_label.dart';
 import '../../../core/utils/formatter.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../../category/models/category_model.dart';
 import '../../category/repositories/category_repository.dart';
 import '../../transaction/models/transaction_model.dart';
@@ -16,10 +17,7 @@ import '../services/receipt_ocr_service.dart';
 
 /// Item struk untuk visualisasi kertas struk
 class ReceiptLineItem {
-  const ReceiptLineItem({
-    required this.name,
-    required this.amount,
-  });
+  const ReceiptLineItem({required this.name, required this.amount});
 
   final String name;
   final int amount;
@@ -83,7 +81,9 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
       final list = await repo.getAll();
       if (mounted) {
         setState(() {
-          _categories = list.where((c) => c.type == TransactionType.expense).toList();
+          _categories = list
+              .where((c) => c.type == TransactionType.expense)
+              .toList();
           if (_categories.isNotEmpty) {
             _selectedCategory = _categories.firstWhere(
               (c) =>
@@ -159,7 +159,9 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
           ),
           FilledButton(
             onPressed: () {
-              final parsed = int.tryParse(controller.text.replaceAll(RegExp(r'[^0-9]'), ''));
+              final parsed = int.tryParse(
+                controller.text.replaceAll(RegExp(r'[^0-9]'), ''),
+              );
               Navigator.of(ctx).pop(parsed);
             },
             child: const Text('Simpan'),
@@ -273,38 +275,8 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header Top Bar
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 12, 16, 8),
-              child: Row(
-                children: [
-                  Material(
-                    color: AppColors.card,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10),
-                      side: const BorderSide(color: AppColors.line),
-                    ),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(10),
-                      onTap: () => Navigator.of(context).pop(),
-                      child: const SizedBox(
-                        width: 40,
-                        height: 40,
-                        child: Icon(
-                          LucideIcons.chevronLeft,
-                          size: 20,
-                          color: AppColors.ink,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Text(
-                    'Periksa struk',
-                    style: AppText.display(size: 26),
-                  ),
-                ],
-              ),
-            ),
+            const AppTitleBar(title: 'Periksa struk'),
+            const SizedBox(height: 8),
 
             // Content List
             Expanded(
@@ -375,10 +347,7 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
                         child: Text(
                           'Belum ada yang tersimpan sampai kamu menekan Konfirmasi.',
                           textAlign: TextAlign.center,
-                          style: AppText.body(
-                            size: 11.5,
-                            color: AppColors.mut,
-                          ),
+                          style: AppText.body(size: 11.5, color: AppColors.mut),
                         ),
                       ),
                     ],

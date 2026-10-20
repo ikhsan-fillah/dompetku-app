@@ -21,33 +21,42 @@ class MainShellPage extends GetView<MainShellController> {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: false,
-      body: Stack(
-        children: [
-          SafeArea(
-            bottom: false,
-            child: Obx(() => _tab(controller.tabIndex.value)),
-          ),
-          Positioned(
-            left: 0,
-            right: 0,
-            bottom: 0,
-            child: SafeArea(
-              top: false,
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
-                child: Obx(
-                  () => AppBottomNav(
-                    currentIndex: controller.tabIndex.value,
-                    onSelect: controller.select,
-                    onAdd: () => showTransactionSheet(context),
+    return Obx(
+      () => PopScope(
+        canPop: controller.tabIndex.value == 0,
+        onPopInvokedWithResult: (didPop, _) {
+          if (didPop) return;
+          controller.select(0);
+        },
+        child: Scaffold(
+          resizeToAvoidBottomInset: false,
+          body: Stack(
+            children: [
+              SafeArea(
+                bottom: false,
+                child: Obx(() => _tab(controller.tabIndex.value)),
+              ),
+              Positioned(
+                left: 0,
+                right: 0,
+                bottom: 0,
+                child: SafeArea(
+                  top: false,
+                  child: Padding(
+                    padding: const EdgeInsets.fromLTRB(12, 0, 12, 10),
+                    child: Obx(
+                      () => AppBottomNav(
+                        currentIndex: controller.tabIndex.value,
+                        onSelect: controller.select,
+                        onAdd: () => showTransactionSheet(context),
+                      ),
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
-        ],
+        ),
       ),
     );
   }

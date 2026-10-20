@@ -6,10 +6,12 @@ import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/formatter.dart';
+import '../../../core/widgets/app_bar_icon_button.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../controllers/recurring_controller.dart';
+import '../models/recurring_rule.dart';
 import '../services/recurring_totals.dart';
 import 'recurring_add_sheet.dart';
-import '../models/recurring_rule.dart';
 
 /// Daftar recurring: item aktif/nonaktif lewat sakelar. Nonaktif tidak dihapus.
 class RecurringPage extends StatelessWidget {
@@ -20,95 +22,68 @@ class RecurringPage extends StatelessWidget {
     final controller = Get.find<RecurringController>();
     return Scaffold(
       backgroundColor: AppColors.paper,
-      appBar: AppBar(
-        backgroundColor: AppColors.paper,
-        elevation: 0,
-        title: Text('Recurring', style: AppText.display(size: 26)),
-        actions: [
-          IconButton(
-            tooltip: 'Add recurring',
-            icon: const Icon(LucideIcons.plus, color: AppColors.ink),
-            onPressed: () async {
-              final saved = await showRecurringAddSheet(context);
-              if (saved) await controller.load();
-            },
-          ),
-        ],
-      ),
-      body: Obx(() {
-        final state = controller.state.value;
-        switch (state.status) {
-          case ResourceStatus.idle:
-          case ResourceStatus.loading:
-            return const Center(child: CircularProgressIndicator());
-          case ResourceStatus.error:
-            return Center(
-              child: Text(
-                state.message ?? 'Gagal memuat recurring.',
-                style: AppText.body(color: AppColors.spend),
+      body: SafeArea(
+        child: Column(
+          children: [
+            AppTitleBar(
+              title: 'Recurring',
+              action: AppBarIconButton(
+                tooltip: 'Tambah recurring',
+                icon: LucideIcons.plus,
+                onPressed: () async {
+                  final saved = await showRecurringAddSheet(context);
+                  if (saved) await controller.load();
+                },
               ),
-            );
-          case ResourceStatus.empty:
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'No recurring items yet. Add rent, subscriptions, or bills.',
-                  textAlign: TextAlign.center,
-                  style: AppText.body(size: 13, color: AppColors.mut),
-                ),
-              ),
-            );
-          case ResourceStatus.success:
-            final rules = state.data ?? const <RecurringRule>[];
-            return ListView.builder(
-              padding: const EdgeInsets.all(16),
-              itemCount: rules.length + 1,
-              itemBuilder: (context, position) {
-                if (position == 0) return _TotalsRow(rules: rules);
-                final index = position - 1;
-                return Dismissible(
-                key: ValueKey(rules[index].id),
-                direction: DismissDirection.endToStart,
-                confirmDismiss: (_) async =>
-                    await showDialog<bool>(
-                      context: context,
-                      builder: (dialogContext) => AlertDialog(
-                        title: const Text('Delete recurring?'),
-                        content: const Text(
-                          'Past transactions stay. Only the schedule is removed.',
-                        ),
-                        actions: [
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.of(dialogContext).pop(false),
-                            child: const Text('Cancel'),
-                          ),
-                          TextButton(
-                            onPressed: () =>
-                                Navigator.of(dialogContext).pop(true),
-                            child: const Text('Delete'),
-                          ),
-                        ],
+            ),
+            Expanded(
+              child: Obx(() {
+                final state = controller.state.value;
+                switch (state.status) {
+                  case ResourceStatus.idle:
+                  case ResourceStatus.loading:
+                    return const Center(child: CircularProgressIndicator());
+                  case ResourceStatus.error:
+                    return Center(
+                      child: Text(
+                        state.message ?? 'Gagal memuat recurring.',
+                        style: AppText.body(color: AppColors.spend),
                       ),
-                    ) ??
-                    false,
-                onDismissed: (_) => controller.remove(rules[index].id!),
-                background: Container(
-                  alignment: Alignment.centerRight,
-                  padding: const EdgeInsets.only(right: 20),
-                  child: const Icon(LucideIcons.trash2, color: AppColors.spend),
-                ),
-                child: _RuleTile(
-                  rule: rules[index],
-                  onToggle: (value) =>
-                      controller.setActive(rules[index].id!, value),
-                ),
-                );
-              },
-            );
-        }
-      }),
+                    );
+                  case ResourceStatus.empty:
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          'No recurring items yet. Add rent, subscriptions, or bills.',
+                          textAlign: TextAlign.center,
+                          style: AppText.body(size: 13, color: AppColors.mut),
+                        ),
+                      ),
+                    );
+                  case ResourceStatus.success:
+                    final rules = state.data ?? const <RecurringRule>[];
+                    return ListView(
+                      padding: const EdgeInsets.fromLTRB(16, 4, 16, 110),
+                      children: [
+                        _TotalsRow(rules: rules),
+                        const SizedBox(height: 12),
+                        for (final rule in rules)
+                          Padding(
+                            padding: const EdgeInsets.only(bottom: 10),
+                            child: _DismissibleRule(
+                              rule: rule,
+                              controller: controller,
+                            ),
+                          ),
+                      ],
+                    );
+                }
+              }),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -121,23 +96,108 @@ class _TotalsRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final totals = RecurringTotals.monthly(rules);
-    Widget cell(String label, int value) => Expanded(
+    return Row(
+      children: [
+        Expanded(
+          child: _TotalCard(
+            label: 'Out per month',
+            value: totals.out,
+            color: AppColors.spend,
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: _TotalCard(
+            label: 'In per month',
+            value: totals.income,
+            color: AppColors.earn,
+          ),
+        ),
+      ],
+    );
+  }
+}
+
+class _TotalCard extends StatelessWidget {
+  const _TotalCard({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
+
+  final String label;
+  final int value;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.line),
+      ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(label.toUpperCase(), style: AppText.label()),
-          const SizedBox(height: 2),
-          Text(formatIdr(value), style: AppText.mono(size: 13, weight: FontWeight.w700)),
+          Text(label, style: AppText.body(size: 12, color: AppColors.mut)),
+          const SizedBox(height: 6),
+          Text(
+            formatIdr(value),
+            style: AppText.mono(size: 15, weight: FontWeight.w700, color: color),
+          ),
         ],
       ),
     );
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 14),
-      child: Row(
-        children: [
-          cell('Out per month', totals.out),
-          cell('In per month', totals.income),
-        ],
+  }
+}
+
+class _DismissibleRule extends StatelessWidget {
+  const _DismissibleRule({required this.rule, required this.controller});
+
+  final RecurringRule rule;
+  final RecurringController controller;
+
+  @override
+  Widget build(BuildContext context) {
+    return Dismissible(
+      key: ValueKey(rule.id),
+      direction: DismissDirection.endToStart,
+      confirmDismiss: (_) async =>
+          await showDialog<bool>(
+            context: context,
+            builder: (dialogContext) => AlertDialog(
+              title: const Text('Delete recurring?'),
+              content: const Text(
+                'Past transactions stay. Only the schedule is removed.',
+              ),
+              actions: [
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(false),
+                  child: const Text('Cancel'),
+                ),
+                TextButton(
+                  onPressed: () => Navigator.of(dialogContext).pop(true),
+                  child: const Text('Delete'),
+                ),
+              ],
+            ),
+          ) ??
+          false,
+      onDismissed: (_) => controller.remove(rule.id!),
+      background: Container(
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 20),
+        decoration: BoxDecoration(
+          color: AppColors.spendSoft,
+          borderRadius: BorderRadius.circular(12),
+        ),
+        child: const Icon(LucideIcons.trash2, color: AppColors.spend),
+      ),
+      child: _RuleTile(
+        rule: rule,
+        onToggle: (value) => controller.setActive(rule.id!, value),
       ),
     );
   }
@@ -149,8 +209,11 @@ class _RuleTile extends StatelessWidget {
   final RecurringRule rule;
   final ValueChanged<bool> onToggle;
 
+  bool get _isIncome => rule.type == RecurringType.income;
+
   String get _schedule => switch (rule.frequency) {
-    RecurringFrequency.monthly => 'Monthly · due ${_ordinal(rule.dayOfMonth ?? rule.startDate.day)}',
+    RecurringFrequency.monthly =>
+      'Monthly · due ${_ordinal(rule.dayOfMonth ?? rule.startDate.day)}',
     RecurringFrequency.weekly => 'Weekly',
     RecurringFrequency.yearly => 'Yearly',
   };
@@ -171,34 +234,53 @@ class _RuleTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final amountText = _isIncome
+        ? '+ ${formatIdr(rule.amount)}'
+        : '- ${formatIdr(rule.amount)}';
     return Container(
-      margin: const EdgeInsets.only(bottom: 10),
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.card,
-        borderRadius: BorderRadius.circular(10),
+        borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.line),
       ),
       child: Row(
         children: [
+          Container(
+            width: 40,
+            height: 40,
+            decoration: BoxDecoration(
+              color: _isIncome ? AppColors.earn : AppColors.catBills,
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: Icon(
+              _isIncome ? LucideIcons.wallet : LucideIcons.receiptText,
+              size: 18,
+              color: AppColors.card,
+            ),
+          ),
+          const SizedBox(width: 12),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(rule.name, style: AppText.body(size: 13, weight: FontWeight.w700)),
+                Text(
+                  rule.name,
+                  style: AppText.body(size: 14, weight: FontWeight.w700),
+                ),
                 const SizedBox(height: 3),
                 Text(
-                  '$_schedule · $_mode',
+                  '$amountText · $_schedule',
+                  style: AppText.mono(size: 11, color: AppColors.mut),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _mode,
                   style: AppText.body(size: 11, color: AppColors.mut),
                 ),
               ],
             ),
           ),
-          Text(
-            formatIdr(rule.amount),
-            style: AppText.mono(size: 12.5, color: AppColors.ink),
-          ),
-          const SizedBox(width: 8),
           Switch(
             value: rule.isActive,
             activeTrackColor: AppColors.ink,

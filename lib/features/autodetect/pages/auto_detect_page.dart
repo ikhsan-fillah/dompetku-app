@@ -4,6 +4,7 @@ import 'package:get/get.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../services/auto_detect_service.dart';
 import '../services/auto_detect_settings.dart';
 
@@ -15,56 +16,61 @@ class AutoDetectPage extends StatefulWidget {
   State<AutoDetectPage> createState() => _AutoDetectPageState();
 }
 
-class _AutoDetectPageState extends State<AutoDetectPage> {
-  static const _apps = {
-    'id.co.bca.mobile': 'BCA mobile',
-    'com.gojek.gopay': 'GoPay',
-    'com.shopee.id': 'ShopeePay',
-    'id.dana': 'DANA',
-  };
+class _AutoDetectPageState extends State<AutoDetectPage>
+    with WidgetsBindingObserver {
+  static const _apps = [
+    'BCA mobile',
+    'GoPay',
+    'ShopeePay',
+    'DANA',
+    'BRImo',
+    'Jago',
+  ];
 
   late final AutoDetectService _service = Get.find<AutoDetectService>();
   final AutoDetectSettings _settings = AutoDetectSettings();
   bool? _enabled;
-  Set<String> _selected = {};
   bool _saveAuto = false;
 
   @override
   void initState() {
     super.initState();
+    WidgetsBinding.instance.addObserver(this);
     _load();
+  }
+
+  @override
+  void dispose() {
+    WidgetsBinding.instance.removeObserver(this);
+    super.dispose();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) {
+    if (state == AppLifecycleState.resumed) _load();
   }
 
   Future<void> _load() async {
     final enabled = await _service.isAccessEnabled();
-    final apps = await _settings.getApps();
     final saveAuto = await _settings.getSaveAuto();
     if (!mounted) return;
     setState(() {
       _enabled = enabled;
-      _selected = apps;
       _saveAuto = saveAuto;
     });
-  }
-
-  Future<void> _toggleApp(String packageName, bool value) async {
-    final next = Set<String>.from(_selected);
-    value ? next.add(packageName) : next.remove(packageName);
-    await _settings.setApps(next);
-    if (mounted) setState(() => _selected = next);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.paper,
-      appBar: AppBar(
-        backgroundColor: AppColors.paper,
-        elevation: 0,
-        title: Text('Auto-detect', style: AppText.display(size: 26)),
-      ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const AppTitleBar(title: 'Auto-detect'),
+            Expanded(
+              child: ListView(
+        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
         children: [
           _Card(
             title: 'What we read',
@@ -73,29 +79,31 @@ class _AutoDetectPageState extends State<AutoDetectPage> {
           ),
           _Card(
             title: 'Notification access',
-            body: _enabled == null ? 'Checking…' : (_enabled! ? 'On' : 'Off'),
-            footer: AppButton(
-              label: 'Open notification access',
-              onPressed: () async {
-                await _service.openAccessSettings();
-                await _load();
-              },
+            body: _enabled == null
+                ? 'Checking…'
+                : (_enabled!
+                      ? 'On'
+                      : 'Off. If the toggle is greyed out (Android 13+), open App info, tap ⋮ > "Allow restricted settings", then come back and enable it.'),
+            footer: Column(
+              children: [
+                AppButton(
+                  label: 'Open notification access',
+                  onPressed: () async {
+                    await _service.openAccessSettings();
+                  },
+                ),
+                const SizedBox(height: 8),
+                AppButton(
+                  label: 'Open app info',
+                  kind: AppButtonKind.outline,
+                  onPressed: () => _service.openAppDetails(),
+                ),
+              ],
             ),
           ),
           _Card(
             title: 'Apps',
-            body: _selected.isEmpty ? 'Choose at least one app.' : '',
-            child: Column(
-              children: [
-                for (final entry in _apps.entries)
-                  SwitchListTile(
-                    contentPadding: EdgeInsets.zero,
-                    title: Text(entry.value),
-                    value: _selected.contains(entry.key),
-                    onChanged: (value) => _toggleApp(entry.key, value),
-                  ),
-              ],
-            ),
+            body: 'Read automatically from: ${_apps.join(', ')}.',
           ),
           _Card(
             title: 'Save automatically',
@@ -120,6 +128,10 @@ class _AutoDetectPageState extends State<AutoDetectPage> {
                 'Set Tally battery use to Unrestricted so Android does not stop detection.',
           ),
         ],
+      ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -156,7 +168,7 @@ class _Card extends StatelessWidget {
             const SizedBox(height: 4),
             Text(body, style: AppText.body(size: 12, color: AppColors.ink2)),
           ],
-          if (child != null) child!,
+          ?child,
           if (footer != null) ...[const SizedBox(height: 12), footer!],
         ],
       ),

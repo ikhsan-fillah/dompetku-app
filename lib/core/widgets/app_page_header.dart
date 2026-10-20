@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_spacing.dart';
+import '../theme/app_text.dart';
 
+/// Header tab utama (tanpa tombol kembali). Gaya judul mengikuti [AppTitleBar].
 class AppPageHeader extends StatelessWidget {
   const AppPageHeader({super.key, required this.title, required this.actions});
 
@@ -13,15 +15,13 @@ class AppPageHeader extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.fromLTRB(
         AppSpacing.page,
-        6,
+        12,
         AppSpacing.page,
-        14,
+        0,
       ),
       child: Row(
         children: [
-          Expanded(
-            child: Text(title, style: Theme.of(context).textTheme.titleLarge),
-          ),
+          Expanded(child: Text(title, style: AppText.display(size: 26))),
           ...actions,
         ],
       ),

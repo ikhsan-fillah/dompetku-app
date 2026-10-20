@@ -1,14 +1,17 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/constant/domain_enums.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/theme/category_style.dart';
 import '../../../core/utils/date_label.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_chip.dart';
+import '../../../core/widgets/category_icon_box.dart';
 import '../../category/models/category_model.dart';
 import '../../category/repositories/category_repository.dart';
 import '../controllers/recurring_form_controller.dart';
@@ -115,91 +118,80 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text('New recurring', style: AppText.display(size: 19)),
+          Row(
+            children: [
+              Expanded(
+                child: Text('New recurring', style: AppText.display(size: 19)),
+              ),
+              IconButton(
+                tooltip: 'Tutup',
+                onPressed: () => Navigator.of(context).pop(false),
+                icon: const Icon(LucideIcons.x, size: 18),
+                color: AppColors.ink,
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          _Segment<RecurringType>(
+            options: RecurringType.values,
+            selected: _form.type.value,
+            label: (t) => t == RecurringType.income ? 'Income' : 'Expense',
+            color: (t) => t == RecurringType.income ? AppColors.earn : AppColors.spend,
+            onSelect: (t) => _select(() {
+              _form.type.value = t;
+              _form.categoryId.value = null;
+            }),
+          ),
           const SizedBox(height: 14),
           TextField(
             controller: _name,
-            decoration: const InputDecoration(labelText: 'Name'),
+            decoration: _fieldDecoration('Name, e.g. Spotify'),
           ),
           const SizedBox(height: 10),
           TextField(
             key: const Key('amount'),
             controller: _amount,
             keyboardType: TextInputType.number,
-            decoration: const InputDecoration(
-              labelText: 'Amount (IDR)',
-              prefixText: 'Rp ',
-            ),
+            decoration: _fieldDecoration('Amount (Rp), e.g. 55000'),
             onChanged: (value) {
               _form.amountDigits.value = value.replaceAll(RegExp(r'[^0-9]'), '');
             },
           ),
-          const SizedBox(height: 12),
-          Row(
-            children: [
-              for (final option in RecurringType.values)
-                Expanded(
-                  child: AppChip(
-                    label: option == RecurringType.income ? 'Income' : 'Expense',
-                    selected: _form.type.value == option,
-                    onTap: () => _select(() {
-                      _form.type.value = option;
-                      _form.categoryId.value = null;
-                    }),
-                  ),
-                ),
-            ],
+          const _Label('Category'),
+          _CategoryRow(
+            options: _options,
+            selected: _form.categoryId.value,
+            onSelect: (id) => _select(() => _form.categoryId.value = id),
           ),
-          const SizedBox(height: 10),
+          const _Label('Repeats'),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: [
-              for (final category in _options)
-                AppChip(
-                  label: category.name,
-                  selected: _form.categoryId.value == category.id,
-                  onTap: () => _select(() => _form.categoryId.value = category.id),
-                ),
-            ],
-          ),
-          const SizedBox(height: 14),
-          Wrap(
-            spacing: 8,
+            crossAxisAlignment: WrapCrossAlignment.center,
             children: [
               for (final option in RecurringFrequency.values)
                 AppChip(
-                  label: option.name,
+                  label: _frequencyLabel(option),
                   selected: _form.frequency.value == option,
                   onTap: () => _select(() => _form.frequency.value = option),
                 ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Wrap(
-            spacing: 8,
-            children: [
-              AppChip(
-                label: 'Ask me first',
-                selected: _form.mode.value == RecurringMode.ask,
-                onTap: () => _select(() => _form.mode.value = RecurringMode.ask),
-              ),
-              AppChip(
-                label: 'Record automatically',
-                selected: _form.mode.value == RecurringMode.auto,
-                onTap: () => _select(() => _form.mode.value = RecurringMode.auto),
+              Obx(
+                () => _DateChip(
+                  date: _form.startDate.value ?? DateTime.now(),
+                  onTap: _pickStartDate,
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 14),
-          Obx(
-            () => OutlinedButton.icon(
-              onPressed: _pickStartDate,
-              icon: const Icon(Icons.calendar_today_outlined, size: 16),
-              label: Text(
-                'Starts ${DateLabel.day(_form.startDate.value ?? DateTime.now())}',
-              ),
-            ),
+          const _Label("When it's due"),
+          _Segment<RecurringMode>(
+            options: RecurringMode.values,
+            selected: _form.mode.value,
+            label: (m) => m == RecurringMode.ask
+                ? 'Ask me first'
+                : 'Record automatically',
+            color: (_) => AppColors.ink,
+            onSelect: (m) => _select(() => _form.mode.value = m),
           ),
           Obx(() {
             final message = _form.error.value;
@@ -226,6 +218,241 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  InputDecoration _fieldDecoration(String hint) {
+    OutlineInputBorder border(Color color) => OutlineInputBorder(
+      borderRadius: BorderRadius.circular(AppRadius.field),
+      borderSide: BorderSide(color: color),
+    );
+    return InputDecoration(
+      hintText: hint,
+      hintStyle: AppText.body(size: 13, color: AppColors.mut),
+      filled: true,
+      fillColor: AppColors.card,
+      contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+      enabledBorder: border(AppColors.line),
+      focusedBorder: border(AppColors.ink),
+      border: border(AppColors.line),
+    );
+  }
+
+  String _frequencyLabel(RecurringFrequency f) => switch (f) {
+    RecurringFrequency.weekly => 'Weekly',
+    RecurringFrequency.monthly => 'Monthly',
+    RecurringFrequency.yearly => 'Yearly',
+  };
+}
+
+class _Label extends StatelessWidget {
+  const _Label(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) {
+    return Padding(
+      padding: const EdgeInsets.only(top: 16, bottom: 8),
+      child: Text(text.toUpperCase(), style: AppText.label()),
+    );
+  }
+}
+
+/// Segmen dua/tiga pilihan, gaya sama dengan toggle di transaction form.
+class _Segment<T> extends StatelessWidget {
+  const _Segment({
+    required this.options,
+    required this.selected,
+    required this.label,
+    required this.color,
+    required this.onSelect,
+  });
+
+  final List<T> options;
+  final T selected;
+  final String Function(T) label;
+  final Color Function(T) color;
+  final ValueChanged<T> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: AppColors.paper2,
+        borderRadius: BorderRadius.circular(AppRadius.field),
+      ),
+      child: Row(
+        children: [
+          for (final option in options)
+            Expanded(
+              child: Semantics(
+                button: true,
+                selected: option == selected,
+                child: GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: () => onSelect(option),
+                  child: AnimatedContainer(
+                    duration: const Duration(milliseconds: 200),
+                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    alignment: Alignment.center,
+                    decoration: BoxDecoration(
+                      color: option == selected
+                          ? color(option)
+                          : Colors.transparent,
+                      borderRadius: BorderRadius.circular(AppRadius.chip),
+                    ),
+                    child: Text(
+                      label(option),
+                      style: AppText.body(
+                        size: 12.5,
+                        weight: FontWeight.w700,
+                        color: option == selected ? Colors.white : AppColors.mut,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DateChip extends StatelessWidget {
+  const _DateChip({required this.date, required this.onTap});
+
+  final DateTime date;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+        side: const BorderSide(color: AppColors.line),
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.chip),
+        onTap: onTap,
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 7),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              const Icon(LucideIcons.calendar, size: 14, color: AppColors.ink),
+              const SizedBox(width: 6),
+              Text(
+                'Starts ${DateLabel.day(date)}',
+                style: AppText.body(
+                  size: 12,
+                  weight: FontWeight.w600,
+                  color: AppColors.ink,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+class _CategoryRow extends StatelessWidget {
+  const _CategoryRow({
+    required this.options,
+    required this.selected,
+    required this.onSelect,
+  });
+
+  final List<CategoryModel> options;
+  final int? selected;
+  final ValueChanged<int> onSelect;
+
+  @override
+  Widget build(BuildContext context) {
+    if (options.isEmpty) {
+      return Padding(
+        padding: const EdgeInsets.symmetric(vertical: 8),
+        child: Text(
+          'Belum ada kategori untuk jenis ini.',
+          style: AppText.body(size: 12, color: AppColors.mut),
+        ),
+      );
+    }
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      child: Row(
+        children: [
+          for (final category in options)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: _CategoryChoice(
+                category: category,
+                selected: category.id == selected,
+                onTap: () => onSelect(category.id!),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _CategoryChoice extends StatelessWidget {
+  const _CategoryChoice({
+    required this.category,
+    required this.selected,
+    required this.onTap,
+  });
+
+  final CategoryModel category;
+  final bool selected;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Semantics(
+      button: true,
+      selected: selected,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.smallButton),
+        onTap: onTap,
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          width: 60,
+          padding: const EdgeInsets.symmetric(vertical: 6),
+          decoration: BoxDecoration(
+            color: selected ? AppColors.paper2 : Colors.transparent,
+            borderRadius: BorderRadius.circular(AppRadius.smallButton),
+            border: Border.all(
+              color: selected ? AppColors.ink : Colors.transparent,
+            ),
+          ),
+          child: Column(
+            children: [
+              CategoryIconBox(
+                icon: CategoryStyle.icon(category.iconKey),
+                color: CategoryStyle.color(category.colorValue),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                category.name,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.body(
+                  size: 10,
+                  weight: selected ? FontWeight.w700 : FontWeight.w400,
+                  color: selected ? AppColors.ink : AppColors.mut,
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

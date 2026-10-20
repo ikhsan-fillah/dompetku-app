@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../../../core/theme/category_style.dart';
 import '../../../core/utils/formatter.dart';
 import '../services/recap_calculation_service.dart';
@@ -25,14 +26,19 @@ class YearlyRecapPage extends StatelessWidget {
         if (snapshot.connectionState != ConnectionState.done) {
           return const Scaffold(
             backgroundColor: AppColors.ink,
-            body: Center(child: CircularProgressIndicator(color: AppColors.paper)),
+            body: Center(
+              child: CircularProgressIndicator(color: AppColors.paper),
+            ),
           );
         }
         if (snapshot.hasError || !snapshot.hasData) {
           return Scaffold(
             backgroundColor: AppColors.ink,
             body: Center(
-              child: Text('Gagal memuat recap.', style: AppText.body(color: AppColors.paper)),
+              child: Text(
+                'Gagal memuat recap.',
+                style: AppText.body(color: AppColors.paper),
+              ),
             ),
           );
         }
@@ -46,19 +52,24 @@ class YearlyRecapPage extends StatelessWidget {
         if (recap.activeMonths == 0) {
           return Scaffold(
             backgroundColor: AppColors.ink,
-            appBar: AppBar(backgroundColor: AppColors.ink, foregroundColor: AppColors.paper),
-            body: Center(
-              child: Text(
-                'Belum ada transaksi di tahun ini.',
-                style: AppText.body(color: AppColors.paper),
+            body: SafeArea(
+              child: Column(
+                children: [
+                  const AppTitleBar(title: 'Recap'),
+                  Expanded(
+                    child: Center(
+                      child: Text(
+                        'Belum ada transaksi di tahun ini.',
+                        style: AppText.body(color: AppColors.paper),
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
           );
         }
-        return StoryFrame(
-          footer: 'Tally · $year',
-          cards: _cards(recap, data),
-        );
+        return StoryFrame(footer: 'Tally · $year', cards: _cards(recap, data));
       },
     );
   }
@@ -150,7 +161,10 @@ class _Cover extends StatelessWidget {
         const SizedBox(height: 28),
         TallyMarks(count: recap.activeMonths, color: fg, height: 26),
         const SizedBox(height: 6),
-        StoryLabel('One stroke per month with notes', color: fg.withValues(alpha: 0.7)),
+        StoryLabel(
+          'One stroke per month with notes',
+          color: fg.withValues(alpha: 0.7),
+        ),
         const Spacer(),
       ],
     );
@@ -263,15 +277,17 @@ class _MonthBars extends StatelessWidget {
                     padding: const EdgeInsets.symmetric(horizontal: 2),
                     child: m.hasData
                         ? FractionallySizedBox(
-                            heightFactor: max == 0 ? 0.02 : (m.spent / max).clamp(0.02, 1.0),
+                            heightFactor: max == 0
+                                ? 0.02
+                                : (m.spent / max).clamp(0.02, 1.0),
                             alignment: Alignment.bottomCenter,
                             child: Container(
                               decoration: BoxDecoration(
                                 color: m.month == heavy
                                     ? AppColors.spend
                                     : m.month == light
-                                        ? AppColors.earn
-                                        : AppColors.ink,
+                                    ? AppColors.earn
+                                    : AppColors.ink,
                                 borderRadius: const BorderRadius.vertical(
                                   top: Radius.circular(2),
                                 ),
@@ -333,7 +349,11 @@ class _MonthBars extends StatelessWidget {
 }
 
 class _Extreme extends StatelessWidget {
-  const _Extreme({required this.label, required this.value, required this.color});
+  const _Extreme({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   final String label;
   final String value;
@@ -421,7 +441,10 @@ class _CategoryRow extends StatelessWidget {
     return Row(
       crossAxisAlignment: CrossAxisAlignment.center,
       children: [
-        Text('$rank', style: AppText.mono(size: 13, color: fg.withValues(alpha: 0.6))),
+        Text(
+          '$rank',
+          style: AppText.mono(size: 13, color: fg.withValues(alpha: 0.6)),
+        ),
         const SizedBox(width: 12),
         Expanded(
           child: Column(
@@ -429,7 +452,11 @@ class _CategoryRow extends StatelessWidget {
             children: [
               Text(
                 name,
-                style: AppText.display(size: big ? 30 : 22, color: fg, height: 1.1),
+                style: AppText.display(
+                  size: big ? 30 : 22,
+                  color: fg,
+                  height: 1.1,
+                ),
               ),
               const SizedBox(height: 6),
               Container(
@@ -448,7 +475,10 @@ class _CategoryRow extends StatelessWidget {
         Column(
           crossAxisAlignment: CrossAxisAlignment.end,
           children: [
-            Text('$pct%', style: AppText.mono(size: 14, color: fg, weight: FontWeight.w700)),
+            Text(
+              '$pct%',
+              style: AppText.mono(size: 14, color: fg, weight: FontWeight.w700),
+            ),
             Text(
               formatIdr(amount),
               style: AppText.mono(size: 11, color: fg.withValues(alpha: 0.7)),
@@ -475,7 +505,10 @@ class _TopMerchant extends StatelessWidget {
         StoryLabel('Most visited', color: AppColors.mut),
         const SizedBox(height: 6),
         if (top == null)
-          Text('Belum ada merchant tercatat.', style: AppText.body(color: AppColors.mut))
+          Text(
+            'Belum ada merchant tercatat.',
+            style: AppText.body(color: AppColors.mut),
+          )
         else ...[
           Text(
             top.name,
@@ -483,9 +516,11 @@ class _TopMerchant extends StatelessWidget {
           ),
           Text(
             '${top.visits} times.',
-            style: AppText.display(size: 28, color: fg, height: 1.1).copyWith(
-              fontStyle: FontStyle.italic,
-            ),
+            style: AppText.display(
+              size: 28,
+              color: fg,
+              height: 1.1,
+            ).copyWith(fontStyle: FontStyle.italic),
           ),
           const SizedBox(height: 18),
           Wrap(
@@ -595,7 +630,9 @@ class _BudgetGrid extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: status == BudgetMonthStatus.inside ? AppColors.ink : Colors.transparent,
+          color: status == BudgetMonthStatus.inside
+              ? AppColors.ink
+              : Colors.transparent,
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(

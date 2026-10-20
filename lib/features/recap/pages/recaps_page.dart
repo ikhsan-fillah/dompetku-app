@@ -5,6 +5,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/formatter.dart';
 import '../../transaction/models/transaction_model.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../../transaction/repositories/transaction_repository.dart';
 import '../services/recap_calculation_service.dart';
 import 'monthly_recap_page.dart';
@@ -67,12 +68,14 @@ class _RecapsPageState extends State<RecapsPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.paper,
-      appBar: AppBar(
-        backgroundColor: AppColors.paper,
-        elevation: 0,
-        title: Text('Recaps', style: AppText.display(size: 26)),
+      body: SafeArea(
+        child: Column(
+          children: [
+            const AppTitleBar(title: 'Recaps'),
+            Expanded(child: _body()),
+          ],
+        ),
       ),
-      body: _body(),
     );
   }
 
