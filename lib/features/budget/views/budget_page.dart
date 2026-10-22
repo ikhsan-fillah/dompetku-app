@@ -16,6 +16,7 @@ import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_progress_bar.dart';
 import '../../../core/widgets/budget_level_style.dart';
 import '../../../core/widgets/category_icon_box.dart';
+import '../../../core/widgets/sort_chip.dart';
 import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../../../core/i18n/app_language.dart';
 import '../controllers/budget_controller.dart';
@@ -199,27 +200,17 @@ class _Header extends StatelessWidget {
     return AppPageHeader(
       title: 'Anggaran'.tr,
       actions: [
-        Obx(() {
-          final selected = controller.sort.value;
-          return PopupMenuButton<BudgetSort>(
-            tooltip: 'Urutkan anggaran'.tr,
-            icon: const Icon(
-              LucideIcons.arrowUpDown,
-              size: 18,
-              color: AppColors.ink,
-            ),
-            color: AppColors.card,
+        Obx(
+          () => SortChip<BudgetSort>(
+            value: controller.sort.value,
+            options: BudgetSort.values,
+            chipLabel: _sortChipLabel,
+            menuLabel: _sortLabel,
             onSelected: controller.setSort,
-            itemBuilder: (_) => [
-              for (final sort in BudgetSort.values)
-                CheckedPopupMenuItem(
-                  value: sort,
-                  checked: selected == sort,
-                  child: Text(_sortLabel(sort), style: AppText.body(size: 13)),
-                ),
-            ],
-          );
-        }),
+            tooltip: 'Urutkan anggaran'.tr,
+          ),
+        ),
+        const SizedBox(width: 4),
         AppBarIconButton(
           tooltip: 'Anggaran terarsip'.tr,
           icon: LucideIcons.archive,
@@ -235,6 +226,15 @@ String _sortLabel(BudgetSort sort) => switch (sort) {
   BudgetSort.sisaTerkecil => 'Sisa terkecil'.tr,
   BudgetSort.limitTerbesar => 'Limit terbesar'.tr,
   BudgetSort.namaAZ => 'Nama A-Z'.tr,
+  BudgetSort.namaZA => 'Nama Z-A'.tr,
+};
+
+String _sortChipLabel(BudgetSort sort) => switch (sort) {
+  BudgetSort.persentaseTerpakaiTertinggi => 'Terpakai'.tr,
+  BudgetSort.sisaTerkecil => 'Sisa'.tr,
+  BudgetSort.limitTerbesar => 'Limit'.tr,
+  BudgetSort.namaAZ => 'A-Z'.tr,
+  BudgetSort.namaZA => 'Z-A'.tr,
 };
 
 /// Blok tinta ringkasan anggaran (spec §3.5 varian Anggaran).

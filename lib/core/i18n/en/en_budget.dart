@@ -38,6 +38,9 @@ const Map<String, String> enBudget = {
   'Sisa terkecil': 'Least remaining',
   'Limit terbesar': 'Largest limit',
   'Nama A-Z': 'Name A-Z',
+  'Terpakai': 'Used',
+  'Sisa': 'Left',
+  'Limit': 'Limit',
   'Belum ada anggaran': 'No budgets yet',
   'Atur batas pengeluaran bulanan agar keuangan lebih terkendali.':
       'Set a monthly spending limit to keep your finances under control.',
