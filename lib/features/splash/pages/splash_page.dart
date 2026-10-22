@@ -4,6 +4,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/services/app_version.dart';
 import '../controllers/splash_controller.dart';
 
 /// Layar pembuka Tally. Menentukan halaman berikutnya lewat SplashController.
@@ -67,7 +68,7 @@ class _SplashPageState extends State<SplashPage>
                       ),
                     ),
                     Text(
-                      'v1.0.0',
+                      'v@version'.trParams({'version': AppVersion.name}),
                       style: AppText.monoLabel(
                         color: paper.withValues(alpha: 0.7),
                       ),

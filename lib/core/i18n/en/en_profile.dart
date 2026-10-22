@@ -32,8 +32,8 @@ const Map<String, String> enProfile = {
   'Bahasa': 'Language',
   'Bahasa tampilan aplikasi': 'App display language',
   'Tidak dapat dibatalkan': 'Cannot be undone',
-  'Tally 1.0.0 · tanpa akun · tanpa cloud':
-      'Tally 1.0.0 · no account · no cloud',
+  'Tally @version · tanpa akun · tanpa cloud':
+      'Tally @version · no account · no cloud',
   'Gagal menyimpan tema.': 'Failed to save the theme.',
   'Gagal menyimpan bahasa.': 'Failed to save the language.',
   'Gagal menyimpan pengaturan biometrik.': 'Failed to save biometric settings.',
