@@ -63,6 +63,8 @@ const Map<String, String> enAutomation = {
   'Simpan otomatis': 'Save automatically',
   'Nonaktif: pembayaran yang terdeteksi menunggu di Draf.':
       'Off: detected payments wait in Drafts.',
+  'Aktif: pembayaran yang terdeteksi langsung dicatat ke kategori Lainnya. Ubah kategorinya nanti di Transaksi.':
+      'On: detected payments are recorded right away in the Other category. Change the category later in Transactions.',
   'Mode senyap': 'Quiet mode',
   'Tanpa pop-up saat kamu memakai aplikasi lain. Draf menunggu di Beranda.':
       'No pop-ups while you use other apps. Drafts wait on Home.',

@@ -69,10 +69,12 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
               TextField(
                 controller: confirmation,
                 decoration: InputDecoration(
-                  labelText: 'Ketik HAPUS untuk melanjutkan'.tr,
+                  labelText: 'Ketik @word untuk melanjutkan'.trParams({
+                    'word': 'HAPUS'.tr,
+                  }),
                 ),
                 onChanged: (value) =>
-                    setDialogState(() => canDelete = value == 'HAPUS'),
+                    setDialogState(() => canDelete = value == 'HAPUS'.tr),
               ),
             ],
           ),

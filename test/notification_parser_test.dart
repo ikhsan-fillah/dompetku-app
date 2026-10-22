@@ -69,23 +69,55 @@ void main() {
     expect(parser.parse('id.dana', 'Pembayaran berhasil'), isNull);
   });
 
-  test(
-    'dedupe: notifikasi sama dalam jendela 5 menit menghasilkan key sama',
-    () {
-      final a = DraftDedupe.keyFor(
-        source: 'GoPay',
-        amount: 15000,
-        detectedAt: DateTime.utc(2026, 9, 1, 10, 0, 10),
-      );
-      final b = DraftDedupe.keyFor(
-        source: 'GoPay',
-        amount: 15000,
-        detectedAt: DateTime.utc(2026, 9, 1, 10, 3, 30),
-      );
+  test('dedupe: key memakai waktu posting persis', () {
+    final a = DraftDedupe.keyFor(
+      source: 'GoPay',
+      amount: 15000,
+      detectedAt: DateTime.utc(2026, 9, 1, 10, 4, 59),
+    );
+    final same = DraftDedupe.keyFor(
+      source: 'GoPay',
+      amount: 15000,
+      detectedAt: DateTime.utc(2026, 9, 1, 10, 4, 59),
+    );
+    final later = DraftDedupe.keyFor(
+      source: 'GoPay',
+      amount: 15000,
+      detectedAt: DateTime.utc(2026, 9, 1, 10, 5, 1),
+    );
 
-      expect(a, b);
-    },
-  );
+    expect(a, same);
+    expect(a, isNot(later));
+  });
+
+  test('transaksi netral dengan saldo tidak dianggap pengeluaran', () {
+    expect(
+      parser.parse(
+        'id.co.bca.mobile',
+        'Transaksi berhasil. Saldo Rp 2.500.000',
+      ),
+      isNull,
+    );
+  });
+
+  test('ke rekening bukan nama merchant', () {
+    final result = parser.parse(
+      'id.co.bri.brimo',
+      'Transfer keluar Rp 50.000 ke rekening 1234567890',
+    );
+
+    expect(result, isNotNull);
+    expect(result!.merchant, isNull);
+  });
+
+  test('merchant dipotong di kata penghubung berikutnya', () {
+    final result = parser.parse(
+      'com.gojek.gopay',
+      'Pembayaran berhasil Rp 15.000 ke Warung Kopi pada 20/10/2026',
+    );
+
+    expect(result!.merchant, 'Warung Kopi');
+  });
 
   test('dedupe: nominal berbeda menghasilkan key berbeda', () {
     final a = DraftDedupe.keyFor(

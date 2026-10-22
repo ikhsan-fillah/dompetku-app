@@ -44,7 +44,8 @@ const Map<String, String> enAuth = {
   'Lupa PIN?': 'Forgot your PIN?',
   'Datamu tidak bisa dibuka tanpa PIN. Kamu hanya bisa menghapus semua data di ponsel ini dan memulai dari awal. Tindakan ini tidak dapat dibatalkan.':
       'Your data cannot be opened without the PIN. You can only erase everything on this phone and start over. This cannot be undone.',
-  'Ketik HAPUS untuk melanjutkan': 'Type HAPUS to continue',
+  'Ketik @word untuk melanjutkan': 'Type @word to continue',
+  'HAPUS': 'DELETE',
   'Hapus semua data': 'Delete all data',
   'Gagal menghapus data. Coba lagi.': 'Could not erase data. Try again.',
   'Masukkan PIN kamu': 'Enter your PIN',

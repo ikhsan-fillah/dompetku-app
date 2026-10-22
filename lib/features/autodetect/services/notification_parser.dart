@@ -19,7 +19,7 @@ class NotificationParser {
 
   static const _otp =
       r'\botp\b|kode verifikasi|jangan bagikan|verification code';
-  static const _promo = r'promo|diskon|cashback\s+\d|voucher|diskon|flash sale';
+  static const _promo = r'promo|diskon|cashback\s+\d|voucher|flash sale';
 
   static final _amountPattern = RegExp(
     r'(?:Rp\.?\s?)([0-9]{1,3}(?:[.,][0-9]{3})+|[0-9]+)',
@@ -46,7 +46,7 @@ class NotificationParser {
 
     final isExpense =
         RegExp(
-          r'(bayar|pembayaran|transaksi|paid|payment|sent|kirim|keluar|debit)',
+          r'(bayar|pembayaran|paid|payment (?:to|of|successful)|sent|kirim|keluar|debit|belanja|pembelian|purchase)',
         ).hasMatch(lower) &&
         !RegExp(r'(terima|received|masuk|cashback)').hasMatch(lower);
     final isIncome = RegExp(
@@ -81,26 +81,40 @@ class NotificationParser {
     _ => null,
   };
 
+  /// Nama setelah "ke/at/to", dipotong di kata penghubung berikutnya. Kata
+  /// seperti "ke rekening" atau "to your account" bukan nama merchant.
   String? _merchant(String text) {
     final match = RegExp(
-      r'(?:ke|at|to)\s+([A-Za-z0-9 .&\-]{3,30})',
+      r'\b(?:ke|at|to)\s+(?!rekening\b|akun\b|kartu\b|nomor\b|no\b|account\b|your\b|you\b)([A-Za-z][A-Za-z0-9 .&\-]{2,29})',
+      caseSensitive: false,
     ).firstMatch(text);
-    return match?.group(1)?.trim();
+    final raw = match?.group(1);
+    if (raw == null) return null;
+    final name = raw
+        .split(
+          RegExp(
+            r'\s+(?:pada|sebesar|senilai|tanggal|dengan|dari|on|for|from)\b',
+            caseSensitive: false,
+          ),
+        )
+        .first
+        .trim();
+    return name.length < 3 ? null : name;
   }
 }
 
-/// Kunci dedupe: sumber, nominal, dan waktu dibulatkan ke jendela (menit).
+/// Kunci unik draft notifikasi: sumber, nominal, dan waktu posting persis.
+/// Notifikasi kembar yang diposting berdekatan ditolak lewat
+/// `DraftRepository.existsNear` dengan jendela [nearWindow], jadi tidak ada
+/// batas bucket yang bisa meloloskan atau menggabungkan notifikasi secara acak.
 class DraftDedupe {
   const DraftDedupe._();
+
+  static const nearWindow = Duration(minutes: 2);
 
   static String keyFor({
     required String source,
     required int amount,
     required DateTime detectedAt,
-    int windowMinutes = 5,
-  }) {
-    final minutes = detectedAt.toUtc().millisecondsSinceEpoch ~/ 60000;
-    final bucket = minutes ~/ windowMinutes;
-    return 'notif:$source:$amount:$bucket';
-  }
+  }) => 'notif:$source:$amount:${detectedAt.toUtc().millisecondsSinceEpoch}';
 }

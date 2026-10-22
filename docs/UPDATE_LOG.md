@@ -89,4 +89,9 @@ Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelu
 - Nama kategori bawaan tetap tersimpan dalam bahasa Inggris di database (tanpa migrasi); tampilannya lewat `CategoryModel.displayName`.
 - Laporan: dipilih per bulan (panah kiri/kanan), tanpa pilihan tanggal. Ditambah cincin pengeluaran per kategori, perbandingan dengan bulan lalu (bulan berjalan dibandingkan dengan hari yang setara), pemasukan vs pengeluaran, batang pengeluaran harian. "Statistik belanja" menjadi "Statistik pengeluaran". Rincian pengeluaran dipertahankan.
 - Auto-detect: notifikasi yang masuk saat app tertutup ditahan sementara di sisi native (maks. 50 item, 24 jam) dan diambil Dart saat app dibuka, lalu dihapus. Sebelumnya notifikasi seperti ini hilang. Draf baru langsung me-refresh Beranda. Nominal yang didahului kata saldo/sisa tidak diambil sebagai nominal transaksi.
+- Simpan otomatis (Auto-detect) kini berfungsi: bila aktif, pembayaran yang terdeteksi langsung dicatat sebagai transaksi di kategori "Other" (bawaan) sesuai jenisnya, dan drafnya ditandai selesai. Bila kategori itu tidak ada, draf tetap menunggu di Draf.
+- Dedupe notifikasi: key memakai waktu posting persis, dan notifikasi kembar dengan sumber dan nominal sama dalam 2 menit diabaikan (tabel `drafts` tidak berubah). Menggantikan bucket 5 menit.
+- Parser notifikasi: kata "transaksi" tidak lagi dianggap sinyal pengeluaran, "ke rekening" tidak menjadi nama merchant, dan nama merchant dipotong di "pada/sebesar/dengan/dari".
+- Kata konfirmasi hapus data mengikuti bahasa: HAPUS (Indonesia) dan DELETE (Inggris).
+- Dibersihkan: `docs/FIX_PLAN.md` dan `xlsx_export_service.dart` (kosong) dihapus, `.gitattributes` ditambahkan, README dan spec v3 diberi catatan status.
 

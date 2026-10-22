@@ -1,0 +1,8 @@
+# Samakan line ending di semua mesin; file biner tidak disentuh.
+* text=auto
+
+*.jks binary
+*.png binary
+*.jpg binary
+*.ttf binary
+*.otf binary

@@ -2,6 +2,10 @@
 
 Tally is an offline-first personal finance application for one user on one device. It helps the user record income and expenses, understand spending patterns, manage a monthly budget, and review financial activity without cloud synchronization.
 
+> **Status dokumen (Oktober 2026):** bagian ini menjelaskan keputusan produk awal (v3). Beberapa sudah berubah di Tally v4:
+> PIN cadangan opsional kini ada (biometrik tetap utama), fitur ekspor data dihapus, dan ditambah Auto-detect notifikasi, Drafts, transaksi berulang, Recap, laporan bulanan, serta pilihan bahasa Indonesia/Inggris.
+> Untuk keadaan terkini baca `DOMPETKU_TALLY_DESIGN_V4_DEV.md` dan `docs/UPDATE_LOG.md`; bila berbeda dengan dokumen ini, keduanya yang menang.
+
 This README is the product brainstorming and feature specification. The development workflow, architecture, database preparation, implementation phases, and testing strategy are documented separately in [DEV_PLAN.md](DEV_PLAN.md).
 
 ## 1. Final Product Decisions

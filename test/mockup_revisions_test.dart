@@ -1,8 +1,6 @@
 import 'package:dompetku_app/app/routes/app_routes.dart';
-import 'package:dompetku_app/core/constant/app_constant.dart';
 import 'package:dompetku_app/core/constant/domain_enums.dart';
 import 'package:dompetku_app/core/services/biometric_service.dart';
-import 'package:dompetku_app/core/services/shared_prefs_service.dart';
 import 'package:dompetku_app/core/utils/date_range.dart';
 import 'package:dompetku_app/features/auth/controllers/auth_controller.dart';
 import 'package:dompetku_app/features/auth/models/app_session_model.dart';
@@ -11,9 +9,6 @@ import 'package:dompetku_app/features/auth/pages/biometric_unlock_page.dart';
 import 'package:dompetku_app/features/auth/repositories/session_repository.dart';
 import 'package:dompetku_app/features/category/models/category_model.dart';
 import 'package:dompetku_app/features/category/repositories/category_repository.dart';
-import 'package:dompetku_app/features/dashboard/controllers/dashboard_controller.dart';
-import 'package:dompetku_app/features/home/widgets/period_picker_sheet.dart';
-import 'package:dompetku_app/features/profile/controllers/profile_controller.dart';
 import 'package:dompetku_app/features/receipt/views/receipt_review_page.dart';
 import 'package:dompetku_app/features/transaction/models/transaction_model.dart';
 import 'package:dompetku_app/features/transaction/repositories/transaction_repository.dart';

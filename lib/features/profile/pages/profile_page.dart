@@ -110,7 +110,9 @@ class _ProfilePageState extends State<ProfilePage> {
                 autofocus: true,
                 style: AppText.body(size: 13),
                 decoration: InputDecoration(
-                  labelText: 'Ketik HAPUS untuk melanjutkan'.tr,
+                  labelText: 'Ketik @word untuk melanjutkan'.trParams({
+                    'word': 'HAPUS'.tr,
+                  }),
                   labelStyle: AppText.body(size: 12, color: AppColors.ink2),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.field),
@@ -126,7 +128,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
                 onChanged: (value) =>
-                    setDialogState(() => canDelete = value == 'HAPUS'),
+                    setDialogState(() => canDelete = value == 'HAPUS'.tr),
               ),
             ],
           ),
