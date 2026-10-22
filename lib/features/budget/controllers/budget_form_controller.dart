@@ -6,7 +6,7 @@ import '../../category/repositories/category_repository.dart';
 import '../models/budget_model.dart';
 import '../repositories/budget_repository.dart';
 
-enum BudgetPeriodPreset { currentMonth, nextMonth, thirtyDays }
+enum BudgetPeriodPreset { currentMonth, nextMonth }
 
 class BudgetFormController extends GetxController {
   BudgetFormController(this._budgets, this._categories);
@@ -114,9 +114,6 @@ class BudgetFormController extends GetxController {
         final nextMonth = DateTime(today.year, today.month + 1, 1);
         startDate.value = nextMonth;
         endDate.value = _monthEnd(nextMonth);
-      case BudgetPeriodPreset.thirtyDays:
-        startDate.value = today;
-        endDate.value = today.add(const Duration(days: 29));
     }
     error.value = null;
   }

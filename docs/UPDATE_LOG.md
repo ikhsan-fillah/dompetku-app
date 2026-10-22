@@ -100,4 +100,6 @@ Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelu
 - Versi di Splash dan Profil dibaca otomatis dari paket terpasang (`package_info_plus`), jadi ikut naik mengikuti `version` di `pubspec.yaml`.
 - Layar Welcome back dirombak: sapaan sesuai jam (pagi 04.00-10.59, siang 11.00-14.59, sore 15.00-17.59, selain itu malam), kartu angka tersamar, dan tombol sidik jari di bawah. Layar pendek bisa di-scroll.
 - Ikon aplikasi baru: huruf T Fraunces bold di atas tinta. Sumber: `assets/logo/app_icon.png` dan `app_icon_foreground.png`, dibuat ulang dengan `dart run flutter_launcher_icons`.
+- Anggaran terarsip: daftar kini dimuat saat halaman dibuka (sebelumnya layar berputar terus) dan hanya menampilkan anggaran yang benar-benar diarsipkan. Bila kosong tampil "Tidak ada anggaran terarsip".
+- Form anggaran: pilihan periode jadi dua segmen (Bulan ini, Bulan depan) dan tanggal mulai/selesai dalam satu kartu. Pilihan "30 hari" dihapus.
 

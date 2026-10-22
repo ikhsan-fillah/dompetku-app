@@ -13,8 +13,24 @@ import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
 
 /// Layar daftar anggaran terarsip dengan opsi pulihkan.
-class BudgetArchivePage extends GetView<BudgetController> {
+class BudgetArchivePage extends StatefulWidget {
   const BudgetArchivePage({super.key});
+
+  @override
+  State<BudgetArchivePage> createState() => _BudgetArchivePageState();
+}
+
+class _BudgetArchivePageState extends State<BudgetArchivePage> {
+  final controller = Get.find<BudgetController>();
+
+  @override
+  void initState() {
+    super.initState();
+    // Tanpa ini daftar tidak pernah dimuat dan layar berputar terus.
+    WidgetsBinding.instance.addPostFrameCallback(
+      (_) => controller.loadArchived(),
+    );
+  }
 
   String _money(int value) {
     final digits = value.abs().toString();

@@ -421,61 +421,18 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
             const SizedBox(height: 12),
             if (_isBudget && _budgetController != null) ...[
               Obx(
-                () => Wrap(
-                  spacing: 8,
-                  children: [
-                    AppChip(
-                      label: 'Bulan ini'.tr,
-                      selected:
-                          _budgetController.selectedPreset.value ==
-                          BudgetPeriodPreset.currentMonth,
-                      onTap: () => _budgetController.setPreset(
-                        BudgetPeriodPreset.currentMonth,
-                      ),
-                    ),
-                    AppChip(
-                      label: 'Bulan depan'.tr,
-                      selected:
-                          _budgetController.selectedPreset.value ==
-                          BudgetPeriodPreset.nextMonth,
-                      onTap: () => _budgetController.setPreset(
-                        BudgetPeriodPreset.nextMonth,
-                      ),
-                    ),
-                    AppChip(
-                      label: '30 hari'.tr,
-                      selected:
-                          _budgetController.selectedPreset.value ==
-                          BudgetPeriodPreset.thirtyDays,
-                      onTap: () => _budgetController.setPreset(
-                        BudgetPeriodPreset.thirtyDays,
-                      ),
-                    ),
-                  ],
+                () => _PeriodSegment(
+                  selected: _budgetController.selectedPreset.value,
+                  onSelect: _budgetController.setPreset,
                 ),
               ),
               const SizedBox(height: 10),
               Obx(
-                () => Row(
-                  children: [
-                    Expanded(
-                      child: _DateRow(
-                        date: _budgetController.startDate.value,
-                        label: 'Mulai'.tr,
-                        showRelativeLabel: false,
-                        onTap: () => _pickBudgetDate(true),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: _DateRow(
-                        date: _budgetController.endDate.value,
-                        label: 'Selesai'.tr,
-                        showRelativeLabel: false,
-                        onTap: () => _pickBudgetDate(false),
-                      ),
-                    ),
-                  ],
+                () => _BudgetDates(
+                  start: _budgetController.startDate.value,
+                  end: _budgetController.endDate.value,
+                  onPickStart: () => _pickBudgetDate(true),
+                  onPickEnd: () => _pickBudgetDate(false),
                 ),
               ),
             ] else
@@ -714,31 +671,141 @@ class _ToggleButton extends StatelessWidget {
   }
 }
 
-class _DateRow extends StatelessWidget {
-  const _DateRow({
-    required this.date,
-    required this.onTap,
-    this.label,
-    this.showRelativeLabel = true,
+/// Pilihan periode anggaran: dua segmen sama lebar (bulan ini / bulan depan).
+/// Tidak ada yang menyala bila tanggal diubah manual.
+class _PeriodSegment extends StatelessWidget {
+  const _PeriodSegment({required this.selected, required this.onSelect});
+
+  final BudgetPeriodPreset? selected;
+  final ValueChanged<BudgetPeriodPreset> onSelect;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(3),
+    decoration: BoxDecoration(
+      color: AppColors.paper2,
+      borderRadius: BorderRadius.circular(AppRadius.field),
+    ),
+    child: Row(
+      children: [
+        _segment('Bulan ini'.tr, BudgetPeriodPreset.currentMonth),
+        _segment('Bulan depan'.tr, BudgetPeriodPreset.nextMonth),
+      ],
+    ),
+  );
+
+  Widget _segment(String label, BudgetPeriodPreset preset) {
+    final active = selected == preset;
+    return Expanded(
+      child: Semantics(
+        button: true,
+        selected: active,
+        label: label,
+        child: Material(
+          color: active ? AppColors.card : Colors.transparent,
+          borderRadius: BorderRadius.circular(AppRadius.field - 3),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.field - 3),
+            onTap: () => onSelect(preset),
+            child: Container(
+              height: 40,
+              alignment: Alignment.center,
+              decoration: active
+                  ? BoxDecoration(
+                      borderRadius: BorderRadius.circular(AppRadius.field - 3),
+                      border: Border.all(color: AppColors.line),
+                    )
+                  : null,
+              child: Text(
+                label,
+                style: AppText.body(
+                  size: 13,
+                  weight: active ? FontWeight.w700 : FontWeight.w600,
+                  color: active ? AppColors.ink : AppColors.ink2,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Tanggal mulai dan selesai dalam satu kartu, masing-masing bisa diketuk.
+class _BudgetDates extends StatelessWidget {
+  const _BudgetDates({
+    required this.start,
+    required this.end,
+    required this.onPickStart,
+    required this.onPickEnd,
   });
+
+  final DateTime start;
+  final DateTime end;
+  final VoidCallback onPickStart;
+  final VoidCallback onPickEnd;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    decoration: BoxDecoration(
+      color: AppColors.card,
+      borderRadius: BorderRadius.circular(AppRadius.field),
+      border: Border.all(color: AppColors.line),
+    ),
+    child: Row(
+      children: [
+        Expanded(child: _cell('Mulai'.tr, start, onPickStart)),
+        const Icon(LucideIcons.arrowRight, size: 16, color: AppColors.mut),
+        Expanded(child: _cell('Selesai'.tr, end, onPickEnd)),
+      ],
+    ),
+  );
+
+  Widget _cell(String label, DateTime date, VoidCallback onTap) => Semantics(
+    button: true,
+    label: 'Pilih tanggal, @date'.trParams({
+      'date': '$label ${DateLabel.day(date)}',
+    }),
+    child: InkWell(
+      borderRadius: BorderRadius.circular(AppRadius.field),
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(label, style: AppText.body(size: 10.5, color: AppColors.ink2)),
+            const SizedBox(height: 2),
+            Text(
+              DateLabel.day(date),
+              style: AppText.body(size: 13, weight: FontWeight.w700),
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
+}
+
+class _DateRow extends StatelessWidget {
+  const _DateRow({required this.date, required this.onTap});
 
   final DateTime date;
   final VoidCallback onTap;
-  final String? label;
-  final bool showRelativeLabel;
 
   @override
   Widget build(BuildContext context) {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
-    final dateLabel = showRelativeLabel && date == today
+    final dateLabel = date == today
         ? 'Hari ini · @date'.trParams({'date': DateLabel.day(date)})
         : DateLabel.day(date);
     return Align(
       alignment: Alignment.center,
       child: Semantics(
         button: true,
-        label: 'Pilih tanggal, @date'.trParams({'date': label ?? dateLabel}),
+        label: 'Pilih tanggal, @date'.trParams({'date': dateLabel}),
         child: Material(
           color: Colors.transparent,
           shape: RoundedRectangleBorder(
@@ -760,7 +827,7 @@ class _DateRow extends StatelessWidget {
                   ),
                   const SizedBox(width: 6),
                   Text(
-                    label == null ? dateLabel : '$label · $dateLabel',
+                    dateLabel,
                     style: AppText.body(
                       size: 11.5,
                       weight: FontWeight.w600,

@@ -149,20 +149,27 @@ void main() {
     expect(saved.isArchived, isFalse);
   });
 
-  test('menyimpan catatan dan preset periode 30 hari', () async {
+  test('menyimpan catatan dan preset periode bulan depan', () async {
     await controller.startNew(now: DateTime(2026, 9, 29));
     controller.amountDigits.value = '100000';
     controller.note.value = '  kebutuhan harian  ';
     controller.setPreset(
-      BudgetPeriodPreset.thirtyDays,
+      BudgetPeriodPreset.nextMonth,
       now: DateTime(2026, 9, 29),
     );
 
     expect(await controller.save(), isTrue);
     final saved = budgets.inserted.single;
     expect(saved.note, 'kebutuhan harian');
-    expect(saved.startDate, DateTime(2026, 9, 29));
-    expect(saved.endDate, DateTime(2026, 10, 28));
+    expect(saved.startDate, DateTime(2026, 10, 1));
+    expect(saved.endDate, DateTime(2026, 10, 31));
+  });
+
+  test('hanya ada preset bulan ini dan bulan depan', () {
+    expect(BudgetPeriodPreset.values, [
+      BudgetPeriodPreset.currentMonth,
+      BudgetPeriodPreset.nextMonth,
+    ]);
   });
 
   test('menolak periode tumpang tindih pada kategori yang sama', () async {
