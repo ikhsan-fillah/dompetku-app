@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/app_colors.dart';
@@ -47,26 +48,26 @@ class AppBottomNav extends StatelessWidget {
               child: Row(
                 children: [
                   _NavButton(
-                    label: 'Beranda',
+                    label: 'Beranda'.tr,
                     icon: LucideIcons.house,
                     selected: currentIndex == 0,
                     onTap: () => onSelect(0),
                   ),
                   _NavButton(
-                    label: 'Transaksi',
+                    label: 'Transaksi'.tr,
                     icon: LucideIcons.listOrdered,
                     selected: currentIndex == 1,
                     onTap: () => onSelect(1),
                   ),
                   const SizedBox(width: 74),
                   _NavButton(
-                    label: 'Anggaran',
+                    label: 'Anggaran'.tr,
                     icon: LucideIcons.chartPie,
                     selected: currentIndex == 2,
                     onTap: () => onSelect(2),
                   ),
                   _NavButton(
-                    label: 'Profil',
+                    label: 'Profil'.tr,
                     icon: LucideIcons.user,
                     selected: currentIndex == 3,
                     onTap: () => onSelect(3),
@@ -75,10 +76,7 @@ class AppBottomNav extends StatelessWidget {
               ),
             ),
           ),
-          Positioned(
-            top: 0,
-            child: _AddButton(onTap: onAdd),
-          ),
+          Positioned(top: 0, child: _AddButton(onTap: onAdd)),
         ],
       ),
     );
@@ -150,7 +148,7 @@ class _AddButton extends StatelessWidget {
   Widget build(BuildContext context) {
     return Semantics(
       button: true,
-      label: 'Tambah transaksi',
+      label: 'Tambah transaksi'.tr,
       child: Container(
         width: AppSpacing.fabSize,
         height: AppSpacing.fabSize,
@@ -171,11 +169,7 @@ class _AddButton extends StatelessWidget {
           child: InkWell(
             borderRadius: BorderRadius.circular(AppRadius.fab),
             onTap: onTap,
-            child: const Icon(
-              LucideIcons.plus,
-              color: Colors.white,
-              size: 24,
-            ),
+            child: const Icon(LucideIcons.plus, color: Colors.white, size: 24),
           ),
         ),
       ),

@@ -31,18 +31,19 @@ class DraftModel {
   final bool needsReview;
   final int? recurringRuleId;
 
-  DraftModel copyWith({int? amount, String? merchant}) => DraftModel(
-    id: id,
-    source: source,
-    kind: kind,
-    amount: amount ?? this.amount,
-    merchant: merchant ?? this.merchant,
-    categoryId: categoryId,
-    paymentMethod: paymentMethod,
-    detectedAt: detectedAt,
-    status: status,
-    dedupeKey: dedupeKey,
-    needsReview: needsReview,
-    recurringRuleId: recurringRuleId,
-  );
+  DraftModel copyWith({int? amount, String? merchant, int? categoryId}) =>
+      DraftModel(
+        id: id,
+        source: source,
+        kind: kind,
+        amount: amount ?? this.amount,
+        merchant: merchant ?? this.merchant,
+        categoryId: categoryId ?? this.categoryId,
+        paymentMethod: paymentMethod,
+        detectedAt: detectedAt,
+        status: status,
+        dedupeKey: dedupeKey,
+        needsReview: needsReview,
+        recurringRuleId: recurringRuleId,
+      );
 }

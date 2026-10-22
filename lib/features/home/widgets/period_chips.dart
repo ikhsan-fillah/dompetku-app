@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../core/utils/date_range.dart';
 import '../../../core/widgets/app_chip.dart';
@@ -14,14 +15,14 @@ class PeriodChips extends StatelessWidget {
   final DateRangePreset selected;
   final ValueChanged<DateRangePreset> onSelect;
 
-  static const _items = [
-    (DateRangePreset.today, 'Hari ini'),
-    (DateRangePreset.week, '1 Minggu'),
-    (DateRangePreset.currentMonth, 'Bulan ini'),
-    (DateRangePreset.month, '1 Bulan'),
-    (DateRangePreset.threeMonths, '3 Bulan'),
-    (DateRangePreset.yearToDate, 'Tahun ini'),
-    (DateRangePreset.custom, 'Kustom'),
+  static List<(DateRangePreset, String)> get _items => [
+    (DateRangePreset.today, 'Hari ini'.tr),
+    (DateRangePreset.week, '1 Minggu'.tr),
+    (DateRangePreset.currentMonth, 'Bulan ini'.tr),
+    (DateRangePreset.month, '1 Bulan'.tr),
+    (DateRangePreset.threeMonths, '3 Bulan'.tr),
+    (DateRangePreset.yearToDate, 'Tahun ini'.tr),
+    (DateRangePreset.custom, 'Kustom'.tr),
   ];
 
   @override

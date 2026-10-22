@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
@@ -21,7 +22,9 @@ class BudgetRing extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Semantics(
-      label: 'Anggaran terpakai ${percent.round()} persen',
+      label: 'Anggaran terpakai @percent persen'.trParams({
+        'percent': '${percent.round()}',
+      }),
       excludeSemantics: true,
       child: SizedBox(
         width: size,

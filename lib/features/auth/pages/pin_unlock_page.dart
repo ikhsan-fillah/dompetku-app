@@ -38,7 +38,10 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
       _value = '';
       _error = _auth.isLockedOut
           ? null
-          : 'Wrong PIN. ${AppConstants.maxBiometricFailures - _auth.biometricFailureCount.value} attempts left.';
+          : 'PIN salah. Sisa @count percobaan.'.trParams({
+              'count':
+                  '${AppConstants.maxBiometricFailures - _auth.biometricFailureCount.value}',
+            });
     });
     if (_auth.isLockedOut) {
       Get.offAllNamed(AppRoutes.biometricUnlock);
@@ -53,19 +56,20 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
-          title: const Text('Forgot your PIN?'),
+          title: Text('Lupa PIN?'.tr),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const Text(
-                'Your data cannot be opened without the PIN. You can only erase everything on this phone and start over. This cannot be undone.',
+              Text(
+                'Datamu tidak bisa dibuka tanpa PIN. Kamu hanya bisa menghapus semua data di ponsel ini dan memulai dari awal. Tindakan ini tidak dapat dibatalkan.'
+                    .tr,
               ),
               const SizedBox(height: 12),
               TextField(
                 controller: confirmation,
-                decoration: const InputDecoration(
-                  labelText: 'Type HAPUS to continue',
+                decoration: InputDecoration(
+                  labelText: 'Ketik HAPUS untuk melanjutkan'.tr,
                 ),
                 onChanged: (value) =>
                     setDialogState(() => canDelete = value == 'HAPUS'),
@@ -75,13 +79,13 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
           actions: [
             TextButton(
               onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: const Text('Cancel'),
+              child: Text('Batal'.tr),
             ),
             FilledButton(
               onPressed: canDelete
                   ? () => Navigator.of(dialogContext).pop(true)
                   : null,
-              child: const Text('Erase all data'),
+              child: Text('Hapus semua data'.tr),
             ),
           ],
         ),
@@ -95,7 +99,7 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
       if (mounted) Get.offAllNamed(AppRoutes.login);
     } catch (_) {
       if (!mounted) return;
-      setState(() => _error = 'Could not erase data. Try again.');
+      setState(() => _error = 'Gagal menghapus data. Coba lagi.'.tr);
     }
   }
 
@@ -124,7 +128,7 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                'Enter your PIN',
+                'Masukkan PIN kamu'.tr,
                 textAlign: TextAlign.center,
                 style: AppText.display(size: 26),
               ),
@@ -151,7 +155,7 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
               TextButton(
                 onPressed: _forgotPin,
                 child: Text(
-                  'Forgot PIN?',
+                  'Lupa PIN?'.tr,
                   style: AppText.body(size: 13, color: AppColors.mut),
                 ),
               ),
@@ -162,7 +166,7 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
                   return TextButton(
                     onPressed: () => Get.offAllNamed(AppRoutes.biometricUnlock),
                     child: Text(
-                      'Use biometrics',
+                      'Pakai biometrik'.tr,
                       style: AppText.body(
                         size: 13,
                         weight: FontWeight.w700,

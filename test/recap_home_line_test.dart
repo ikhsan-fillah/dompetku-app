@@ -26,7 +26,8 @@ class _Tx implements TransactionRepository {
 
 class _Budgets implements BudgetRepository {
   @override
-  Future<List<BudgetModel>> getAll({bool includeArchived = false}) async => const [];
+  Future<List<BudgetModel>> getAll({bool includeArchived = false}) async =>
+      const [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -34,23 +35,28 @@ class _Budgets implements BudgetRepository {
 
 class _Categories implements CategoryRepository {
   @override
-  Future<List<CategoryModel>> getAll({bool includeArchived = false}) async => const [];
+  Future<List<CategoryModel>> getAll({bool includeArchived = false}) async =>
+      const [];
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
 TransactionModel _tx(DateTime date, int amount) => TransactionModel(
-      type: TransactionType.expense,
-      title: 'x',
-      amount: amount,
-      transactionDate: date,
-      categoryId: 1,
-      createdAt: date,
-      updatedAt: date,
-    );
+  type: TransactionType.expense,
+  title: 'x',
+  amount: amount,
+  transactionDate: date,
+  categoryId: 1,
+  createdAt: date,
+  updatedAt: date,
+);
 
-Future<void> _pump(WidgetTester tester, {required DateTime now, required List<TransactionModel> tx}) async {
+Future<void> _pump(
+  WidgetTester tester, {
+  required DateTime now,
+  required List<TransactionModel> tx,
+}) async {
   Get.testMode = true;
   Get.reset();
   Get.put<TransactionRepository>(_Tx(tx));
@@ -68,14 +74,16 @@ Future<void> _pump(WidgetTester tester, {required DateTime now, required List<Tr
 void main() {
   tearDown(() => Get.reset());
 
-  testWidgets('tampil di tanggal 2 jika bulan lalu punya transaksi', (tester) async {
+  testWidgets('tampil di tanggal 2 jika bulan lalu punya transaksi', (
+    tester,
+  ) async {
     await _pump(
       tester,
       now: DateTime(2026, 10, 2),
       tx: [_tx(DateTime(2026, 9, 10), 50000)],
     );
 
-    expect(find.text('Your September recap is ready'), findsOneWidget);
+    expect(find.text('Rekap September kamu sudah siap'), findsOneWidget);
   });
 
   testWidgets('tidak tampil di tanggal 4', (tester) async {
@@ -85,7 +93,7 @@ void main() {
       tx: [_tx(DateTime(2026, 9, 10), 50000)],
     );
 
-    expect(find.textContaining('recap is ready'), findsNothing);
+    expect(find.textContaining('sudah siap'), findsNothing);
   });
 
   testWidgets('tidak tampil jika bulan lalu kosong', (tester) async {
@@ -95,16 +103,18 @@ void main() {
       tx: [_tx(DateTime(2026, 8, 10), 50000)],
     );
 
-    expect(find.textContaining('recap is ready'), findsNothing);
+    expect(find.textContaining('sudah siap'), findsNothing);
   });
 
-  testWidgets('bulan lalu di Januari menunjuk Desember tahun sebelumnya', (tester) async {
+  testWidgets('bulan lalu di Januari menunjuk Desember tahun sebelumnya', (
+    tester,
+  ) async {
     await _pump(
       tester,
       now: DateTime(2026, 1, 2),
       tx: [_tx(DateTime(2025, 12, 20), 50000)],
     );
 
-    expect(find.text('Your December recap is ready'), findsOneWidget);
+    expect(find.text('Rekap Desember kamu sudah siap'), findsOneWidget);
   });
 }

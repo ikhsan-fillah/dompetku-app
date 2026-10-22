@@ -64,7 +64,9 @@ Future<bool> showTransactionSheet(
     backgroundColor: AppColors.card,
     elevation: 0,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppRadius.sheet),
+      ),
       side: BorderSide(color: AppColors.line),
     ),
     builder: (sheetContext) => Padding(
@@ -91,13 +93,13 @@ Future<bool> showTransactionSheet(
 }
 
 String _paymentLabel(PaymentMethod method) => switch (method) {
-  PaymentMethod.cash => 'Tunai',
-  PaymentMethod.eWallet => 'E-wallet',
-  PaymentMethod.qris => 'QRIS',
-  PaymentMethod.bankTransfer => 'Transfer',
-  PaymentMethod.debitCard => 'Kartu debit',
-  PaymentMethod.creditCard => 'Kartu kredit',
-  PaymentMethod.other => 'Lainnya',
+  PaymentMethod.cash => 'Tunai'.tr,
+  PaymentMethod.eWallet => 'E-wallet'.tr,
+  PaymentMethod.qris => 'QRIS'.tr,
+  PaymentMethod.bankTransfer => 'Transfer'.tr,
+  PaymentMethod.debitCard => 'Kartu debit'.tr,
+  PaymentMethod.creditCard => 'Kartu kredit'.tr,
+  PaymentMethod.other => 'Lainnya'.tr,
 };
 
 String _groupDigits(String digits) {
@@ -288,8 +290,8 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
       SnackBar(
         content: Text(
           result.receipt!.isComplete
-              ? 'Data struk terisi. Periksa sebelum menyimpan.'
-              : 'Sebagian data struk terisi. Lengkapi dan periksa kembali.',
+              ? 'Data struk terisi. Periksa sebelum menyimpan.'.tr
+              : 'Sebagian data struk terisi. Lengkapi dan periksa kembali.'.tr,
         ),
       ),
     );
@@ -319,19 +321,21 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                 Expanded(
                   child: Text(
                     _isBudget
-                        ? (_isEditing ? 'Edit anggaran' : 'Catat Keuangan')
+                        ? (_isEditing
+                              ? 'Edit anggaran'.tr
+                              : 'Catat Keuangan'.tr)
                         : _isEditing
                         ? c.type.value == TransactionType.income
-                              ? 'Edit pemasukan'
-                              : 'Edit pengeluaran'
-                        : 'Catat Keuangan',
+                              ? 'Edit pemasukan'.tr
+                              : 'Edit pengeluaran'.tr
+                        : 'Catat Keuangan'.tr,
                     style: AppText.display(size: 19),
                   ),
                 ),
                 if (!_isEditing && !_isBudget)
                   Obx(
                     () => IconButton(
-                      tooltip: 'Dari galeri',
+                      tooltip: 'Dari galeri'.tr,
                       onPressed: c.scanning.value || c.saving.value
                           ? null
                           : () => _scanReceipt(ReceiptImageSource.gallery),
@@ -342,7 +346,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                 if (!_isEditing && !_isBudget)
                   Obx(
                     () => IconButton(
-                      tooltip: 'Scan struk',
+                      tooltip: 'Scan struk'.tr,
                       onPressed: c.scanning.value || c.saving.value
                           ? null
                           : () => _scanReceipt(ReceiptImageSource.camera),
@@ -357,7 +361,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                     ),
                   ),
                 IconButton(
-                  tooltip: 'Tutup',
+                  tooltip: 'Tutup'.tr,
                   onPressed: () => Navigator.of(context).pop(false),
                   icon: const Icon(LucideIcons.x, size: 18),
                   color: AppColors.ink,
@@ -398,8 +402,8 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                   style: AppText.display(size: 36, color: color),
                   decoration: InputDecoration(
                     labelText: _isBudget
-                        ? 'Batas anggaran (IDR)'
-                        : 'Jumlah (IDR)',
+                        ? 'Batas anggaran (IDR)'.tr
+                        : 'Jumlah (IDR)'.tr,
                     floatingLabelBehavior: FloatingLabelBehavior.always,
                     floatingLabelAlignment: FloatingLabelAlignment.center,
                     labelStyle: AppText.body(size: 11, color: AppColors.mut),
@@ -421,7 +425,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                   spacing: 8,
                   children: [
                     AppChip(
-                      label: 'Bulan ini',
+                      label: 'Bulan ini'.tr,
                       selected:
                           _budgetController.selectedPreset.value ==
                           BudgetPeriodPreset.currentMonth,
@@ -430,7 +434,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                       ),
                     ),
                     AppChip(
-                      label: 'Bulan depan',
+                      label: 'Bulan depan'.tr,
                       selected:
                           _budgetController.selectedPreset.value ==
                           BudgetPeriodPreset.nextMonth,
@@ -439,7 +443,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                       ),
                     ),
                     AppChip(
-                      label: '30 hari',
+                      label: '30 hari'.tr,
                       selected:
                           _budgetController.selectedPreset.value ==
                           BudgetPeriodPreset.thirtyDays,
@@ -457,7 +461,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                     Expanded(
                       child: _DateRow(
                         date: _budgetController.startDate.value,
-                        label: 'Mulai',
+                        label: 'Mulai'.tr,
                         showRelativeLabel: false,
                         onTap: () => _pickBudgetDate(true),
                       ),
@@ -466,7 +470,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                     Expanded(
                       child: _DateRow(
                         date: _budgetController.endDate.value,
-                        label: 'Selesai',
+                        label: 'Selesai'.tr,
                         showRelativeLabel: false,
                         onTap: () => _pickBudgetDate(false),
                       ),
@@ -476,7 +480,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
               ),
             ] else
               Obx(() => _DateRow(date: c.date.value, onTap: _pickDate)),
-            const _Label('Kategori'),
+            _Label('Kategori'.tr),
             Obx(
               () => _CategoryRow(
                 options: _isBudget
@@ -505,20 +509,20 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                 childrenPadding: EdgeInsets.zero,
                 initiallyExpanded: _isEditing,
                 title: Text(
-                  'Detail tambahan',
+                  'Detail tambahan'.tr,
                   style: AppText.body(size: 13, weight: FontWeight.w700),
                 ),
                 subtitle: Text(
                   _isBudget
-                      ? 'Nama dan catatan anggaran'
-                      : 'Metode pembayaran, nama, catatan',
+                      ? 'Nama dan catatan anggaran'.tr
+                      : 'Metode pembayaran, nama, catatan'.tr,
                   style: AppText.body(size: 10.5, color: AppColors.mut),
                 ),
                 children: [
                   if (!_isBudget) ...[
-                    const Align(
+                    Align(
                       alignment: Alignment.centerLeft,
-                      child: _Label('Metode pembayaran'),
+                      child: _Label('Metode pembayaran'.tr),
                     ),
                     Obx(
                       () => SingleChildScrollView(
@@ -545,8 +549,8 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                   AppTextField(
                     controller: _titleField,
                     hint: _isBudget
-                        ? 'Nama anggaran (opsional)'
-                        : 'Nama (opsional), contoh: Makan siang',
+                        ? 'Nama anggaran (opsional)'.tr
+                        : 'Nama (opsional), contoh: Makan siang'.tr,
                     prefixIcon: LucideIcons.pencil,
                     textInputAction: TextInputAction.next,
                     onChanged: (value) => _isBudget
@@ -556,7 +560,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                   const SizedBox(height: 10),
                   AppTextField(
                     controller: _noteField,
-                    hint: 'Catatan (opsional)',
+                    hint: 'Catatan (opsional)'.tr,
                     prefixIcon: LucideIcons.fileText,
                     textInputAction: TextInputAction.done,
                     onChanged: (value) => _isBudget
@@ -587,8 +591,12 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
             Obx(
               () => AppButton(
                 label: _isBudget
-                    ? (_isEditing ? 'Simpan perubahan' : 'Simpan anggaran')
-                    : (_isEditing ? 'Simpan perubahan' : 'Simpan transaksi'),
+                    ? (_isEditing
+                          ? 'Simpan perubahan'.tr
+                          : 'Simpan anggaran'.tr)
+                    : (_isEditing
+                          ? 'Simpan perubahan'.tr
+                          : 'Simpan transaksi'.tr),
                 icon: LucideIcons.check,
                 loading: _isBudget
                     ? _budgetController?.saving.value ?? false
@@ -616,10 +624,7 @@ class _Label extends StatelessWidget {
   Widget build(BuildContext context) {
     return Padding(
       padding: const EdgeInsets.only(top: 12, bottom: 6),
-      child: Text(
-        text.toUpperCase(),
-        style: AppText.label(),
-      ),
+      child: Text(text.toUpperCase(), style: AppText.label()),
     );
   }
 }
@@ -641,19 +646,19 @@ class _ModeToggle extends StatelessWidget {
       child: Row(
         children: [
           _ToggleButton(
-            label: 'Pengeluaran',
+            label: 'Pengeluaran'.tr,
             selected: mode == FinancialInputMode.expense,
             color: AppColors.spend,
             onTap: () => onChanged(FinancialInputMode.expense),
           ),
           _ToggleButton(
-            label: 'Pemasukan',
+            label: 'Pemasukan'.tr,
             selected: mode == FinancialInputMode.income,
             color: AppColors.earn,
             onTap: () => onChanged(FinancialInputMode.income),
           ),
           _ToggleButton(
-            label: 'Anggaran',
+            label: 'Anggaran'.tr,
             selected: mode == FinancialInputMode.budget,
             color: AppColors.ink,
             onTap: () => onChanged(FinancialInputMode.budget),
@@ -727,13 +732,13 @@ class _DateRow extends StatelessWidget {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final dateLabel = showRelativeLabel && date == today
-        ? 'Hari ini · ${DateLabel.day(date)}'
+        ? 'Hari ini · @date'.trParams({'date': DateLabel.day(date)})
         : DateLabel.day(date);
     return Align(
       alignment: Alignment.center,
       child: Semantics(
         button: true,
-        label: 'Pilih tanggal, ${label ?? dateLabel}',
+        label: 'Pilih tanggal, @date'.trParams({'date': label ?? dateLabel}),
         child: Material(
           color: Colors.transparent,
           shape: RoundedRectangleBorder(
@@ -789,7 +794,7 @@ class _CategoryRow extends StatelessWidget {
       return Padding(
         padding: EdgeInsets.symmetric(vertical: 8),
         child: Text(
-          'Belum ada kategori untuk jenis ini.',
+          'Belum ada kategori untuk jenis ini.'.tr,
           style: AppText.body(size: 12, color: AppColors.mut),
         ),
       );
@@ -851,7 +856,7 @@ class _CategoryChoice extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                category.name,
+                category.displayName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppText.body(

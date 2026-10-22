@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import '../../../core/constant/domain_enums.dart';
 import '../../category/models/category_model.dart';
 import '../../dashboard/models/dashboard_view_models.dart';
@@ -69,7 +70,7 @@ class TransactionListService {
         item.title,
         item.note ?? '',
         item.merchantOrSource ?? '',
-        byId[item.categoryId]?.name ?? '',
+        byId[item.categoryId]?.displayName ?? '',
       ].join(' ').toLowerCase();
       return haystack.contains(needle);
     }).toList()..sort((a, b) => _compare(a, b, sort, byId));
@@ -90,7 +91,7 @@ class TransactionListService {
       final view = RecentTransactionItem(
         id: item.id ?? 0,
         title: item.title,
-        categoryName: category?.name ?? 'Tanpa kategori',
+        categoryName: category?.displayName ?? 'Tanpa kategori'.tr,
         iconKey: category?.iconKey ?? 'more_horiz',
         colorValue: category?.colorValue ?? 0xFF90A4AE,
         amount: item.amount,
@@ -127,11 +128,13 @@ class TransactionListService {
 
     int byId() => (b.id ?? 0).compareTo(a.id ?? 0);
     int byName() => a.title.toLowerCase().compareTo(b.title.toLowerCase());
-    int byCategory() => (categories[a.categoryId]?.name ?? 'Tanpa kategori')
-        .toLowerCase()
-        .compareTo(
-          (categories[b.categoryId]?.name ?? 'Tanpa kategori').toLowerCase(),
-        );
+    int byCategory() =>
+        (categories[a.categoryId]?.displayName ?? 'Tanpa kategori'.tr)
+            .toLowerCase()
+            .compareTo(
+              (categories[b.categoryId]?.displayName ?? 'Tanpa kategori'.tr)
+                  .toLowerCase(),
+            );
 
     final value = switch (sort) {
       TransactionSort.terbaru => byDate(),

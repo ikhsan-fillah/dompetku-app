@@ -57,26 +57,27 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
             AppTitleBar(
               titleWidget: Obx(
                 () => Text(
-                  controller.category.value?.name ?? 'Detail kategori',
+                  controller.category.value?.displayName ??
+                      'Detail kategori'.tr,
                   style: AppText.display(size: 26),
                 ),
               ),
               action: Obx(() {
                 final selectedSort = controller.sort.value;
                 return PopupMenuButton<CategoryTransactionSort>(
-                  tooltip: 'Urutkan transaksi',
+                  tooltip: 'Urutkan transaksi'.tr,
                   icon: const Icon(LucideIcons.arrowUpDown, size: 20),
                   onSelected: controller.setSort,
                   itemBuilder: (context) => [
                     CheckedPopupMenuItem(
                       value: CategoryTransactionSort.newest,
                       checked: selectedSort == CategoryTransactionSort.newest,
-                      child: const Text('Tanggal terbaru'),
+                      child: Text('Tanggal terbaru'.tr),
                     ),
                     CheckedPopupMenuItem(
                       value: CategoryTransactionSort.oldest,
                       checked: selectedSort == CategoryTransactionSort.oldest,
-                      child: const Text('Tanggal terlama'),
+                      child: Text('Tanggal terlama'.tr),
                     ),
                   ],
                 );
@@ -91,14 +92,15 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                   ),
                   ResourceStatus.error => AppErrorView(
                     message:
-                        current.message ?? 'Gagal memuat transaksi kategori.',
+                        current.message ??
+                        'Gagal memuat transaksi kategori.'.tr,
                     onRetry: controller.load,
                   ),
-                  ResourceStatus.empty => const AppEmptyView(
+                  ResourceStatus.empty => AppEmptyView(
                     icon: LucideIcons.receipt,
-                    title: 'Belum ada transaksi pada kategori ini',
+                    title: 'Belum ada transaksi pada kategori ini'.tr,
                     message:
-                        'Transaksi dengan kategori ini akan tampil di sini.',
+                        'Transaksi dengan kategori ini akan tampil di sini.'.tr,
                   ),
                   ResourceStatus.success => _content(context),
                 };
@@ -139,12 +141,15 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        category?.name ?? 'Kategori',
+                        category?.displayName ?? 'Detail kategori'.tr,
                         style: AppText.body(size: 14, weight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '${formatIdr(summary?.total ?? 0)} · ${summary?.count ?? 0} transaksi',
+                        '@total · @count transaksi'.trParams({
+                          'total': formatIdr(summary?.total ?? 0),
+                          'count': '${summary?.count ?? 0}',
+                        }),
                         style: AppText.mono(
                           size: 11.5,
                           weight: FontWeight.w500,

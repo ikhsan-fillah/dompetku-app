@@ -1,16 +1,15 @@
 import 'package:flutter/material.dart';
 
+import '../../../core/i18n/app_language.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 
-const recapMonthNames = [
-  'January', 'February', 'March', 'April', 'May', 'June',
-  'July', 'August', 'September', 'October', 'November', 'December',
+List<String> get recapMonthNames => [
+  for (var month = 1; month <= 12; month++) AppLanguage.monthLong(month),
 ];
 
-const recapMonthShort = [
-  'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-  'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
+List<String> get recapMonthShort => [
+  for (var month = 1; month <= 12; month++) AppLanguage.monthShort(month),
 ];
 
 /// Tally: setiap lima goresan = empat tegak dan satu coret miring.
@@ -141,11 +140,7 @@ class _DashedPainter extends CustomPainter {
 
 /// Angka yang naik dari nol ke [value] (count-up).
 class CountUpText extends StatelessWidget {
-  const CountUpText({
-    super.key,
-    required this.value,
-    required this.style,
-  });
+  const CountUpText({super.key, required this.value, required this.style});
 
   final int value;
   final TextStyle style;
@@ -159,10 +154,7 @@ class CountUpText extends StatelessWidget {
       builder: (context, v, _) {
         final amount = v.round();
         final sign = amount < 0 ? '-' : '';
-        return Text(
-          '${sign}Rp ${_group(amount.abs())}',
-          style: style,
-        );
+        return Text('${sign}Rp ${_group(amount.abs())}', style: style);
       },
     );
   }
@@ -193,10 +185,7 @@ class BudgetStamp extends StatelessWidget {
         border: Border.all(color: color, width: 1.5),
         borderRadius: BorderRadius.circular(4),
       ),
-      child: Text(
-        label,
-        style: AppText.label(color: color, size: 10),
-      ),
+      child: Text(label, style: AppText.label(color: color, size: 10)),
     );
   }
 }

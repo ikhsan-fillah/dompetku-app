@@ -57,21 +57,32 @@ class RecapHomeLine extends StatelessWidget {
             child: InkWell(
               borderRadius: BorderRadius.circular(10),
               onTap: () => Get.to(
-                () => MonthlyRecapPage(year: previous.year, month: previous.month),
+                () => MonthlyRecapPage(
+                  year: previous.year,
+                  month: previous.month,
+                ),
               ),
               child: Padding(
                 padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                 child: Row(
                   children: [
-                    const Icon(LucideIcons.play, size: 16, color: AppColors.ink),
+                    const Icon(
+                      LucideIcons.play,
+                      size: 16,
+                      color: AppColors.ink,
+                    ),
                     const SizedBox(width: 10),
                     Expanded(
                       child: Text(
-                        'Your $name recap is ready',
+                        'Rekap @name kamu sudah siap'.trParams({'name': name}),
                         style: AppText.body(size: 13, weight: FontWeight.w700),
                       ),
                     ),
-                    const Icon(LucideIcons.chevronRight, size: 16, color: AppColors.mut),
+                    const Icon(
+                      LucideIcons.chevronRight,
+                      size: 16,
+                      color: AppColors.mut,
+                    ),
                   ],
                 ),
               ),

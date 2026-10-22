@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'dart:math' as math;
 
 import '../../../core/constant/domain_enums.dart';
@@ -42,7 +43,7 @@ class DashboardInsightsService {
       result.add(
         CategoryCardData(
           categoryId: category.id!,
-          name: category.name,
+          name: category.displayName,
           iconKey: category.iconKey,
           colorValue: category.colorValue,
           amount: 0,
@@ -52,11 +53,11 @@ class DashboardInsightsService {
     }
     for (final item in fallback) {
       if (result.length >= limit) break;
-      if (result.any((card) => card.name == item.$2)) continue;
+      if (result.any((card) => card.name == item.$2.tr)) continue;
       result.add(
         CategoryCardData(
           categoryId: item.$1,
-          name: item.$2,
+          name: item.$2.tr,
           iconKey: item.$3,
           colorValue: item.$4,
           amount: 0,
@@ -129,7 +130,8 @@ class DashboardInsightsService {
         RecentTransactionItem(
           id: item.id ?? 0,
           title: item.title,
-          categoryName: byId[item.categoryId]?.name ?? 'Tanpa kategori',
+          categoryName:
+              byId[item.categoryId]?.displayName ?? 'Tanpa kategori'.tr,
           iconKey: byId[item.categoryId]?.iconKey ?? 'more_horiz',
           colorValue: byId[item.categoryId]?.colorValue ?? 0xFF90A4AE,
           amount: item.amount,
@@ -159,13 +161,15 @@ class DashboardInsightsService {
     }
     final id = bestId;
     if (id == null) return null;
-    var name = 'Sebuah kategori';
+    var name = 'Sebuah kategori'.tr;
     for (final category in categories) {
-      if (category.id == id) name = category.name;
+      if (category.id == id) name = category.displayName;
     }
     return DashboardInsight(
-      message:
-          '$name naik ${(bestChange * 100).round()}% dibanding periode sebelumnya',
+      message: '@name naik @percent% dibanding periode sebelumnya'.trParams({
+        'name': name,
+        'percent': '${(bestChange * 100).round()}',
+      }),
     );
   }
 

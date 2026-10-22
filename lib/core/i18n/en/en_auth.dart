@@ -1,0 +1,60 @@
+const Map<String, String> enAuth = {
+  'KUNCI': 'LOCK',
+  'Pasang kunci dulu.': 'Set up your lock first.',
+  'Verifikasi biometrik sekali. Angka tidak akan tampil sebelum kamu lolos. Tally tidak menyimpan data sidik jari/wajah — itu urusan sistem operasi.':
+      'Verify your biometrics once. Numbers stay hidden until you pass. Tally does not store fingerprint or face data — that is handled by the operating system.',
+  'Verifikasi gagal. Silakan coba lagi.':
+      'Verification failed. Please try again.',
+  'Memverifikasi...': 'Verifying...',
+  'Verifikasi biometrik': 'Verify biometrics',
+  'Perangkat tanpa biometrik? Pakai PIN':
+      'No biometrics on this device? Use a PIN',
+  'Selamat datang kembali': 'Welcome back',
+  'Verifikasi untuk membuka': 'Verify to open',
+  'Verifikasi sidik jari': 'Verify with fingerprint',
+  'Ketuk ikon sidik jari untuk memulai': 'Tap the fingerprint to start',
+  'Pakai PIN': 'Use PIN instead',
+  '5 kali gagal = terkunci 5:00': '5 failed attempts = locked for 5:00',
+  'Jeda sebentar.': 'Take a short break.',
+  'Terlalu banyak percobaan biometrik. Demi keamanan, coba lagi setelah hitung mundur selesai.':
+      'Too many biometric attempts. For your security, try again when the countdown ends.',
+  'Data keuanganmu tetap tersembunyi': 'Your financial data stays hidden',
+  'Gagal menyiapkan aplikasi. Coba lagi.':
+      'Failed to set up the app. Please try again.',
+  'MULAI': 'GET STARTED',
+  'Mulai kelola uangmu': 'Start managing your money',
+  'Tally mencatat pemasukan dan pengeluaran secara pribadi di perangkat ini. Tidak perlu akun atau koneksi internet.':
+      'Tally records your income and expenses privately on this device. No account or internet connection needed.',
+  'Dibuka dengan sidik jari / wajah': 'Unlocked with fingerprint / face',
+  'Tanpa akun, tanpa cloud, tanpa iklan': 'No account, no cloud, no ads',
+  'Scan struk, lalu kamu yang memutuskan': 'Scan receipts, then you decide',
+  'Menyiapkan...': 'Setting up...',
+  'Mulai & pasang kunci biometrik': 'Start & set up biometric lock',
+  'Gaji September': 'September salary',
+  'Listrik PLN': 'PLN electricity',
+  'Warung Sederhana': 'Simple Eatery',
+  'CONTOH TAMPILAN DATA': 'SAMPLE DATA PREVIEW',
+  'Sisa': 'Left',
+  'PIN tidak cocok. Coba lagi.': "PINs don't match. Try again.",
+  'Konfirmasi PIN kamu': 'Confirm your PIN',
+  'Buat PIN': 'Create a PIN',
+  'Cadangan opsional saat biometrik tidak tersedia. Jika kamu lupa PIN, datamu tidak bisa dibuka. Kamu hanya bisa menghapusnya.':
+      'Optional backup for when biometrics are not available. If you forget it, your data cannot be opened. You can only erase it.',
+  'PIN salah. Sisa @count percobaan.': 'Wrong PIN. @count attempts left.',
+  'Lupa PIN?': 'Forgot your PIN?',
+  'Datamu tidak bisa dibuka tanpa PIN. Kamu hanya bisa menghapus semua data di ponsel ini dan memulai dari awal. Tindakan ini tidak dapat dibatalkan.':
+      'Your data cannot be opened without the PIN. You can only erase everything on this phone and start over. This cannot be undone.',
+  'Ketik HAPUS untuk melanjutkan': 'Type HAPUS to continue',
+  'Hapus semua data': 'Delete all data',
+  'Gagal menghapus data. Coba lagi.': 'Could not erase data. Try again.',
+  'Masukkan PIN kamu': 'Enter your PIN',
+  'Pakai biometrik': 'Use biometrics',
+  'PENCATAT KEUANGAN': 'MONEY TRACKER',
+  'Uangmu, catatanmu, tetap di ponselmu.':
+      'Your money, your records, kept on your phone.',
+  'Menyiapkan Tally': 'Preparing Tally',
+  'Segera hadir': 'Coming soon',
+  'Halaman @title dibangun pada tahap berikutnya.':
+      'The @title page will be built in a later stage.',
+  'Autentikasi untuk membuka Tally': 'Authenticate to open Tally',
+};

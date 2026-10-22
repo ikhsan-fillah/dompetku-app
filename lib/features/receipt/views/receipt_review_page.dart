@@ -23,10 +23,10 @@ class ReceiptLineItem {
   final int amount;
 }
 
-/// Halaman review "Periksa struk" sesuai mockup:
+/// Halaman review "Periksa struk".tr sesuai mockup:
 /// - Kertas struk bergaya realistis
-/// - Field yang kurang yakin ditandai "Periksa" (latar amber + ikon lonceng)
-/// - Field yang yakin ditandai "Yakin" (ikon centang hijau)
+/// - Field yang kurang yakin ditandai "Periksa".tr (latar amber + ikon lonceng)
+/// - Field yang yakin ditandai "Yakin".tr (ikon centang hijau)
 /// - Ubah kategori yang disarankan
 /// - Peringatan: "Belum ada yang tersimpan sampai kamu menekan Konfirmasi"
 /// - Tombol Foto ulang & Konfirmasi
@@ -55,7 +55,7 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
   late String _merchant;
   late DateTime _date;
   late int _total;
-  bool _totalDoubtful = true; // Field kurang yakin ditandai "Periksa"
+  bool _totalDoubtful = true; // Field kurang yakin ditandai "Periksa".tr
   CategoryModel? _selectedCategory;
   List<CategoryModel> _categories = [];
   bool _saving = false;
@@ -102,20 +102,20 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
     final result = await showDialog<String>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Ubah Merchant', style: AppText.display(size: 19)),
+        title: Text('Ubah Merchant'.tr, style: AppText.display(size: 19)),
         content: TextField(
           controller: controller,
           autofocus: true,
-          decoration: const InputDecoration(labelText: 'Nama Merchant'),
+          decoration: InputDecoration(labelText: 'Nama Merchant'.tr),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Batal'),
+            child: Text('Batal'.tr),
           ),
           FilledButton(
             onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-            child: const Text('Simpan'),
+            child: Text('Simpan'.tr),
           ),
         ],
       ),
@@ -142,20 +142,20 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
     final result = await showDialog<int>(
       context: context,
       builder: (ctx) => AlertDialog(
-        title: Text('Ubah Total', style: AppText.display(size: 19)),
+        title: Text('Ubah Total'.tr, style: AppText.display(size: 19)),
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
           autofocus: true,
-          decoration: const InputDecoration(
-            labelText: 'Total Pembayaran',
+          decoration: InputDecoration(
+            labelText: 'Total Pembayaran'.tr,
             prefixText: 'Rp ',
           ),
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(ctx).pop(),
-            child: const Text('Batal'),
+            child: Text('Batal'.tr),
           ),
           FilledButton(
             onPressed: () {
@@ -164,7 +164,7 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
               );
               Navigator.of(ctx).pop(parsed);
             },
-            child: const Text('Simpan'),
+            child: Text('Simpan'.tr),
           ),
         ],
       ),
@@ -190,7 +190,7 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Pilih Kategori', style: AppText.display(size: 18)),
+              Text('Pilih Kategori'.tr, style: AppText.display(size: 18)),
               const SizedBox(height: 12),
               Flexible(
                 child: ListView.builder(
@@ -233,7 +233,7 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
       await repo.insert(
         TransactionModel(
           type: TransactionType.expense,
-          title: _merchant.isEmpty ? _selectedCategory!.name : _merchant,
+          title: _merchant.isEmpty ? _selectedCategory!.displayName : _merchant,
           amount: _total,
           currency: 'IDR',
           transactionDate: _date,
@@ -254,8 +254,8 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
     } catch (_) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Gagal menyimpan transaksi. Coba lagi.'),
+          SnackBar(
+            content: Text('Gagal menyimpan transaksi. Coba lagi.'.tr),
             backgroundColor: AppColors.spend,
           ),
         );
@@ -266,7 +266,7 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
 
   @override
   Widget build(BuildContext context) {
-    final categoryName = _selectedCategory?.name ?? '-';
+    final categoryName = _selectedCategory?.displayName ?? '-';
 
     return Scaffold(
       backgroundColor: AppColors.paper,
@@ -275,7 +275,7 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             // Header Top Bar
-            const AppTitleBar(title: 'Periksa struk'),
+            AppTitleBar(title: 'Periksa struk'.tr),
             const SizedBox(height: 8),
 
             // Content List
@@ -295,9 +295,9 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
 
                   // Card 1: Merchant
                   _ReviewFieldCard(
-                    label: 'Merchant',
+                    label: 'Merchant'.tr,
                     value: _merchant,
-                    statusText: 'Yakin',
+                    statusText: 'Yakin'.tr,
                     isSure: true,
                     onTap: _editMerchant,
                   ),
@@ -305,19 +305,19 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
 
                   // Card 2: Tanggal
                   _ReviewFieldCard(
-                    label: 'Tanggal',
+                    label: 'Tanggal'.tr,
                     value: DateLabel.day(_date),
-                    statusText: 'Yakin',
+                    statusText: 'Yakin'.tr,
                     isSure: true,
                     onTap: _editDate,
                   ),
                   const SizedBox(height: 10),
 
-                  // Card 3: Total (Field yang kurang yakin ditandai "Periksa")
+                  // Card 3: Total (Field yang kurang yakin ditandai "Periksa".tr)
                   _ReviewFieldCard(
-                    label: 'Total',
+                    label: 'Total'.tr,
                     value: formatIdr(_total),
-                    statusText: _totalDoubtful ? 'Periksa' : 'Yakin',
+                    statusText: _totalDoubtful ? 'Periksa'.tr : 'Yakin'.tr,
                     isSure: !_totalDoubtful,
                     isWarn: _totalDoubtful,
                     onTap: _editTotal,
@@ -326,9 +326,9 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
 
                   // Card 4: Kategori Disarankan
                   _ReviewFieldCard(
-                    label: 'Kategori disarankan',
+                    label: 'Kategori disarankan'.tr,
                     value: categoryName,
-                    actionText: 'Ubah',
+                    actionText: 'Ubah'.tr,
                     onTap: _chooseCategory,
                   ),
                   const SizedBox(height: 20),
@@ -345,7 +345,8 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
                       const SizedBox(width: 6),
                       Flexible(
                         child: Text(
-                          'Belum ada yang tersimpan sampai kamu menekan Konfirmasi.',
+                          'Belum ada yang tersimpan sampai kamu menekan Konfirmasi.'
+                              .tr,
                           textAlign: TextAlign.center,
                           style: AppText.body(size: 11.5, color: AppColors.mut),
                         ),
@@ -374,7 +375,7 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
                               ),
                             ),
                             child: Text(
-                              'Foto ulang',
+                              'Foto ulang'.tr,
                               style: AppText.body(
                                 size: 14,
                                 weight: FontWeight.w700,
@@ -408,7 +409,7 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
                                     ),
                                   )
                                 : Text(
-                                    'Konfirmasi',
+                                    'Konfirmasi'.tr,
                                     style: AppText.body(
                                       size: 14,
                                       weight: FontWeight.w700,

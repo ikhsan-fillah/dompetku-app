@@ -83,7 +83,7 @@ class HomePage extends StatelessWidget {
       case ResourceStatus.error:
         return [
           AppErrorView(
-            message: state.message ?? 'Gagal memuat dashboard.',
+            message: state.message ?? 'Gagal memuat dashboard.'.tr,
             onRetry: () => controller.refreshDashboard(),
           ),
         ];
@@ -95,12 +95,12 @@ class HomePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SectionHeader(title: 'Pengeluaran per kategori'),
+                SectionHeader(title: 'Pengeluaran per kategori'.tr),
                 ExpenseDonut(slices: data.expenses),
                 if (data.expenses.isNotEmpty) ...[
                   const SizedBox(height: 8),
                   Text(
-                    'Urut dari terbesar ke terkecil · ketuk untuk detail',
+                    'Urut dari terbesar ke terkecil · ketuk untuk detail'.tr,
                     style: AppText.body(size: 10.5, color: AppColors.mut),
                   ),
                 ],
@@ -111,13 +111,13 @@ class HomePage extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SectionHeader(title: 'Tren pengeluaran'),
+                SectionHeader(title: 'Tren pengeluaran'.tr),
                 SpendingBars(buckets: data.trendBuckets),
               ],
             ),
           ),
           if (data.favorites.isNotEmpty) ...[
-            const SectionHeader(title: 'Kategori favorit'),
+            SectionHeader(title: 'Kategori favorit'.tr),
             CategoryCardsGrid(
               items: data.favorites,
               onTap: (categoryId) => Get.toNamed(
@@ -202,7 +202,8 @@ class _EmptyPeriodNote extends StatelessWidget {
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              'Tidak ada transaksi pada periode ini. Coba pilih periode lain.',
+              'Tidak ada transaksi pada periode ini. Coba pilih periode lain.'
+                  .tr,
               style: AppText.body(size: 12, color: AppColors.mut),
             ),
           ),
@@ -220,8 +221,6 @@ class _BalanceCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final summary = data.summary;
-    final amount = formatIdr(summary.balance);
-    final prefixAt = amount.indexOf('Rp');
     return Container(
       margin: const EdgeInsets.only(bottom: AppSpacing.gap),
       padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
@@ -233,7 +232,7 @@ class _BalanceCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            'Saldo periode ini'.toUpperCase(),
+            'Saldo periode ini'.tr.toUpperCase(),
             style: AppText.body(
               size: 11.5,
               weight: FontWeight.w700,
@@ -245,32 +244,15 @@ class _BalanceCard extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  if (prefixAt >= 0) ...[
-                    if (prefixAt > 0)
-                      TextSpan(text: amount.substring(0, prefixAt)),
-                    TextSpan(
-                      text: 'Rp ',
-                      style: AppText.mono(
-                        size: 13,
-                        color: AppColors.paper.withValues(alpha: 0.7),
-                        letterSpacing: 0,
-                      ),
-                    ),
-                    TextSpan(text: amount.substring(prefixAt + 3)),
-                  ] else
-                    TextSpan(text: amount),
-                ],
-                style: AppText.display(
-                  size: 38,
-                  color: AppColors.paper,
-                  height: 1.05,
-                  letterSpacing: -0.38,
-                ),
-              ),
+            child: Text(
+              formatIdrPlain(summary.balance),
               maxLines: 1,
+              style: AppText.display(
+                size: 38,
+                color: AppColors.paper,
+                height: 1.05,
+                letterSpacing: -0.38,
+              ),
             ),
           ),
           const SizedBox(height: 14),
@@ -278,9 +260,7 @@ class _BalanceCard extends StatelessWidget {
             padding: const EdgeInsets.only(top: 12),
             decoration: BoxDecoration(
               border: Border(
-                top: BorderSide(
-                  color: AppColors.paper.withValues(alpha: 0.18),
-                ),
+                top: BorderSide(color: AppColors.paper.withValues(alpha: 0.18)),
               ),
             ),
             child: Row(
@@ -288,7 +268,7 @@ class _BalanceCard extends StatelessWidget {
                 Expanded(
                   child: _MiniPill(
                     icon: LucideIcons.arrowUp,
-                    label: 'Pemasukan',
+                    label: 'Pemasukan'.tr,
                     amount: summary.income,
                     color: AppColors.earn,
                   ),
@@ -306,7 +286,7 @@ class _BalanceCard extends StatelessWidget {
                     ),
                     child: _MiniPill(
                       icon: LucideIcons.arrowDown,
-                      label: 'Pengeluaran',
+                      label: 'Pengeluaran'.tr,
                       amount: summary.expense,
                       color: AppColors.spend,
                     ),
@@ -361,10 +341,7 @@ class _MiniPill extends StatelessWidget {
                 alignment: Alignment.centerLeft,
                 child: Text(
                   formatIdr(amount),
-                  style: AppText.mono(
-                    size: 12.5,
-                    color: AppColors.paper,
-                  ),
+                  style: AppText.mono(size: 12.5, color: AppColors.paper),
                 ),
               ),
             ],

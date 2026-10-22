@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/i18n/app_language.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
@@ -26,9 +27,9 @@ class RecurringPage extends StatelessWidget {
         child: Column(
           children: [
             AppTitleBar(
-              title: 'Recurring',
+              title: 'Transaksi berulang'.tr,
               action: AppBarIconButton(
-                tooltip: 'Tambah recurring',
+                tooltip: 'Tambah transaksi berulang'.tr,
                 icon: LucideIcons.plus,
                 onPressed: () async {
                   final saved = await showRecurringAddSheet(context);
@@ -46,7 +47,7 @@ class RecurringPage extends StatelessWidget {
                   case ResourceStatus.error:
                     return Center(
                       child: Text(
-                        state.message ?? 'Gagal memuat recurring.',
+                        state.message ?? 'Gagal memuat transaksi berulang.'.tr,
                         style: AppText.body(color: AppColors.spend),
                       ),
                     );
@@ -55,7 +56,8 @@ class RecurringPage extends StatelessWidget {
                       child: Padding(
                         padding: const EdgeInsets.all(24),
                         child: Text(
-                          'No recurring items yet. Add rent, subscriptions, or bills.',
+                          'Belum ada transaksi berulang. Tambahkan sewa, langganan, atau tagihan.'
+                              .tr,
                           textAlign: TextAlign.center,
                           style: AppText.body(size: 13, color: AppColors.mut),
                         ),
@@ -100,7 +102,7 @@ class _TotalsRow extends StatelessWidget {
       children: [
         Expanded(
           child: _TotalCard(
-            label: 'Out per month',
+            label: 'Keluar per bulan'.tr,
             value: totals.out,
             color: AppColors.spend,
           ),
@@ -108,7 +110,7 @@ class _TotalsRow extends StatelessWidget {
         const SizedBox(width: 10),
         Expanded(
           child: _TotalCard(
-            label: 'In per month',
+            label: 'Masuk per bulan'.tr,
             value: totals.income,
             color: AppColors.earn,
           ),
@@ -145,7 +147,11 @@ class _TotalCard extends StatelessWidget {
           const SizedBox(height: 6),
           Text(
             formatIdr(value),
-            style: AppText.mono(size: 15, weight: FontWeight.w700, color: color),
+            style: AppText.mono(
+              size: 15,
+              weight: FontWeight.w700,
+              color: color,
+            ),
           ),
         ],
       ),
@@ -168,18 +174,19 @@ class _DismissibleRule extends StatelessWidget {
           await showDialog<bool>(
             context: context,
             builder: (dialogContext) => AlertDialog(
-              title: const Text('Delete recurring?'),
-              content: const Text(
-                'Past transactions stay. Only the schedule is removed.',
+              title: Text('Hapus transaksi berulang?'.tr),
+              content: Text(
+                'Transaksi sebelumnya tetap ada. Hanya jadwalnya yang dihapus.'
+                    .tr,
               ),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Cancel'),
+                  child: Text('Batal'.tr),
                 ),
                 TextButton(
                   onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: const Text('Delete'),
+                  child: Text('Hapus'.tr),
                 ),
               ],
             ),
@@ -212,15 +219,19 @@ class _RuleTile extends StatelessWidget {
   bool get _isIncome => rule.type == RecurringType.income;
 
   String get _schedule => switch (rule.frequency) {
-    RecurringFrequency.monthly =>
-      'Monthly · due ${_ordinal(rule.dayOfMonth ?? rule.startDate.day)}',
-    RecurringFrequency.weekly => 'Weekly',
-    RecurringFrequency.yearly => 'Yearly',
+    RecurringFrequency.monthly => 'Bulanan · jatuh tempo @day'.trParams({
+      'day': _dayLabel(rule.dayOfMonth ?? rule.startDate.day),
+    }),
+    RecurringFrequency.weekly => 'Mingguan'.tr,
+    RecurringFrequency.yearly => 'Tahunan'.tr,
   };
 
-  String get _mode => rule.mode == RecurringMode.ask
-      ? 'Ask me first'
-      : 'Record automatically';
+  String get _mode =>
+      rule.mode == RecurringMode.ask ? 'Tanya dulu'.tr : 'Catat otomatis'.tr;
+
+  /// Bahasa Inggris memakai akhiran urutan (5th); Indonesia cukup angka.
+  static String _dayLabel(int day) =>
+      AppLanguage.isEnglish ? _ordinal(day) : '$day';
 
   static String _ordinal(int day) {
     if (day >= 11 && day <= 13) return '${day}th';

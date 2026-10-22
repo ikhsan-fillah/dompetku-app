@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -29,8 +30,8 @@ class RecentTransactionsCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           SectionHeader(
-            title: 'Transaksi terbaru',
-            actionLabel: items.isEmpty ? null : 'Lihat semua',
+            title: 'Transaksi terbaru'.tr,
+            actionLabel: items.isEmpty ? null : 'Lihat semua'.tr,
             onAction: items.isEmpty ? null : onSeeAll,
           ),
           if (items.isNotEmpty)

@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
@@ -52,9 +53,11 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
   Widget build(BuildContext context) {
     final slices = widget.slices;
     if (slices.isEmpty) {
-      return const Padding(
+      return Padding(
         padding: EdgeInsets.symmetric(vertical: 16),
-        child: Center(child: Text('Belum ada pengeluaran pada periode ini.')),
+        child: Center(
+          child: Text('Belum ada pengeluaran pada periode ini.'.tr),
+        ),
       );
     }
     final isZeroState = _total == 0;
@@ -87,7 +90,7 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
                 padding: const EdgeInsets.all(34),
                 child: selected == null
                     ? _CenterText(
-                        top: 'Total',
+                        top: 'Total'.tr,
                         amount: _total,
                         color: AppColors.ink,
                       )
@@ -120,7 +123,9 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
           Padding(
             padding: const EdgeInsets.only(left: 6, top: 4),
             child: Text(
-              '+${slices.length - _legendLimit} kategori lain',
+              '+@count kategori lain'.trParams({
+                'count': '${slices.length - _legendLimit}',
+              }),
               style: AppText.body(size: 11, color: AppColors.mut),
             ),
           ),
@@ -149,7 +154,7 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
           Padding(
             padding: const EdgeInsets.only(top: 8),
             child: Text(
-              'Belum ada pengeluaran pada periode ini.',
+              'Belum ada pengeluaran pada periode ini.'.tr,
               style: AppText.body(size: 10.5, color: AppColors.mut),
             ),
           ),
@@ -222,7 +227,11 @@ class _LegendRow extends StatelessWidget {
     return Semantics(
       button: onTap != null,
       excludeSemantics: true,
-      label: '${slice.name}, $percent persen, ${formatIdr(slice.amount)}',
+      label: '@name, @percent persen, @amount'.trParams({
+        'name': slice.name,
+        'percent': '$percent',
+        'amount': formatIdr(slice.amount),
+      }),
       child: InkWell(
         borderRadius: BorderRadius.circular(10),
         onTap: onTap,
@@ -230,9 +239,7 @@ class _LegendRow extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 5),
           decoration: BoxDecoration(
             color: selected ? AppColors.paper2 : Colors.transparent,
-            border: const Border(
-              bottom: BorderSide(color: AppColors.line2),
-            ),
+            border: const Border(bottom: BorderSide(color: AppColors.line2)),
           ),
           child: Row(
             children: [

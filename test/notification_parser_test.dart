@@ -16,6 +16,28 @@ void main() {
     expect(result.isExpense, isTrue);
   });
 
+  test('BRImo dana keluar dikenali sebagai pengeluaran', () {
+    final result = parser.parse(
+      'id.co.bri.brimo',
+      'Sobat BRI! Dana Rp1.500 keluar dari rekening 675301021460535 pada 20/10/2026 16:56:30',
+    );
+
+    expect(result, isNotNull);
+    expect(result!.source, 'BRImo');
+    expect(result.amount, 1500);
+    expect(result.isExpense, isTrue);
+  });
+
+  test('nominal saldo tidak diambil sebagai nominal transaksi', () {
+    final result = parser.parse(
+      'id.co.bri.brimo',
+      'Saldo Rp9.000.000. Dana Rp1.500 keluar dari rekening 6753',
+    );
+
+    expect(result, isNotNull);
+    expect(result!.amount, 1500);
+  });
+
   test('OTP diabaikan', () {
     final result = parser.parse(
       'id.co.bca.mobile',
@@ -44,26 +66,26 @@ void main() {
   });
 
   test('teks tanpa nominal diabaikan', () {
-    expect(
-      parser.parse('id.dana', 'Pembayaran berhasil'),
-      isNull,
-    );
+    expect(parser.parse('id.dana', 'Pembayaran berhasil'), isNull);
   });
 
-  test('dedupe: notifikasi sama dalam jendela 5 menit menghasilkan key sama', () {
-    final a = DraftDedupe.keyFor(
-      source: 'GoPay',
-      amount: 15000,
-      detectedAt: DateTime.utc(2026, 9, 1, 10, 0, 10),
-    );
-    final b = DraftDedupe.keyFor(
-      source: 'GoPay',
-      amount: 15000,
-      detectedAt: DateTime.utc(2026, 9, 1, 10, 3, 30),
-    );
+  test(
+    'dedupe: notifikasi sama dalam jendela 5 menit menghasilkan key sama',
+    () {
+      final a = DraftDedupe.keyFor(
+        source: 'GoPay',
+        amount: 15000,
+        detectedAt: DateTime.utc(2026, 9, 1, 10, 0, 10),
+      );
+      final b = DraftDedupe.keyFor(
+        source: 'GoPay',
+        amount: 15000,
+        detectedAt: DateTime.utc(2026, 9, 1, 10, 3, 30),
+      );
 
-    expect(a, b);
-  });
+      expect(a, b);
+    },
+  );
 
   test('dedupe: nominal berbeda menghasilkan key berbeda', () {
     final a = DraftDedupe.keyFor(

@@ -23,73 +23,76 @@ class DraftsPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            const AppTitleBar(title: 'Drafts'),
-            Expanded(child: Obx(() {
-        final state = controller.state.value;
-        switch (state.status) {
-          case ResourceStatus.idle:
-          case ResourceStatus.loading:
-            return const Center(child: CircularProgressIndicator());
-          case ResourceStatus.error:
-            return Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    state.message ?? 'Gagal memuat drafts.',
-                    style: AppText.body(color: AppColors.spend),
-                  ),
-                  const SizedBox(height: 12),
-                  AppButton(
-                    label: 'Try again',
-                    expand: false,
-                    onPressed: controller.load,
-                  ),
-                ],
-              ),
-            );
-          case ResourceStatus.empty:
-            return Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Text(
-                  'No drafts right now. Detected payments will show up here.',
-                  textAlign: TextAlign.center,
-                  style: AppText.body(size: 13, color: AppColors.mut),
-                ),
-              ),
-            );
-          case ResourceStatus.success:
-            final items = state.data ?? const <DraftModel>[];
-            return ListView(
-              padding: const EdgeInsets.all(16),
-              children: [
-                if (items.length > 1)
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: TextButton(
-                      onPressed: controller.confirmAll,
-                      child: Text(
-                        'Confirm all',
-                        style: AppText.body(
-                          size: 12.5,
-                          weight: FontWeight.w700,
-                          color: AppColors.ink,
+            AppTitleBar(title: 'Draf'.tr),
+            Expanded(
+              child: Obx(() {
+                final state = controller.state.value;
+                switch (state.status) {
+                  case ResourceStatus.idle:
+                  case ResourceStatus.loading:
+                    return const Center(child: CircularProgressIndicator());
+                  case ResourceStatus.error:
+                    return Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Text(
+                            state.message ?? 'Gagal memuat draf.'.tr,
+                            style: AppText.body(color: AppColors.spend),
+                          ),
+                          const SizedBox(height: 12),
+                          AppButton(
+                            label: 'Coba lagi'.tr,
+                            expand: false,
+                            onPressed: controller.load,
+                          ),
+                        ],
+                      ),
+                    );
+                  case ResourceStatus.empty:
+                    return Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(24),
+                        child: Text(
+                          'Belum ada draf. Pembayaran yang terdeteksi akan muncul di sini.'
+                              .tr,
+                          textAlign: TextAlign.center,
+                          style: AppText.body(size: 13, color: AppColors.mut),
                         ),
                       ),
-                    ),
-                  ),
-                for (final draft in items) _DraftCard(draft: draft),
-                const SizedBox(height: 12),
-                Text(
-                  'Raw notification text is never saved.',
-                  textAlign: TextAlign.center,
-                  style: AppText.body(size: 11, color: AppColors.mut),
-                ),
-              ],
-            );
-        }
-      })),
+                    );
+                  case ResourceStatus.success:
+                    final items = state.data ?? const <DraftModel>[];
+                    return ListView(
+                      padding: const EdgeInsets.all(16),
+                      children: [
+                        if (items.length > 1)
+                          Align(
+                            alignment: Alignment.centerRight,
+                            child: TextButton(
+                              onPressed: controller.confirmAll,
+                              child: Text(
+                                'Konfirmasi semua'.tr,
+                                style: AppText.body(
+                                  size: 12.5,
+                                  weight: FontWeight.w700,
+                                  color: AppColors.ink,
+                                ),
+                              ),
+                            ),
+                          ),
+                        for (final draft in items) _DraftCard(draft: draft),
+                        const SizedBox(height: 12),
+                        Text(
+                          'Teks notifikasi mentah tidak pernah disimpan.'.tr,
+                          textAlign: TextAlign.center,
+                          style: AppText.body(size: 11, color: AppColors.mut),
+                        ),
+                      ],
+                    );
+                }
+              }),
+            ),
           ],
         ),
       ),
@@ -114,7 +117,8 @@ class _DraftCard extends StatelessWidget {
     }
     final ok = await controller.confirm(target);
     if (!ok && context.mounted) {
-      final message = controller.error.value ?? 'Failed to confirm. Try again.';
+      final message =
+          controller.error.value ?? 'Gagal mengonfirmasi. Coba lagi.'.tr;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
@@ -127,20 +131,20 @@ class _DraftCard extends StatelessWidget {
     final ok = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Edit draft'),
+        title: Text('Ubah draf'.tr),
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             TextField(
               controller: name,
-              decoration: const InputDecoration(labelText: 'Name'),
+              decoration: InputDecoration(labelText: 'Nama'.tr),
             ),
             const SizedBox(height: 12),
             TextField(
               controller: amount,
               keyboardType: TextInputType.number,
-              decoration: const InputDecoration(
-                labelText: 'Amount (IDR)',
+              decoration: InputDecoration(
+                labelText: 'Jumlah (IDR)'.tr,
                 prefixText: 'Rp ',
               ),
             ),
@@ -153,14 +157,14 @@ class _DraftCard extends StatelessWidget {
               Expanded(
                 child: OutlinedButton(
                   onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: const Text('Cancel'),
+                  child: Text('Batal'.tr),
                 ),
               ),
               const SizedBox(width: 10),
               Expanded(
                 child: FilledButton(
                   onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: const Text('Save & confirm'),
+                  child: Text('Simpan & konfirmasi'.tr),
                 ),
               ),
             ],
@@ -186,7 +190,7 @@ class _DraftCard extends StatelessWidget {
       merchant: merchant,
     );
     if (!saved && context.mounted) {
-      final message = controller.error.value ?? 'Failed to save changes.';
+      final message = controller.error.value ?? 'Gagal menyimpan perubahan.'.tr;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text(message)));
@@ -207,12 +211,12 @@ class _DraftCard extends StatelessWidget {
           shrinkWrap: true,
           padding: const EdgeInsets.all(16),
           children: [
-            Text('Pilih kategori', style: AppText.display(size: 20)),
+            Text('Pilih kategori'.tr, style: AppText.display(size: 20)),
             const SizedBox(height: 8),
             for (final category in categories)
               ListTile(
                 contentPadding: EdgeInsets.zero,
-                title: Text(category.name),
+                title: Text(category.displayName),
                 onTap: () => Navigator.of(sheetContext).pop(category.id),
               ),
           ],
@@ -237,7 +241,7 @@ class _DraftCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
-            draft.source,
+            draft.source.tr,
             style: AppText.body(size: 11, color: AppColors.mut),
           ),
           const SizedBox(height: 4),
@@ -254,7 +258,7 @@ class _DraftCard extends StatelessWidget {
             children: [
               Expanded(
                 child: AppButton(
-                  label: 'Confirm',
+                  label: 'Konfirmasi'.tr,
                   expand: true,
                   onPressed: () => _confirm(context, controller),
                 ),
@@ -262,14 +266,14 @@ class _DraftCard extends StatelessWidget {
               TextButton(
                 onPressed: () => _edit(context, controller),
                 child: Text(
-                  'Edit',
+                  'Edit'.tr,
                   style: AppText.body(size: 12.5, color: AppColors.ink),
                 ),
               ),
               TextButton(
                 onPressed: () => controller.dismiss(draft),
                 child: Text(
-                  'Dismiss',
+                  'Abaikan'.tr,
                   style: AppText.body(size: 12.5, color: AppColors.mut),
                 ),
               ),

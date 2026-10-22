@@ -33,7 +33,7 @@ class _LoginPageState extends State<LoginPage> {
       if (mounted) {
         setState(() {
           busy = false;
-          error = 'Gagal menyiapkan aplikasi. Coba lagi.';
+          error = 'Gagal menyiapkan aplikasi. Coba lagi.'.tr;
         });
       }
     }
@@ -42,40 +42,40 @@ class _LoginPageState extends State<LoginPage> {
   @override
   Widget build(BuildContext context) => AuthScaffold(
     icon: LucideIcons.wallet,
-    kicker: 'MULAI',
+    kicker: 'MULAI'.tr,
     step: '01 / 02',
-    title: 'Mulai kelola uangmu',
+    title: 'Mulai kelola uangmu'.tr,
     description:
-        'Tally mencatat pemasukan dan pengeluaran secara pribadi di perangkat ini. Tidak perlu akun atau koneksi internet.',
+        'Tally mencatat pemasukan dan pengeluaran secara pribadi di perangkat ini. Tidak perlu akun atau koneksi internet.'
+            .tr,
     hero: const _SampleLedger(),
     child: Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        const _FeatureRow(
+        _FeatureRow(
           icon: LucideIcons.shieldCheck,
-          text: 'Dibuka dengan sidik jari / wajah',
+          text: 'Dibuka dengan sidik jari / wajah'.tr,
         ),
         const SizedBox(height: 10),
-        const _FeatureRow(
+        _FeatureRow(
           icon: LucideIcons.lock,
-          text: 'Tanpa akun, tanpa cloud, tanpa iklan',
+          text: 'Tanpa akun, tanpa cloud, tanpa iklan'.tr,
         ),
         const SizedBox(height: 10),
-        const _FeatureRow(
+        _FeatureRow(
           icon: LucideIcons.camera,
-          text: 'Scan struk, lalu kamu yang memutuskan',
+          text: 'Scan struk, lalu kamu yang memutuskan'.tr,
         ),
         const SizedBox(height: 20),
         if (error != null) ...[
-          Text(
-            error!,
-            style: AppText.body(size: 12, color: AppColors.spend),
-          ),
+          Text(error!, style: AppText.body(size: 12, color: AppColors.spend)),
           const SizedBox(height: 12),
         ],
         AppButton(
           onPressed: busy ? null : start,
-          label: busy ? 'Menyiapkan...' : 'Mulai & pasang kunci biometrik',
+          label: busy
+              ? 'Menyiapkan...'.tr
+              : 'Mulai & pasang kunci biometrik'.tr,
         ),
       ],
     ),
@@ -85,10 +85,10 @@ class _LoginPageState extends State<LoginPage> {
 class _SampleLedger extends StatelessWidget {
   const _SampleLedger();
 
-  static const _rows = [
-    ('Gaji September', '+5.000.000'),
-    ('Listrik PLN', '\u2212438.000'),
-    ('Warung Sederhana', '\u221245.000'),
+  static List<(String, String)> get _rows => [
+    ('Gaji September'.tr, '+5.000.000'),
+    ('Listrik PLN'.tr, '\u2212438.000'),
+    ('Warung Sederhana'.tr, '\u221245.000'),
     ('Gojek', '\u221232.000'),
   ];
 
@@ -101,7 +101,7 @@ class _SampleLedger extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Text(
-            'CONTOH TAMPILAN DATA',
+            'CONTOH TAMPILAN DATA'.tr,
             style: AppText.monoLabel(
               color: AppColors.paper.withValues(alpha: 0.6),
               size: 11,
@@ -145,7 +145,7 @@ class _SampleLedger extends StatelessWidget {
             textBaseline: TextBaseline.alphabetic,
             children: [
               Text(
-                'Sisa',
+                'Sisa'.tr,
                 style: AppText.body(
                   size: 13,
                   color: AppColors.paper.withValues(alpha: 0.7),

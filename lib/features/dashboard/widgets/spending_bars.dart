@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
@@ -32,7 +33,7 @@ class _SpendingBarsState extends State<SpendingBars> {
   Widget build(BuildContext context) {
     final buckets = widget.buckets;
     if (buckets.isEmpty) {
-      return const Text('Belum ada pengeluaran pada periode ini.');
+      return Text('Belum ada pengeluaran pada periode ini.'.tr);
     }
     final maxAmount = buckets.fold<int>(
       0,
@@ -53,9 +54,9 @@ class _SpendingBarsState extends State<SpendingBars> {
             alignment: Alignment.centerLeft,
             child: Text(
               isZeroState
-                  ? 'Belum ada pengeluaran pada periode ini.'
+                  ? 'Belum ada pengeluaran pada periode ini.'.tr
                   : selected == null
-                  ? 'Ketuk batang untuk melihat nilai'
+                  ? 'Ketuk batang untuk melihat nilai'.tr
                   : '${_rangeLabel(buckets[selected])} · ${formatIdr(buckets[selected].amount)}',
               style: selected == null || isZeroState
                   ? AppText.mono(

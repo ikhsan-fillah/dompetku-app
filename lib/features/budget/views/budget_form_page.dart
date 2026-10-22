@@ -221,7 +221,9 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
       child: Column(
         children: [
           AppTitleBar(
-            title: widget.budget == null ? 'Buat anggaran' : 'Edit anggaran',
+            title: widget.budget == null
+                ? 'Buat anggaran'.tr
+                : 'Edit anggaran'.tr,
           ),
           Expanded(
             child: Obx(() {
@@ -244,7 +246,7 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
                     onChanged: (value) => controller.name.value = value,
                     style: AppText.body(size: 13.5),
                     decoration: _decoration(
-                      'Nama anggaran',
+                      'Nama anggaran'.tr,
                       LucideIcons.pencilLine,
                     ),
                   ),
@@ -256,12 +258,12 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
                     inputFormatters: [FilteringTextInputFormatter.digitsOnly],
                     style: AppText.mono(size: 13.5),
                     decoration: _decoration(
-                      'Batas anggaran (Rp)',
+                      'Batas anggaran (Rp)'.tr,
                       LucideIcons.banknote,
                     ),
                   ),
                   const SizedBox(height: 20),
-                  _sectionLabel('Jenis anggaran'),
+                  _sectionLabel('Jenis anggaran'.tr),
                   Container(
                     padding: const EdgeInsets.all(3),
                     decoration: BoxDecoration(
@@ -271,13 +273,13 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
                     child: Row(
                       children: [
                         _segment(
-                          label: 'Keseluruhan',
+                          label: 'Keseluruhan'.tr,
                           icon: LucideIcons.wallet,
                           active: overall,
                           onTap: () => controller.setOverall(true),
                         ),
                         _segment(
-                          label: 'Kategori',
+                          label: 'Per kategori'.tr,
                           icon: LucideIcons.layers,
                           active: !overall,
                           onTap: () => controller.setOverall(false),
@@ -290,8 +292,8 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
                     padding: const EdgeInsets.only(left: 2),
                     child: Text(
                       overall
-                          ? 'Mencakup semua pengeluaran'
-                          : 'Hanya pengeluaran pada kategori terpilih',
+                          ? 'Mencakup semua pengeluaran'.tr
+                          : 'Hanya pengeluaran pada kategori terpilih'.tr,
                       style: AppText.body(size: 11, color: AppColors.mut),
                     ),
                   ),
@@ -304,32 +306,40 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
                       dropdownColor: AppColors.card,
                       style: AppText.body(size: 13.5),
                       decoration: _decoration(
-                        'Kategori pengeluaran',
+                        'Kategori pengeluaran'.tr,
                         LucideIcons.tag,
                       ),
                       items: [
                         for (final category in controller.availableCategories)
                           DropdownMenuItem(
                             value: category.id,
-                            child: Text(category.name),
+                            child: Text(category.displayName),
                           ),
                       ],
                       onChanged: (value) => controller.categoryId.value = value,
                     ),
                   ],
                   const SizedBox(height: 20),
-                  _sectionLabel('Periode'),
+                  _sectionLabel('Periode'.tr),
                   Row(
                     children: [
-                      _dateCard(label: 'Mulai', value: startDate, start: true),
+                      _dateCard(
+                        label: 'Mulai'.tr,
+                        value: startDate,
+                        start: true,
+                      ),
                       const SizedBox(width: 12),
-                      _dateCard(label: 'Selesai', value: endDate, start: false),
+                      _dateCard(
+                        label: 'Selesai'.tr,
+                        value: endDate,
+                        start: false,
+                      ),
                     ],
                   ),
                   if (error != null) _errorPanel(error),
                   const SizedBox(height: 28),
                   AppButton(
-                    label: 'Simpan',
+                    label: 'Simpan'.tr,
                     loading: saving,
                     onPressed: saving
                         ? null

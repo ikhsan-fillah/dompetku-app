@@ -23,7 +23,9 @@ Future<bool> showCategorySheet(
     showDragHandle: true,
     backgroundColor: AppColors.card,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppRadius.sheet),
+      ),
       side: BorderSide(color: AppColors.line),
     ),
     builder: (sheetContext) => Padding(
@@ -79,7 +81,9 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
     _iconKey = widget.category?.iconKey ?? CategoryIcons.keys.first;
     _colorValue = widget.category?.colorValue ?? _colorPalette.first;
     _isFavorite = widget.category?.isFavorite ?? false;
-    _nameController = TextEditingController(text: widget.category?.name ?? '');
+    _nameController = TextEditingController(
+      text: widget.category?.displayName ?? '',
+    );
   }
 
   @override
@@ -91,7 +95,7 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
   Future<void> _save() async {
     final trimmed = _nameController.text.trim();
     if (trimmed.isEmpty) {
-      setState(() => _error = 'Nama kategori wajib diisi.');
+      setState(() => _error = 'Nama kategori wajib diisi.'.tr);
       return;
     }
 
@@ -107,7 +111,11 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
         1;
     final category = CategoryModel(
       id: widget.category?.id,
-      name: trimmed,
+      name:
+          (widget.category?.isDefault ?? false) &&
+              trimmed == widget.category!.displayName
+          ? widget.category!.name
+          : trimmed,
       type: _type,
       iconKey: _iconKey,
       colorValue: _colorValue,
@@ -128,7 +136,7 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
     }
 
     setState(() {
-      _error = controller.state.value.message ?? 'Gagal menyimpan kategori.';
+      _error = controller.state.value.message ?? 'Gagal menyimpan kategori.'.tr;
     });
   }
 
@@ -148,13 +156,13 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
                 Expanded(
                   child: Text(
                     widget.category == null
-                        ? 'Tambah kategori'
-                        : 'Edit kategori',
+                        ? 'Tambah kategori'.tr
+                        : 'Edit kategori'.tr,
                     style: AppText.display(size: 19),
                   ),
                 ),
                 IconButton(
-                  tooltip: 'Tutup',
+                  tooltip: 'Tutup'.tr,
                   onPressed: () => Navigator.of(context).pop(false),
                   icon: const Icon(LucideIcons.x, color: AppColors.ink),
                 ),
@@ -174,14 +182,14 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
                   borderRadius: BorderRadius.circular(AppRadius.smallButton),
                 ),
               ),
-              segments: const [
+              segments: [
                 ButtonSegment<TransactionType>(
                   value: TransactionType.expense,
-                  label: Text('Pengeluaran'),
+                  label: Text('Pengeluaran'.tr),
                 ),
                 ButtonSegment<TransactionType>(
                   value: TransactionType.income,
-                  label: Text('Pemasukan'),
+                  label: Text('Pemasukan'.tr),
                 ),
               ],
               selected: {_type},
@@ -192,8 +200,8 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
             const SizedBox(height: 16),
             AppTextField(
               controller: _nameController,
-              label: 'Nama kategori',
-              hint: 'Contoh: Makan siang',
+              label: 'Nama kategori'.tr,
+              hint: 'Contoh: Makan siang'.tr,
               prefixIcon: LucideIcons.tag,
               textInputAction: TextInputAction.next,
             ),
@@ -202,7 +210,7 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
               children: [
                 Expanded(
                   child: Text(
-                    'Favorit',
+                    'Favorit'.tr,
                     style: AppText.body(size: 13, weight: FontWeight.w700),
                   ),
                 ),
@@ -212,16 +220,15 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
                   activeThumbColor: AppColors.paper,
                   inactiveTrackColor: AppColors.line,
                   inactiveThumbColor: Colors.white,
-                  trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+                  trackOutlineColor: WidgetStateProperty.all(
+                    Colors.transparent,
+                  ),
                   onChanged: (value) => setState(() => _isFavorite = value),
                 ),
               ],
             ),
             const SizedBox(height: 16),
-            Text(
-              'Ikon',
-              style: AppText.label(),
-            ),
+            Text('Ikon'.tr, style: AppText.label()),
             const SizedBox(height: 8),
             GridView.count(
               crossAxisCount: 5,
@@ -240,8 +247,9 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
                         color: _iconKey == iconKey
                             ? AppColors.ink
                             : AppColors.card,
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.smallButton),
+                        borderRadius: BorderRadius.circular(
+                          AppRadius.smallButton,
+                        ),
                         border: Border.all(
                           color: _iconKey == iconKey
                               ? AppColors.ink
@@ -260,10 +268,7 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
               ],
             ),
             const SizedBox(height: 16),
-            Text(
-              'Warna',
-              style: AppText.label(),
-            ),
+            Text('Warna'.tr, style: AppText.label()),
             const SizedBox(height: 8),
             GridView.count(
               crossAxisCount: 5,
@@ -280,8 +285,9 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
                     child: Container(
                       decoration: BoxDecoration(
                         color: Color(value),
-                        borderRadius:
-                            BorderRadius.circular(AppRadius.smallButton),
+                        borderRadius: BorderRadius.circular(
+                          AppRadius.smallButton,
+                        ),
                         border: Border.all(
                           color: _colorValue == value
                               ? AppColors.ink
@@ -314,8 +320,8 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
             const SizedBox(height: 16),
             AppButton(
               label: widget.category == null
-                  ? 'Simpan kategori'
-                  : 'Perbarui kategori',
+                  ? 'Simpan kategori'.tr
+                  : 'Perbarui kategori'.tr,
               icon: LucideIcons.check,
               onPressed: _save,
             ),

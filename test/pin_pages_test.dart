@@ -42,11 +42,11 @@ void main() {
     );
     await tester.pumpAndSettle();
 
-    expect(find.text('Create a PIN'), findsOneWidget);
+    expect(find.text('Buat PIN'), findsOneWidget);
     await _tapDigits(tester, '123456');
     await tester.pumpAndSettle();
 
-    expect(find.text('Confirm your PIN'), findsOneWidget);
+    expect(find.text('Konfirmasi PIN kamu'), findsOneWidget);
     await _tapDigits(tester, '123456');
     await tester.pumpAndSettle();
 
@@ -73,8 +73,8 @@ void main() {
     await _tapDigits(tester, '654321');
     await tester.pumpAndSettle();
 
-    expect(find.text("PINs don't match. Try again."), findsOneWidget);
-    expect(find.text('Create a PIN'), findsOneWidget);
+    expect(find.text('PIN tidak cocok. Coba lagi.'), findsOneWidget);
+    expect(find.text('Buat PIN'), findsOneWidget);
     expect(created, isFalse);
     expect(await pins.hasPin(), isFalse);
   });

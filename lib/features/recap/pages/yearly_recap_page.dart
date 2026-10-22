@@ -36,7 +36,7 @@ class YearlyRecapPage extends StatelessWidget {
             backgroundColor: AppColors.ink,
             body: Center(
               child: Text(
-                'Gagal memuat recap.',
+                'Gagal memuat rekap.'.tr,
                 style: AppText.body(color: AppColors.paper),
               ),
             ),
@@ -55,11 +55,11 @@ class YearlyRecapPage extends StatelessWidget {
             body: SafeArea(
               child: Column(
                 children: [
-                  const AppTitleBar(title: 'Recap'),
+                  AppTitleBar(title: 'Rekap'.tr),
                   Expanded(
                     child: Center(
                       child: Text(
-                        'Belum ada transaksi di tahun ini.',
+                        'Belum ada transaksi di tahun ini.'.tr,
                         style: AppText.body(color: AppColors.paper),
                       ),
                     ),
@@ -137,7 +137,7 @@ class _Cover extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         StoryLabel(
-          '1 Jan – ${_endLabel(recap)} · Yearly recap',
+          '1 Jan – @end · Rekap tahunan'.trParams({'end': _endLabel(recap)}),
           color: fg.withValues(alpha: 0.8),
         ),
         const Spacer(),
@@ -146,7 +146,7 @@ class _Cover extends StatelessWidget {
             children: [
               TextSpan(text: '${recap.year},\n'),
               TextSpan(
-                text: recap.isSoFar ? 'so far.' : 'in full.',
+                text: recap.isSoFar ? 'sejauh ini.'.tr : 'lengkap.'.tr,
                 style: const TextStyle(fontStyle: FontStyle.italic),
               ),
             ],
@@ -155,14 +155,16 @@ class _Cover extends StatelessWidget {
         ),
         const SizedBox(height: 14),
         Text(
-          '${recap.activeMonths} months with notes.',
+          '@count bulan ada catatan.'.trParams({
+            'count': '${recap.activeMonths}',
+          }),
           style: AppText.body(size: 14, color: fg.withValues(alpha: 0.8)),
         ),
         const SizedBox(height: 28),
         TallyMarks(count: recap.activeMonths, color: fg, height: 26),
         const SizedBox(height: 6),
         StoryLabel(
-          'One stroke per month with notes',
+          'Satu goresan per bulan yang ada catatan'.tr,
           color: fg.withValues(alpha: 0.7),
         ),
         const Spacer(),
@@ -171,7 +173,9 @@ class _Cover extends StatelessWidget {
   }
 
   static String _endLabel(YearlyRecap recap) {
-    if (!recap.isSoFar) return '31 Dec ${recap.year}';
+    if (!recap.isSoFar) {
+      return '31 ${recapMonthShort[11]} ${recap.year}';
+    }
     final now = DateTime.now();
     return '${now.day} ${recapMonthShort[now.month - 1]} ${recap.year}';
   }
@@ -195,13 +199,13 @@ class _InOut extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         const Spacer(),
-        StoryLabel('In', color: AppColors.mut),
+        StoryLabel('Masuk'.tr, color: AppColors.mut),
         CountUpText(
           value: recap.totalIncome,
           style: AppText.display(size: 44, color: AppColors.earn),
         ),
         const SizedBox(height: 22),
-        StoryLabel('Out', color: AppColors.mut),
+        StoryLabel('Keluar'.tr, color: AppColors.mut),
         CountUpText(
           value: recap.totalSpent,
           style: AppText.display(size: 44, color: AppColors.spend),
@@ -220,12 +224,14 @@ class _InOut extends StatelessWidget {
         Text.rich(
           TextSpan(
             children: [
-              const TextSpan(text: 'You kept '),
+              TextSpan(text: 'Kamu menyimpan '.tr),
               TextSpan(
                 text: formatIdr(recap.net),
                 style: const TextStyle(fontWeight: FontWeight.w700),
               ),
-              TextSpan(text: ', $keptPct% of what came in.'),
+              TextSpan(
+                text: ', @pct% dari yang masuk.'.trParams({'pct': '$keptPct'}),
+              ),
             ],
           ),
           style: AppText.body(size: 15, color: fg),
@@ -251,14 +257,14 @@ class _MonthBars extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('Month by month', color: AppColors.mut),
+        StoryLabel('Bulan demi bulan'.tr, color: AppColors.mut),
         const SizedBox(height: 6),
         Text.rich(
           TextSpan(
             children: [
-              const TextSpan(text: 'Where the year\n'),
+              TextSpan(text: 'Bagian tahun\nyang '.tr),
               TextSpan(
-                text: 'got heavy.',
+                text: 'terasa berat.'.tr,
                 style: const TextStyle(fontStyle: FontStyle.italic),
               ),
             ],
@@ -323,7 +329,9 @@ class _MonthBars extends StatelessWidget {
             if (heavy != null)
               Expanded(
                 child: _Extreme(
-                  label: 'Heaviest · ${recapMonthShort[heavy - 1]}',
+                  label: 'Terberat · @month'.trParams({
+                    'month': recapMonthShort[heavy - 1],
+                  }),
                   value: formatIdr(recap.months[heavy - 1].spent),
                   color: AppColors.spend,
                 ),
@@ -331,7 +339,9 @@ class _MonthBars extends StatelessWidget {
             if (light != null)
               Expanded(
                 child: _Extreme(
-                  label: 'Lightest · ${recapMonthShort[light - 1]}',
+                  label: 'Teringan · @month'.trParams({
+                    'month': recapMonthShort[light - 1],
+                  }),
                   value: formatIdr(recap.months[light - 1].spent),
                   color: AppColors.earn,
                 ),
@@ -340,7 +350,7 @@ class _MonthBars extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'Dashed boxes are months without transactions.',
+          'Kotak putus-putus adalah bulan tanpa transaksi.'.tr,
           style: AppText.body(size: 11, color: AppColors.mut),
         ),
       ],
@@ -386,15 +396,15 @@ class _Categories extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('Where it went', color: fg.withValues(alpha: 0.8)),
+        StoryLabel('Ke mana perginya'.tr, color: fg.withValues(alpha: 0.8)),
         const SizedBox(height: 6),
         Text(
-          'Your year in\nfive categories.',
+          'Tahunmu dalam\nlima kategori.'.tr,
           style: AppText.display(size: 28, color: fg, height: 1.1),
         ),
         const SizedBox(height: 22),
         if (cats.isEmpty)
-          Text('Tidak ada pengeluaran.', style: AppText.body(color: fg))
+          Text('Tidak ada pengeluaran.'.tr, style: AppText.body(color: fg))
         else
           for (var i = 0; i < cats.length; i++) ...[
             _CategoryRow(
@@ -502,11 +512,11 @@ class _TopMerchant extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('Most visited', color: AppColors.mut),
+        StoryLabel('Paling sering dikunjungi'.tr, color: AppColors.mut),
         const SizedBox(height: 6),
         if (top == null)
           Text(
-            'Belum ada merchant tercatat.',
+            'Belum ada merchant tercatat.'.tr,
             style: AppText.body(color: AppColors.mut),
           )
         else ...[
@@ -515,7 +525,7 @@ class _TopMerchant extends StatelessWidget {
             style: AppText.display(size: 28, color: fg, height: 1.1),
           ),
           Text(
-            '${top.visits} times.',
+            '@count kali.'.trParams({'count': '${top.visits}'}),
             style: AppText.display(
               size: 28,
               color: fg,
@@ -537,12 +547,12 @@ class _TopMerchant extends StatelessWidget {
             style: AppText.display(size: 24, color: fg),
           ),
           Text(
-            'spent there this year',
+            'dibelanjakan di sana tahun ini'.tr,
             style: AppText.body(size: 12, color: AppColors.mut),
           ),
           if (recap.biggestExpense != null) ...[
             const SizedBox(height: 18),
-            StoryLabel('Biggest single expense', color: AppColors.mut),
+            StoryLabel('Pengeluaran tunggal terbesar'.tr, color: AppColors.mut),
             const SizedBox(height: 4),
             Text(
               formatIdr(recap.biggestExpense!.amount),
@@ -571,16 +581,19 @@ class _BudgetMonths extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('Budget months', color: AppColors.mut),
+        StoryLabel('Bulan anggaran'.tr, color: AppColors.mut),
         const SizedBox(height: 6),
         Text.rich(
           TextSpan(
             children: [
               TextSpan(
-                text: '${recap.budgetMonthsInside} of $withData',
+                text: '@inside dari @total'.trParams({
+                  'inside': '${recap.budgetMonthsInside}',
+                  'total': '$withData',
+                }),
                 style: const TextStyle(fontWeight: FontWeight.w400),
               ),
-              const TextSpan(text: ' months\ninside your limit.'),
+              TextSpan(text: ' bulan\ndalam batas anggaranmu.'.tr),
             ],
           ),
           style: AppText.display(size: 28, color: fg, height: 1.1),
@@ -650,9 +663,9 @@ class _BudgetGrid extends StatelessWidget {
             ),
             Text(
               switch (status) {
-                BudgetMonthStatus.noData => 'no data',
-                BudgetMonthStatus.inside => 'inside',
-                BudgetMonthStatus.over => 'over',
+                BudgetMonthStatus.noData => 'tanpa data'.tr,
+                BudgetMonthStatus.inside => 'dalam batas'.tr,
+                BudgetMonthStatus.over => 'melebihi'.tr,
               },
               style: AppText.mono(
                 size: 10,
@@ -707,11 +720,18 @@ class _ClosingState extends State<_Closing> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   StoryLabel(
-                    '${recap.year}, net${recap.isSoFar ? ' so far' : ''}',
+                    recap.isSoFar
+                        ? '@year, bersih sejauh ini'.trParams({
+                            'year': '${recap.year}',
+                          })
+                        : '@year, bersih'.trParams({'year': '${recap.year}'}),
                     color: fg.withValues(alpha: 0.8),
                   ),
                   const Spacer(),
-                  Text('You kept', style: AppText.body(size: 16, color: fg)),
+                  Text(
+                    'Kamu menyimpan'.tr,
+                    style: AppText.body(size: 16, color: fg),
+                  ),
                   const SizedBox(height: 4),
                   CountUpText(
                     value: recap.net,
@@ -720,8 +740,9 @@ class _ClosingState extends State<_Closing> {
                   const SizedBox(height: 12),
                   Text(
                     recap.isSoFar
-                        ? '$monthsToGo months to go. Your yearly recap refreshes on 31 Dec.'
-                        : 'That is the whole year.',
+                        ? '@count bulan lagi. Rekap tahunanmu diperbarui pada 31 Des.'
+                              .trParams({'count': '$monthsToGo'})
+                        : 'Itulah satu tahun penuh.'.tr,
                     style: AppText.body(size: 15, color: fg),
                   ),
                   const Spacer(),
@@ -744,7 +765,7 @@ class _ClosingState extends State<_Closing> {
                   fileName: 'tally-recap-${recap.year}',
                   text: 'Tally · ${recap.year}',
                 ),
-                child: const Text('Save as image'),
+                child: Text('Simpan sebagai gambar'.tr),
               ),
             ),
             const SizedBox(width: 10),
@@ -756,7 +777,7 @@ class _ClosingState extends State<_Closing> {
                   padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 onPressed: () => Navigator.of(context).maybePop(),
-                child: const Text('Back to Tally'),
+                child: Text('Kembali ke Tally'.tr),
               ),
             ),
           ],
@@ -777,19 +798,21 @@ class _QuietStreak extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('Quiet streak', color: AppColors.mut),
+        StoryLabel('Rentetan tanpa belanja'.tr, color: AppColors.mut),
         const SizedBox(height: 6),
         Text(
           '${recap.quietStreak}',
           style: AppText.display(size: 72, color: fg, height: 1),
         ),
         Text(
-          'days in a row without spending.',
+          'hari berturut-turut tanpa belanja.'.tr,
           style: AppText.body(size: 13, color: AppColors.ink2),
         ),
         const SizedBox(height: 18),
         Text(
-          '${recap.quietDays} no-spend days since your first entry.',
+          '@count hari tanpa belanja sejak catatan pertamamu.'.trParams({
+            'count': '${recap.quietDays}',
+          }),
           style: AppText.body(size: 12, color: AppColors.mut),
         ),
       ],

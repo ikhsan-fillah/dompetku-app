@@ -1,0 +1,61 @@
+const Map<String, String> enBudget = {
+  'Gagal memuat anggaran.': 'Failed to load budgets.',
+  'Gagal memuat anggaran terarsip.': 'Failed to load archived budgets.',
+  'Gagal mengarsipkan anggaran.': 'Failed to archive the budget.',
+  'Gagal memulihkan anggaran.': 'Failed to restore the budget.',
+  'Gagal menyimpan anggaran.': 'Failed to save the budget.',
+  'Batas anggaran harus lebih dari nol.':
+      'The budget limit must be greater than zero.',
+  'Pilih kategori pengeluaran aktif.': 'Choose an active expense category.',
+  'Tanggal selesai tidak boleh sebelum tanggal mulai.':
+      'The end date cannot be before the start date.',
+  'Sudah ada anggaran aktif untuk kategori ini pada periode yang tumpang tindih. Edit anggaran sebelumnya atau pilih periode lain.':
+      'An active budget already exists for this category in an overlapping period. Edit the previous budget or choose another period.',
+  'Anggaran @name': 'Budget @name',
+  'BATAS @month': '@month LIMIT',
+  '"@name" dipindahkan ke arsip. Riwayat transaksi tidak ikut terhapus.':
+      '"@name" is moved to the archive. Transaction history is not deleted.',
+  'Melebihi @amount': 'Over by @amount',
+  'Sisa @amount': 'Left @amount',
+  'Mendekati batas • Sisa @amount': 'Near the limit • Left @amount',
+  'Hampir habis • Sisa @amount': 'Almost used up • Left @amount',
+  'Melebihi batas @amount': 'Over the limit by @amount',
+  '@used dari @limit': '@used of @limit',
+  '@used dari @limit · keseluruhan': '@used of @limit · overall',
+  'Arsipkan anggaran?': 'Archive budget?',
+  'Per kategori': 'By category',
+  'Sudah 75% terpakai': '75% used',
+  'Masih ada waktu untuk mengatur ritme':
+      'There is still time to adjust your pace',
+  'Hampir habis (90%)': 'Almost used up (90%)',
+  'Kurangi pengeluaran non-esensial': 'Cut back on non-essential spending',
+  'Batas terlewati': 'Limit exceeded',
+  'Pengeluaran melewati batas bulan ini':
+      'Spending is over this month\'s limit',
+  'Urutkan anggaran': 'Sort budgets',
+  'Anggaran terarsip': 'Archived budgets',
+  'Terpakai tertinggi': 'Most used',
+  'Sisa terkecil': 'Least remaining',
+  'Limit terbesar': 'Largest limit',
+  'Nama A-Z': 'Name A-Z',
+  'Belum ada anggaran': 'No budgets yet',
+  'Atur batas pengeluaran bulanan agar keuangan lebih terkendali.':
+      'Set a monthly spending limit to keep your finances under control.',
+  'Buat anggaran': 'Create budget',
+  '"@name" akan kembali muncul di daftar anggaran aktif. Histori transaksi tidak berubah.':
+      '"@name" will appear in the active budget list again. Transaction history is unchanged.',
+  'Pulihkan anggaran?': 'Restore budget?',
+  'Pulihkan': 'Restore',
+  'Tidak ada anggaran terarsip': 'No archived budgets',
+  'Edit anggaran': 'Edit budget',
+  'Nama anggaran': 'Budget name',
+  'Batas anggaran (Rp)': 'Budget limit (Rp)',
+  'Jenis anggaran': 'Budget type',
+  'Keseluruhan': 'Overall',
+  'Mencakup semua pengeluaran': 'Covers all expenses',
+  'Hanya pengeluaran pada kategori terpilih':
+      'Only expenses in the selected category',
+  'Kategori pengeluaran': 'Expense category',
+  'Periode': 'Period',
+  'Simpan': 'Save',
+};

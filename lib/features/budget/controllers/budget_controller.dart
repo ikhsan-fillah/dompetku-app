@@ -79,7 +79,7 @@ class BudgetController extends GetxController {
           : ResourceState.success(items);
     } catch (_) {
       if (requestId != _requestId) return;
-      state.value = const ResourceState.error('Gagal memuat anggaran.');
+      state.value = ResourceState.error('Gagal memuat anggaran.'.tr);
     }
   }
 
@@ -98,8 +98,8 @@ class BudgetController extends GetxController {
           ? const ResourceState.empty()
           : ResourceState.success(items);
     } catch (_) {
-      archived.value = const ResourceState.error(
-        'Gagal memuat anggaran terarsip.',
+      archived.value = ResourceState.error(
+        'Gagal memuat anggaran terarsip.'.tr,
       );
     }
   }
@@ -129,7 +129,7 @@ class BudgetController extends GetxController {
       }
       return true;
     } catch (_) {
-      state.value = const ResourceState.error('Gagal mengarsipkan anggaran.');
+      state.value = ResourceState.error('Gagal mengarsipkan anggaran.'.tr);
       return false;
     }
   }
@@ -142,7 +142,7 @@ class BudgetController extends GetxController {
       await loadArchived();
       return true;
     } catch (_) {
-      archived.value = const ResourceState.error('Gagal memulihkan anggaran.');
+      archived.value = ResourceState.error('Gagal memulihkan anggaran.'.tr);
       return false;
     }
   }

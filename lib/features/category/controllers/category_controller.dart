@@ -44,7 +44,7 @@ class CategoryController extends GetxController {
           ? const ResourceState.empty()
           : ResourceState.success(categories);
     } catch (_) {
-      state.value = const ResourceState.error('Gagal memuat kategori.');
+      state.value = ResourceState.error('Gagal memuat kategori.'.tr);
     }
   }
 
@@ -63,7 +63,10 @@ class CategoryController extends GetxController {
   }
 
   Future<bool> save(CategoryModel category) async {
-    final nameError = requiredText(category.name, fieldName: 'Nama kategori');
+    final nameError = requiredText(
+      category.name,
+      fieldName: 'Nama kategori'.tr,
+    );
     if (nameError != null) {
       state.value = ResourceState.error(nameError);
       return false;
@@ -76,7 +79,7 @@ class CategoryController extends GetxController {
       }
       return await _reloadAfterWrite();
     } catch (_) {
-      state.value = const ResourceState.error('Gagal menyimpan kategori.');
+      state.value = ResourceState.error('Gagal menyimpan kategori.'.tr);
       return false;
     }
   }
@@ -87,7 +90,7 @@ class CategoryController extends GetxController {
       await _repository.archive(id);
       return await _reloadAfterWrite();
     } catch (_) {
-      state.value = const ResourceState.error('Gagal mengarsipkan kategori.');
+      state.value = ResourceState.error('Gagal mengarsipkan kategori.'.tr);
       return false;
     }
   }
@@ -97,9 +100,7 @@ class CategoryController extends GetxController {
       await _repository.reorder(ids);
       return await _reloadAfterWrite();
     } catch (_) {
-      state.value = const ResourceState.error(
-        'Gagal mengubah urutan kategori.',
-      );
+      state.value = ResourceState.error('Gagal mengubah urutan kategori.'.tr);
       return false;
     }
   }

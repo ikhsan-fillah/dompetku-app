@@ -13,14 +13,14 @@ import '../../dashboard/controllers/dashboard_controller.dart';
 /// - Memilih preset langsung menutup popover dan memperbarui semua kartu
 /// - Rentang kustom: Mulai, Selesai, dan tombol Terapkan rentang
 class PeriodPickerSheet extends StatefulWidget {
-  const PeriodPickerSheet({
-    super.key,
-    required this.controller,
-  });
+  const PeriodPickerSheet({super.key, required this.controller});
 
   final DashboardController controller;
 
-  static Future<void> show(BuildContext context, DashboardController controller) {
+  static Future<void> show(
+    BuildContext context,
+    DashboardController controller,
+  ) {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
@@ -40,12 +40,12 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
   late DateTime _customStart;
   late DateTime _customEnd;
 
-  static const _presets = <(DateRangePreset, String)>[
-    (DateRangePreset.today, 'Hari ini'),
-    (DateRangePreset.week, '1 Minggu'),
-    (DateRangePreset.month, '1 Bulan'),
-    (DateRangePreset.threeMonths, '3 Bulan'),
-    (DateRangePreset.yearToDate, 'Tahun ini'),
+  static List<(DateRangePreset, String)> get _presets => [
+    (DateRangePreset.today, 'Hari ini'.tr),
+    (DateRangePreset.week, '1 Minggu'.tr),
+    (DateRangePreset.month, '1 Bulan'.tr),
+    (DateRangePreset.threeMonths, '3 Bulan'.tr),
+    (DateRangePreset.yearToDate, 'Tahun ini'.tr),
   ];
 
   @override
@@ -76,7 +76,9 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
       context: context,
       initialDate: _customStart,
       firstDate: DateTime(2000),
-      lastDate: _customEnd.isBefore(DateTime.now()) ? _customEnd : DateTime.now(),
+      lastDate: _customEnd.isBefore(DateTime.now())
+          ? _customEnd
+          : DateTime.now(),
     );
     if (picked != null) {
       setState(() => _customStart = picked);
@@ -117,11 +119,8 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Text(
-              'PILIH PERIODE',
-              style: AppText.monoLabel(
-                color: AppColors.mut,
-                size: 11.5,
-              ),
+              'PILIH PERIODE'.tr,
+              style: AppText.monoLabel(color: AppColors.mut, size: 11.5),
             ),
             const SizedBox(height: 14),
             for (var i = 0; i < _presets.length; i++) ...[
@@ -134,26 +133,19 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
               if (i < _presets.length - 1 &&
                   selectedPreset != _presets[i].$1 &&
                   selectedPreset != _presets[i + 1].$1)
-                const Divider(
-                  height: 1,
-                  thickness: 1,
-                  color: AppColors.line2,
-                ),
+                const Divider(height: 1, thickness: 1, color: AppColors.line2),
             ],
             const SizedBox(height: 22),
             Text(
-              'RENTANG KUSTOM',
-              style: AppText.monoLabel(
-                color: AppColors.mut,
-                size: 11.5,
-              ),
+              'RENTANG KUSTOM'.tr,
+              style: AppText.monoLabel(color: AppColors.mut, size: 11.5),
             ),
             const SizedBox(height: 12),
             Row(
               children: [
                 Expanded(
                   child: _DateBox(
-                    label: 'Mulai',
+                    label: 'Mulai'.tr,
                     value: _formatDate(_customStart),
                     onTap: _pickStartDate,
                   ),
@@ -161,7 +153,7 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
                 const SizedBox(width: 12),
                 Expanded(
                   child: _DateBox(
-                    label: 'Selesai',
+                    label: 'Selesai'.tr,
                     value: _formatDate(_customEnd),
                     onTap: _pickEndDate,
                   ),
@@ -182,7 +174,7 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
                   ),
                 ),
                 child: Text(
-                  'Terapkan rentang',
+                  'Terapkan rentang'.tr,
                   style: AppText.body(
                     size: 14,
                     weight: FontWeight.w700,
@@ -239,11 +231,7 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
               ),
             ),
             if (isSelected)
-              const Icon(
-                LucideIcons.check,
-                color: AppColors.ink,
-                size: 20,
-              ),
+              const Icon(LucideIcons.check, color: AppColors.ink, size: 20),
           ],
         ),
       ),
@@ -275,10 +263,7 @@ class _DateBox extends StatelessWidget {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                label,
-                style: AppText.body(size: 11, color: AppColors.mut),
-              ),
+              Text(label, style: AppText.body(size: 11, color: AppColors.mut)),
               const SizedBox(height: 4),
               FittedBox(
                 fit: BoxFit.scaleDown,

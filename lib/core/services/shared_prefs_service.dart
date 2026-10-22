@@ -8,6 +8,7 @@ class SharedPrefsService {
   static const _kThemeMode = 'themeMode';
   static const _kDisplayName = 'displayName';
   static const _kAutoLockSeconds = 'autoLockSeconds';
+  static const _kLanguage = 'language';
 
   Future<bool> getIsRegistered() async {
     final prefs = await SharedPreferences.getInstance();
@@ -85,6 +86,16 @@ class SharedPrefsService {
   Future<void> setAutoLockSeconds(int value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_kAutoLockSeconds, value);
+  }
+
+  Future<String> getLanguage() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getString(_kLanguage) ?? 'id';
+  }
+
+  Future<void> setLanguage(String value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kLanguage, value);
   }
 
   Future<void> clearAll() async {

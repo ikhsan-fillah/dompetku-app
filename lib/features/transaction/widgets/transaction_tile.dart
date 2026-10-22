@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
@@ -64,10 +65,7 @@ class TransactionTile extends StatelessWidget {
                         item.categoryName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        style: AppText.body(
-                          size: 10.5,
-                          color: AppColors.mut,
-                        ),
+                        style: AppText.body(size: 10.5, color: AppColors.mut),
                       ),
                     ],
                   ),
@@ -96,21 +94,21 @@ class TransactionTile extends StatelessWidget {
                     runSpacing: 6,
                     children: [
                       _ActionButton(
-                        label: 'Edit',
+                        label: 'Edit'.tr,
                         icon: LucideIcons.pencil,
                         background: AppColors.paper2,
                         foreground: AppColors.ink,
                         onTap: onEdit,
                       ),
                       _ActionButton(
-                        label: 'Duplikat',
+                        label: 'Duplikat'.tr,
                         icon: LucideIcons.copy,
                         background: AppColors.paper2,
                         foreground: AppColors.ink,
                         onTap: onDuplicate,
                       ),
                       _ActionButton(
-                        label: 'Hapus',
+                        label: 'Hapus'.tr,
                         icon: LucideIcons.trash2,
                         background: AppColors.spendSoft,
                         foreground: AppColors.spend,

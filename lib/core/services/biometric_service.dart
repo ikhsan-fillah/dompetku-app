@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'package:local_auth/local_auth.dart';
 
 abstract interface class BiometricService {
@@ -25,7 +26,7 @@ class LocalAuthBiometricService implements BiometricService {
   Future<bool> authenticate() async {
     try {
       return await _localAuthentication.authenticate(
-        localizedReason: 'Autentikasi untuk membuka Tally',
+        localizedReason: 'Autentikasi untuk membuka Tally'.tr,
         biometricOnly: true,
         persistAcrossBackgrounding: true,
       );

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../theme/app_colors.dart';
 
@@ -21,7 +22,9 @@ class AppProgressBar extends StatelessWidget {
   Widget build(BuildContext context) {
     final target = value.isNaN ? 0.0 : value.clamp(0.0, 1.0).toDouble();
     return Semantics(
-      value: '${(target * 100).round()} persen',
+      value: '@percent persen'.trParams({
+        'percent': '${(target * 100).round()}',
+      }),
       child: Container(
         height: height,
         color: trackColor,
@@ -32,7 +35,10 @@ class AppProgressBar extends StatelessWidget {
           curve: Curves.easeOutCubic,
           builder: (context, factor, _) => FractionallySizedBox(
             widthFactor: factor,
-            child: ColoredBox(color: color, child: SizedBox(height: height)),
+            child: ColoredBox(
+              color: color,
+              child: SizedBox(height: height),
+            ),
           ),
         ),
       ),
