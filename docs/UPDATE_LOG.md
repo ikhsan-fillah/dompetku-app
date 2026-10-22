@@ -82,7 +82,7 @@ quiet streak dihitung sejak transaksi pertama, total recurring (mingguan x52/12,
 
 Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelumnya (tanpa uninstall).
 
-### Setelah 1.1.1+3 (Oktober 2026)
+### 1.1.2+4 (Oktober 2026)
 
 - Bahasa: pilihan Indonesia (bawaan) atau Inggris di Profil, kartu "Tampilan & data", di bawah Tema. Semua teks UI mengikuti pilihan itu, termasuk nama bulan, label tanggal, dan nama kategori bawaan. Pilihan tersimpan di Shared Preferences (`language`).
 - Teks baru: kunci terjemahan adalah teks Indonesia (`'Laporan'.tr`), terjemahan Inggris ada di `lib/core/i18n/en/`. `test/translations_coverage_test.dart` gagal bila ada teks `.tr` tanpa terjemahan Inggris.
