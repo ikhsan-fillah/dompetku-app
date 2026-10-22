@@ -84,8 +84,12 @@ class BudgetController extends GetxController {
   }
 
   Future<void> loadArchived() async {
+    if (archived.value.status != ResourceStatus.success) {
+      archived.value = const ResourceState.loading();
+    }
     try {
-      final budgets = await _repository.getAll(includeArchived: true);
+      final all = await _repository.getAll(includeArchived: true);
+      final budgets = all.where((budget) => budget.isArchived).toList();
       final transactionRepository = _transactionRepository;
       final transactions = transactionRepository == null
           ? const <TransactionModel>[]

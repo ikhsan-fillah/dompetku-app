@@ -48,7 +48,6 @@ const Map<String, String> enTransaction = {
   'Batas anggaran (IDR)': 'Budget limit (IDR)',
   'Jumlah (IDR)': 'Amount (IDR)',
   'Bulan depan': 'Next month',
-  '30 hari': '30 days',
   'Detail tambahan': 'Extra details',
   'Nama dan catatan anggaran': 'Budget name and note',
   'Metode pembayaran, nama, catatan': 'Payment method, name, note',
