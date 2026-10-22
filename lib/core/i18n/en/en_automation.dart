@@ -11,6 +11,7 @@ const Map<String, String> enAutomation = {
   'Teks notifikasi mentah tidak pernah disimpan.':
       'Raw notification text is never saved.',
   'Ubah draf': 'Edit draft',
+  'Nama': 'Name',
   'Jumlah (IDR)': 'Amount (IDR)',
   'Simpan & konfirmasi': 'Save & confirm',
   'Pilih kategori': 'Choose a category',

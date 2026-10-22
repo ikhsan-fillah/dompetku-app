@@ -127,6 +127,7 @@ class InitialBinding extends Bindings {
         Get.find<SharedPrefsService>(),
         resetService: Get.find<LocalDataResetService>(),
         authController: Get.find<AuthController>(),
+        transactions: Get.find<TransactionRepository>(),
       ),
       fenix: true,
     );

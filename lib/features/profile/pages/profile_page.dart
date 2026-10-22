@@ -4,16 +4,16 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/i18n/app_language.dart';
 import '../../../core/services/app_version.dart';
+import '../../../core/services/data_refresh_service.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
-import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/section_header.dart';
 import '../../../core/widgets/settings_tile.dart';
 import '../../../app/routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
+import '../widgets/profile_header.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -24,22 +24,23 @@ class ProfilePage extends StatefulWidget {
 
 class _ProfilePageState extends State<ProfilePage> {
   late final ProfileController _controller = Get.find<ProfileController>();
-  late final TextEditingController _nameField;
-  Worker? _worker;
+  Worker? _refreshWorker;
 
   @override
   void initState() {
     super.initState();
-    _nameField = TextEditingController(text: _controller.displayName.value);
-    _worker = ever<String>(_controller.displayName, (value) {
-      if (_nameField.text.isEmpty) _nameField.text = value;
-    });
+    _controller.loadTransactionCount();
+    if (Get.isRegistered<DataRefreshService>()) {
+      _refreshWorker = ever<int>(
+        Get.find<DataRefreshService>().version,
+        (_) => _controller.loadTransactionCount(),
+      );
+    }
   }
 
   @override
   void dispose() {
-    _worker?.dispose();
-    _nameField.dispose();
+    _refreshWorker?.dispose();
     super.dispose();
   }
 
@@ -54,12 +55,6 @@ class _ProfilePageState extends State<ProfilePage> {
     color: AppColors.mut,
     size: 18,
   );
-
-  Future<void> _save() async {
-    await _controller.setDisplayName(_nameField.text);
-    if (!mounted) return;
-    FocusScope.of(context).unfocus();
-  }
 
   void _openCategories() => Get.toNamed(AppRoutes.categories);
 
@@ -207,89 +202,7 @@ class _ProfilePageState extends State<ProfilePage> {
         130,
       ),
       children: [
-        Container(
-          margin: const EdgeInsets.only(bottom: AppSpacing.gap),
-          padding: const EdgeInsets.all(16),
-          decoration: BoxDecoration(
-            color: AppColors.ink,
-            borderRadius: BorderRadius.circular(AppRadius.hero),
-          ),
-          child: Obx(
-            () => Row(
-              children: [
-                Container(
-                  width: 54,
-                  height: 54,
-                  alignment: Alignment.center,
-                  decoration: const BoxDecoration(
-                    color: AppColors.paper,
-                    shape: BoxShape.circle,
-                  ),
-                  child: Text(
-                    _controller.initial,
-                    style: AppText.display(
-                      size: 20,
-                      weight: FontWeight.w500,
-                      color: AppColors.ink,
-                    ),
-                  ),
-                ),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        _controller.greetingName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.display(
-                          size: 18,
-                          color: AppColors.paper,
-                        ),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        '1 dompet · data tersimpan di perangkat ini'.tr,
-                        style: AppText.body(
-                          size: 11,
-                          color: AppColors.paper.withValues(alpha: 0.75),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-        AppCard(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              SectionHeader(title: 'Nama tampilan'.tr),
-              AppTextField(
-                controller: _nameField,
-                label: 'Nama'.tr,
-                hint: 'Friend',
-                prefixIcon: LucideIcons.user,
-                textInputAction: TextInputAction.done,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                'Dipakai pada sapaan di Beranda. Kosongkan untuk memakai "Friend".'
-                    .tr,
-                style: AppText.body(size: 10.5, color: AppColors.mut),
-              ),
-              const SizedBox(height: 14),
-              AppButton(
-                label: 'Simpan nama'.tr,
-                icon: LucideIcons.check,
-                onPressed: _save,
-              ),
-            ],
-          ),
-        ),
+        ProfileHeader(controller: _controller),
         AppCard(
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
