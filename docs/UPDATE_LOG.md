@@ -102,4 +102,5 @@ Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelu
 - Ikon aplikasi baru: huruf T Fraunces bold di atas tinta. Sumber: `assets/logo/app_icon.png` dan `app_icon_foreground.png`, dibuat ulang dengan `dart run flutter_launcher_icons`.
 - Anggaran terarsip: daftar kini dimuat saat halaman dibuka (sebelumnya layar berputar terus) dan hanya menampilkan anggaran yang benar-benar diarsipkan. Bila kosong tampil "Tidak ada anggaran terarsip".
 - Form anggaran: pilihan periode jadi dua segmen (Bulan ini, Bulan depan) dan tanggal mulai/selesai dalam satu kartu. Pilihan "30 hari" dihapus.
+- Urutan di Transaksi dan Anggaran memakai satu komponen bersama, `SortChip`: chip di app bar (ikon urut + label singkat + panah) yang membuka menu kecil berisi label lengkap. Anggaran kini punya urutan Nama Z-A.
 

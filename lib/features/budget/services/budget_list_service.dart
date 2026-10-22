@@ -5,6 +5,7 @@ enum BudgetSort {
   sisaTerkecil,
   limitTerbesar,
   namaAZ,
+  namaZA,
 }
 
 class BudgetListService {
@@ -26,6 +27,9 @@ class BudgetListService {
         ),
         BudgetSort.namaAZ => a.budget.name.toLowerCase().compareTo(
           b.budget.name.toLowerCase(),
+        ),
+        BudgetSort.namaZA => b.budget.name.toLowerCase().compareTo(
+          a.budget.name.toLowerCase(),
         ),
       };
       if (value != 0) return value;

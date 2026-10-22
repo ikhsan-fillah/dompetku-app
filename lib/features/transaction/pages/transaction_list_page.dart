@@ -14,6 +14,7 @@ import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_chip.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/app_text_field.dart';
+import '../../../core/widgets/sort_chip.dart';
 import '../../dashboard/models/dashboard_view_models.dart';
 import '../controllers/transaction_controller.dart';
 import '../services/transaction_list_service.dart';
@@ -120,6 +121,16 @@ class _TransactionListPageState extends State<TransactionListPage> {
     TransactionSort.kategoriAZ => 'Kategori A-Z'.tr,
   };
 
+  String _sortChipLabel(TransactionSort sort) => switch (sort) {
+    TransactionSort.terbaru => 'Terbaru'.tr,
+    TransactionSort.terlama => 'Terlama'.tr,
+    TransactionSort.nominalTerbesar => 'Terbesar'.tr,
+    TransactionSort.nominalTerkecil => 'Terkecil'.tr,
+    TransactionSort.namaAZ => 'A-Z'.tr,
+    TransactionSort.namaZA => 'Z-A'.tr,
+    TransactionSort.kategoriAZ => 'Kategori'.tr,
+  };
+
   Widget _body() {
     final state = _controller.state.value;
     switch (state.status) {
@@ -221,22 +232,16 @@ class _TransactionListPageState extends State<TransactionListPage> {
         AppPageHeader(
           title: 'Transaksi'.tr,
           actions: [
-            Obx(() {
-              final selectedSort = _controller.sort.value;
-              return PopupMenuButton<TransactionSort>(
-                tooltip: 'Urutkan transaksi'.tr,
-                icon: const Icon(LucideIcons.arrowUpDown, size: 20),
+            Obx(
+              () => SortChip<TransactionSort>(
+                value: _controller.sort.value,
+                options: TransactionSort.values,
+                chipLabel: _sortChipLabel,
+                menuLabel: _sortLabel,
                 onSelected: _controller.setSort,
-                itemBuilder: (context) => [
-                  for (final sort in TransactionSort.values)
-                    CheckedPopupMenuItem(
-                      value: sort,
-                      checked: selectedSort == sort,
-                      child: Text(_sortLabel(sort)),
-                    ),
-                ],
-              );
-            }),
+                tooltip: 'Urutkan transaksi'.tr,
+              ),
+            ),
           ],
         ),
         Padding(

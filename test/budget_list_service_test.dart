@@ -37,5 +37,6 @@ void main() {
     expect(ids(BudgetSort.sisaTerkecil), [1, 3, 2]);
     expect(ids(BudgetSort.limitTerbesar), [2, 3, 1]);
     expect(ids(BudgetSort.namaAZ), [3, 1, 2]);
+    expect(ids(BudgetSort.namaZA), [2, 1, 3]);
   });
 }
