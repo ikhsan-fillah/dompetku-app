@@ -42,7 +42,7 @@ void main() {
       ..categoryId.value = 3;
 
     expect(await form.save(), isFalse);
-    expect(form.error.value, 'Name is required.');
+    expect(form.error.value, 'Nama wajib diisi.');
     expect(store.inserted, isEmpty);
   });
 
@@ -52,7 +52,7 @@ void main() {
       ..categoryId.value = 3;
 
     expect(await form.save(), isFalse);
-    expect(form.error.value, 'Amount must be more than zero.');
+    expect(form.error.value, 'Nominal harus lebih dari nol.');
   });
 
   test('kategori wajib dipilih', () async {
@@ -61,7 +61,7 @@ void main() {
       ..amountDigits.value = '438000';
 
     expect(await form.save(), isFalse);
-    expect(form.error.value, 'Choose a category.');
+    expect(form.error.value, 'Pilih kategori.');
   });
 
   test('simpan aturan bulanan dengan tanggal dari hari mulai', () async {
@@ -103,6 +103,6 @@ void main() {
       ..categoryId.value = 3;
 
     expect(await form.save(), isFalse);
-    expect(form.error.value, 'Failed to save. Try again.');
+    expect(form.error.value, 'Gagal menyimpan. Coba lagi.');
   });
 }

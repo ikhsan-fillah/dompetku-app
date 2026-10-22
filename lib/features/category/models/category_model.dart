@@ -1,5 +1,6 @@
 import 'package:dompetku_app/core/constant/domain_enums.dart';
 import 'package:dompetku_app/core/database/database_constants.dart';
+import 'package:get/get.dart';
 
 class CategoryModel {
   const CategoryModel({
@@ -27,6 +28,10 @@ class CategoryModel {
   final bool isArchived;
   final DateTime createdAt;
   final DateTime updatedAt;
+
+  /// Nama kategori bawaan mengikuti bahasa aplikasi; kategori buatan pengguna
+  /// ditampilkan apa adanya.
+  String get displayName => isDefault ? name.tr : name;
 
   factory CategoryModel.fromMap(Map<String, Object?> map) {
     return CategoryModel(

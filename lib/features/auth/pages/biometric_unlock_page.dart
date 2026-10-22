@@ -54,199 +54,189 @@ class _UnlockView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        return SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
-          child: ConstrainedBox(
-            constraints: BoxConstraints(
-              minHeight: constraints.maxHeight - 40,
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 20),
+      child: Column(
+        children: [
+          const SizedBox(height: 20),
+          // Avatar Lingkaran Inisial IF
+          Container(
+            width: 72,
+            height: 72,
+            decoration: const BoxDecoration(
+              color: AppColors.ink,
+              shape: BoxShape.circle,
             ),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Column(
-                  children: [
-                    const SizedBox(height: 20),
-                    // Avatar Lingkaran Inisial IF
-                    Container(
-                      width: 72,
-                      height: 72,
-                      decoration: const BoxDecoration(
-                        color: AppColors.ink,
-                        shape: BoxShape.circle,
-                      ),
-                      alignment: Alignment.center,
-                      child: Text(
-                        _getInitials(),
-                        style: AppText.display(
-                          size: 26,
-                          color: AppColors.paper,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    // Judul & Subtitle
-                    Text(
-                      'Selamat datang kembali',
-                      textAlign: TextAlign.center,
-                      style: AppText.display(size: 26),
-                    ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Verifikasi untuk membuka',
-                      textAlign: TextAlign.center,
-                      style: AppText.body(size: 13, color: AppColors.mut),
-                    ),
-                    const SizedBox(height: 72),
+            alignment: Alignment.center,
+            child: Text(
+              _getInitials(),
+              style: AppText.display(size: 26, color: AppColors.paper),
+            ),
+          ),
+          const SizedBox(height: 24),
+          // Judul & Subtitle
+          Text(
+            'Selamat datang kembali'.tr,
+            textAlign: TextAlign.center,
+            style: AppText.display(size: 26),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'Verifikasi untuk membuka'.tr,
+            textAlign: TextAlign.center,
+            style: AppText.body(size: 13, color: AppColors.mut),
+          ),
+          Expanded(
+            child: Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  // Tombol Sidik Jari Interaktif
+                  Obx(() {
+                    final status = auth.biometricStatus.value;
+                    final isFailed = status == BiometricStatus.failed;
+                    final isBusy = status == BiometricStatus.authenticating;
 
-                    // Tombol Sidik Jari Interaktif
-                    Obx(() {
-                      final status = auth.biometricStatus.value;
-                      final isFailed = status == BiometricStatus.failed;
-                      final isBusy = status == BiometricStatus.authenticating;
-
-                      return Semantics(
-                        button: true,
-                        label: 'Verifikasi sidik jari',
-                        child: Material(
-                          color: Colors.transparent,
-                          shape: const CircleBorder(),
-                          child: InkWell(
-                            customBorder: const CircleBorder(),
-                            onTap: isBusy
-                                ? null
-                                : () async {
-                                    final success =
-                                        await auth.unlockWithBiometric();
-                                    if (success && context.mounted) {
-                                      Get.offAllNamed(AppRoutes.home);
-                                    }
-                                  },
+                    return Semantics(
+                      button: true,
+                      label: 'Verifikasi sidik jari'.tr,
+                      child: Material(
+                        color: Colors.transparent,
+                        shape: const CircleBorder(),
+                        child: InkWell(
+                          customBorder: const CircleBorder(),
+                          onTap: isBusy
+                              ? null
+                              : () async {
+                                  final success = await auth
+                                      .unlockWithBiometric();
+                                  if (success && context.mounted) {
+                                    Get.offAllNamed(AppRoutes.home);
+                                  }
+                                },
+                          child: Container(
+                            width: 130,
+                            height: 130,
+                            decoration: BoxDecoration(
+                              color: isFailed
+                                  ? AppColors.spendSoft
+                                  : AppColors.paper2,
+                              shape: BoxShape.circle,
+                            ),
+                            alignment: Alignment.center,
                             child: Container(
-                              width: 130,
-                              height: 130,
+                              width: 106,
+                              height: 106,
                               decoration: BoxDecoration(
                                 color: isFailed
-                                    ? AppColors.spendSoft
-                                    : AppColors.paper2,
+                                    ? AppColors.spend
+                                    : AppColors.ink,
                                 shape: BoxShape.circle,
                               ),
                               alignment: Alignment.center,
-                              child: Container(
-                                width: 106,
-                                height: 106,
-                                decoration: BoxDecoration(
-                                  color: isFailed
-                                      ? AppColors.spend
-                                      : AppColors.ink,
-                                  shape: BoxShape.circle,
-                                ),
-                                alignment: Alignment.center,
-                                child: isBusy
-                                    ? const SizedBox(
-                                        width: 32,
-                                        height: 32,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2.5,
-                                          color: AppColors.paper,
-                                        ),
-                                      )
-                                    : Icon(
-                                        LucideIcons.fingerprint,
-                                        size: 52,
-                                        color: isFailed
-                                            ? Colors.white
-                                            : AppColors.paper,
+                              child: isBusy
+                                  ? const SizedBox(
+                                      width: 32,
+                                      height: 32,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2.5,
+                                        color: AppColors.paper,
                                       ),
-                              ),
+                                    )
+                                  : Icon(
+                                      LucideIcons.fingerprint,
+                                      size: 52,
+                                      color: isFailed
+                                          ? Colors.white
+                                          : AppColors.paper,
+                                    ),
                             ),
                           ),
                         ),
-                      );
-                    }),
-                    const SizedBox(height: 24),
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 24),
 
-                    // Lima titik menunjukkan sisa percobaan
-                    Obx(() {
-                      final failureCount = auth.biometricFailureCount.value;
-                      final remaining =
-                          (AppConstants.maxBiometricFailures - failureCount)
-                              .clamp(0, AppConstants.maxBiometricFailures);
+                  // Lima titik menunjukkan sisa percobaan
+                  Obx(() {
+                    final failureCount = auth.biometricFailureCount.value;
+                    final remaining =
+                        (AppConstants.maxBiometricFailures - failureCount)
+                            .clamp(0, AppConstants.maxBiometricFailures);
 
-                      return Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: List.generate(
-                          AppConstants.maxBiometricFailures,
-                          (index) {
-                            final isAvailable = index < remaining;
-                            return Container(
-                              width: 10,
-                              height: 10,
-                              margin: const EdgeInsets.symmetric(horizontal: 4),
-                              decoration: BoxDecoration(
-                                shape: BoxShape.circle,
+                    return Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: List.generate(
+                        AppConstants.maxBiometricFailures,
+                        (index) {
+                          final isAvailable = index < remaining;
+                          return Container(
+                            width: 10,
+                            height: 10,
+                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: isAvailable
+                                  ? Colors.transparent
+                                  : AppColors.spend.withValues(alpha: 0.6),
+                              border: Border.all(
                                 color: isAvailable
-                                    ? Colors.transparent
-                                    : AppColors.spend.withValues(alpha: 0.6),
-                                border: Border.all(
-                                  color: isAvailable
-                                      ? AppColors.line
-                                      : AppColors.spend,
-                                  width: 1.5,
-                                ),
+                                    ? AppColors.line
+                                    : AppColors.spend,
+                                width: 1.5,
                               ),
-                            );
-                          },
+                            ),
+                          );
+                        },
+                      ),
+                    );
+                  }),
+                  const SizedBox(height: 18),
+
+                  // Keterangan ketuk ikon
+                  Text(
+                    'Ketuk ikon sidik jari untuk memulai'.tr,
+                    textAlign: TextAlign.center,
+                    style: AppText.body(size: 12.5, color: AppColors.mut),
+                  ),
+                  FutureBuilder<bool>(
+                    future: auth.hasPin(),
+                    builder: (context, snapshot) {
+                      if (snapshot.data != true) return const SizedBox.shrink();
+                      return TextButton(
+                        onPressed: () => Get.offAllNamed(AppRoutes.pinUnlock),
+                        child: Text(
+                          'Pakai PIN'.tr,
+                          style: AppText.body(
+                            size: 13,
+                            weight: FontWeight.w700,
+                            color: AppColors.ink,
+                          ),
                         ),
                       );
-                    }),
-                    const SizedBox(height: 18),
-
-                    // Keterangan ketuk ikon
-                    Text(
-                      'Ketuk ikon sidik jari untuk memulai',
-                      textAlign: TextAlign.center,
-                      style: AppText.body(size: 12.5, color: AppColors.mut),
-                    ),
-                    FutureBuilder<bool>(
-                      future: auth.hasPin(),
-                      builder: (context, snapshot) {
-                        if (snapshot.data != true) return const SizedBox.shrink();
-                        return TextButton(
-                          onPressed: () => Get.offAllNamed(AppRoutes.pinUnlock),
-                          child: Text(
-                            'Use PIN instead',
-                            style: AppText.body(
-                              size: 13,
-                              weight: FontWeight.w700,
-                              color: AppColors.ink,
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
-                ),
-
-                // Footer catatan gagal
-                Padding(
-                  padding: const EdgeInsets.only(bottom: 12),
-                  child: Text(
-                    '5× gagal = dikunci 5:00',
-                    textAlign: TextAlign.center,
-                    style: AppText.mono(
-                      size: 11,
-                      color: AppColors.mut,
-                      letterSpacing: 0,
-                    ),
+                    },
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
-        );
-      },
+
+          // Footer catatan gagal
+          Padding(
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Text(
+              '5 kali gagal = terkunci 5:00'.tr,
+              textAlign: TextAlign.center,
+              style: AppText.mono(
+                size: 11,
+                color: AppColors.mut,
+                letterSpacing: 0,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }
@@ -333,7 +323,7 @@ class _LockedOutViewState extends State<_LockedOutView> {
 
             // Judul
             Text(
-              'Jeda sebentar.',
+              'Jeda sebentar.'.tr,
               textAlign: TextAlign.center,
               style: AppText.display(size: 28, height: 1.2),
             ),
@@ -341,13 +331,10 @@ class _LockedOutViewState extends State<_LockedOutView> {
 
             // Penjelasan
             Text(
-              'Terlalu banyak percobaan biometrik. Demi keamanan, coba lagi setelah hitung mundur selesai.',
+              'Terlalu banyak percobaan biometrik. Demi keamanan, coba lagi setelah hitung mundur selesai.'
+                  .tr,
               textAlign: TextAlign.center,
-              style: AppText.body(
-                size: 13,
-                color: AppColors.ink2,
-                height: 1.5,
-              ),
+              style: AppText.body(size: 13, color: AppColors.ink2, height: 1.5),
             ),
             const SizedBox(height: 36),
 
@@ -366,7 +353,7 @@ class _LockedOutViewState extends State<_LockedOutView> {
 
             // Keterangan privasi data tetap tersembunyi
             Text(
-              'Data keuanganmu tetap tersembunyi',
+              'Data keuanganmu tetap tersembunyi'.tr,
               textAlign: TextAlign.center,
               style: AppText.body(size: 12.5, color: AppColors.mut),
             ),

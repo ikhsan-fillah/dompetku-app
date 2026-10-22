@@ -32,7 +32,7 @@ class RecurringController extends GetxController {
           ? const ResourceState.empty()
           : ResourceState.success(rules);
     } catch (_) {
-      state.value = const ResourceState.error('Gagal memuat recurring.');
+      state.value = ResourceState.error('Gagal memuat transaksi berulang.'.tr);
     }
   }
 
@@ -42,7 +42,9 @@ class RecurringController extends GetxController {
       await load();
       return true;
     } catch (_) {
-      state.value = const ResourceState.error('Gagal menghapus recurring.');
+      state.value = ResourceState.error(
+        'Gagal menghapus transaksi berulang.'.tr,
+      );
       return false;
     }
   }
@@ -53,7 +55,7 @@ class RecurringController extends GetxController {
       await load();
       return true;
     } catch (_) {
-      state.value = const ResourceState.error('Gagal mengubah status.');
+      state.value = ResourceState.error('Gagal mengubah status.'.tr);
       return false;
     }
   }

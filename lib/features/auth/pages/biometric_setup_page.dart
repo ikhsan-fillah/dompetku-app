@@ -36,7 +36,7 @@ class BiometricSetupPage extends StatelessWidget {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'KUNCI',
+                    'KUNCI'.tr,
                     style: AppText.monoLabel(
                       color: AppColors.paper.withValues(alpha: 0.7),
                       size: 11,
@@ -100,12 +100,13 @@ class BiometricSetupPage extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Text(
-                      'Pasang kunci dulu.',
+                      'Pasang kunci dulu.'.tr,
                       style: AppText.display(size: 24, height: 1.15),
                     ),
                     const SizedBox(height: 10),
                     Text(
-                      'Verifikasi biometrik sekali. Angka tidak akan tampil sebelum kamu lolos. Tally tidak menyimpan data sidik jari/wajah — itu urusan sistem operasi.',
+                      'Verifikasi biometrik sekali. Angka tidak akan tampil sebelum kamu lolos. Tally tidak menyimpan data sidik jari/wajah — itu urusan sistem operasi.'
+                          .tr,
                       style: AppText.body(
                         size: 12,
                         color: AppColors.ink2,
@@ -115,7 +116,7 @@ class BiometricSetupPage extends StatelessWidget {
                     if (failed) ...[
                       const SizedBox(height: 10),
                       Text(
-                        'Verifikasi gagal. Silakan coba lagi.',
+                        'Verifikasi gagal. Silakan coba lagi.'.tr,
                         style: AppText.body(
                           size: 12,
                           color: AppColors.spend,
@@ -154,7 +155,9 @@ class BiometricSetupPage extends StatelessWidget {
                             ),
                             const SizedBox(width: 8),
                             Text(
-                              busy ? 'Memverifikasi...' : 'Verifikasi biometrik',
+                              busy
+                                  ? 'Memverifikasi...'.tr
+                                  : 'Verifikasi biometrik'.tr,
                               style: AppText.body(
                                 size: 14,
                                 weight: FontWeight.w700,
@@ -181,14 +184,17 @@ class BiometricSetupPage extends StatelessWidget {
                               },
                         style: OutlinedButton.styleFrom(
                           foregroundColor: AppColors.ink,
-                          side: const BorderSide(color: AppColors.ink, width: 1.2),
+                          side: const BorderSide(
+                            color: AppColors.ink,
+                            width: 1.2,
+                          ),
                           elevation: 0,
                           shape: RoundedRectangleBorder(
                             borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         child: Text(
-                          'Perangkat tanpa biometrik? Pakai PIN',
+                          'Perangkat tanpa biometrik? Pakai PIN'.tr,
                           style: AppText.body(
                             size: 13,
                             weight: FontWeight.w700,

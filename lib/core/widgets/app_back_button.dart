@@ -10,7 +10,7 @@ class AppBackButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return AppBarIconButton(
-      tooltip: 'Kembali',
+      tooltip: 'Kembali'.tr,
       onPressed: Get.back,
       icon: LucideIcons.arrowLeft,
     );

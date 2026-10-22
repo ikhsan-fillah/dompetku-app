@@ -49,7 +49,7 @@ class BudgetFormController extends GetxController {
         ),
       );
     } catch (_) {
-      error.value = 'Gagal memuat kategori.';
+      error.value = 'Gagal memuat kategori.'.tr;
     }
   }
 
@@ -123,16 +123,16 @@ class BudgetFormController extends GetxController {
 
   String? _validate() {
     if (amount == null || amount! <= 0) {
-      return 'Batas anggaran harus lebih dari nol.';
+      return 'Batas anggaran harus lebih dari nol.'.tr;
     }
     if (categoryId.value == null ||
         !availableCategories.any(
           (category) => category.id == categoryId.value,
         )) {
-      return 'Pilih kategori pengeluaran aktif.';
+      return 'Pilih kategori pengeluaran aktif.'.tr;
     }
     if (startDate.value.isAfter(endDate.value)) {
-      return 'Tanggal selesai tidak boleh sebelum tanggal mulai.';
+      return 'Tanggal selesai tidak boleh sebelum tanggal mulai.'.tr;
     }
     return null;
   }
@@ -160,17 +160,18 @@ class BudgetFormController extends GetxController {
     try {
       if (await _hasOverlappingBudget()) {
         error.value =
-            'Sudah ada anggaran aktif untuk kategori ini pada periode yang tumpang tindih. Edit anggaran sebelumnya atau pilih periode lain.';
+            'Sudah ada anggaran aktif untuk kategori ini pada periode yang tumpang tindih. Edit anggaran sebelumnya atau pilih periode lain.'
+                .tr;
         return false;
       }
       final now = DateTime.now();
       final categoryName = availableCategories
           .firstWhere((category) => category.id == categoryId.value)
-          .name;
+          .displayName;
       final budget = BudgetModel(
         id: _editing?.id,
         name: name.value.trim().isEmpty
-            ? 'Anggaran $categoryName'
+            ? 'Anggaran @name'.trParams({'name': categoryName})
             : name.value.trim(),
         amountLimit: amount!,
         categoryId: categoryId.value,
@@ -191,7 +192,7 @@ class BudgetFormController extends GetxController {
       }
       return true;
     } catch (_) {
-      error.value = 'Gagal menyimpan anggaran.';
+      error.value = 'Gagal menyimpan anggaran.'.tr;
       return false;
     } finally {
       saving.value = false;

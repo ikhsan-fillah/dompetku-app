@@ -289,4 +289,84 @@ void main() {
     expect(report.topMerchant, 'Kopi Kenangan');
     expect(report.topMerchantCount, 2);
   });
+
+  group('laporan bulanan', () {
+    test('monthRange bulan lalu penuh, bulan berjalan sampai hari ini', () {
+      final now = DateTime(2026, 10, 22);
+
+      final past = ReportController.monthRange(DateTime(2026, 9), now: now);
+      expect(past.start, DateTime(2026, 9, 1));
+      expect(past.end, DateTime(2026, 9, 30));
+
+      final current = ReportController.monthRange(DateTime(2026, 10), now: now);
+      expect(current.start, DateTime(2026, 10, 1));
+      expect(current.end, DateTime(2026, 10, 22));
+    });
+
+    test('previousMonthRange memakai jumlah hari yang setara', () {
+      final current = DateRange(
+        start: DateTime(2026, 3, 1),
+        end: DateTime(2026, 3, 31),
+      );
+
+      final previous = ReportController.previousMonthRange(current);
+
+      expect(previous.start, DateTime(2026, 2, 1));
+      expect(previous.end, DateTime(2026, 2, 28));
+    });
+
+    test('loadMonth membandingkan dengan bulan sebelumnya', () async {
+      transactions.items = [
+        _tx(TransactionType.expense, 200000, DateTime(2026, 8, 10)),
+        _tx(TransactionType.expense, 100000, DateTime(2026, 9, 3)),
+        _tx(TransactionType.expense, 50000, DateTime(2026, 9, 4)),
+        _tx(TransactionType.income, 900000, DateTime(2026, 9, 5)),
+      ];
+
+      await controller.loadMonth(DateTime(2026, 9, 17));
+
+      expect(controller.month.value, DateTime(2026, 9));
+      expect(controller.range.value.start, DateTime(2026, 9, 1));
+      final report = controller.state.value.data!;
+      expect(report.summary.expense, 150000);
+      expect(report.previousExpense, 200000);
+      expect(report.expenseChange, closeTo(-0.25, 0.0001));
+    });
+
+    test('dailySpending berisi satu nilai per hari dalam bulan', () async {
+      transactions.items = [
+        _tx(TransactionType.expense, 70000, DateTime(2026, 9, 2)),
+        _tx(TransactionType.expense, 30000, DateTime(2026, 9, 2)),
+        _tx(TransactionType.expense, 5000, DateTime(2026, 9, 30)),
+      ];
+
+      await controller.loadMonth(DateTime(2026, 9));
+
+      final daily = controller.state.value.data!.dailySpending;
+      expect(daily.length, 30);
+      expect(daily[1], 100000);
+      expect(daily[29], 5000);
+      expect(daily[0], 0);
+    });
+
+    test('bulan tanpa pembanding tidak dianggap naik', () async {
+      transactions.items = [
+        _tx(TransactionType.expense, 80000, DateTime(2026, 9, 2)),
+      ];
+
+      await controller.loadMonth(DateTime(2026, 9));
+
+      expect(controller.state.value.data!.previousExpense, 0);
+    });
+
+    test('bulan tanpa transaksi menghasilkan state kosong', () async {
+      transactions.items = [
+        _tx(TransactionType.expense, 80000, DateTime(2026, 8, 2)),
+      ];
+
+      await controller.loadMonth(DateTime(2026, 9));
+
+      expect(controller.state.value.status, ResourceStatus.empty);
+    });
+  });
 }

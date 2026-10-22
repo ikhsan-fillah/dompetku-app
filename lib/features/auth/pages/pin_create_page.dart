@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/services/pin_service.dart';
@@ -58,7 +59,7 @@ class _PinCreatePageState extends State<PinCreatePage> {
         _value = '';
         _first = '';
         _confirming = false;
-        _error = "PINs don't match. Try again.";
+        _error = 'PIN tidak cocok. Coba lagi.'.tr;
       });
       return;
     }
@@ -79,13 +80,14 @@ class _PinCreatePageState extends State<PinCreatePage> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
               Text(
-                _confirming ? 'Confirm your PIN' : 'Create a PIN',
+                _confirming ? 'Konfirmasi PIN kamu'.tr : 'Buat PIN'.tr,
                 textAlign: TextAlign.center,
                 style: AppText.display(size: 26),
               ),
               const SizedBox(height: 8),
               Text(
-                'Optional backup for when biometrics are not available. If you forget it, your data cannot be opened. You can only erase it.',
+                'Cadangan opsional saat biometrik tidak tersedia. Jika kamu lupa PIN, datamu tidak bisa dibuka. Kamu hanya bisa menghapusnya.'
+                    .tr,
                 textAlign: TextAlign.center,
                 style: AppText.body(size: 13, color: AppColors.mut),
               ),

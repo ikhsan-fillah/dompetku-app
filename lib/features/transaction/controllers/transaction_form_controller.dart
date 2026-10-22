@@ -69,7 +69,7 @@ class TransactionFormController extends GetxController {
     try {
       categories.assignAll(await _categories.getAll());
     } catch (_) {
-      error.value = 'Gagal memuat kategori.';
+      error.value = 'Gagal memuat kategori.'.tr;
     }
   }
 
@@ -132,7 +132,7 @@ class TransactionFormController extends GetxController {
       if (path == null) return null;
       return await _scanImage(path);
     } catch (_) {
-      error.value = 'Tidak dapat membuka kamera atau galeri.';
+      error.value = 'Tidak dapat membuka kamera atau galeri.'.tr;
       return null;
     }
   }
@@ -172,8 +172,8 @@ class TransactionFormController extends GetxController {
   }
 
   String? _validate(int? value) {
-    if (value == null || value <= 0) return 'Nominal harus lebih dari nol.';
-    if (categoryId.value == null) return 'Pilih kategori dulu.';
+    if (value == null || value <= 0) return 'Nominal harus lebih dari nol.'.tr;
+    if (categoryId.value == null) return 'Pilih kategori dulu.'.tr;
     return null;
   }
 
@@ -199,9 +199,10 @@ class TransactionFormController extends GetxController {
     }
     saving.value = true;
     try {
-      var categoryName = 'Transaksi';
+      var categoryName = 'Transaksi'.tr;
       for (final category in categories) {
-        if (category.id == categoryId.value) categoryName = category.name;
+        if (category.id == categoryId.value)
+          categoryName = category.displayName;
       }
       final titleText = title.value.trim();
       final noteText = note.value.trim();
@@ -230,7 +231,7 @@ class TransactionFormController extends GetxController {
       }
       return true;
     } catch (_) {
-      error.value = 'Gagal menyimpan transaksi.';
+      error.value = 'Gagal menyimpan transaksi.'.tr;
       return false;
     } finally {
       saving.value = false;

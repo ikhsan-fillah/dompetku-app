@@ -107,8 +107,8 @@ class CategoryDetailController extends GetxController {
           : ResourceState.success(page);
     } catch (_) {
       if (requestId == _requestId) {
-        state.value = const ResourceState.error(
-          'Gagal memuat transaksi kategori.',
+        state.value = ResourceState.error(
+          'Gagal memuat transaksi kategori.'.tr,
         );
       }
     }

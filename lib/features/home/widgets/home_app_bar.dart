@@ -6,7 +6,6 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/date_label.dart';
-import '../../../core/utils/date_range.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../profile/controllers/profile_controller.dart';
 import 'period_picker_sheet.dart';
@@ -43,7 +42,7 @@ class HomeAppBar extends StatelessWidget {
               children: [
                 Obx(
                   () => Text(
-                    'Halo, ${profile.greetingName}',
+                    'Halo, @name'.trParams({'name': profile.greetingName}),
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: AppText.body(size: 11, color: AppColors.mut),
@@ -90,10 +89,7 @@ class _Avatar extends StatelessWidget {
       ),
       child: Text(
         initial,
-        style: AppText.display(
-          size: 16,
-          color: AppColors.paper,
-        ),
+        style: AppText.display(size: 16, color: AppColors.paper),
       ),
     );
   }
@@ -110,7 +106,7 @@ class _DateChip extends StatelessWidget {
     final radius = BorderRadius.circular(AppRadius.chip);
     return Semantics(
       button: true,
-      label: 'Pilih periode, $label',
+      label: 'Pilih periode, @label'.trParams({'label': label}),
       child: DecoratedBox(
         decoration: BoxDecoration(
           borderRadius: radius,
@@ -127,7 +123,10 @@ class _DateChip extends StatelessWidget {
                 maxWidth: 190,
               ),
               child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 7),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 7,
+                ),
                 child: Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [

@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import 'receipt_parser.dart';
 
 /// Membaca teks dari gambar struk. Dipisah dari plugin agar mudah diuji.
@@ -26,16 +27,16 @@ class ReceiptScanResult {
   }
 
   factory ReceiptScanResult.empty() {
-    return const ReceiptScanResult._(
+    return ReceiptScanResult._(
       ReceiptScanStatus.empty,
-      message: 'Teks pada struk tidak terbaca. Coba foto yang lebih jelas.',
+      message: 'Teks pada struk tidak terbaca. Coba foto yang lebih jelas.'.tr,
     );
   }
 
   factory ReceiptScanResult.failure() {
-    return const ReceiptScanResult._(
+    return ReceiptScanResult._(
       ReceiptScanStatus.failure,
-      message: 'Gagal membaca struk. Coba lagi atau isi manual.',
+      message: 'Gagal membaca struk. Coba lagi atau isi manual.'.tr,
     );
   }
 

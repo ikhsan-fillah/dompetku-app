@@ -1,3 +1,4 @@
+import 'package:get/get.dart';
 import '../../category/models/category_model.dart';
 import '../models/expense_slice.dart';
 
@@ -23,7 +24,9 @@ class ExpenseBreakdownService {
       for (final entry in sorted)
         ExpenseSlice(
           categoryId: entry.key,
-          name: lookup[entry.key]?.name ?? 'Kategori #${entry.key}',
+          name:
+              lookup[entry.key]?.displayName ??
+              'Kategori #@id'.trParams({'id': '${entry.key}'}),
           colorValue: lookup[entry.key]?.colorValue ?? 0xFF64748B,
           amount: entry.value,
           percent: entry.value * 100 / amount,

@@ -125,7 +125,10 @@ class _FakeTransactionRepository implements TransactionRepository {
   Future<List<TransactionModel>> getByCategory(int categoryId) async => [];
 
   @override
-  Future<int> getTotal({required TransactionType type, DateRange? range}) async => 0;
+  Future<int> getTotal({
+    required TransactionType type,
+    DateRange? range,
+  }) async => 0;
 }
 
 void main() {
@@ -159,9 +162,8 @@ void main() {
                   onPressed: () {
                     showModalBottomSheet(
                       context: context,
-                      builder: (_) => const Scaffold(
-                        body: Text('Periode Sheet Terbuka'),
-                      ),
+                      builder: (_) =>
+                          const Scaffold(body: Text('Periode Sheet Terbuka')),
                     );
                   },
                   child: const Text('Buka'),
@@ -287,15 +289,16 @@ void main() {
         Get.put(auth);
 
         await tester.pumpWidget(
-          const GetMaterialApp(
-            home: BiometricUnlockPage(),
-          ),
+          const GetMaterialApp(home: BiometricUnlockPage()),
         );
         await tester.pumpAndSettle();
 
         expect(find.text('Selamat datang kembali'), findsOneWidget);
         expect(find.text('Verifikasi untuk membuka'), findsOneWidget);
-        expect(find.text('Ketuk ikon sidik jari untuk memulai'), findsOneWidget);
+        expect(
+          find.text('Ketuk ikon sidik jari untuk memulai'),
+          findsOneWidget,
+        );
 
         // Pastikan TIDAK ADA panel simulasi mockup
         expect(find.textContaining('SIMULASI'), findsNothing);
@@ -326,10 +329,7 @@ void main() {
 
         // Sekarang layar beralih ke Mockup 5: Terkunci "Jeda sebentar."
         expect(find.text('Jeda sebentar.'), findsOneWidget);
-        expect(
-          find.text('Data keuanganmu tetap tersembunyi'),
-          findsOneWidget,
-        );
+        expect(find.text('Data keuanganmu tetap tersembunyi'), findsOneWidget);
 
         // Pastikan TIDAK ADA tombol lewati demo mockup
         expect(find.textContaining('Lewati'), findsNothing);

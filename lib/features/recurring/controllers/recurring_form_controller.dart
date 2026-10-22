@@ -27,17 +27,17 @@ class RecurringFormController extends GetxController {
     error.value = null;
     final trimmed = name.value.trim();
     if (trimmed.isEmpty) {
-      error.value = 'Name is required.';
+      error.value = 'Nama wajib diisi.'.tr;
       return false;
     }
     final amount = int.tryParse(amountDigits.value) ?? 0;
     if (amount <= 0) {
-      error.value = 'Amount must be more than zero.';
+      error.value = 'Nominal harus lebih dari nol.'.tr;
       return false;
     }
     final category = categoryId.value;
     if (category == null) {
-      error.value = 'Choose a category.';
+      error.value = 'Pilih kategori.'.tr;
       return false;
     }
 
@@ -66,7 +66,7 @@ class RecurringFormController extends GetxController {
       );
       return true;
     } catch (_) {
-      error.value = 'Failed to save. Try again.';
+      error.value = 'Gagal menyimpan. Coba lagi.'.tr;
       return false;
     } finally {
       saving.value = false;

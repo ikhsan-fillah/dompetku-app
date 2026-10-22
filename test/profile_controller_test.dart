@@ -14,6 +14,7 @@ class _FakeSharedPrefsService extends SharedPrefsService {
   bool biometric = false;
   String theme = 'light';
   String name = '';
+  String language = 'id';
   int autoLock = 0;
   bool failBiometricWrite = false;
   bool failAutoLockWrite = false;
@@ -27,6 +28,14 @@ class _FakeSharedPrefsService extends SharedPrefsService {
 
   @override
   Future<String> getDisplayName() async => name;
+
+  @override
+  Future<String> getLanguage() async => language;
+
+  @override
+  Future<void> setLanguage(String value) async {
+    language = value;
+  }
 
   @override
   Future<int> getAutoLockSeconds() async => autoLock;
@@ -130,15 +139,18 @@ void main() {
   late _FakeResetService resetService;
   late ProfileController controller;
   late List<ThemeMode> appliedThemes;
+  late List<String> appliedLanguages;
 
   setUp(() {
     preferences = _FakeSharedPrefsService();
     resetService = _FakeResetService();
     appliedThemes = [];
+    appliedLanguages = [];
     controller = ProfileController(
       preferences,
       resetService: resetService,
       themeApplier: appliedThemes.add,
+      languageApplier: appliedLanguages.add,
     );
   });
 
@@ -338,5 +350,49 @@ void main() {
   test('lockApp gagal bila AuthController tidak tersedia', () async {
     expect(await controller.lockApp(), isFalse);
     expect(controller.lockingApp.value, isFalse);
+  });
+
+  test('bahasa bawaan Indonesia dan load membaca bahasa tersimpan', () async {
+    await controller.load();
+    expect(controller.language.value, 'id');
+
+    preferences.language = 'en';
+    await controller.load();
+    expect(controller.language.value, 'en');
+  });
+
+  test('load mengganti bahasa tak dikenal menjadi Indonesia', () async {
+    preferences.language = 'fr';
+
+    await controller.load();
+
+    expect(controller.language.value, 'id');
+  });
+
+  test('setLanguage menyimpan pilihan dan menerapkan bahasa', () async {
+    final saved = await controller.setLanguage('en');
+
+    expect(saved, isTrue);
+    expect(preferences.language, 'en');
+    expect(controller.language.value, 'en');
+    expect(appliedLanguages, ['en']);
+  });
+
+  test('setLanguage menolak kode bahasa tidak dikenal', () async {
+    final saved = await controller.setLanguage('fr');
+
+    expect(saved, isFalse);
+    expect(preferences.language, 'id');
+    expect(appliedLanguages, isEmpty);
+  });
+
+  test('resetAllData mengembalikan bahasa ke Indonesia', () async {
+    await controller.setLanguage('en');
+    appliedLanguages.clear();
+
+    await controller.resetAllData();
+
+    expect(controller.language.value, 'id');
+    expect(appliedLanguages, ['id']);
   });
 }

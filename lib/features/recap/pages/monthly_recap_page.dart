@@ -9,6 +9,7 @@ import '../../../core/utils/budget_status.dart';
 import '../../../core/utils/formatter.dart';
 import '../services/recap_calculation_service.dart';
 import '../services/recap_data_loader.dart';
+import '../../../core/i18n/app_language.dart';
 import '../widgets/recap_widgets.dart';
 import '../widgets/story_frame.dart';
 import '../widgets/story_share.dart';
@@ -39,7 +40,7 @@ class MonthlyRecapPage extends StatelessWidget {
             backgroundColor: AppColors.ink,
             body: Center(
               child: Text(
-                'Gagal memuat recap.',
+                'Gagal memuat rekap.'.tr,
                 style: AppText.body(color: AppColors.paper),
               ),
             ),
@@ -59,11 +60,11 @@ class MonthlyRecapPage extends StatelessWidget {
             body: SafeArea(
               child: Column(
                 children: [
-                  const AppTitleBar(title: 'Recap'),
+                  AppTitleBar(title: 'Rekap'.tr),
                   Expanded(
                     child: Center(
                       child: Text(
-                        'Belum ada transaksi di bulan ini.',
+                        'Belum ada transaksi di bulan ini.'.tr,
                         style: AppText.body(color: AppColors.paper),
                       ),
                     ),
@@ -162,16 +163,18 @@ class _Cover extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         StoryLabel(
-          '1 – ${recap.elapsedDays} $short ${recap.year} · Monthly recap${recap.isSoFar ? ' · so far' : ''}',
+          '${'1 – @days @short @year · Rekap bulanan'.trParams({'days': '${recap.elapsedDays}', 'short': short, 'year': '${recap.year}'})}${recap.isSoFar ? ' · ${'sejauh ini'.tr}' : ''}',
           color: fg.withValues(alpha: 0.8),
         ),
         const Spacer(),
         Text.rich(
           TextSpan(
             children: [
-              TextSpan(text: 'Your\n$name,\n'),
               TextSpan(
-                text: 'in ink.',
+                text: 'Ceritamu\ndi bulan @name,\n'.trParams({'name': name}),
+              ),
+              TextSpan(
+                text: 'dalam tinta.'.tr,
                 style: const TextStyle(fontStyle: FontStyle.italic),
               ),
             ],
@@ -181,14 +184,17 @@ class _Cover extends StatelessWidget {
         const SizedBox(height: 14),
         Text(
           recap.isSoFar
-              ? '8 cards · this month is still open.'
-              : '8 cards · tap to move on.',
+              ? '8 kartu · bulan ini masih berjalan.'.tr
+              : '8 kartu · ketuk untuk lanjut.'.tr,
           style: AppText.body(size: 14, color: fg.withValues(alpha: 0.8)),
         ),
         const SizedBox(height: 28),
         TallyMarks(count: recap.elapsedDays, color: fg, height: 26),
         const SizedBox(height: 6),
-        StoryLabel('One stroke per day', color: fg.withValues(alpha: 0.7)),
+        StoryLabel(
+          'Satu goresan per hari'.tr,
+          color: fg.withValues(alpha: 0.7),
+        ),
         const Spacer(),
       ],
     );
@@ -213,7 +219,7 @@ class _Total extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('You spent', color: AppColors.mut),
+        StoryLabel('Kamu mengeluarkan'.tr, color: AppColors.mut),
         const SizedBox(height: 8),
         CountUpText(
           value: recap.spent,
@@ -222,23 +228,33 @@ class _Total extends StatelessWidget {
         const SizedBox(height: 12),
         if (prev == null)
           Text(
-            "That's $perDay a day. Nothing earlier to compare with.",
+            'Rata-rata @perDay per hari. Belum ada bulan sebelumnya untuk dibandingkan.'
+                .trParams({'perDay': perDay}),
             style: AppText.body(size: 15, color: fg),
           )
         else
           Text.rich(
             TextSpan(
               children: [
-                TextSpan(text: "That's $perDay a day, "),
                 TextSpan(
-                  text:
-                      '${formatIdr(diff.abs())} ${diff >= 0 ? 'more' : 'less'}',
+                  text: 'Rata-rata @perDay per hari, '.trParams({
+                    'perDay': perDay,
+                  }),
+                ),
+                TextSpan(
+                  text: diff >= 0
+                      ? '@amount lebih banyak'.trParams({
+                          'amount': formatIdr(diff.abs()),
+                        })
+                      : '@amount lebih sedikit'.trParams({
+                          'amount': formatIdr(diff.abs()),
+                        }),
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
                     color: diff >= 0 ? AppColors.spend : AppColors.earn,
                   ),
                 ),
-                TextSpan(text: ' than $prevName.'),
+                TextSpan(text: ' dari @prev.'.trParams({'prev': prevName})),
               ],
             ),
             style: AppText.body(size: 15, color: fg),
@@ -252,7 +268,11 @@ class _Total extends StatelessWidget {
               borderRadius: BorderRadius.circular(20),
             ),
             child: Text(
-              '${diff >= 0 ? '+' : '-'}${pct.toStringAsFixed(1).replaceAll('.', ',')}% vs $prevName',
+              '@pct% vs @prev'.trParams({
+                'pct':
+                    '${diff >= 0 ? '+' : '-'}${pct.toStringAsFixed(1).replaceAll('.', ',')}',
+                'prev': prevName,
+              }),
               style: AppText.body(
                 size: 12,
                 weight: FontWeight.w700,
@@ -343,15 +363,20 @@ class _Heatmap extends StatelessWidget {
     final maxDay = recap.dailySpend.fold<int>(0, (a, b) => b > a ? b : a);
     final heaviest = recap.heaviestDay;
     final offset = DateTime(recap.year, recap.month, 1).weekday - 1;
-    final headers = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+    final headers = AppLanguage.isEnglish
+        ? ['M', 'T', 'W', 'T', 'F', 'S', 'S']
+        : ['S', 'S', 'R', 'K', 'J', 'S', 'M'];
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('Every day of $name', color: AppColors.mut),
+        StoryLabel(
+          'Setiap hari di @name'.trParams({'name': name}),
+          color: AppColors.mut,
+        ),
         const SizedBox(height: 6),
         Text(
-          'Some days quiet,\none day loud.',
+          'Ada hari yang tenang,\nada hari yang ramai.'.tr,
           style: AppText.display(size: 28, color: fg, height: 1.1),
         ),
         const SizedBox(height: 16),
@@ -372,7 +397,7 @@ class _Heatmap extends StatelessWidget {
         const SizedBox(height: 12),
         Row(
           children: [
-            StoryLabel('Less', color: AppColors.mut),
+            StoryLabel('Sedikit'.tr, color: AppColors.mut),
             const SizedBox(width: 6),
             for (final a in [0.14, 0.34, 0.6, 0.92]) ...[
               Container(
@@ -385,7 +410,7 @@ class _Heatmap extends StatelessWidget {
               ),
               const SizedBox(width: 4),
             ],
-            StoryLabel('More', color: AppColors.mut),
+            StoryLabel('Banyak'.tr, color: AppColors.mut),
           ],
         ),
         const SizedBox(height: 18),
@@ -393,7 +418,7 @@ class _Heatmap extends StatelessWidget {
           children: [
             Expanded(
               child: _Stat(
-                label: 'Priciest day',
+                label: 'Hari termahal'.tr,
                 value: heaviest == null ? '—' : '$heaviest $short',
                 sub: heaviest == null
                     ? ''
@@ -402,9 +427,9 @@ class _Heatmap extends StatelessWidget {
             ),
             Expanded(
               child: _Stat(
-                label: 'No-spend days',
+                label: 'Hari tanpa belanja'.tr,
                 value: '${recap.noSpendDays}',
-                sub: 'dashed squares',
+                sub: 'kotak putus-putus'.tr,
               ),
             ),
           ],
@@ -495,7 +520,7 @@ class _TopCategory extends StatelessWidget {
     if (recap.topCategories.isEmpty) {
       return Center(
         child: Text(
-          'Tidak ada pengeluaran bulan ini.',
+          'Tidak ada pengeluaran bulan ini.'.tr,
           style: AppText.body(color: fg),
         ),
       );
@@ -507,7 +532,7 @@ class _TopCategory extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('Your top category', color: fg.withValues(alpha: 0.8)),
+        StoryLabel('Kategori teratasmu'.tr, color: fg.withValues(alpha: 0.8)),
         const SizedBox(height: 14),
         Container(
           width: 56,
@@ -529,7 +554,12 @@ class _TopCategory extends StatelessWidget {
         ),
         const SizedBox(height: 12),
         Text(
-          '$pct% of everything you spent.\n${formatIdr(top.total)} across ${top.count} purchases.',
+          '@pct% dari semua pengeluaranmu.\n@total dari @count pembelian.'
+              .trParams({
+                'pct': '$pct',
+                'total': formatIdr(top.total),
+                'count': '${top.count}',
+              }),
           style: AppText.body(size: 15, color: fg),
         ),
         const Spacer(),
@@ -613,14 +643,19 @@ class _Receipt extends StatelessWidget {
     final perDay = formatIdr(recap.dailyAverage);
     final items = recap.topCategories.fold<int>(0, (a, c) => a + c.count);
     final footer = recap.isSoFar
-        ? 'THANK YOU. TO BE CONTINUED.'
-        : 'THANK YOU. SEE YOU IN ${nextName.toUpperCase()}.';
+        ? 'TERIMA KASIH. BERSAMBUNG.'.tr
+        : 'TERIMA KASIH. SAMPAI JUMPA DI @month.'.trParams({
+            'month': nextName.toUpperCase(),
+          });
 
     final mono = AppText.mono(size: 11, color: AppColors.receiptText);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('$name, as a receipt', color: AppColors.mut),
+        StoryLabel(
+          '@name, sebagai struk'.trParams({'name': name}),
+          color: AppColors.mut,
+        ),
         const SizedBox(height: 14),
         Container(
           padding: const EdgeInsets.all(16),
@@ -631,7 +666,7 @@ class _Receipt extends StatelessWidget {
           child: Column(
             children: [
               Text(
-                'TALLY · MONTHLY',
+                'TALLY · BULANAN'.tr,
                 style: mono.copyWith(
                   fontWeight: FontWeight.w700,
                   letterSpacing: 1.4,
@@ -646,10 +681,10 @@ class _Receipt extends StatelessWidget {
                   style: mono,
                 ),
               _Dashes(),
-              _Row(left: 'ITEMS', right: '$items', style: mono),
-              _Row(left: 'PER DAY', right: perDay, style: mono),
+              _Row(left: 'ITEM'.tr, right: '$items', style: mono),
+              _Row(left: 'PER HARI'.tr, right: perDay, style: mono),
               _Row(
-                left: 'TOTAL',
+                left: 'TOTAL'.tr,
                 right: formatIdr(recap.spent),
                 style: mono.copyWith(fontSize: 14, fontWeight: FontWeight.w700),
               ),
@@ -785,15 +820,21 @@ class _Merchants extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('You kept coming back to', color: fg.withValues(alpha: 0.8)),
+        StoryLabel(
+          'Kamu sering kembali ke'.tr,
+          color: fg.withValues(alpha: 0.8),
+        ),
         const SizedBox(height: 6),
         Text(
-          'Your regular\nspots.',
+          'Tempat\nlangananmu.'.tr,
           style: AppText.display(size: 30, color: fg, height: 1.1),
         ),
         const SizedBox(height: 24),
         if (top.isEmpty)
-          Text('Belum ada merchant bulan ini.', style: AppText.body(color: fg))
+          Text(
+            'Belum ada merchant bulan ini.'.tr,
+            style: AppText.body(color: fg),
+          )
         else
           for (var i = 0; i < top.length; i++) ...[
             _MerchantRow(rank: i + 1, spend: top[i]),
@@ -831,7 +872,10 @@ class _MerchantRow extends StatelessWidget {
               ),
               const SizedBox(height: 2),
               Text(
-                '${spend.visits} visits · ${formatIdr(spend.total)}',
+                '@count kunjungan · @total'.trParams({
+                  'count': '${spend.visits}',
+                  'total': formatIdr(spend.total),
+                }),
                 style: AppText.mono(size: 11, color: fg.withValues(alpha: 0.7)),
               ),
             ],
@@ -856,13 +900,16 @@ class _BudgetCard extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('Budget report card', color: AppColors.mut),
+        StoryLabel('Rapor anggaran'.tr, color: AppColors.mut),
         const SizedBox(height: 6),
-        Text('Stamped & filed.', style: AppText.display(size: 30, color: fg)),
+        Text(
+          'Dicap & diarsipkan.'.tr,
+          style: AppText.display(size: 30, color: fg),
+        ),
         const SizedBox(height: 18),
         if (items.isEmpty)
           Text(
-            'Belum ada anggaran aktif di bulan ini.',
+            'Belum ada anggaran aktif di bulan ini.'.tr,
             style: AppText.body(size: 14, color: AppColors.mut),
           )
         else
@@ -884,10 +931,10 @@ class _BudgetRow extends StatelessWidget {
   Widget build(BuildContext context) {
     final level = BudgetStatus.levelFor(item.percent);
     final (label, color) = switch (level) {
-      BudgetLevel.safe => ('SAFE', AppColors.earn),
-      BudgetLevel.warning => ('WATCH', AppColors.warn),
-      BudgetLevel.critical => ('CRITICAL', AppColors.crit),
-      BudgetLevel.exceeded => ('OVER', AppColors.spend),
+      BudgetLevel.safe => ('AMAN'.tr, AppColors.earn),
+      BudgetLevel.warning => ('WASPADA'.tr, AppColors.warn),
+      BudgetLevel.critical => ('KRITIS'.tr, AppColors.crit),
+      BudgetLevel.exceeded => ('LEWAT'.tr, AppColors.spend),
     };
     final budget = item.budget;
     return Row(
@@ -949,11 +996,18 @@ class _ClosingState extends State<_Closing> {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   StoryLabel(
-                    '${widget.name}, net${recap.isSoFar ? ' so far' : ''}',
+                    recap.isSoFar
+                        ? '@name, bersih sejauh ini'.trParams({
+                            'name': widget.name,
+                          })
+                        : '@name, bersih'.trParams({'name': widget.name}),
                     color: fg.withValues(alpha: 0.8),
                   ),
                   const Spacer(),
-                  Text('You kept', style: AppText.body(size: 16, color: fg)),
+                  Text(
+                    'Kamu menyimpan'.tr,
+                    style: AppText.body(size: 16, color: fg),
+                  ),
                   const SizedBox(height: 4),
                   CountUpText(
                     value: recap.net,
@@ -962,8 +1016,11 @@ class _ClosingState extends State<_Closing> {
                   const SizedBox(height: 12),
                   Text(
                     income == 0
-                        ? 'Belum ada pemasukan tercatat bulan ini.'
-                        : "That's $kept% of the ${formatIdr(income)} that came in.",
+                        ? 'Belum ada pemasukan tercatat bulan ini.'.tr
+                        : 'Itu @kept% dari @income pemasukanmu.'.trParams({
+                            'kept': '$kept',
+                            'income': formatIdr(income),
+                          }),
                     style: AppText.body(size: 15, color: fg),
                   ),
                   const Spacer(),
@@ -986,7 +1043,7 @@ class _ClosingState extends State<_Closing> {
                   fileName: 'tally-recap-${widget.year}-$month',
                   text: 'Tally · ${widget.name} ${widget.year}',
                 ),
-                child: const Text('Save as image'),
+                child: Text('Simpan sebagai gambar'.tr),
               ),
             ),
             const SizedBox(width: 10),
@@ -999,7 +1056,9 @@ class _ClosingState extends State<_Closing> {
                 ),
                 onPressed: () =>
                     Get.off(() => YearlyRecapPage(year: widget.year)),
-                child: Text('Watch ${widget.year} recap'),
+                child: Text(
+                  'Lihat rekap @year'.trParams({'year': '${widget.year}'}),
+                ),
               ),
             ),
           ],
@@ -1022,10 +1081,13 @@ class _DailyLimit extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        StoryLabel('Daily limit', color: AppColors.mut),
+        StoryLabel('Batas harian'.tr, color: AppColors.mut),
         const SizedBox(height: 6),
         Text(
-          '${recap.daysUnderLimit} of ${recap.elapsedDays} days\nunder the line.',
+          '@under dari @days hari\ndi bawah garis.'.trParams({
+            'under': '${recap.daysUnderLimit}',
+            'days': '${recap.elapsedDays}',
+          }),
           style: AppText.display(size: 28, color: AppColors.ink, height: 1.1),
         ),
         const SizedBox(height: 18),
@@ -1073,7 +1135,9 @@ class _DailyLimit extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         Text(
-          'Limit ${formatIdr(limit)} a day (budget ÷ days).',
+          'Batas @limit per hari (anggaran ÷ hari).'.trParams({
+            'limit': formatIdr(limit),
+          }),
           style: AppText.body(size: 12, color: AppColors.mut),
         ),
       ],

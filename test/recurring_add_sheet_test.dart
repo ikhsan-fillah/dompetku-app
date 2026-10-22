@@ -59,7 +59,9 @@ void main() {
     Get.reset();
   });
 
-  testWidgets('sheet tambah menyimpan aturan dan menutup sheet', (tester) async {
+  testWidgets('sheet tambah menyimpan aturan dan menutup sheet', (
+    tester,
+  ) async {
     final store = _Store();
     Get.put(RecurringController(store));
     Get.put(RecurringFormController(store));
@@ -76,10 +78,8 @@ void main() {
         home: Scaffold(
           body: Builder(
             builder: (context) => TextButton(
-              onPressed: () => showRecurringAddSheet(
-                context,
-                categories: _Categories(),
-              ),
+              onPressed: () =>
+                  showRecurringAddSheet(context, categories: _Categories()),
               child: const Text('open'),
             ),
           ),
@@ -89,7 +89,7 @@ void main() {
     await tester.tap(find.text('open'));
     await tester.pumpAndSettle();
 
-    expect(find.text('Save recurring'), findsOneWidget);
+    expect(find.text('Simpan transaksi berulang'), findsOneWidget);
     await tester.pumpAndSettle();
     await tester.enterText(find.byType(TextField).first, 'Listrik');
     await tester.enterText(find.byKey(const Key('amount')), '438000');
@@ -97,11 +97,11 @@ void main() {
     await tester.tap(find.text('Bills'));
     await tester.pump();
 
-    await tester.tap(find.text('Save recurring'));
+    await tester.tap(find.text('Simpan transaksi berulang'));
     await tester.pumpAndSettle();
 
     expect(store.items.single.name, 'Listrik');
     expect(store.items.single.amount, 438000);
-    expect(find.text('Save recurring'), findsNothing);
+    expect(find.text('Simpan transaksi berulang'), findsNothing);
   });
 }

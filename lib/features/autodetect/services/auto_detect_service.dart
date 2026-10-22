@@ -2,14 +2,18 @@ import 'dart:async';
 
 import 'package:flutter/services.dart';
 
+import 'package:get/get.dart';
+
 import '../../../core/constant/domain_enums.dart';
+import '../../../core/services/data_refresh_service.dart';
 import '../../drafts/models/draft_model.dart';
 import '../../drafts/repositories/draft_repository.dart';
 import 'auto_detect_settings.dart';
 import 'notification_parser.dart';
 
 /// Menghubungkan event notifikasi native ke parser dan draft. Teks mentah
-/// tidak pernah disimpan. Hanya app yang dipilih user yang diproses.
+/// tidak pernah disimpan di Dart; di sisi native hanya ditahan sementara
+/// bila app tertutup dan dihapus saat diambil. Hanya app yang dipilih user yang diproses.
 class AutoDetectService {
   AutoDetectService(
     this._drafts, {
@@ -37,9 +41,24 @@ class AutoDetectService {
 
   Future<void> openAccessSettings() => _access.invokeMethod('openSettings');
 
+  Future<void> openAppDetails() => _access.invokeMethod('openAppDetails');
+
   void start() {
     if (_listener != null) return;
     _listener = _events.receiveBroadcastStream().listen(_onEvent);
+    unawaited(drainPending());
+  }
+
+  /// Memproses notifikasi yang masuk saat app tertutup.
+  Future<void> drainPending() async {
+    try {
+      final pending = await _access.invokeMethod<List<dynamic>>('drainPending');
+      for (final event in pending ?? const <dynamic>[]) {
+        await _onEvent(event);
+      }
+    } on PlatformException {
+      return;
+    }
   }
 
   Future<void> _onEvent(dynamic event) async {
@@ -54,11 +73,16 @@ class AutoDetectService {
     final parsed = _parser.parse(packageName, text);
     if (parsed == null) return;
 
-    final detectedAt = DateTime.fromMillisecondsSinceEpoch(postTime, isUtc: true);
+    final detectedAt = DateTime.fromMillisecondsSinceEpoch(
+      postTime,
+      isUtc: true,
+    );
     await _drafts.insertIfNew(
       DraftModel(
         source: parsed.source,
-        kind: parsed.isExpense ? TransactionType.expense : TransactionType.income,
+        kind: parsed.isExpense
+            ? TransactionType.expense
+            : TransactionType.income,
         amount: parsed.amount,
         merchant: parsed.merchant,
         detectedAt: detectedAt,
@@ -69,5 +93,8 @@ class AutoDetectService {
         ),
       ),
     );
+    if (Get.isRegistered<DataRefreshService>()) {
+      Get.find<DataRefreshService>().bump();
+    }
   }
 }

@@ -17,6 +17,8 @@ class ReportData {
     this.highestSpendingDayAmount = 0,
     this.topMerchant,
     this.topMerchantCount = 0,
+    this.dailySpending = const [],
+    this.previousExpense = 0,
   });
 
   final DashboardSummaryModel summary;
@@ -27,6 +29,10 @@ class ReportData {
   final int highestSpendingDayAmount;
   final String? topMerchant;
   final int topMerchantCount;
+
+  /// Pengeluaran per hari, dimulai dari hari pertama rentang.
+  final List<int> dailySpending;
+  final int previousExpense;
 }
 
 class ReportCategoryTotal {
@@ -50,9 +56,45 @@ class ReportController extends GetxController {
   final CategoryRepository _categories;
   final FinancialCalculationService _calculations;
   final range = DateRange.fromPreset(DateRangePreset.currentMonth).obs;
+  final month = _firstOfMonth(DateTime.now()).obs;
   final state = const ResourceState<ReportData>.idle().obs;
 
-  Future<void> load(DateRange selectedRange) async {
+  static DateTime _firstOfMonth(DateTime value) =>
+      DateTime(value.year, value.month);
+
+  /// Rentang satu bulan kalender; bulan berjalan berakhir hari ini.
+  static DateRange monthRange(DateTime month, {DateTime? now}) {
+    final today = now ?? DateTime.now();
+    final start = _firstOfMonth(month);
+    final last = DateTime(start.year, start.month + 1, 0);
+    final isCurrent = start.year == today.year && start.month == today.month;
+    return DateRange(
+      start: start,
+      end: isCurrent ? DateTime(today.year, today.month, today.day) : last,
+    );
+  }
+
+  /// Rentang bulan sebelumnya dengan jumlah hari yang sama dengan [current],
+  /// supaya bulan berjalan dibandingkan dengan hari yang setara.
+  static DateRange previousMonthRange(DateRange current) {
+    final start = DateTime(current.start.year, current.start.month - 1);
+    final last = DateTime(start.year, start.month + 1, 0);
+    final endDay = current.end.day < last.day ? current.end.day : last.day;
+    return DateRange(
+      start: start,
+      end: DateTime(start.year, start.month, endDay),
+    );
+  }
+
+  Future<void> loadMonth(DateTime selectedMonth) {
+    month.value = _firstOfMonth(selectedMonth);
+    final selected = monthRange(month.value);
+    return load(selected, previousRange: previousMonthRange(selected));
+  }
+
+  Future<void> reload() => loadMonth(month.value);
+
+  Future<void> load(DateRange selectedRange, {DateRange? previousRange}) async {
     range.value = selectedRange;
     state.value = const ResourceState.loading();
     try {
@@ -78,7 +120,7 @@ class ReportController extends GetxController {
         final category = categoriesById[entry.key];
         return ReportCategoryTotal(
           categoryId: entry.key,
-          name: category?.name ?? 'Kategori diarsipkan',
+          name: category?.name ?? 'Kategori diarsipkan'.tr,
           colorValue: category?.colorValue ?? 0xFF64748B,
           amount: entry.value,
         );
@@ -92,15 +134,39 @@ class ReportController extends GetxController {
           ? 0
           : _calculations.expenseOnDay(transactions, highDay);
       final merchant = _calculations.topMerchant(transactions, selectedRange);
+      final summary = _calculations.summary(transactions, selectedRange);
+      final previousExpense = _calculations
+          .summary(
+            transactions,
+            previousRange ?? selectedRange.previousEquivalentPeriod,
+          )
+          .expense;
+      final dailyByDate = {
+        for (final point in _calculations.dailyExpenses(
+          transactions,
+          selectedRange,
+        ))
+          point.date: point.amount,
+      };
+      final dailySpending = [
+        for (var i = 0; i < selectedRange.dayCount; i++)
+          dailyByDate[DateTime(
+                selectedRange.start.year,
+                selectedRange.start.month,
+                selectedRange.start.day + i,
+              )] ??
+              0,
+      ];
 
       state.value = ResourceState.success(
         ReportData(
-          summary: _calculations.summary(transactions, selectedRange),
+          summary: summary,
           expensesByCategory: expensesByCategory,
-          expenseChange: _calculations.previousPeriodExpenseChange(
-            transactions,
-            selectedRange,
-          ),
+          expenseChange: previousExpense == 0
+              ? (summary.expense == 0 ? 0 : 1)
+              : (summary.expense - previousExpense) / previousExpense,
+          previousExpense: previousExpense,
+          dailySpending: dailySpending,
           dailyAverage: _calculations.dailyAverage(transactions, selectedRange),
           highestSpendingDay: highDay,
           highestSpendingDayAmount: highDayAmount,
@@ -109,7 +175,7 @@ class ReportController extends GetxController {
         ),
       );
     } catch (_) {
-      state.value = const ResourceState.error('Gagal memuat laporan.');
+      state.value = ResourceState.error('Gagal memuat laporan.'.tr);
     }
   }
 }

@@ -2,16 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/i18n/app_language.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
-import '../../../core/utils/date_range.dart';
-import '../../../core/widgets/app_title_bar.dart';
 import '../../../core/widgets/app_card.dart';
-import '../../../core/widgets/app_chip.dart';
 import '../../../core/widgets/app_progress_bar.dart';
+import '../../../core/widgets/app_title_bar.dart';
 import '../controllers/report_controller.dart';
+import '../widgets/report_visuals.dart';
 
 class ReportPage extends StatefulWidget {
   const ReportPage({super.key});
@@ -20,42 +20,14 @@ class ReportPage extends StatefulWidget {
   State<ReportPage> createState() => _ReportPageState();
 }
 
-const _months = [
-  'Jan',
-  'Feb',
-  'Mar',
-  'Apr',
-  'Mei',
-  'Jun',
-  'Jul',
-  'Agu',
-  'Sep',
-  'Okt',
-  'Nov',
-  'Des',
-];
-
 class _ReportPageState extends State<ReportPage> {
-  static const _presets = <(DateRangePreset, String)>[
-    (DateRangePreset.today, 'Hari ini'),
-    (DateRangePreset.week, '1 Minggu'),
-    (DateRangePreset.month, '1 Bulan'),
-    (DateRangePreset.threeMonths, '3 Bulan'),
-    (DateRangePreset.yearToDate, 'Tahun ini'),
-    (DateRangePreset.year, '1 Tahun'),
-    (DateRangePreset.allTime, 'Semua'),
-    (DateRangePreset.currentMonth, 'Bulan ini'),
-    (DateRangePreset.custom, 'Kustom'),
-  ];
-
   final controller = Get.find<ReportController>();
-  DateRangePreset _preset = DateRangePreset.month;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback(
-      (_) => controller.load(DateRange.fromPreset(_preset)),
+      (_) => controller.loadMonth(DateTime.now()),
     );
   }
 
@@ -69,90 +41,32 @@ class _ReportPageState extends State<ReportPage> {
     return '${value < 0 ? '-' : ''}Rp$buffer';
   }
 
-  String _date(DateTime value) =>
-      '${value.day} ${_months[value.month - 1]} ${value.year}';
-
-  Future<void> _selectPreset(DateRangePreset preset) async {
-    if (preset == DateRangePreset.custom) {
-      await _pickCustom();
-      return;
-    }
-    setState(() => _preset = preset);
-    await controller.load(DateRange.fromPreset(preset));
-  }
-
-  Future<void> _pickCustom() async {
+  bool _isCurrentMonth(DateTime month) {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final first = DateTime(2000);
-    final current = controller.range.value;
-    final start = current.start.isBefore(first) ? first : current.start;
-    final picked = await showDateRangePicker(
-      context: context,
-      firstDate: first,
-      lastDate: today,
-      initialDateRange: DateTimeRange(start: start, end: current.end),
-    );
-    if (picked == null || !mounted) return;
-    setState(() => _preset = DateRangePreset.custom);
-    await controller.load(
-      DateRange.history(start: picked.start, end: picked.end),
-    );
+    return month.year == now.year && month.month == now.month;
   }
 
-  Future<void> _reload() => controller.load(controller.range.value);
+  void _shiftMonth(int delta) => controller.loadMonth(
+    DateTime(controller.month.value.year, controller.month.value.month + delta),
+  );
 
   @override
   Widget build(BuildContext context) => Scaffold(
     body: SafeArea(
       child: Column(
         children: [
-          const AppTitleBar(title: 'Laporan'),
+          AppTitleBar(title: 'Laporan'.tr),
           const SizedBox(height: AppSpacing.gap),
-          SizedBox(
-            height: 48,
-            child: ListView.separated(
-              scrollDirection: Axis.horizontal,
-              padding: const EdgeInsets.symmetric(
-                horizontal: AppSpacing.page,
-                vertical: 6,
-              ),
-              itemCount: _presets.length,
-              separatorBuilder: (_, _) => const SizedBox(width: 8),
-              itemBuilder: (_, index) {
-                final (preset, label) = _presets[index];
-                final selected = preset == _preset;
-                return AppChip(
-                  label: label,
-                  selected: selected,
-                  onTap: () => _selectPreset(preset),
-                );
-              },
-            ),
-          ),
-          Padding(
-            padding: const EdgeInsets.fromLTRB(
-              AppSpacing.page,
-              AppSpacing.tight,
-              AppSpacing.page,
-              AppSpacing.gap,
-            ),
-            child: Align(
-              alignment: Alignment.centerLeft,
-              child: Obx(() {
-                final range = controller.range.value;
-                return Text(
-                  '${_date(range.start)} - ${_date(range.end)}',
-                  style: AppText.mono(
-                    size: 11.5,
-                    weight: FontWeight.w500,
-                    color: AppColors.mut,
-                    letterSpacing: 0,
-                  ),
-                );
-              }),
-            ),
-          ),
+          Obx(() {
+            final month = controller.month.value;
+            return MonthSwitcher(
+              month: month,
+              canGoNext: !_isCurrentMonth(month),
+              onPrevious: () => _shiftMonth(-1),
+              onNext: () => _shiftMonth(1),
+            );
+          }),
+          const SizedBox(height: AppSpacing.gap),
           Expanded(
             child: Obx(() {
               final current = controller.state.value;
@@ -162,20 +76,25 @@ class _ReportPageState extends State<ReportPage> {
                 ),
                 ResourceStatus.empty => _Message(
                   icon: LucideIcons.chartColumn,
-                  text: 'Belum ada transaksi pada periode ini',
-                  action: 'Muat ulang',
-                  onTap: _reload,
+                  text: 'Belum ada transaksi pada bulan ini'.tr,
+                  action: 'Muat ulang'.tr,
+                  onTap: controller.reload,
                 ),
                 ResourceStatus.error => _Message(
                   icon: LucideIcons.circleAlert,
-                  text: current.message ?? 'Gagal memuat laporan.',
-                  action: 'Coba lagi',
-                  onTap: _reload,
+                  text: current.message ?? 'Gagal memuat laporan.'.tr,
+                  action: 'Coba lagi'.tr,
+                  onTap: controller.reload,
                 ),
                 ResourceStatus.success => RefreshIndicator(
                   color: AppColors.ink,
-                  onRefresh: _reload,
-                  child: _Summary(data: current.data!, money: _money),
+                  onRefresh: controller.reload,
+                  child: _Summary(
+                    data: current.data!,
+                    start: controller.range.value.start,
+                    isCurrentMonth: _isCurrentMonth(controller.month.value),
+                    money: _money,
+                  ),
                 ),
               };
             }),
@@ -187,9 +106,16 @@ class _ReportPageState extends State<ReportPage> {
 }
 
 class _Summary extends StatelessWidget {
-  const _Summary({required this.data, required this.money});
+  const _Summary({
+    required this.data,
+    required this.start,
+    required this.isCurrentMonth,
+    required this.money,
+  });
 
   final ReportData data;
+  final DateTime start;
+  final bool isCurrentMonth;
   final String Function(int) money;
 
   @override
@@ -198,78 +124,54 @@ class _Summary extends StatelessWidget {
     final remaining = summary.remainingBudget;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 8, 16, 32),
+      padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
       children: [
-        Container(
-          padding: const EdgeInsets.fromLTRB(18, 20, 18, 16),
-          decoration: BoxDecoration(
-            color: AppColors.ink,
-            borderRadius: BorderRadius.circular(AppRadius.hero),
-          ),
+        AppCard(
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
           child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
-                'Saldo periode ini',
-                style: AppText.body(
-                  size: 11.5,
-                  weight: FontWeight.w700,
-                  color: AppColors.paper.withValues(alpha: 0.7),
-                  letterSpacing: 0.7,
+              if (data.expensesByCategory.isEmpty || summary.expense == 0)
+                SpendingRing(items: const [], total: 0, totalLabel: money(0))
+              else
+                SpendingRing(
+                  items: data.expensesByCategory,
+                  total: summary.expense,
+                  totalLabel: money(summary.expense),
                 ),
-              ),
-              const SizedBox(height: 6),
-              Text(
-                money(summary.balance),
-                style: AppText.mono(
-                  size: 26,
-                  weight: FontWeight.w500,
-                  color: AppColors.paper,
-                  letterSpacing: -0.01 * 26,
-                ),
+              const SizedBox(height: 16),
+              _ChangeInsight(
+                change: data.expenseChange,
+                hasPrevious: data.previousExpense > 0,
+                isCurrentMonth: isCurrentMonth,
               ),
             ],
           ),
         ),
         const SizedBox(height: 14),
-        Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
-              child: _StatCard(
-                icon: LucideIcons.arrowDown,
-                label: 'Pemasukan',
-                value: money(summary.income),
-                background: AppColors.earnSoft,
-                foreground: AppColors.earn,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Expanded(
-              child: _StatCard(
-                icon: LucideIcons.arrowUp,
-                label: 'Pengeluaran',
-                value: money(summary.expense),
-                background: AppColors.spendSoft,
-                foreground: AppColors.spend,
-              ),
-            ),
-          ],
+        _SectionCard(
+          title: 'Pemasukan vs pengeluaran'.tr,
+          child: IncomeExpenseBars(
+            income: summary.income,
+            expense: summary.expense,
+            money: money,
+          ),
         ),
         if (remaining != null) ...[
-          const SizedBox(height: 12),
-          _StatCard(
-            icon: LucideIcons.chartPie,
-            label: 'Sisa anggaran',
-            value: money(remaining),
-            background: remaining < 0
-                ? AppColors.spendSoft
-                : AppColors.earnSoft,
-            foreground: remaining < 0 ? AppColors.spend : AppColors.earn,
+          const SizedBox(height: 14),
+          _BudgetRemaining(value: money(remaining), negative: remaining < 0),
+        ],
+        if (data.dailySpending.any((value) => value > 0)) ...[
+          const SizedBox(height: 14),
+          _SectionCard(
+            title: 'Pengeluaran harian'.tr,
+            child: DailySpendingBars(
+              values: data.dailySpending,
+              start: start,
+              money: money,
+            ),
           ),
         ],
-        const SizedBox(height: 14),
-        _ChangeInsight(change: data.expenseChange),
         if (data.dailyAverage > 0 ||
             data.highestSpendingDay != null ||
             data.topMerchant != null) ...[
@@ -289,47 +191,96 @@ class _Summary extends StatelessWidget {
   }
 }
 
+class _SectionCard extends StatelessWidget {
+  const _SectionCard({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    margin: EdgeInsets.zero,
+    padding: const EdgeInsets.all(16),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: AppText.body(size: 13, weight: FontWeight.w700)),
+        const SizedBox(height: 14),
+        child,
+      ],
+    ),
+  );
+}
+
 class _ChangeInsight extends StatelessWidget {
-  const _ChangeInsight({required this.change});
+  const _ChangeInsight({
+    required this.change,
+    required this.hasPrevious,
+    required this.isCurrentMonth,
+  });
 
   final double change;
+  final bool hasPrevious;
+  final bool isCurrentMonth;
+
+  String _message() {
+    if (!hasPrevious) {
+      return 'Belum ada pengeluaran bulan lalu sebagai pembanding.'.tr;
+    }
+    final percent = (change.abs() * 100).round();
+    final params = {'percent': '$percent'};
+    if (change.abs() < 0.005) {
+      return isCurrentMonth
+          ? 'Pengeluaran sama dengan periode yang sama bulan lalu.'.tr
+          : 'Pengeluaran sama dengan bulan lalu.'.tr;
+    }
+    if (change < 0) {
+      return isCurrentMonth
+          ? 'Pengeluaran turun @percent% dari periode yang sama bulan lalu.'
+                .trParams(params)
+          : 'Pengeluaran turun @percent% dari bulan lalu.'.trParams(params);
+    }
+    return isCurrentMonth
+        ? 'Pengeluaran naik @percent% dari periode yang sama bulan lalu.'
+              .trParams(params)
+        : 'Pengeluaran naik @percent% dari bulan lalu.'.trParams(params);
+  }
 
   @override
   Widget build(BuildContext context) {
-    final unchanged = change.abs() < 0.005;
+    final neutral = !hasPrevious || change.abs() < 0.005;
     final decreased = change < 0;
-    final percent = (change.abs() * 100).round();
-    final background = unchanged || decreased
+    final background = neutral
+        ? AppColors.paper2
+        : decreased
         ? AppColors.earnSoft
         : AppColors.spendSoft;
-    final foreground = unchanged || decreased
+    final foreground = neutral
+        ? AppColors.ink2
+        : decreased
         ? AppColors.earn
         : AppColors.spend;
-    final icon = unchanged
+    final icon = neutral
         ? LucideIcons.minus
         : decreased
         ? LucideIcons.trendingDown
         : LucideIcons.trendingUp;
-    final message = unchanged
-        ? 'Pengeluaran sama dengan periode sebelumnya.'
-        : decreased
-        ? 'Pengeluaran turun $percent% dari periode sebelumnya.'
-        : 'Pengeluaran naik $percent% dari periode sebelumnya.';
     return Container(
-      padding: const EdgeInsets.all(16),
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
       decoration: BoxDecoration(
         color: background,
-        borderRadius: BorderRadius.circular(AppRadius.card),
+        borderRadius: BorderRadius.circular(AppRadius.field),
       ),
       child: Row(
         children: [
-          Icon(icon, color: foreground, size: 20),
+          Icon(icon, color: foreground, size: 18),
           const SizedBox(width: 10),
           Expanded(
             child: Text(
-              message,
+              _message(),
               style: AppText.body(
-                size: 13,
+                size: 12,
                 weight: FontWeight.w700,
                 color: foreground,
               ),
@@ -341,35 +292,80 @@ class _ChangeInsight extends StatelessWidget {
   }
 }
 
+class _BudgetRemaining extends StatelessWidget {
+  const _BudgetRemaining({required this.value, required this.negative});
+
+  final String value;
+  final bool negative;
+
+  @override
+  Widget build(BuildContext context) => AppCard(
+    margin: EdgeInsets.zero,
+    padding: const EdgeInsets.all(16),
+    child: Row(
+      children: [
+        Container(
+          width: 36,
+          height: 36,
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: negative ? AppColors.spendSoft : AppColors.earnSoft,
+            borderRadius: BorderRadius.circular(AppRadius.smallButton),
+          ),
+          child: Icon(
+            LucideIcons.chartPie,
+            size: 18,
+            color: negative ? AppColors.spend : AppColors.earn,
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            'Sisa anggaran'.tr,
+            style: AppText.body(size: 12, weight: FontWeight.w700),
+          ),
+        ),
+        Text(
+          value,
+          style: AppText.mono(
+            size: 14,
+            weight: FontWeight.w600,
+            color: negative ? AppColors.spend : AppColors.earn,
+            letterSpacing: 0,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
 class _SpendingStats extends StatelessWidget {
   const _SpendingStats({required this.data, required this.money});
 
   final ReportData data;
   final String Function(int) money;
 
+  String _dayLabel(DateTime value) =>
+      '${value.day} ${AppLanguage.monthShort(value.month)} ${value.year}';
+
   @override
-  Widget build(BuildContext context) => AppCard(
-    margin: EdgeInsets.zero,
-    padding: const EdgeInsets.all(16),
+  Widget build(BuildContext context) => _SectionCard(
+    title: 'Statistik pengeluaran'.tr,
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Statistik belanja',
-          style: AppText.body(size: 13, weight: FontWeight.w700),
-        ),
-        const SizedBox(height: 14),
         if (data.dailyAverage > 0)
           _StatRow(
             icon: LucideIcons.calculator,
-            label: 'Rata-rata harian',
-            value: '${money(data.dailyAverage.round())} / hari',
+            label: 'Rata-rata harian'.tr,
+            value: '@amount / hari'.trParams({
+              'amount': money(data.dailyAverage.round()),
+            }),
           ),
         if (data.highestSpendingDay != null) ...[
           if (data.dailyAverage > 0) const SizedBox(height: 12),
           _StatRow(
             icon: LucideIcons.calendarX,
-            label: 'Hari belanja terbesar',
+            label: 'Hari pengeluaran terbesar'.tr,
             value:
                 '${_dayLabel(data.highestSpendingDay!)} · ${money(data.highestSpendingDayAmount)}',
           ),
@@ -378,16 +374,13 @@ class _SpendingStats extends StatelessWidget {
           const SizedBox(height: 12),
           _StatRow(
             icon: LucideIcons.store,
-            label: 'Merchant teratas',
+            label: 'Merchant teratas'.tr,
             value: '${data.topMerchant} · ${data.topMerchantCount}x',
           ),
         ],
       ],
     ),
   );
-
-  String _dayLabel(DateTime value) =>
-      '${value.day} ${_months[value.month - 1]} ${value.year}';
 }
 
 class _StatRow extends StatelessWidget {
@@ -449,17 +442,10 @@ class _CategoryBreakdown extends StatelessWidget {
   final String Function(int) money;
 
   @override
-  Widget build(BuildContext context) => AppCard(
-    margin: EdgeInsets.zero,
-    padding: const EdgeInsets.all(16),
+  Widget build(BuildContext context) => _SectionCard(
+    title: 'Rincian pengeluaran'.tr,
     child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          'Rincian pengeluaran',
-          style: AppText.body(size: 13, weight: FontWeight.w700),
-        ),
-        const SizedBox(height: 14),
         for (var index = 0; index < items.length; index++) ...[
           _CategoryRow(item: items[index], total: total, money: money),
           if (index < items.length - 1) const SizedBox(height: 14),
@@ -520,60 +506,14 @@ class _CategoryRow extends StatelessWidget {
         AppProgressBar(value: share, color: color),
         const SizedBox(height: 5),
         Text(
-          '${(share * 100).round()}% dari pengeluaran',
+          '@percent% dari pengeluaran'.trParams({
+            'percent': '${(share * 100).round()}',
+          }),
           style: AppText.body(size: 10.5, color: AppColors.mut),
         ),
       ],
     );
   }
-}
-
-class _StatCard extends StatelessWidget {
-  const _StatCard({
-    required this.icon,
-    required this.label,
-    required this.value,
-    required this.background,
-    required this.foreground,
-  });
-
-  final IconData icon;
-  final String label;
-  final String value;
-  final Color background;
-  final Color foreground;
-
-  @override
-  Widget build(BuildContext context) => AppCard(
-    margin: EdgeInsets.zero,
-    padding: const EdgeInsets.all(16),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 36,
-          height: 36,
-          alignment: Alignment.center,
-          decoration: BoxDecoration(
-            color: background,
-            borderRadius: BorderRadius.circular(AppRadius.smallButton),
-          ),
-          child: Icon(icon, size: 18, color: foreground),
-        ),
-        const SizedBox(height: 12),
-        Text(label, style: AppText.body(size: 10.5, color: AppColors.mut)),
-        const SizedBox(height: 4),
-        Text(
-          value,
-          style: AppText.mono(
-            size: 14,
-            weight: FontWeight.w500,
-            letterSpacing: 0,
-          ),
-        ),
-      ],
-    ),
-  );
 }
 
 class _Message extends StatelessWidget {

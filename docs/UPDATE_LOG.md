@@ -42,6 +42,14 @@ Hasil APK: `build\app\outputs\flutter-apk\app-release.apk`.
 
 ## Riwayat
 
+### 1.1.0+2 (Oktober 2026)
+
+- Auto-detect: BRImo dan Jago ditambahkan, semua app dipantau otomatis tanpa toggle. Status izin di-refresh saat kembali dari Settings, ada tombol buka info app.
+- Drafts: confirm tanpa kategori memilih kategori dulu, error ditampilkan, dialog edit dirapikan.
+- Beranda: "Rp" dihapus dari saldo periode ini.
+- Biometrik: tombol sidik jari dipindah ke bawah tengah layar.
+- Recap bulanan: warna slide penutup diperbaiki.
+
 ### 1.0.0+1 (Oktober 2026)
 
 - Hapus fitur ekspor data dan dependensi `excel`, `share_plus`.
@@ -73,3 +81,12 @@ Keputusan §13 (sudah diputuskan dan dikerjakan): batas harian recap = total bud
 quiet streak dihitung sejak transaksi pertama, total recurring (mingguan x52/12, tahunan /12), Forgot PIN hanya bisa menghapus data, biggest single expense ditampilkan.
 
 Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelumnya (tanpa uninstall).
+
+### Setelah 1.1.1+3 (Oktober 2026)
+
+- Bahasa: pilihan Indonesia (bawaan) atau Inggris di Profil, kartu "Tampilan & data", di bawah Tema. Semua teks UI mengikuti pilihan itu, termasuk nama bulan, label tanggal, dan nama kategori bawaan. Pilihan tersimpan di Shared Preferences (`language`).
+- Teks baru: kunci terjemahan adalah teks Indonesia (`'Laporan'.tr`), terjemahan Inggris ada di `lib/core/i18n/en/`. `test/translations_coverage_test.dart` gagal bila ada teks `.tr` tanpa terjemahan Inggris.
+- Nama kategori bawaan tetap tersimpan dalam bahasa Inggris di database (tanpa migrasi); tampilannya lewat `CategoryModel.displayName`.
+- Laporan: dipilih per bulan (panah kiri/kanan), tanpa pilihan tanggal. Ditambah cincin pengeluaran per kategori, perbandingan dengan bulan lalu (bulan berjalan dibandingkan dengan hari yang setara), pemasukan vs pengeluaran, batang pengeluaran harian. "Statistik belanja" menjadi "Statistik pengeluaran". Rincian pengeluaran dipertahankan.
+- Auto-detect: notifikasi yang masuk saat app tertutup ditahan sementara di sisi native (maks. 50 item, 24 jam) dan diambil Dart saat app dibuka, lalu dihapus. Sebelumnya notifikasi seperti ini hilang. Draf baru langsung me-refresh Beranda. Nominal yang didahului kata saldo/sisa tidak diambil sebagai nominal transaksi.
+

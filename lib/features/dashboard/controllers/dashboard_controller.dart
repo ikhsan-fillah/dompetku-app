@@ -168,9 +168,7 @@ class DashboardController extends GetxController {
       );
     } catch (_) {
       if (requestId != _requestId) return;
-      state.value = const ResourceState.error(
-        'Gagal memuat ringkasan dashboard.',
-      );
+      state.value = ResourceState.error('Gagal memuat ringkasan dashboard.'.tr);
     }
   }
 

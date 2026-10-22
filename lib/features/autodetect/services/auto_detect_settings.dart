@@ -1,34 +1,20 @@
-import 'dart:convert';
-
 import 'package:shared_preferences/shared_preferences.dart';
 
 /// Pengaturan auto-detect: app yang dipantau dan mode simpan otomatis.
 class AutoDetectSettings {
-  static const _kApps = 'autoDetectApps';
   static const _kSaveAuto = 'autoDetectSaveAuto';
 
-  static const defaultOff = ['com.whatsapp', 'ovo'];
+  static const monitoredApps = {
+    'id.co.bca.mobile',
+    'com.gojek.gopay',
+    'com.gojek.app',
+    'com.shopee.id',
+    'id.dana',
+    'id.co.bri.brimo',
+    'com.jago.digitalBanking',
+  };
 
-  Future<Set<String>> getApps() async {
-    final prefs = await SharedPreferences.getInstance();
-    final raw = prefs.getString(_kApps);
-    if (raw == null) {
-      return const {
-        'id.co.bca.mobile',
-        'com.gojek.gopay',
-        'com.shopee.id',
-        'id.dana',
-      };
-    }
-    return Set<String>.from(
-      (jsonDecode(raw) as List).cast<String>(),
-    );
-  }
-
-  Future<void> setApps(Set<String> apps) async {
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString(_kApps, jsonEncode(apps.toList()));
-  }
+  Future<Set<String>> getApps() async => monitoredApps;
 
   Future<bool> getSaveAuto() async {
     final prefs = await SharedPreferences.getInstance();

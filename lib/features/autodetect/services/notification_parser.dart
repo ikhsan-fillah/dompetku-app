@@ -17,7 +17,8 @@ class ParsedPayment {
 class NotificationParser {
   const NotificationParser();
 
-  static const _otp = r'\botp\b|kode verifikasi|jangan bagikan|verification code';
+  static const _otp =
+      r'\botp\b|kode verifikasi|jangan bagikan|verification code';
   static const _promo = r'promo|diskon|cashback\s+\d|voucher|diskon|flash sale';
 
   static final _amountPattern = RegExp(
@@ -33,17 +34,24 @@ class NotificationParser {
     final source = _sourceName(appId);
     if (source == null) return null;
 
-    final amountMatch = _amountPattern.firstMatch(text);
+    final amountMatch = _amountPattern
+        .allMatches(text)
+        .where((m) => !_isBalance(text, m.start))
+        .firstOrNull;
     if (amountMatch == null) return null;
     final amount = int.tryParse(
       amountMatch.group(1)!.replaceAll(RegExp(r'[.,]'), ''),
     );
     if (amount == null || amount <= 0) return null;
 
-    final isExpense = RegExp(r'(bayar|pembayaran|transaksi|paid|payment|sent|kirim)')
-            .hasMatch(lower) &&
+    final isExpense =
+        RegExp(
+          r'(bayar|pembayaran|transaksi|paid|payment|sent|kirim|keluar|debit)',
+        ).hasMatch(lower) &&
         !RegExp(r'(terima|received|masuk|cashback)').hasMatch(lower);
-    final isIncome = RegExp(r'(terima|received|masuk)').hasMatch(lower);
+    final isIncome = RegExp(
+      r'(terima|received|masuk|kredit|credited)',
+    ).hasMatch(lower);
     if (!isExpense && !isIncome) return null;
 
     final merchant = _merchant(text);
@@ -55,16 +63,28 @@ class NotificationParser {
     );
   }
 
+  /// Nominal yang didahului kata saldo/sisa bukan nominal transaksi.
+  bool _isBalance(String text, int start) {
+    final before = text
+        .substring(start < 14 ? 0 : start - 14, start)
+        .toLowerCase();
+    return before.contains('saldo') || before.contains('sisa');
+  }
+
   String? _sourceName(String appId) => switch (appId) {
     'id.co.bca.mobile' => 'BCA mobile',
     'com.gojek.gopay' || 'com.gojek.app' => 'GoPay',
     'com.shopee.id' => 'ShopeePay',
     'id.dana' => 'DANA',
+    'id.co.bri.brimo' => 'BRImo',
+    'com.jago.digitalBanking' => 'Jago',
     _ => null,
   };
 
   String? _merchant(String text) {
-    final match = RegExp(r'(?:ke|at|to)\s+([A-Za-z0-9 .&\-]{3,30})').firstMatch(text);
+    final match = RegExp(
+      r'(?:ke|at|to)\s+([A-Za-z0-9 .&\-]{3,30})',
+    ).firstMatch(text);
     return match?.group(1)?.trim();
   }
 }

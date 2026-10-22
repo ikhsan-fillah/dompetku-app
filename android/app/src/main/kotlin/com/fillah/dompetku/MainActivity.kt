@@ -49,8 +49,17 @@ class MainActivity : FlutterFragmentActivity() {
                     ) == true
                     result.success(enabled)
                 }
+                "drainPending" -> result.success(PendingNotificationStore.drain(this))
                 "openSettings" -> {
                     startActivity(android.content.Intent(Settings.ACTION_NOTIFICATION_LISTENER_SETTINGS))
+                    result.success(null)
+                }
+                "openAppDetails" -> {
+                    val intent = android.content.Intent(
+                        Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
+                        android.net.Uri.parse("package:$packageName"),
+                    )
+                    startActivity(intent)
                     result.success(null)
                 }
                 else -> result.notImplemented()

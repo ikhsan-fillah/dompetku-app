@@ -1,17 +1,25 @@
 import 'package:get/get.dart';
 
+import '../../../core/constant/domain_enums.dart';
 import '../../../core/services/data_refresh_service.dart';
 import '../../../core/state/resource_state.dart';
+import '../../category/models/category_model.dart';
+import '../../category/repositories/category_repository.dart';
 import '../../transaction/models/transaction_model.dart';
 import '../../transaction/repositories/transaction_repository.dart';
 import '../models/draft_model.dart';
 import '../repositories/draft_repository.dart';
 
 class DraftController extends GetxController {
-  DraftController(this._drafts, this._transactions);
+  DraftController(
+    this._drafts,
+    this._transactions, {
+    CategoryRepository? categories,
+  }) : _categories = categories;
 
   final DraftRepository _drafts;
   final TransactionRepository _transactions;
+  final CategoryRepository? _categories;
   final state = const ResourceState<List<DraftModel>>.idle().obs;
   final error = Rxn<String>();
 
@@ -29,7 +37,7 @@ class DraftController extends GetxController {
           ? const ResourceState.empty()
           : ResourceState.success(items);
     } catch (_) {
-      state.value = const ResourceState.error('Gagal memuat drafts.');
+      state.value = ResourceState.error('Gagal memuat draf.'.tr);
     }
   }
 
@@ -39,7 +47,7 @@ class DraftController extends GetxController {
     final categoryId = draft.categoryId;
     if (id == null) return false;
     if (categoryId == null) {
-      error.value = 'Choose a category before confirming.';
+      error.value = 'Pilih kategori sebelum konfirmasi.'.tr;
       return false;
     }
     error.value = null;
@@ -49,7 +57,7 @@ class DraftController extends GetxController {
       await _afterChange();
       return true;
     } catch (_) {
-      error.value = 'Failed to confirm. Try again.';
+      error.value = 'Gagal mengonfirmasi. Coba lagi.'.tr;
       return false;
     }
   }
@@ -64,10 +72,25 @@ class DraftController extends GetxController {
     try {
       await _drafts.update(updated);
     } catch (_) {
-      error.value = 'Failed to save changes.';
+      error.value = 'Gagal menyimpan perubahan.'.tr;
       return false;
     }
-    return confirm(updated);
+    final ok = await confirm(updated);
+    if (!ok) await load();
+    return ok;
+  }
+
+  Future<List<CategoryModel>> expenseCategories({
+    required TransactionType kind,
+  }) async {
+    final repo =
+        _categories ??
+        (Get.isRegistered<CategoryRepository>()
+            ? Get.find<CategoryRepository>()
+            : null);
+    if (repo == null) return const [];
+    final all = await repo.getAll();
+    return all.where((c) => c.type == kind && !c.isArchived).toList();
   }
 
   Future<void> confirmAll() async {
@@ -86,7 +109,7 @@ class DraftController extends GetxController {
       await _afterChange();
       return true;
     } catch (_) {
-      error.value = 'Failed to dismiss. Try again.';
+      error.value = 'Gagal mengabaikan. Coba lagi.'.tr;
       return false;
     }
   }

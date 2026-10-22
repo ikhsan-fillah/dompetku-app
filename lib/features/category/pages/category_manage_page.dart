@@ -48,7 +48,7 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
   );
 
   void _showError() {
-    final message = _controller.state.value.message ?? 'Terjadi kesalahan.';
+    final message = _controller.state.value.message ?? 'Terjadi kesalahan.'.tr;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
@@ -82,9 +82,10 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
           borderRadius: BorderRadius.circular(AppRadius.hero),
           side: const BorderSide(color: AppColors.line),
         ),
-        title: Text('Arsipkan kategori?', style: AppText.display(size: 20)),
+        title: Text('Arsipkan kategori?'.tr, style: AppText.display(size: 20)),
         content: Text(
-          '"${category.name}" tidak muncul lagi untuk transaksi baru. Transaksi lama tetap aman.',
+          '"@name" tidak muncul lagi untuk transaksi baru. Transaksi lama tetap aman.'
+              .trParams({'name': category.displayName}),
           style: AppText.body(size: 13, color: AppColors.mut, height: 1.45),
         ),
         actions: [
@@ -98,7 +99,7 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
             ),
             onPressed: () => Navigator.of(dialogContext).pop(false),
             child: Text(
-              'Batal',
+              'Batal'.tr,
               style: AppText.body(
                 size: 13,
                 weight: FontWeight.w700,
@@ -116,7 +117,7 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
             ),
             onPressed: () => Navigator.of(dialogContext).pop(true),
             child: Text(
-              'Arsipkan',
+              'Arsipkan'.tr,
               style: AppText.body(
                 size: 13,
                 weight: FontWeight.w700,
@@ -149,7 +150,7 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
           if (retry) ...[
             const SizedBox(height: 14),
             AppButton(
-              label: 'Coba lagi',
+              label: 'Coba lagi'.tr,
               expand: false,
               onPressed: () => _controller.load(),
             ),
@@ -168,10 +169,13 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
       return const Center(child: CircularProgressIndicator());
     }
     if (state.status == ResourceStatus.error) {
-      return _message(state.message ?? 'Gagal memuat kategori.', retry: true);
+      return _message(
+        state.message ?? 'Gagal memuat kategori.'.tr,
+        retry: true,
+      );
     }
     if (items.isEmpty) {
-      return _message('Belum ada kategori.');
+      return _message('Belum ada kategori.'.tr);
     }
 
     return ReorderableListView.builder(
@@ -217,7 +221,7 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        category.name,
+                        category.displayName,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
                         style: AppText.body(size: 13, weight: FontWeight.w700),
@@ -225,8 +229,8 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                       const SizedBox(height: 2),
                       Text(
                         category.isDefault
-                            ? 'Bawaan · tidak bisa dihapus bila dipakai'
-                            : 'Kustom',
+                            ? 'Bawaan · tidak bisa dihapus bila dipakai'.tr
+                            : 'Kustom'.tr,
                         style: AppText.body(size: 10.5, color: AppColors.mut),
                       ),
                     ],
@@ -234,8 +238,8 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                 ),
                 IconButton(
                   tooltip: category.isFavorite
-                      ? 'Hapus dari favorit'
-                      : 'Jadikan favorit',
+                      ? 'Hapus dari favorit'.tr
+                      : 'Jadikan favorit'.tr,
                   onPressed: () => _toggleFavorite(category),
                   icon: Icon(
                     LucideIcons.star,
@@ -256,11 +260,14 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                     }
                     _confirmArchive(category);
                   },
-                  itemBuilder: (_) => const [
-                    PopupMenuItem<String>(value: 'edit', child: Text('Edit')),
+                  itemBuilder: (_) => [
+                    PopupMenuItem<String>(
+                      value: 'edit',
+                      child: Text('Edit'.tr),
+                    ),
                     PopupMenuItem<String>(
                       value: 'archive',
-                      child: Text('Arsipkan'),
+                      child: Text('Arsipkan'.tr),
                     ),
                   ],
                 ),
@@ -280,9 +287,9 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             AppTitleBar(
-              title: 'Kategori',
+              title: 'Daftar kategori'.tr,
               action: AppBarIconButton(
-                tooltip: 'Tambah kategori',
+                tooltip: 'Tambah kategori'.tr,
                 icon: LucideIcons.plus,
                 onPressed: () => _showAddOrEditForm(),
               ),
@@ -295,14 +302,14 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                   child: SegmentedButton<TransactionType>(
                     showSelectedIcon: false,
                     style: _segmentStyle,
-                    segments: const [
+                    segments: [
                       ButtonSegment<TransactionType>(
                         value: TransactionType.expense,
-                        label: Text('Pengeluaran'),
+                        label: Text('Pengeluaran'.tr),
                       ),
                       ButtonSegment<TransactionType>(
                         value: TransactionType.income,
-                        label: Text('Pemasukan'),
+                        label: Text('Pemasukan'.tr),
                       ),
                     ],
                     selected: {_controller.selectedType.value},

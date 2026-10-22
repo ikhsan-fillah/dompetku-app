@@ -57,7 +57,9 @@ void main() {
     await _open(tester, _Store([]));
 
     expect(
-      find.text('No recurring items yet. Add rent, subscriptions, or bills.'),
+      find.text(
+        'Belum ada transaksi berulang. Tambahkan sewa, langganan, atau tagihan.',
+      ),
       findsOneWidget,
     );
   });
@@ -67,9 +69,9 @@ void main() {
 
     expect(find.text('Listrik'), findsOneWidget);
     expect(find.text('Rp 438.000'), findsOneWidget);
-    expect(find.text('Out per month'), findsOneWidget);
-    expect(find.text('- Rp 438.000 · Monthly · due 5th'), findsOneWidget);
-    expect(find.text('Ask me first'), findsOneWidget);
+    expect(find.text('Keluar per bulan'), findsOneWidget);
+    expect(find.text('- Rp 438.000 · Bulanan · jatuh tempo 5'), findsOneWidget);
+    expect(find.text('Tanya dulu'), findsOneWidget);
   });
 
   testWidgets('sakelar menonaktifkan tanpa menghapus item', (tester) async {

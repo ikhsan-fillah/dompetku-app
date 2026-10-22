@@ -67,68 +67,77 @@ class _AutoDetectPageState extends State<AutoDetectPage>
       body: SafeArea(
         child: Column(
           children: [
-            const AppTitleBar(title: 'Auto-detect'),
+            AppTitleBar(title: 'Deteksi otomatis'.tr),
             Expanded(
               child: ListView(
-        padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
-        children: [
-          _Card(
-            title: 'What we read',
-            body:
-                'Payment notifications from apps you choose. OTP codes, promos, and raw notification text are never saved.',
-          ),
-          _Card(
-            title: 'Notification access',
-            body: _enabled == null
-                ? 'Checking…'
-                : (_enabled!
-                      ? 'On'
-                      : 'Off. If the toggle is greyed out (Android 13+), open App info, tap ⋮ > "Allow restricted settings", then come back and enable it.'),
-            footer: Column(
-              children: [
-                AppButton(
-                  label: 'Open notification access',
-                  onPressed: () async {
-                    await _service.openAccessSettings();
-                  },
-                ),
-                const SizedBox(height: 8),
-                AppButton(
-                  label: 'Open app info',
-                  kind: AppButtonKind.outline,
-                  onPressed: () => _service.openAppDetails(),
-                ),
-              ],
-            ),
-          ),
-          _Card(
-            title: 'Apps',
-            body: 'Read automatically from: ${_apps.join(', ')}.',
-          ),
-          _Card(
-            title: 'Save automatically',
-            body: 'Off: detected payments wait in Drafts.',
-            child: SwitchListTile(
-              contentPadding: EdgeInsets.zero,
-              title: const Text('Save automatically'),
-              value: _saveAuto,
-              onChanged: (value) async {
-                await _settings.setSaveAuto(value);
-                if (mounted) setState(() => _saveAuto = value);
-              },
-            ),
-          ),
-          _Card(
-            title: 'Quiet mode',
-            body: 'No pop-ups while you use other apps. Drafts wait on Home.',
-          ),
-          _Card(
-            title: 'Battery',
-            body:
-                'Set Tally battery use to Unrestricted so Android does not stop detection.',
-          ),
-        ],
-      ),
+                padding: const EdgeInsets.fromLTRB(16, 14, 16, 16),
+                children: [
+                  _Card(
+                    title: 'Yang kami baca'.tr,
+                    body:
+                        'Notifikasi pembayaran dari aplikasi yang kamu pilih. Kode OTP, promo, dan teks notifikasi mentah tidak pernah disimpan.'
+                            .tr,
+                  ),
+                  _Card(
+                    title: 'Akses notifikasi'.tr,
+                    body: _enabled == null
+                        ? 'Memeriksa…'.tr
+                        : (_enabled!
+                              ? 'Aktif'.tr
+                              : 'Nonaktif. Jika tombolnya abu-abu (Android 13+), buka Info aplikasi, ketuk ⋮ > "Izinkan pengaturan terbatas", lalu kembali dan aktifkan.'
+                                    .tr),
+                    footer: Column(
+                      children: [
+                        AppButton(
+                          label: 'Buka akses notifikasi'.tr,
+                          onPressed: () async {
+                            await _service.openAccessSettings();
+                          },
+                        ),
+                        const SizedBox(height: 8),
+                        AppButton(
+                          label: 'Buka info aplikasi'.tr,
+                          kind: AppButtonKind.outline,
+                          onPressed: () => _service.openAppDetails(),
+                        ),
+                      ],
+                    ),
+                  ),
+                  _Card(
+                    title: 'Aplikasi'.tr,
+                    body: 'Dibaca otomatis dari: @apps.'.trParams({
+                      'apps': _apps.join(', '),
+                    }),
+                  ),
+                  _Card(
+                    title: 'Simpan otomatis'.tr,
+                    body:
+                        'Nonaktif: pembayaran yang terdeteksi menunggu di Draf.'
+                            .tr,
+                    child: SwitchListTile(
+                      contentPadding: EdgeInsets.zero,
+                      title: Text('Simpan otomatis'.tr),
+                      value: _saveAuto,
+                      onChanged: (value) async {
+                        await _settings.setSaveAuto(value);
+                        if (mounted) setState(() => _saveAuto = value);
+                      },
+                    ),
+                  ),
+                  _Card(
+                    title: 'Mode senyap'.tr,
+                    body:
+                        'Tanpa pop-up saat kamu memakai aplikasi lain. Draf menunggu di Beranda.'
+                            .tr,
+                  ),
+                  _Card(
+                    title: 'Baterai'.tr,
+                    body:
+                        'Atur penggunaan baterai Tally ke Tidak dibatasi agar Android tidak menghentikan deteksi.'
+                            .tr,
+                  ),
+                ],
+              ),
             ),
           ],
         ),

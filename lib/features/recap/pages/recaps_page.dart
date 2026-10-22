@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
+import '../../../core/i18n/app_language.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/formatter.dart';
@@ -20,8 +21,10 @@ class RecapsPage extends StatefulWidget {
 }
 
 class _RecapsPageState extends State<RecapsPage> {
-  late final RecapCalculationService _recaps = Get.find<RecapCalculationService>();
-  late final TransactionRepository _transactions = Get.find<TransactionRepository>();
+  late final RecapCalculationService _recaps =
+      Get.find<RecapCalculationService>();
+  late final TransactionRepository _transactions =
+      Get.find<TransactionRepository>();
 
   bool _loading = true;
   String? _error;
@@ -51,7 +54,7 @@ class _RecapsPageState extends State<RecapsPage> {
     } catch (_) {
       if (!mounted) return;
       setState(() {
-        _error = 'Gagal memuat recap.';
+        _error = 'Gagal memuat rekap.'.tr;
         _loading = false;
       });
     }
@@ -71,7 +74,7 @@ class _RecapsPageState extends State<RecapsPage> {
       body: SafeArea(
         child: Column(
           children: [
-            const AppTitleBar(title: 'Recaps'),
+            AppTitleBar(title: 'Rekap'.tr),
             Expanded(child: _body()),
           ],
         ),
@@ -82,7 +85,9 @@ class _RecapsPageState extends State<RecapsPage> {
   Widget _body() {
     if (_loading) return const Center(child: CircularProgressIndicator());
     if (_error != null) {
-      return Center(child: Text(_error!, style: AppText.body(color: AppColors.spend)));
+      return Center(
+        child: Text(_error!, style: AppText.body(color: AppColors.spend)),
+      );
     }
     final first = _firstYear;
     if (first == null) {
@@ -90,7 +95,8 @@ class _RecapsPageState extends State<RecapsPage> {
         child: Padding(
           padding: const EdgeInsets.all(24),
           child: Text(
-            'No recaps yet. Add transactions to see your first month.',
+            'Belum ada rekap. Tambahkan transaksi untuk melihat bulan pertamamu.'
+                .tr,
             textAlign: TextAlign.center,
             style: AppText.body(size: 13, color: AppColors.mut),
           ),
@@ -103,7 +109,8 @@ class _RecapsPageState extends State<RecapsPage> {
       padding: const EdgeInsets.all(16),
       children: [
         Text(
-          'Replay any month or year. Periods without transactions are greyed out, and future periods are not listed.',
+          'Putar ulang bulan atau tahun mana pun. Periode tanpa transaksi diberi warna abu-abu, dan periode mendatang tidak ditampilkan.'
+              .tr,
           style: AppText.body(size: 12, color: AppColors.mut),
         ),
         const SizedBox(height: 14),
@@ -112,16 +119,25 @@ class _RecapsPageState extends State<RecapsPage> {
           children: [
             for (final y in years)
               ChoiceChip(
-                label: Text(y == _now.year ? '$y · so far' : '$y'),
+                label: Text(
+                  y == _now.year
+                      ? '@year · sejauh ini'.trParams({'year': '$y'})
+                      : '$y',
+                ),
                 selected: y == _year,
-                onSelected: _hasData(y) ? (_) => setState(() => _year = y) : null,
+                onSelected: _hasData(y)
+                    ? (_) => setState(() => _year = y)
+                    : null,
               ),
           ],
         ),
         const SizedBox(height: 14),
         _yearRow(),
         const SizedBox(height: 14),
-        Text('Month · $_year', style: AppText.label()),
+        Text(
+          'Bulan · @year'.trParams({'year': '$_year'}),
+          style: AppText.label(),
+        ),
         const SizedBox(height: 8),
         _monthGrid(),
       ],
@@ -146,7 +162,9 @@ class _RecapsPageState extends State<RecapsPage> {
           children: [
             Expanded(
               child: Text(
-                '$_year recap${_year == _now.year ? ' · so far' : ''}',
+                _year == _now.year
+                    ? 'Rekap @year · sejauh ini'.trParams({'year': '$_year'})
+                    : 'Rekap @year'.trParams({'year': '$_year'}),
                 style: AppText.body(
                   size: 14,
                   weight: FontWeight.w700,
@@ -173,9 +191,7 @@ class _RecapsPageState extends State<RecapsPage> {
       mainAxisSpacing: 8,
       crossAxisSpacing: 8,
       childAspectRatio: 1.25,
-      children: [
-        for (var m = 1; m <= lastMonth; m++) _monthTile(m),
-      ],
+      children: [for (var m = 1; m <= lastMonth; m++) _monthTile(m)],
     );
   }
 
@@ -185,25 +201,21 @@ class _RecapsPageState extends State<RecapsPage> {
     final label = _monthName(month);
 
     if (!recap.hasData) {
-      return _Tile(
-        title: label,
-        subtitle: '—',
-        dashed: true,
-        onTap: null,
-      );
+      return _Tile(title: label, subtitle: '—', dashed: true, onTap: null);
     }
     return _Tile(
-      title: isCurrent ? '$label · so far' : label,
-      subtitle: '${formatIdr(recap.spent)}\nspent',
+      title: isCurrent
+          ? '@label · sejauh ini'.trParams({'label': label})
+          : label,
+      subtitle: '@amount\ndibelanjakan'.trParams({
+        'amount': formatIdr(recap.spent),
+      }),
       dashed: false,
       onTap: () => Get.to(() => MonthlyRecapPage(year: _year, month: month)),
     );
   }
 
-  static String _monthName(int month) => const [
-        'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
-        'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec',
-      ][month - 1];
+  static String _monthName(int month) => AppLanguage.monthShort(month);
 }
 
 class _Tile extends StatelessWidget {

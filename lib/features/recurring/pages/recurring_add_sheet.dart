@@ -30,7 +30,9 @@ Future<bool> showRecurringAddSheet(
     backgroundColor: AppColors.card,
     elevation: 0,
     shape: const RoundedRectangleBorder(
-      borderRadius: BorderRadius.vertical(top: Radius.circular(AppRadius.sheet)),
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppRadius.sheet),
+      ),
       side: BorderSide(color: AppColors.line),
     ),
     builder: (_) => _RecurringAddBody(categories: categories),
@@ -48,7 +50,8 @@ class _RecurringAddBody extends StatefulWidget {
 }
 
 class _RecurringAddBodyState extends State<_RecurringAddBody> {
-  late final RecurringFormController _form = Get.find<RecurringFormController>();
+  late final RecurringFormController _form =
+      Get.find<RecurringFormController>();
   final TextEditingController _name = TextEditingController();
   final TextEditingController _amount = TextEditingController();
   List<CategoryModel> _all = const [];
@@ -67,7 +70,8 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
   }
 
   Future<void> _loadCategories() async {
-    final repo = widget.categories ??
+    final repo =
+        widget.categories ??
         (Get.isRegistered<CategoryRepository>()
             ? Get.find<CategoryRepository>()
             : null);
@@ -79,9 +83,8 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
     });
   }
 
-  List<CategoryModel> get _options => _all
-      .where((c) => c.type == _transactionType(_form.type.value))
-      .toList();
+  List<CategoryModel> get _options =>
+      _all.where((c) => c.type == _transactionType(_form.type.value)).toList();
 
   TransactionType _transactionType(RecurringType type) =>
       type == RecurringType.income
@@ -121,10 +124,13 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
           Row(
             children: [
               Expanded(
-                child: Text('New recurring', style: AppText.display(size: 19)),
+                child: Text(
+                  'Transaksi berulang baru'.tr,
+                  style: AppText.display(size: 19),
+                ),
               ),
               IconButton(
-                tooltip: 'Tutup',
+                tooltip: 'Tutup'.tr,
                 onPressed: () => Navigator.of(context).pop(false),
                 icon: const Icon(LucideIcons.x, size: 18),
                 color: AppColors.ink,
@@ -135,8 +141,10 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
           _Segment<RecurringType>(
             options: RecurringType.values,
             selected: _form.type.value,
-            label: (t) => t == RecurringType.income ? 'Income' : 'Expense',
-            color: (t) => t == RecurringType.income ? AppColors.earn : AppColors.spend,
+            label: (t) =>
+                t == RecurringType.income ? 'Pemasukan'.tr : 'Pengeluaran'.tr,
+            color: (t) =>
+                t == RecurringType.income ? AppColors.earn : AppColors.spend,
             onSelect: (t) => _select(() {
               _form.type.value = t;
               _form.categoryId.value = null;
@@ -145,25 +153,28 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
           const SizedBox(height: 14),
           TextField(
             controller: _name,
-            decoration: _fieldDecoration('Name, e.g. Spotify'),
+            decoration: _fieldDecoration('Nama, contoh: Spotify'.tr),
           ),
           const SizedBox(height: 10),
           TextField(
             key: const Key('amount'),
             controller: _amount,
             keyboardType: TextInputType.number,
-            decoration: _fieldDecoration('Amount (Rp), e.g. 55000'),
+            decoration: _fieldDecoration('Jumlah (Rp), contoh: 55000'.tr),
             onChanged: (value) {
-              _form.amountDigits.value = value.replaceAll(RegExp(r'[^0-9]'), '');
+              _form.amountDigits.value = value.replaceAll(
+                RegExp(r'[^0-9]'),
+                '',
+              );
             },
           ),
-          const _Label('Category'),
+          _Label('Kategori'.tr),
           _CategoryRow(
             options: _options,
             selected: _form.categoryId.value,
             onSelect: (id) => _select(() => _form.categoryId.value = id),
           ),
-          const _Label('Repeats'),
+          _Label('Berulang setiap'.tr),
           Wrap(
             spacing: 8,
             runSpacing: 8,
@@ -183,13 +194,12 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
               ),
             ],
           ),
-          const _Label("When it's due"),
+          _Label('Saat jatuh tempo'.tr),
           _Segment<RecurringMode>(
             options: RecurringMode.values,
             selected: _form.mode.value,
-            label: (m) => m == RecurringMode.ask
-                ? 'Ask me first'
-                : 'Record automatically',
+            label: (m) =>
+                m == RecurringMode.ask ? 'Tanya dulu'.tr : 'Catat otomatis'.tr,
             color: (_) => AppColors.ink,
             onSelect: (m) => _select(() => _form.mode.value = m),
           ),
@@ -211,7 +221,7 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
           const SizedBox(height: 12),
           Obx(
             () => AppButton(
-              label: 'Save recurring',
+              label: 'Simpan transaksi berulang'.tr,
               icon: Icons.check_rounded,
               loading: _form.saving.value,
               onPressed: _save,
@@ -240,9 +250,9 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
   }
 
   String _frequencyLabel(RecurringFrequency f) => switch (f) {
-    RecurringFrequency.weekly => 'Weekly',
-    RecurringFrequency.monthly => 'Monthly',
-    RecurringFrequency.yearly => 'Yearly',
+    RecurringFrequency.weekly => 'Mingguan'.tr,
+    RecurringFrequency.monthly => 'Bulanan'.tr,
+    RecurringFrequency.yearly => 'Tahunan'.tr,
   };
 }
 
@@ -309,7 +319,9 @@ class _Segment<T> extends StatelessWidget {
                       style: AppText.body(
                         size: 12.5,
                         weight: FontWeight.w700,
-                        color: option == selected ? Colors.white : AppColors.mut,
+                        color: option == selected
+                            ? Colors.white
+                            : AppColors.mut,
                       ),
                     ),
                   ),
@@ -347,7 +359,7 @@ class _DateChip extends StatelessWidget {
               const Icon(LucideIcons.calendar, size: 14, color: AppColors.ink),
               const SizedBox(width: 6),
               Text(
-                'Starts ${DateLabel.day(date)}',
+                'Mulai @date'.trParams({'date': DateLabel.day(date)}),
                 style: AppText.body(
                   size: 12,
                   weight: FontWeight.w600,
@@ -379,7 +391,7 @@ class _CategoryRow extends StatelessWidget {
       return Padding(
         padding: const EdgeInsets.symmetric(vertical: 8),
         child: Text(
-          'Belum ada kategori untuk jenis ini.',
+          'Belum ada kategori untuk jenis ini.'.tr,
           style: AppText.body(size: 12, color: AppColors.mut),
         ),
       );
@@ -441,7 +453,7 @@ class _CategoryChoice extends StatelessWidget {
               ),
               const SizedBox(height: 4),
               Text(
-                category.name,
+                category.displayName,
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: AppText.body(

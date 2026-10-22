@@ -34,20 +34,20 @@ class BudgetArchivePage extends GetView<BudgetController> {
           borderRadius: BorderRadius.circular(AppRadius.hero),
           side: const BorderSide(color: AppColors.line),
         ),
-        title: Text('Pulihkan anggaran?', style: AppText.display(size: 20)),
+        title: Text('Pulihkan anggaran?'.tr, style: AppText.display(size: 20)),
         content: Text(
-          '"${item.budget.name}" akan kembali muncul di daftar anggaran aktif. '
-          'Histori transaksi tidak berubah.',
+          '"@name" akan kembali muncul di daftar anggaran aktif. Histori transaksi tidak berubah.'
+              .trParams({'name': item.budget.name}),
           style: AppText.body(size: 13, color: AppColors.ink2),
         ),
         actions: [
           TextButton(
             onPressed: () => Get.back(result: false),
-            child: const Text('Batal'),
+            child: Text('Batal'.tr),
           ),
           FilledButton(
             onPressed: () => Get.back(result: true),
-            child: const Text('Pulihkan'),
+            child: Text('Pulihkan'.tr),
           ),
         ],
       ),
@@ -62,7 +62,7 @@ class BudgetArchivePage extends GetView<BudgetController> {
     body: SafeArea(
       child: Column(
         children: [
-          const AppTitleBar(title: 'Anggaran terarsip'),
+          AppTitleBar(title: 'Anggaran terarsip'.tr),
           Expanded(
             child: Obx(() {
               final current = controller.archived.value;
@@ -75,12 +75,12 @@ class BudgetArchivePage extends GetView<BudgetController> {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        current.message ?? 'Gagal memuat anggaran terarsip.',
+                        current.message ?? 'Gagal memuat anggaran terarsip.'.tr,
                         style: AppText.body(color: AppColors.ink2),
                       ),
                       TextButton(
                         onPressed: controller.loadArchived,
-                        child: const Text('Coba lagi'),
+                        child: Text('Coba lagi'.tr),
                       ),
                     ],
                   ),
@@ -106,7 +106,7 @@ class BudgetArchivePage extends GetView<BudgetController> {
                       ),
                       const SizedBox(height: 12),
                       Text(
-                        'Tidak ada anggaran terarsip',
+                        'Tidak ada anggaran terarsip'.tr,
                         style: AppText.body(size: 14, weight: FontWeight.w700),
                       ),
                     ],
@@ -172,8 +172,14 @@ class _ArchivedCard extends StatelessWidget {
                 const SizedBox(height: 3),
                 Text(
                   item.isOverall
-                      ? '${money(item.used)} dari ${money(item.budget.amountLimit)} · keseluruhan'
-                      : '${money(item.used)} dari ${money(item.budget.amountLimit)}',
+                      ? '@used dari @limit · keseluruhan'.trParams({
+                          'used': money(item.used),
+                          'limit': money(item.budget.amountLimit),
+                        })
+                      : '@used dari @limit'.trParams({
+                          'used': money(item.used),
+                          'limit': money(item.budget.amountLimit),
+                        }),
                   style: AppText.mono(
                     size: 11,
                     weight: FontWeight.w400,
@@ -186,7 +192,7 @@ class _ArchivedCard extends StatelessWidget {
           TextButton.icon(
             onPressed: onRestore,
             icon: const Icon(LucideIcons.undo2, size: 16),
-            label: const Text('Pulihkan'),
+            label: Text('Pulihkan'.tr),
             style: TextButton.styleFrom(foregroundColor: AppColors.ink),
           ),
         ],

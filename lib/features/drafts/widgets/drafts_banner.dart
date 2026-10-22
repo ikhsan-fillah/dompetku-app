@@ -41,15 +41,30 @@ class DraftsBanner extends StatelessWidget {
                   padding: const EdgeInsets.all(14),
                   child: Row(
                     children: [
-                      const Icon(LucideIcons.bell, size: 18, color: AppColors.ink),
+                      const Icon(
+                        LucideIcons.bell,
+                        size: 18,
+                        color: AppColors.ink,
+                      ),
                       const SizedBox(width: 10),
                       Expanded(
                         child: Text(
-                          '$count ${count == 1 ? 'draft' : 'drafts'} waiting for you',
-                          style: AppText.body(size: 13, weight: FontWeight.w700),
+                          count == 1
+                              ? '1 draf menunggumu'.tr
+                              : '@count draf menunggumu'.trParams({
+                                  'count': '$count',
+                                }),
+                          style: AppText.body(
+                            size: 13,
+                            weight: FontWeight.w700,
+                          ),
                         ),
                       ),
-                      const Icon(LucideIcons.chevronRight, size: 18, color: AppColors.mut),
+                      const Icon(
+                        LucideIcons.chevronRight,
+                        size: 18,
+                        color: AppColors.mut,
+                      ),
                     ],
                   ),
                 ),

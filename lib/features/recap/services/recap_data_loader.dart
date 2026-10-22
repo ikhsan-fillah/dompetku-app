@@ -18,7 +18,7 @@ class RecapData {
   final List<BudgetModel> budgets;
   final Map<int, CategoryModel> categories;
 
-  String categoryName(int id) => categories[id]?.name ?? 'Other';
+  String categoryName(int id) => categories[id]?.displayName ?? 'Lainnya'.tr;
 }
 
 Future<RecapData> loadRecapData() async {

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
+import '../../../core/i18n/app_language.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
@@ -44,10 +45,7 @@ class _ProfilePageState extends State<ProfilePage> {
   static const _spinner = SizedBox(
     width: 20,
     height: 20,
-    child: CircularProgressIndicator(
-      strokeWidth: 2,
-      color: AppColors.ink,
-    ),
+    child: CircularProgressIndicator(strokeWidth: 2, color: AppColors.ink),
   );
 
   static const _chevron = Icon(
@@ -77,10 +75,7 @@ class _ProfilePageState extends State<ProfilePage> {
             borderRadius: BorderRadius.circular(AppRadius.hero),
             side: const BorderSide(color: AppColors.line),
           ),
-          title: Text(
-            'Hapus semua data?',
-            style: AppText.display(size: 20),
-          ),
+          title: Text('Hapus semua data?'.tr, style: AppText.display(size: 20)),
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -101,7 +96,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               const SizedBox(height: 14),
               Text(
-                'Tindakan ini menghapus seluruh data keuangan, pengaturan, dan kunci aman dari perangkat ini. Tindakan tidak dapat dibatalkan.',
+                'Tindakan ini menghapus seluruh data keuangan, pengaturan, dan kunci aman dari perangkat ini. Tindakan tidak dapat dibatalkan.'
+                    .tr,
                 style: AppText.body(
                   size: 13,
                   color: AppColors.mut,
@@ -114,7 +110,7 @@ class _ProfilePageState extends State<ProfilePage> {
                 autofocus: true,
                 style: AppText.body(size: 13),
                 decoration: InputDecoration(
-                  labelText: 'Ketik HAPUS untuk melanjutkan',
+                  labelText: 'Ketik HAPUS untuk melanjutkan'.tr,
                   labelStyle: AppText.body(size: 12, color: AppColors.ink2),
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(AppRadius.field),
@@ -145,7 +141,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               onPressed: () => Navigator.of(dialogContext).pop(false),
               child: Text(
-                'Batal',
+                'Batal'.tr,
                 style: AppText.body(
                   size: 13,
                   weight: FontWeight.w700,
@@ -167,7 +163,7 @@ class _ProfilePageState extends State<ProfilePage> {
                   ? () => Navigator.of(dialogContext).pop(true)
                   : null,
               child: Text(
-                'Hapus semua data',
+                'Hapus semua data'.tr,
                 style: AppText.body(
                   size: 13,
                   weight: FontWeight.w700,
@@ -191,7 +187,8 @@ class _ProfilePageState extends State<ProfilePage> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
         content: Text(
-          _controller.error.value ?? 'Gagal menghapus semua data. Coba lagi.',
+          _controller.error.value ??
+              'Gagal menghapus semua data. Coba lagi.'.tr,
         ),
       ),
     );
@@ -250,7 +247,7 @@ class _ProfilePageState extends State<ProfilePage> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        '1 dompet · data tersimpan di perangkat ini',
+                        '1 dompet · data tersimpan di perangkat ini'.tr,
                         style: AppText.body(
                           size: 11,
                           color: AppColors.paper.withValues(alpha: 0.75),
@@ -267,22 +264,23 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionHeader(title: 'Nama tampilan'),
+              SectionHeader(title: 'Nama tampilan'.tr),
               AppTextField(
                 controller: _nameField,
-                label: 'Nama',
+                label: 'Nama'.tr,
                 hint: 'Friend',
                 prefixIcon: LucideIcons.user,
                 textInputAction: TextInputAction.done,
               ),
               const SizedBox(height: 6),
               Text(
-                'Dipakai pada sapaan di Beranda. Kosongkan untuk memakai "Friend".',
+                'Dipakai pada sapaan di Beranda. Kosongkan untuk memakai "Friend".'
+                    .tr,
                 style: AppText.body(size: 10.5, color: AppColors.mut),
               ),
               const SizedBox(height: 14),
               AppButton(
-                label: 'Simpan nama',
+                label: 'Simpan nama'.tr,
                 icon: LucideIcons.check,
                 onPressed: _save,
               ),
@@ -293,11 +291,11 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionHeader(title: 'Kelola'),
+              SectionHeader(title: 'Kelola'.tr),
               SettingsTile(
                 icon: LucideIcons.tag,
-                title: 'Kategori',
-                subtitle: 'Ikon, warna, urutan, favorit',
+                title: 'Kategori'.tr,
+                subtitle: 'Ikon, warna, urutan, favorit'.tr,
                 iconBackground: AppColors.paper2,
                 iconColor: AppColors.ink,
                 trailing: _chevron,
@@ -305,8 +303,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SettingsTile(
                 icon: LucideIcons.chartPie,
-                title: 'Laporan',
-                subtitle: 'Perbandingan & insight',
+                title: 'Laporan'.tr,
+                subtitle: 'Perbandingan & insight'.tr,
                 iconBackground: AppColors.paper2,
                 iconColor: AppColors.ink,
                 trailing: _chevron,
@@ -314,8 +312,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SettingsTile(
                 icon: LucideIcons.repeat,
-                title: 'Recurring',
-                subtitle: 'Tagihan dan langganan berulang',
+                title: 'Transaksi berulang'.tr,
+                subtitle: 'Tagihan dan langganan berulang'.tr,
                 iconBackground: AppColors.paper2,
                 iconColor: AppColors.ink,
                 trailing: _chevron,
@@ -323,8 +321,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SettingsTile(
                 icon: LucideIcons.chartColumn,
-                title: 'Recaps',
-                subtitle: 'Replay any month or year',
+                title: 'Rekap'.tr,
+                subtitle: 'Putar ulang bulan atau tahun mana pun'.tr,
                 iconBackground: AppColors.paper2,
                 iconColor: AppColors.ink,
                 trailing: _chevron,
@@ -332,8 +330,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SettingsTile(
                 icon: LucideIcons.scanEye,
-                title: 'Auto-detect',
-                subtitle: 'Baca notifikasi pembayaran (Android)',
+                title: 'Deteksi otomatis'.tr,
+                subtitle: 'Baca notifikasi pembayaran (Android)'.tr,
                 iconBackground: AppColors.paper2,
                 iconColor: AppColors.ink,
                 trailing: _chevron,
@@ -341,8 +339,8 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               SettingsTile(
                 icon: LucideIcons.bell,
-                title: 'Drafts',
-                subtitle: 'Detected from payment notifications',
+                title: 'Draf'.tr,
+                subtitle: 'Terdeteksi dari notifikasi pembayaran'.tr,
                 iconBackground: AppColors.paper2,
                 iconColor: AppColors.ink,
                 showDivider: false,
@@ -356,17 +354,28 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              const SectionHeader(title: 'Tampilan & data'),
+              SectionHeader(title: 'Tampilan & data'.tr),
               SettingsTile(
                 icon: LucideIcons.palette,
-                title: 'Tema',
-                subtitle: 'Terang (mode gelap tidak dipakai)',
+                title: 'Tema'.tr,
+                subtitle: 'Terang (mode gelap tidak dipakai)'.tr,
                 iconBackground: AppColors.paper2,
                 iconColor: AppColors.ink,
-                trailing: const SettingsBadge(
-                  label: 'Terang',
+                trailing: SettingsBadge(
+                  label: 'Terang'.tr,
                   background: AppColors.paper2,
                   foreground: AppColors.ink,
+                ),
+              ),
+              Obx(
+                () => SettingsTile(
+                  icon: LucideIcons.languages,
+                  title: 'Bahasa'.tr,
+                  subtitle: 'Bahasa tampilan aplikasi'.tr,
+                  trailing: _LanguageDropdown(
+                    value: _controller.language.value,
+                    onChanged: _controller.setLanguage,
+                  ),
                 ),
               ),
               Obx(
@@ -375,8 +384,8 @@ class _ProfilePageState extends State<ProfilePage> {
                   iconBackground: AppColors.spendSoft,
                   iconColor: AppColors.spend,
                   titleColor: AppColors.spend,
-                  title: 'Hapus semua data',
-                  subtitle: 'Tidak dapat dibatalkan',
+                  title: 'Hapus semua data'.tr,
+                  subtitle: 'Tidak dapat dibatalkan'.tr,
                   showDivider: false,
                   trailing: _controller.resettingData.value ? _spinner : null,
                   onTap: _controller.resettingData.value ? null : _confirmReset,
@@ -389,7 +398,7 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'Tally 1.0.0 · tanpa akun · tanpa cloud',
+              'Tally 1.0.0 · tanpa akun · tanpa cloud'.tr,
               style: AppText.mono(
                 size: 10.5,
                 weight: FontWeight.w400,
@@ -402,4 +411,35 @@ class _ProfilePageState extends State<ProfilePage> {
       ],
     );
   }
+}
+
+class _LanguageDropdown extends StatelessWidget {
+  const _LanguageDropdown({required this.value, required this.onChanged});
+
+  final String value;
+  final Future<bool> Function(String code) onChanged;
+
+  static const _labels = {
+    AppLanguage.indonesian: 'Indonesia',
+    AppLanguage.english: 'English',
+  };
+
+  @override
+  Widget build(BuildContext context) => DropdownButtonHideUnderline(
+    child: DropdownButton<String>(
+      value: value,
+      isDense: true,
+      borderRadius: BorderRadius.circular(AppRadius.field),
+      dropdownColor: AppColors.card,
+      icon: const Icon(LucideIcons.chevronDown, size: 16, color: AppColors.mut),
+      style: AppText.body(size: 12.5, weight: FontWeight.w700),
+      items: [
+        for (final code in AppLanguage.options)
+          DropdownMenuItem(value: code, child: Text(_labels[code]!)),
+      ],
+      onChanged: (code) {
+        if (code != null && code != value) onChanged(code);
+      },
+    ),
+  );
 }

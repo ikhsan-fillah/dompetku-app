@@ -75,24 +75,24 @@ class _TransactionListPageState extends State<TransactionListPage> {
     final ok = await _controller.duplicate(model);
     if (!mounted) return;
     _expanded.value = null;
-    if (!ok) _snack('Gagal menggandakan.');
+    if (!ok) _snack('Gagal menggandakan.'.tr);
   }
 
   Future<void> _delete(int id) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
-        title: const Text('Hapus transaksi?'),
-        content: const Text('Transaksi ini akan dihapus permanen.'),
+        title: Text('Hapus transaksi?'.tr),
+        content: Text('Transaksi ini akan dihapus permanen.'.tr),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: const Text('Batal'),
+            child: Text('Batal'.tr),
           ),
           TextButton(
             onPressed: () => Navigator.of(dialogContext).pop(true),
             style: TextButton.styleFrom(foregroundColor: AppColors.spend),
-            child: const Text('Hapus'),
+            child: Text('Hapus'.tr),
           ),
         ],
       ),
@@ -101,7 +101,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
     final ok = await _controller.delete(id);
     if (!mounted) return;
     _expanded.value = null;
-    if (!ok) _snack('Gagal menghapus transaksi.');
+    if (!ok) _snack('Gagal menghapus transaksi.'.tr);
   }
 
   String _groupLabel(DateTime date) {
@@ -111,13 +111,13 @@ class _TransactionListPageState extends State<TransactionListPage> {
   }
 
   String _sortLabel(TransactionSort sort) => switch (sort) {
-    TransactionSort.terbaru => 'Terbaru',
-    TransactionSort.terlama => 'Terlama',
-    TransactionSort.nominalTerbesar => 'Nominal terbesar',
-    TransactionSort.nominalTerkecil => 'Nominal terkecil',
-    TransactionSort.namaAZ => 'Nama A-Z',
-    TransactionSort.namaZA => 'Nama Z-A',
-    TransactionSort.kategoriAZ => 'Kategori A-Z',
+    TransactionSort.terbaru => 'Terbaru'.tr,
+    TransactionSort.terlama => 'Terlama'.tr,
+    TransactionSort.nominalTerbesar => 'Nominal terbesar'.tr,
+    TransactionSort.nominalTerkecil => 'Nominal terkecil'.tr,
+    TransactionSort.namaAZ => 'Nama A-Z'.tr,
+    TransactionSort.namaZA => 'Nama Z-A'.tr,
+    TransactionSort.kategoriAZ => 'Kategori A-Z'.tr,
   };
 
   Widget _body() {
@@ -128,16 +128,16 @@ class _TransactionListPageState extends State<TransactionListPage> {
         return const Center(child: CircularProgressIndicator());
       case ResourceStatus.error:
         return AppErrorView(
-          message: state.message ?? 'Gagal memuat transaksi.',
+          message: state.message ?? 'Gagal memuat transaksi.'.tr,
           onRetry: () => _controller.load(),
         );
       case ResourceStatus.empty:
         return AppEmptyView(
           icon: LucideIcons.receiptText,
-          title: 'Belum ada transaksi',
-          message: 'Catat pengeluaran atau pemasukan pertamamu.',
+          title: 'Belum ada transaksi'.tr,
+          message: 'Catat pengeluaran atau pemasukan pertamamu.'.tr,
           action: AppButton(
-            label: 'Tambah transaksi',
+            label: 'Tambah transaksi'.tr,
             icon: LucideIcons.plus,
             expand: false,
             onPressed: () => showTransactionSheet(context),
@@ -146,10 +146,10 @@ class _TransactionListPageState extends State<TransactionListPage> {
       case ResourceStatus.success:
         final result = _controller.list;
         if (result.isEmpty) {
-          return const AppEmptyView(
+          return AppEmptyView(
             icon: LucideIcons.search,
-            title: 'Tidak ada hasil',
-            message: 'Coba kata kunci atau filter lain.',
+            title: 'Tidak ada hasil'.tr,
+            message: 'Coba kata kunci atau filter lain.'.tr,
           );
         }
         final expandedId = _expanded.value;
@@ -219,12 +219,12 @@ class _TransactionListPageState extends State<TransactionListPage> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         AppPageHeader(
-          title: 'Transaksi',
+          title: 'Transaksi'.tr,
           actions: [
             Obx(() {
               final selectedSort = _controller.sort.value;
               return PopupMenuButton<TransactionSort>(
-                tooltip: 'Urutkan transaksi',
+                tooltip: 'Urutkan transaksi'.tr,
                 icon: const Icon(LucideIcons.arrowUpDown, size: 20),
                 onSelected: _controller.setSort,
                 itemBuilder: (context) => [
@@ -248,7 +248,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
           ),
           child: AppTextField(
             controller: _search,
-            hint: 'Cari transaksi…',
+            hint: 'Cari transaksi…'.tr,
             prefixIcon: LucideIcons.search,
             onChanged: _controller.setQuery,
           ),
@@ -264,10 +264,10 @@ class _TransactionListPageState extends State<TransactionListPage> {
               clipBehavior: Clip.none,
               child: Row(
                 children: [
-                  for (final entry in const [
-                    (TransactionTypeFilter.all, 'Semua'),
-                    (TransactionTypeFilter.expense, 'Pengeluaran'),
-                    (TransactionTypeFilter.income, 'Pemasukan'),
+                  for (final entry in [
+                    (TransactionTypeFilter.all, 'Semua'.tr),
+                    (TransactionTypeFilter.expense, 'Pengeluaran'.tr),
+                    (TransactionTypeFilter.income, 'Pemasukan'.tr),
                   ])
                     Padding(
                       padding: const EdgeInsets.only(right: 8),
@@ -315,7 +315,7 @@ class _SummaryRow extends StatelessWidget {
         children: [
           Expanded(
             child: _SummaryItem(
-              label: 'Pemasukan',
+              label: 'Pemasukan'.tr,
               amount: income,
               color: AppColors.earn,
             ),
@@ -325,7 +325,7 @@ class _SummaryRow extends StatelessWidget {
           const SizedBox(width: 16),
           Expanded(
             child: _SummaryItem(
-              label: 'Pengeluaran',
+              label: 'Pengeluaran'.tr,
               amount: expense,
               color: AppColors.spend,
             ),
@@ -352,10 +352,7 @@ class _SummaryItem extends StatelessWidget {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Text(
-          label,
-          style: AppText.body(size: 10.5, color: AppColors.mut),
-        ),
+        Text(label, style: AppText.body(size: 10.5, color: AppColors.mut)),
         const SizedBox(height: 2),
         FittedBox(
           fit: BoxFit.scaleDown,

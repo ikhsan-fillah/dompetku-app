@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../theme/app_colors.dart';
@@ -76,10 +77,10 @@ class AppErrorView extends StatelessWidget {
   @override
   Widget build(BuildContext context) => AppEmptyView(
     icon: LucideIcons.triangleAlert,
-    title: 'Terjadi kendala',
+    title: 'Terjadi kendala'.tr,
     message: message,
     action: AppButton(
-      label: 'Coba lagi',
+      label: 'Coba lagi'.tr,
       icon: LucideIcons.download,
       kind: AppButtonKind.soft,
       expand: false,

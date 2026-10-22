@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:get/get.dart';
 
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
@@ -28,8 +29,10 @@ class ComingSoonTab extends StatelessWidget {
         Expanded(
           child: AppEmptyView(
             icon: icon,
-            title: 'Segera hadir',
-            message: 'Halaman $title dibangun pada tahap berikutnya.',
+            title: 'Segera hadir'.tr,
+            message: 'Halaman @title dibangun pada tahap berikutnya.'.trParams({
+              'title': title,
+            }),
           ),
         ),
       ],

@@ -61,7 +61,7 @@ class _SplashPageState extends State<SplashPage>
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'PENCATAT KEUANGAN',
+                      'PENCATAT KEUANGAN'.tr,
                       style: AppText.monoLabel(
                         color: paper.withValues(alpha: 0.7),
                       ),
@@ -124,7 +124,7 @@ class _SplashPageState extends State<SplashPage>
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'Uangmu, catatanmu, tetap di ponselmu.',
+                          'Uangmu, catatanmu, tetap di ponselmu.'.tr,
                           textAlign: TextAlign.center,
                           style: AppText.body(
                             size: 13,
@@ -133,12 +133,12 @@ class _SplashPageState extends State<SplashPage>
                         ),
                         const SizedBox(height: 40),
                         Semantics(
-                          label: 'Menyiapkan Tally',
+                          label: 'Menyiapkan Tally'.tr,
                           child: Column(
                             mainAxisSize: MainAxisSize.min,
                             children: [
                               Text(
-                                'Menyiapkan Tally',
+                                'Menyiapkan Tally'.tr,
                                 style: AppText.monoLabel(
                                   color: paper.withValues(alpha: 0.6),
                                 ),

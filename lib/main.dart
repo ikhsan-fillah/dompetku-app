@@ -1,11 +1,15 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
 import 'app/bindings/initial_binding.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
 import 'core/services/app_lock_service.dart';
+import 'core/i18n/app_language.dart';
+import 'core/i18n/app_translations.dart';
 import 'core/services/data_refresh_service.dart';
+import 'core/services/shared_prefs_service.dart';
 import 'core/theme/app_theme.dart';
 import 'features/auth/controllers/auth_controller.dart';
 
@@ -20,11 +24,14 @@ Future<void> main() async {
       systemStatusBarContrastEnforced: false,
     ),
   );
-  runApp(const MyApp());
+  final language = await SharedPrefsService().getLanguage();
+  runApp(MyApp(language: language));
 }
 
 class MyApp extends StatefulWidget {
-  const MyApp({super.key});
+  const MyApp({super.key, this.language = AppLanguage.defaultCode});
+
+  final String language;
 
   @override
   State<MyApp> createState() => _MyAppState();
@@ -77,6 +84,11 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
   Widget build(BuildContext context) {
     return GetMaterialApp(
       debugShowCheckedModeBanner: false,
+      translations: AppTranslations(),
+      locale: AppLanguage.localeFor(widget.language),
+      fallbackLocale: AppLanguage.localeFor(AppLanguage.defaultCode),
+      supportedLocales: const [Locale('id', 'ID'), Locale('en', 'US')],
+      localizationsDelegates: GlobalMaterialLocalizations.delegates,
       theme: AppTheme.light,
       themeMode: ThemeMode.light,
       initialBinding: InitialBinding(),

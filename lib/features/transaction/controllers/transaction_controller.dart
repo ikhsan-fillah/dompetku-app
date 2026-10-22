@@ -149,7 +149,7 @@ class TransactionController extends GetxController {
           : ResourceState.success(transactions);
     } catch (_) {
       if (requestId != _requestId) return;
-      state.value = const ResourceState.error('Gagal memuat transaksi.');
+      state.value = ResourceState.error('Gagal memuat transaksi.'.tr);
     }
   }
 
@@ -201,7 +201,7 @@ class TransactionController extends GetxController {
   Future<bool> save(TransactionModel transaction) async {
     final titleError = requiredText(
       transaction.title,
-      fieldName: 'Nama transaksi',
+      fieldName: 'Nama transaksi'.tr,
     );
     final amountError = positiveAmount(transaction.amount);
     if (titleError != null ||
@@ -218,7 +218,7 @@ class TransactionController extends GetxController {
       await _afterMutation();
       return true;
     } catch (_) {
-      state.value = const ResourceState.error('Gagal menyimpan transaksi.');
+      state.value = ResourceState.error('Gagal menyimpan transaksi.'.tr);
       return false;
     }
   }
@@ -229,7 +229,7 @@ class TransactionController extends GetxController {
       await _afterMutation();
       return true;
     } catch (_) {
-      state.value = const ResourceState.error('Gagal menghapus transaksi.');
+      state.value = ResourceState.error('Gagal menghapus transaksi.'.tr);
       return false;
     }
   }
@@ -257,7 +257,7 @@ class TransactionController extends GetxController {
       await _afterMutation();
       return true;
     } catch (_) {
-      state.value = const ResourceState.error('Gagal menduplikasi transaksi.');
+      state.value = ResourceState.error('Gagal menduplikasi transaksi.'.tr);
       return false;
     }
   }
