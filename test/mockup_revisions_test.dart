@@ -288,7 +288,8 @@ void main() {
         );
         await tester.pumpAndSettle();
 
-        expect(find.text('Selamat datang kembali'), findsOneWidget);
+        expect(find.textContaining('Selamat datang'), findsOneWidget);
+        expect(find.textContaining('kembali.'), findsOneWidget);
         expect(find.text('Verifikasi untuk membuka'), findsOneWidget);
         expect(
           find.text('Ketuk ikon sidik jari untuk memulai'),

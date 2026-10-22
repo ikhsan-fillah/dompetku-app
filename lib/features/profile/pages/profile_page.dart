@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/i18n/app_language.dart';
+import '../../../core/services/app_version.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
@@ -400,7 +401,9 @@ class _ProfilePageState extends State<ProfilePage> {
           child: Padding(
             padding: const EdgeInsets.only(top: 4),
             child: Text(
-              'Tally 1.0.0 · tanpa akun · tanpa cloud'.tr,
+              'Tally @version · tanpa akun · tanpa cloud'.trParams({
+                'version': AppVersion.name,
+              }),
               style: AppText.mono(
                 size: 10.5,
                 weight: FontWeight.w400,

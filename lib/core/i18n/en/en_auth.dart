@@ -54,6 +54,13 @@ const Map<String, String> enAuth = {
   'Uangmu, catatanmu, tetap di ponselmu.':
       'Your money, your records, kept on your phone.',
   'Menyiapkan Tally': 'Preparing Tally',
+  'v@version': 'v@version',
+  'Selamat pagi': 'Good morning',
+  'Selamat siang': 'Good afternoon',
+  'Selamat sore': 'Good evening',
+  'Selamat malam': 'Good night',
+  'Saldo bulan ini': 'Balance this month',
+  'Terkunci': 'Locked',
   'Segera hadir': 'Coming soon',
   'Halaman @title dibangun pada tahap berikutnya.':
       'The @title page will be built in a later stage.',

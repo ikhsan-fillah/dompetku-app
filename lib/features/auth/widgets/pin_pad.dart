@@ -68,9 +68,7 @@ class PinPad extends StatelessWidget {
         onTap: onTap,
         child: SizedBox(
           height: 56,
-          child: Center(
-            child: Text(label, style: AppText.display(size: 24)),
-          ),
+          child: Center(child: Text(label, style: AppText.display(size: 24))),
         ),
       ),
     );
@@ -83,9 +81,7 @@ class PinPad extends StatelessWidget {
         onTap: onTap,
         child: SizedBox(
           height: 56,
-          child: Center(
-            child: Icon(icon, color: AppColors.ink2),
-          ),
+          child: Center(child: Icon(icon, color: AppColors.ink2)),
         ),
       ),
     );

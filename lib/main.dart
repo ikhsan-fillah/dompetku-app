@@ -8,6 +8,7 @@ import 'app/routes/app_routes.dart';
 import 'core/services/app_lock_service.dart';
 import 'core/i18n/app_language.dart';
 import 'core/i18n/app_translations.dart';
+import 'core/services/app_version.dart';
 import 'core/services/data_refresh_service.dart';
 import 'core/services/shared_prefs_service.dart';
 import 'core/theme/app_theme.dart';
@@ -24,6 +25,7 @@ Future<void> main() async {
       systemStatusBarContrastEnforced: false,
     ),
   );
+  await AppVersion.init();
   final language = await SharedPrefsService().getLanguage();
   runApp(MyApp(language: language));
 }
