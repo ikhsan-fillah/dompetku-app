@@ -2,7 +2,7 @@
 
 > Dokumen ini dibaca **sebelum** menulis kode. Isinya menerjemahkan mockup `tally-mockup-v4.html` (dengan revisi recap dari v5) menjadi spesifikasi yang bisa langsung dikerjakan di repo `dompetku_app`.
 >
-> Dokumen ini tidak menggantikan `DOMPETKU_TALLY_SPEC_v4.md`. Keduanya dibaca bersama.
+> `DOMPETKU_TALLY_SPEC_v4.md` dan `tally-mockup-v4.html` yang disebut di bawah tidak ada di repo ini. Sebagai gantinya dipakai dokumen ini, `README.md`, `tally-mockup-v5.html`, dan `docs/UPDATE_LOG.md`.
 
 ---
 
@@ -10,7 +10,7 @@
 
 | Prioritas | Sumber | Dipakai untuk |
 |---|---|---|
-| 1 | `DOMPETKU_TALLY_SPEC_v4.md` | Arsitektur, token, data model, urutan fase, keputusan produk |
+| 1 | `DOMPETKU_TALLY_SPEC_v4.md` (tidak ada di repo; lihat `README.md` dan `docs/UPDATE_LOG.md`) | Arsitektur, token, data model, urutan fase, keputusan produk |
 | 2 | Dokumen ini (`DOMPETKU_TALLY_DESIGN_V4_DEV.md`) | Detail per layar, state, copy, dan perilaku |
 | 3 | `tally-mockup-v5.html` | Acuan visual dan perilaku interaksi. Jika berbeda dengan dokumen, dokumen yang menang |
 

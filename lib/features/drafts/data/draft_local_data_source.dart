@@ -41,6 +41,30 @@ class DraftLocalDataSource {
     );
   }
 
+  /// Apakah sudah ada draft (apa pun statusnya) dengan sumber dan nominal yang
+  /// sama dalam [window] dari [at].
+  Future<bool> existsNear({
+    required String source,
+    required int amount,
+    required DateTime at,
+    required Duration window,
+  }) async {
+    final database = await _appDatabase.database;
+    final rows = await database.query(
+      _table,
+      columns: ['id'],
+      where: 'source = ? AND amount = ? AND detected_at BETWEEN ? AND ?',
+      whereArgs: [
+        source,
+        amount,
+        at.subtract(window).toUtc().toIso8601String(),
+        at.add(window).toUtc().toIso8601String(),
+      ],
+      limit: 1,
+    );
+    return rows.isNotEmpty;
+  }
+
   Future<void> update(DraftModel draft) async {
     final id = draft.id;
     if (id == null) throw ArgumentError('Draft id is required');

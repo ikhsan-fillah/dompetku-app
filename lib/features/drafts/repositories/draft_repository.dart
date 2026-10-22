@@ -8,6 +8,12 @@ abstract interface class DraftRepository {
   Future<List<DraftModel>> getPending();
   Future<int> countPending();
   Future<void> insertIfNew(DraftModel draft);
+  Future<bool> existsNear({
+    required String source,
+    required int amount,
+    required DateTime at,
+    required Duration window,
+  });
   Future<void> update(DraftModel draft);
   Future<void> setStatus(int id, DraftStatus status);
 }
@@ -50,6 +56,19 @@ class DraftRepositoryImpl implements DraftRepository {
 
   @override
   Future<void> insertIfNew(DraftModel draft) => _dataSource.insertIfNew(draft);
+
+  @override
+  Future<bool> existsNear({
+    required String source,
+    required int amount,
+    required DateTime at,
+    required Duration window,
+  }) => _dataSource.existsNear(
+    source: source,
+    amount: amount,
+    at: at,
+    window: window,
+  );
 
   @override
   Future<void> update(DraftModel draft) => _dataSource.update(draft);

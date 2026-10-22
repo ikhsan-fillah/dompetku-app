@@ -87,7 +87,11 @@ class InitialBinding extends Bindings {
       pinService: PinService(Get.find<SecureStorageService>()),
     );
     Get.put(
-      AutoDetectService(Get.find<DraftRepository>()),
+      AutoDetectService(
+        Get.find<DraftRepository>(),
+        transactions: Get.find<TransactionRepository>(),
+        categories: Get.find<CategoryRepository>(),
+      ),
       permanent: true,
     );
     auth.onUnlocked = () async {

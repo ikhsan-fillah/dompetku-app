@@ -2,7 +2,6 @@ const Map<String, String> enProfile = {
   'Hapus semua data?': 'Delete all data?',
   'Tindakan ini menghapus seluruh data keuangan, pengaturan, dan kunci aman dari perangkat ini. Tindakan tidak dapat dibatalkan.':
       'This deletes all financial data, settings, and secure keys from this device. This action cannot be undone.',
-  'Ketik HAPUS untuk melanjutkan': 'Type HAPUS to continue',
   'Hapus semua data': 'Delete all data',
   'Gagal menghapus semua data. Coba lagi.':
       'Failed to delete all data. Please try again.',

@@ -1,5 +1,7 @@
 # DompetKu — Spesifikasi Desain UI v3 (Light · “Paper & Ink”)
 
+> **Dokumen lama (v3).** Penggantinya adalah `DOMPETKU_TALLY_DESIGN_V4_DEV.md`; perubahan setelah rilis dicatat di `docs/UPDATE_LOG.md`.
+
 > Dokumen ini diturunkan 1:1 dari `dompetku-mockup-3-1.html`. Semua token, ukuran, teks, dan perilaku di bawah adalah yang terlihat di mockup itu.
 > Sumber aturan visual: `anti-ai-slop.md` (dipatuhi penuh).
 

@@ -111,9 +111,11 @@ class _AutoDetectPageState extends State<AutoDetectPage>
                   ),
                   _Card(
                     title: 'Simpan otomatis'.tr,
-                    body:
-                        'Nonaktif: pembayaran yang terdeteksi menunggu di Draf.'
-                            .tr,
+                    body: _saveAuto
+                        ? 'Aktif: pembayaran yang terdeteksi langsung dicatat ke kategori Lainnya. Ubah kategorinya nanti di Transaksi.'
+                              .tr
+                        : 'Nonaktif: pembayaran yang terdeteksi menunggu di Draf.'
+                              .tr,
                     child: SwitchListTile(
                       contentPadding: EdgeInsets.zero,
                       title: Text('Simpan otomatis'.tr),
