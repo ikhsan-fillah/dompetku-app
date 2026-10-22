@@ -6,6 +6,7 @@ import '../../../core/services/local_data_reset_service.dart';
 import '../../../core/services/shared_prefs_service.dart';
 import '../../../core/utils/display_name.dart';
 import '../../auth/controllers/auth_controller.dart';
+import '../../transaction/repositories/transaction_repository.dart';
 
 class ProfileController extends GetxController {
   ProfileController(
@@ -14,7 +15,9 @@ class ProfileController extends GetxController {
     AuthController? authController,
     void Function(ThemeMode mode)? themeApplier,
     void Function(String code)? languageApplier,
+    TransactionRepository? transactions,
   }) : _resetService = resetService,
+       _transactions = transactions,
        _authController = authController,
        _themeApplier = themeApplier ?? Get.changeThemeMode,
        _languageApplier = languageApplier ?? _applyLanguage;
@@ -26,12 +29,16 @@ class ProfileController extends GetxController {
   final SharedPrefsService _preferences;
   final LocalDataResetService? _resetService;
   final AuthController? _authController;
+  final TransactionRepository? _transactions;
   final void Function(ThemeMode mode) _themeApplier;
   final void Function(String code) _languageApplier;
   final biometricEnabled = false.obs;
   final themeMode = defaultThemeMode.obs;
   final language = AppLanguage.defaultCode.obs;
   final displayName = ''.obs;
+
+  /// Jumlah semua transaksi tercatat; null sebelum dimuat atau bila gagal.
+  final transactionCount = Rxn<int>();
   final autoLockSeconds = 0.obs;
   final savingBiometric = false.obs;
   final savingAutoLock = false.obs;
@@ -97,6 +104,16 @@ class ProfileController extends GetxController {
       return false;
     } finally {
       savingTheme.value = false;
+    }
+  }
+
+  Future<void> loadTransactionCount() async {
+    final repository = _transactions;
+    if (repository == null) return;
+    try {
+      transactionCount.value = (await repository.getAll()).length;
+    } catch (_) {
+      transactionCount.value = null;
     }
   }
 

@@ -5,12 +5,10 @@ const Map<String, String> enProfile = {
   'Hapus semua data': 'Delete all data',
   'Gagal menghapus semua data. Coba lagi.':
       'Failed to delete all data. Please try again.',
-  '1 dompet · data tersimpan di perangkat ini':
-      '1 wallet · data is stored on this device',
-  'Nama tampilan': 'Display name',
-  'Nama': 'Name',
-  'Dipakai pada sapaan di Beranda. Kosongkan untuk memakai "Friend".':
-      'Used in the greeting on Home. Leave empty to use "Friend".',
+  '1 transaksi tercatat': '1 transaction recorded',
+  '@count transaksi tercatat': '@count transactions recorded',
+  'Ubah nama tampilan': 'Edit display name',
+  'Kosongkan untuk memakai "Friend"': 'Leave empty to use "Friend"',
   'Simpan nama': 'Save name',
   'Kelola': 'Manage',
   'Ikon, warna, urutan, favorit': 'Icon, color, order, favorites',
