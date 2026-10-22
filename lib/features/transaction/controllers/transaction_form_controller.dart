@@ -201,8 +201,9 @@ class TransactionFormController extends GetxController {
     try {
       var categoryName = 'Transaksi'.tr;
       for (final category in categories) {
-        if (category.id == categoryId.value)
+        if (category.id == categoryId.value) {
           categoryName = category.displayName;
+        }
       }
       final titleText = title.value.trim();
       final noteText = note.value.trim();
