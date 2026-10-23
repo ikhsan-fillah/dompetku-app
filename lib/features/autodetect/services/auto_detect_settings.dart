@@ -12,6 +12,14 @@ class AutoDetectSettings {
     'id.dana',
     'id.co.bri.brimo',
     'com.jago.digitalBanking',
+    'ovo.id',
+    'com.telkom.mwallet',
+    'id.bmri.livin',
+    'src.com.bni',
+    'com.bsm.activity2',
+    'com.bcadigital.blu',
+    'id.co.bankbkemobile.digitalbank',
+    'com.btpn.dc',
   };
 
   Future<Set<String>> getApps() async => monitoredApps;

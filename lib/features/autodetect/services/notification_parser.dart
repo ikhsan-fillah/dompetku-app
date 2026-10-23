@@ -78,6 +78,14 @@ class NotificationParser {
     'id.dana' => 'DANA',
     'id.co.bri.brimo' => 'BRImo',
     'com.jago.digitalBanking' => 'Jago',
+    'ovo.id' => 'OVO',
+    'com.telkom.mwallet' => 'LinkAja',
+    'id.bmri.livin' => "Livin' by Mandiri",
+    'src.com.bni' => 'BNI Mobile',
+    'com.bsm.activity2' => 'BSI Mobile',
+    'com.bcadigital.blu' => 'blu by BCA',
+    'id.co.bankbkemobile.digitalbank' => 'SeaBank',
+    'com.btpn.dc' => 'Jenius',
     _ => null,
   };
 

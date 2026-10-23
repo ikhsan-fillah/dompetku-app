@@ -25,6 +25,14 @@ class _AutoDetectPageState extends State<AutoDetectPage>
     'DANA',
     'BRImo',
     'Jago',
+    'OVO',
+    'LinkAja',
+    "Livin' by Mandiri",
+    'BNI Mobile',
+    'BSI Mobile',
+    'blu by BCA',
+    'SeaBank',
+    'Jenius',
   ];
 
   late final AutoDetectService _service = Get.find<AutoDetectService>();

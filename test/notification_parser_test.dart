@@ -133,4 +133,48 @@ void main() {
 
     expect(a, isNot(b));
   });
+  group('teks notifikasi asli dan app baru', () {
+    const parser = NotificationParser();
+
+    test('BRImo dana masuk dari notifikasi asli', () {
+      final r = parser.parse(
+        'id.co.bri.brimo',
+        'BRImo Sobat BRI! Dana Rp2.500.000 masuk ke rekening 675301021460535 '
+            'pada 23/10/2026 14:40:13 KET.:ATMLTRPRM 01TEK 000565181',
+      )!;
+      expect(r.amount, 2500000);
+      expect(r.isExpense, isFalse);
+    });
+
+    test('GoPay pembayaran dari notifikasi asli', () {
+      final r = parser.parse(
+        'com.gojek.gopay',
+        'Pembayaran berhasil! Mantaap, kamu barusan bayar Rp24.100 ke SPBU 44.552.04 ADS.',
+      )!;
+      expect(r.amount, 24100);
+      expect(r.isExpense, isTrue);
+      expect(r.merchant, startsWith('SPBU'));
+    });
+
+    test('app baru dikenali dengan nama sumbernya', () {
+      final cases = {
+        'ovo.id': 'OVO',
+        'com.telkom.mwallet': 'LinkAja',
+        'id.bmri.livin': "Livin' by Mandiri",
+        'src.com.bni': 'BNI Mobile',
+        'com.bsm.activity2': 'BSI Mobile',
+        'com.bcadigital.blu': 'blu by BCA',
+        'id.co.bankbkemobile.digitalbank': 'SeaBank',
+        'com.btpn.dc': 'Jenius',
+      };
+      for (final entry in cases.entries) {
+        final r = parser.parse(
+          entry.key,
+          'Pembayaran Rp50.000 ke Toko Maju berhasil',
+        );
+        expect(r?.source, entry.value, reason: entry.key);
+        expect(r?.amount, 50000);
+      }
+    });
+  });
 }
