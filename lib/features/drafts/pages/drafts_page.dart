@@ -10,6 +10,7 @@ import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_title_bar.dart';
 import '../controllers/draft_controller.dart';
 import '../models/draft_model.dart';
+import '../../../core/widgets/app_dialog.dart';
 
 /// Daftar draft hasil deteksi. Confirm, Edit (lewat Confirm), atau Dismiss.
 class DraftsPage extends StatelessWidget {
@@ -130,8 +131,8 @@ class _DraftCard extends StatelessWidget {
     final name = TextEditingController(text: draft.merchant ?? '');
     final ok = await showDialog<bool>(
       context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Ubah draf'.tr),
+      builder: (dialogContext) => AppDialog(
+        title: 'Ubah draf'.tr,
         content: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
@@ -150,26 +151,9 @@ class _DraftCard extends StatelessWidget {
             ),
           ],
         ),
-        actionsPadding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-        actions: [
-          Row(
-            children: [
-              Expanded(
-                child: OutlinedButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: Text('Batal'.tr),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Expanded(
-                child: FilledButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: Text('Simpan & konfirmasi'.tr),
-                ),
-              ),
-            ],
-          ),
-        ],
+        confirmLabel: 'Simpan & konfirmasi'.tr,
+        onCancel: () => Navigator.of(dialogContext).pop(false),
+        onConfirm: () => Navigator.of(dialogContext).pop(true),
       ),
     );
     final value = int.tryParse(amount.text.replaceAll(RegExp(r'[^0-9]'), ''));

@@ -14,6 +14,8 @@ import '../../../core/widgets/settings_tile.dart';
 import '../../../app/routes/app_routes.dart';
 import '../controllers/profile_controller.dart';
 import '../widgets/profile_header.dart';
+import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_dialog.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -65,15 +67,12 @@ class _ProfilePageState extends State<ProfilePage> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          backgroundColor: AppColors.card,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppRadius.hero),
-            side: const BorderSide(color: AppColors.line),
-          ),
-          title: Text('Hapus semua data?'.tr, style: AppText.display(size: 20)),
+        builder: (context, setDialogState) => AppDialog(
+          title: 'Hapus semua data?'.tr,
+          message:
+              'Tindakan ini menghapus seluruh data keuangan, pengaturan, dan kunci aman dari perangkat ini. Tindakan tidak dapat dibatalkan.'
+                  .tr,
           content: Column(
-            mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Container(
@@ -88,16 +87,6 @@ class _ProfilePageState extends State<ProfilePage> {
                   LucideIcons.trash2,
                   color: AppColors.spend,
                   size: 24,
-                ),
-              ),
-              const SizedBox(height: 14),
-              Text(
-                'Tindakan ini menghapus seluruh data keuangan, pengaturan, dan kunci aman dari perangkat ini. Tindakan tidak dapat dibatalkan.'
-                    .tr,
-                style: AppText.body(
-                  size: 13,
-                  color: AppColors.mut,
-                  height: 1.45,
                 ),
               ),
               const SizedBox(height: 16),
@@ -128,48 +117,12 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ],
           ),
-          actions: [
-            OutlinedButton(
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.ink,
-                side: const BorderSide(color: AppColors.line),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.button),
-                ),
-              ),
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text(
-                'Batal'.tr,
-                style: AppText.body(
-                  size: 13,
-                  weight: FontWeight.w700,
-                  color: AppColors.ink,
-                ),
-              ),
-            ),
-            FilledButton(
-              style: FilledButton.styleFrom(
-                backgroundColor: AppColors.spend,
-                foregroundColor: Colors.white,
-                disabledBackgroundColor: AppColors.paper2,
-                disabledForegroundColor: AppColors.mut,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(AppRadius.button),
-                ),
-              ),
-              onPressed: canDelete
-                  ? () => Navigator.of(dialogContext).pop(true)
-                  : null,
-              child: Text(
-                'Hapus semua data'.tr,
-                style: AppText.body(
-                  size: 13,
-                  weight: FontWeight.w700,
-                  color: canDelete ? Colors.white : AppColors.mut,
-                ),
-              ),
-            ),
-          ],
+          confirmLabel: 'Hapus semua data'.tr,
+          confirmKind: AppButtonKind.danger,
+          onCancel: () => Navigator.of(dialogContext).pop(false),
+          onConfirm: canDelete
+              ? () => Navigator.of(dialogContext).pop(true)
+              : null,
         ),
       ),
     );

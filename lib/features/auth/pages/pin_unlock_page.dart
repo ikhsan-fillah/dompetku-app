@@ -8,6 +8,8 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../controllers/auth_controller.dart';
 import '../widgets/pin_pad.dart';
+import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_dialog.dart';
 
 /// Unlock dengan PIN cadangan. Tautan "Use biometrics" hanya bila perangkat punya biometrik.
 class PinUnlockPage extends StatefulWidget {
@@ -55,41 +57,27 @@ class _PinUnlockPageState extends State<PinUnlockPage> {
       context: context,
       barrierDismissible: false,
       builder: (dialogContext) => StatefulBuilder(
-        builder: (context, setDialogState) => AlertDialog(
-          title: Text('Lupa PIN?'.tr),
-          content: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(
-                'Datamu tidak bisa dibuka tanpa PIN. Kamu hanya bisa menghapus semua data di ponsel ini dan memulai dari awal. Tindakan ini tidak dapat dibatalkan.'
-                    .tr,
-              ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: confirmation,
-                decoration: InputDecoration(
-                  labelText: 'Ketik @word untuk melanjutkan'.trParams({
-                    'word': 'HAPUS'.tr,
-                  }),
-                ),
-                onChanged: (value) =>
-                    setDialogState(() => canDelete = value == 'HAPUS'.tr),
-              ),
-            ],
+        builder: (context, setDialogState) => AppDialog(
+          title: 'Lupa PIN?'.tr,
+          message:
+              'Datamu tidak bisa dibuka tanpa PIN. Kamu hanya bisa menghapus semua data di ponsel ini dan memulai dari awal. Tindakan ini tidak dapat dibatalkan.'
+                  .tr,
+          content: TextField(
+            controller: confirmation,
+            decoration: InputDecoration(
+              labelText: 'Ketik @word untuk melanjutkan'.trParams({
+                'word': 'HAPUS'.tr,
+              }),
+            ),
+            onChanged: (value) =>
+                setDialogState(() => canDelete = value == 'HAPUS'.tr),
           ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(dialogContext).pop(false),
-              child: Text('Batal'.tr),
-            ),
-            FilledButton(
-              onPressed: canDelete
-                  ? () => Navigator.of(dialogContext).pop(true)
-                  : null,
-              child: Text('Hapus semua data'.tr),
-            ),
-          ],
+          confirmLabel: 'Hapus semua data'.tr,
+          confirmKind: AppButtonKind.danger,
+          onCancel: () => Navigator.of(dialogContext).pop(false),
+          onConfirm: canDelete
+              ? () => Navigator.of(dialogContext).pop(true)
+              : null,
         ),
       ),
     );

@@ -17,6 +17,7 @@ import '../models/category_model.dart';
 import '../utils/category_icons.dart';
 import '../widgets/category_form_sheet.dart';
 import '../../../app/routes/app_routes.dart';
+import '../../../core/widgets/app_dialog.dart';
 
 /// Halaman kelola kategori: filter tipe, favorit, urutan, dan arsip.
 class CategoryManagePage extends StatefulWidget {
@@ -74,61 +75,15 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
   Future<void> _confirmArchive(CategoryModel category) async {
     final id = category.id;
     if (id == null) return;
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppColors.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.hero),
-          side: const BorderSide(color: AppColors.line),
-        ),
-        title: Text('Arsipkan kategori?'.tr, style: AppText.display(size: 20)),
-        content: Text(
+    final confirmed = await showAppConfirm(
+      context,
+      title: 'Arsipkan kategori?'.tr,
+      message:
           '"@name" tidak muncul lagi untuk transaksi baru. Transaksi lama tetap aman.'
               .trParams({'name': category.displayName}),
-          style: AppText.body(size: 13, color: AppColors.mut, height: 1.45),
-        ),
-        actions: [
-          OutlinedButton(
-            style: OutlinedButton.styleFrom(
-              foregroundColor: AppColors.ink,
-              side: const BorderSide(color: AppColors.line),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.button),
-              ),
-            ),
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text(
-              'Batal'.tr,
-              style: AppText.body(
-                size: 13,
-                weight: FontWeight.w700,
-                color: AppColors.ink,
-              ),
-            ),
-          ),
-          FilledButton(
-            style: FilledButton.styleFrom(
-              backgroundColor: AppColors.ink,
-              foregroundColor: AppColors.paper,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(AppRadius.button),
-              ),
-            ),
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text(
-              'Arsipkan'.tr,
-              style: AppText.body(
-                size: 13,
-                weight: FontWeight.w700,
-                color: AppColors.paper,
-              ),
-            ),
-          ),
-        ],
-      ),
+      confirmLabel: 'Arsipkan'.tr,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     final ok = await _controller.archive(id);
     if (!mounted) return;
     if (!ok) {

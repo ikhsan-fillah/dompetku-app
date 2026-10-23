@@ -14,6 +14,7 @@ import '../../category/repositories/category_repository.dart';
 import '../../transaction/models/transaction_model.dart';
 import '../../transaction/repositories/transaction_repository.dart';
 import '../services/receipt_ocr_service.dart';
+import '../../../core/widgets/app_dialog.dart';
 
 /// Item struk untuk visualisasi kertas struk
 class ReceiptLineItem {
@@ -101,23 +102,16 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
     final controller = TextEditingController(text: _merchant);
     final result = await showDialog<String>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Ubah Merchant'.tr, style: AppText.display(size: 19)),
+      builder: (ctx) => AppDialog(
+        title: 'Ubah Merchant'.tr,
         content: TextField(
           controller: controller,
           autofocus: true,
           decoration: InputDecoration(labelText: 'Nama Merchant'.tr),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Batal'.tr),
-          ),
-          FilledButton(
-            onPressed: () => Navigator.of(ctx).pop(controller.text.trim()),
-            child: Text('Simpan'.tr),
-          ),
-        ],
+        confirmLabel: 'Simpan'.tr,
+        onCancel: () => Navigator.of(ctx).pop(),
+        onConfirm: () => Navigator.of(ctx).pop(controller.text.trim()),
       ),
     );
     if (result != null && result.isNotEmpty && mounted) {
@@ -141,8 +135,8 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
     final controller = TextEditingController(text: _total.toString());
     final result = await showDialog<int>(
       context: context,
-      builder: (ctx) => AlertDialog(
-        title: Text('Ubah Total'.tr, style: AppText.display(size: 19)),
+      builder: (ctx) => AppDialog(
+        title: 'Ubah Total'.tr,
         content: TextField(
           controller: controller,
           keyboardType: TextInputType.number,
@@ -152,21 +146,14 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
             prefixText: 'Rp ',
           ),
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(ctx).pop(),
-            child: Text('Batal'.tr),
-          ),
-          FilledButton(
-            onPressed: () {
-              final parsed = int.tryParse(
-                controller.text.replaceAll(RegExp(r'[^0-9]'), ''),
-              );
-              Navigator.of(ctx).pop(parsed);
-            },
-            child: Text('Simpan'.tr),
-          ),
-        ],
+        confirmLabel: 'Simpan'.tr,
+        onCancel: () => Navigator.of(ctx).pop(),
+        onConfirm: () {
+          final parsed = int.tryParse(
+            controller.text.replaceAll(RegExp(r'[^0-9]'), ''),
+          );
+          Navigator.of(ctx).pop(parsed);
+        },
       ),
     );
     if (result != null && result > 0 && mounted) {

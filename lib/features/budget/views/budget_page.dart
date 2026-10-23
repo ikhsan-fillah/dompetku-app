@@ -21,6 +21,7 @@ import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
 import '../services/budget_list_service.dart';
 import '../widgets/confirm_delete_budget.dart';
+import '../../../core/widgets/app_dialog.dart';
 
 class BudgetPage extends GetView<BudgetController> {
   const BudgetPage({super.key});
@@ -48,33 +49,15 @@ class BudgetPage extends GetView<BudgetController> {
     BuildContext context,
     BudgetViewModel item,
   ) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        backgroundColor: AppColors.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.hero),
-          side: const BorderSide(color: AppColors.line),
-        ),
-        title: Text('Arsipkan anggaran?'.tr, style: AppText.display(size: 20)),
-        content: Text(
+    final confirmed = await showAppConfirm(
+      context,
+      title: 'Arsipkan anggaran?'.tr,
+      message:
           '"@name" dipindahkan ke arsip. Riwayat transaksi tidak ikut terhapus.'
               .trParams({'name': item.budget.name}),
-          style: AppText.body(size: 13, color: AppColors.ink2),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text('Batal'.tr),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            child: Text('Arsipkan'.tr),
-          ),
-        ],
-      ),
+      confirmLabel: 'Arsipkan'.tr,
     );
-    if (confirmed == true) {
+    if (confirmed) {
       await controller.archive(item.budget.id!);
     }
   }

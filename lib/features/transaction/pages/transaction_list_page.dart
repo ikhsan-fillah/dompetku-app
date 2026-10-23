@@ -20,6 +20,7 @@ import '../controllers/transaction_controller.dart';
 import '../services/transaction_list_service.dart';
 import '../widgets/transaction_form_sheet.dart';
 import '../widgets/transaction_tile.dart';
+import '../../../core/widgets/app_dialog.dart';
 
 /// Tab Transaksi: cari, filter jenis, ringkasan, dan daftar per hari.
 class TransactionListPage extends StatefulWidget {
@@ -80,25 +81,14 @@ class _TransactionListPageState extends State<TransactionListPage> {
   }
 
   Future<void> _delete(int id) async {
-    final confirmed = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AlertDialog(
-        title: Text('Hapus transaksi?'.tr),
-        content: Text('Transaksi ini akan dihapus permanen.'.tr),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(false),
-            child: Text('Batal'.tr),
-          ),
-          TextButton(
-            onPressed: () => Navigator.of(dialogContext).pop(true),
-            style: TextButton.styleFrom(foregroundColor: AppColors.spend),
-            child: Text('Hapus'.tr),
-          ),
-        ],
-      ),
+    final confirmed = await showAppConfirm(
+      context,
+      title: 'Hapus transaksi?'.tr,
+      message: 'Transaksi ini akan dihapus permanen.'.tr,
+      confirmLabel: 'Hapus'.tr,
+      danger: true,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     final ok = await _controller.delete(id);
     if (!mounted) return;
     _expanded.value = null;

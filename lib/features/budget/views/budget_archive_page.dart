@@ -12,6 +12,7 @@ import '../../../core/widgets/category_icon_box.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
 import '../widgets/confirm_delete_budget.dart';
+import '../../../core/widgets/app_dialog.dart';
 
 /// Layar daftar anggaran terarsip dengan opsi pulihkan.
 class BudgetArchivePage extends StatefulWidget {
@@ -44,32 +45,15 @@ class _BudgetArchivePageState extends State<BudgetArchivePage> {
   }
 
   Future<void> _confirmRestore(BudgetViewModel item) async {
-    final confirmed = await Get.dialog<bool>(
-      AlertDialog(
-        backgroundColor: AppColors.card,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.hero),
-          side: const BorderSide(color: AppColors.line),
-        ),
-        title: Text('Pulihkan anggaran?'.tr, style: AppText.display(size: 20)),
-        content: Text(
+    final confirmed = await showAppConfirm(
+      context,
+      title: 'Pulihkan anggaran?'.tr,
+      message:
           '"@name" akan kembali muncul di daftar anggaran aktif. Histori transaksi tidak berubah.'
               .trParams({'name': item.budget.name}),
-          style: AppText.body(size: 13, color: AppColors.ink2),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Get.back(result: false),
-            child: Text('Batal'.tr),
-          ),
-          FilledButton(
-            onPressed: () => Get.back(result: true),
-            child: Text('Pulihkan'.tr),
-          ),
-        ],
-      ),
+      confirmLabel: 'Pulihkan'.tr,
     );
-    if (confirmed != true) return;
+    if (!confirmed) return;
     await controller.restore(item.budget.id!);
   }
 

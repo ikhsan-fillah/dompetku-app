@@ -13,6 +13,7 @@ import '../controllers/recurring_controller.dart';
 import '../models/recurring_rule.dart';
 import '../services/recurring_totals.dart';
 import 'recurring_add_sheet.dart';
+import '../../../core/widgets/app_dialog.dart';
 
 /// Daftar recurring: item aktif/nonaktif lewat sakelar. Nonaktif tidak dihapus.
 class RecurringPage extends StatelessWidget {
@@ -170,28 +171,14 @@ class _DismissibleRule extends StatelessWidget {
     return Dismissible(
       key: ValueKey(rule.id),
       direction: DismissDirection.endToStart,
-      confirmDismiss: (_) async =>
-          await showDialog<bool>(
-            context: context,
-            builder: (dialogContext) => AlertDialog(
-              title: Text('Hapus transaksi berulang?'.tr),
-              content: Text(
-                'Transaksi sebelumnya tetap ada. Hanya jadwalnya yang dihapus.'
-                    .tr,
-              ),
-              actions: [
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(false),
-                  child: Text('Batal'.tr),
-                ),
-                TextButton(
-                  onPressed: () => Navigator.of(dialogContext).pop(true),
-                  child: Text('Hapus'.tr),
-                ),
-              ],
-            ),
-          ) ??
-          false,
+      confirmDismiss: (_) => showAppConfirm(
+        context,
+        title: 'Hapus transaksi berulang?'.tr,
+        message:
+            'Transaksi sebelumnya tetap ada. Hanya jadwalnya yang dihapus.'.tr,
+        confirmLabel: 'Hapus'.tr,
+        danger: true,
+      ),
       onDismissed: (_) => controller.remove(rule.id!),
       background: Container(
         alignment: Alignment.centerRight,
