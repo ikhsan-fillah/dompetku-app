@@ -25,9 +25,10 @@ class PeriodPickerSheet extends StatefulWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: AppColors.paper,
+      // Palet sama dengan lembar rentang kustom (kalender B).
+      backgroundColor: AppColors.card,
       shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
       builder: (_) => PeriodPickerSheet(controller: controller),
     );
@@ -193,7 +194,7 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
         decoration: BoxDecoration(
-          color: isSelected ? AppColors.paper2 : Colors.transparent,
+          color: isSelected ? AppColors.ink : Colors.transparent,
           borderRadius: BorderRadius.circular(12),
         ),
         child: Row(
@@ -207,7 +208,7 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
                     style: AppText.body(
                       size: 14,
                       weight: FontWeight.w700,
-                      color: AppColors.ink,
+                      color: isSelected ? AppColors.paper : AppColors.ink,
                     ),
                   ),
                   const SizedBox(height: 3),
@@ -215,7 +216,9 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
                     subtitle,
                     style: AppText.mono(
                       size: 11.5,
-                      color: AppColors.mut,
+                      color: isSelected
+                          ? AppColors.paper.withValues(alpha: 0.75)
+                          : AppColors.ink2,
                       letterSpacing: 0,
                     ),
                   ),
@@ -223,7 +226,7 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
               ),
             ),
             if (isSelected)
-              const Icon(LucideIcons.check, color: AppColors.ink, size: 20),
+              const Icon(LucideIcons.check, color: AppColors.paper, size: 20),
           ],
         ),
       ),
@@ -245,8 +248,11 @@ class _DateBox extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: AppColors.paper2,
-      borderRadius: BorderRadius.circular(12),
+      color: AppColors.card,
+      shape: RoundedRectangleBorder(
+        borderRadius: BorderRadius.circular(12),
+        side: const BorderSide(color: AppColors.line),
+      ),
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
