@@ -2,11 +2,10 @@
 
 Tally is an offline-first personal finance application for one user on one device. It helps the user record income and expenses, understand spending patterns, manage a monthly budget, and review financial activity without cloud synchronization.
 
-> **Status dokumen (Oktober 2026):** bagian ini menjelaskan keputusan produk awal (v3). Beberapa sudah berubah di Tally v4:
-> PIN cadangan opsional kini ada (biometrik tetap utama), fitur ekspor data dihapus, dan ditambah Auto-detect notifikasi, Drafts, transaksi berulang, Recap, laporan bulanan, serta pilihan bahasa Indonesia/Inggris.
-> Untuk keadaan terkini baca `DOMPETKU_TALLY_DESIGN_V4_DEV.md` dan `docs/UPDATE_LOG.md`; bila berbeda dengan dokumen ini, keduanya yang menang.
+> **Status dokumen (Oktober 2026):** README ini satu-satunya dokumen proyek. Bagian 1 sampai 6 menjelaskan keputusan produk awal; beberapa sudah berubah di Tally v4 dan dirangkum di bagian 7 dan 9:
+> PIN cadangan opsional kini ada (biometrik tetap utama), fitur ekspor data dihapus, dan ditambah Auto-detect notifikasi, Drafts, transaksi berulang, Recap, laporan bulanan, tren pengeluaran harian, serta pilihan bahasa Indonesia/Inggris. Bila bagian awal berbeda dengan bagian 7 sampai 9, bagian 7 sampai 9 yang berlaku.
 
-This README is the product brainstorming and feature specification. The development workflow, architecture, database preparation, implementation phases, and testing strategy are documented separately in [DEV_PLAN.md](DEV_PLAN.md).
+This README is the product specification and the operational notes (release, signing, data rules, version history).
 
 ## 1. Final Product Decisions
 
@@ -246,39 +245,116 @@ The product direction is considered complete when the specification is clear abo
 
 ## 7. Implementation Status
 
-Last updated: 1 October 2026. The detailed phase tracker and commit log are in [DEV_PLAN.md](DEV_PLAN.md).
-
 | Area | Status |
 |---|---|
 | Local database, models, repositories | Done |
-| Login, biometric unlock, app route guard | Done |
-| Transactions (history and form) | Done |
-| Dashboard / home | Done |
-| Budgets (list, create, edit, archive, restore) | Done |
-| Budget warning levels 75% / 90% / 100% | Done |
-| Reports (summary, breakdown, daily statistics) | Done |
-| Profile and settings | Done |
+| Login, biometric unlock, optional backup PIN, app route guard | Done |
+| Transactions (history, form, search, filter, sort) | Done |
+| Dashboard / home (balance, category donut, daily spending trend per month) | Done |
+| Budgets (list, create, edit, archive, restore, warning levels 75% / 90% / 100%) | Done |
+| Reports (monthly: category ring, comparison, income vs expense, daily bars) | Done |
+| Categories (custom icons, colors, favorites, order, archive) | Done |
+| Recurring transactions, Drafts, Auto-detect payment notifications (Android) | Done |
+| Monthly and yearly Recap (shareable as image) | Done |
 | OCR receipt scan (on-device ML Kit, review before save) | Done |
+| Language: Indonesian (default) and English | Done |
+| Profile and settings | Done |
 
 Quality gate: `flutter analyze` reports no issues and `flutter test` passes.
 
-## 8. Release Notes
+## 8. Rilis, Tanda Tangan, dan Aturan Data
 
-### 1.0.0
+### 8.1 Identitas aplikasi (tetap, jangan diubah)
 
-- Offline-first personal finance for one user on one device.
-- Biometric protection with a five-failure lockout of five minutes, plus configurable auto-lock.
-- Income and expense transactions with editable historical dates, search, filtering, duplication, and deletion.
-- On-device ML Kit receipt OCR that fills candidate fields for review; photos are never stored.
-- Dashboard with preset and custom date ranges, category breakdown, spending trend, budget summary, and insights.
-- Budgets with 75%, 90%, and 100% warning levels, archive, and restore.
-- Reports with category breakdown, previous-period comparison, daily average, highest spending day, and top merchant.
-- Category management with custom icons, colors, favorites, ordering, and archive.
-- Profile settings: display name, theme, auto-lock, manual lock, and safe full reset.
+| Item | Nilai |
+|---|---|
+| Application ID | `com.fillah.dompetku` |
+| Namespace | `com.fillah.dompetku` |
+| Keystore release | `android/app/upload-keystore.jks` (alias `upload`) |
+| Konfigurasi signing | `android/key.properties` |
+| SHA-256 sertifikat | `D9:63:E3:1D:BE:BD:F2:DF:6F:77:3D:2C:8A:81:D9:78:D5:A1:AC:16:64:58:BC:FF:2E:34:10:84:90:32:FB:6F` |
 
-### 8.1 Release Identity
+Aturan wajib:
 
-- Application ID: `com.fillah.dompetku` (permanent after first public release).
-- Release builds are signed with the `upload-keystore.jks` keystore. Keep the keystore and `android/key.properties` backed up outside the repository; losing them blocks future updates.
-- Updates must be installed over the previous version (not uninstalled) to keep local data. Schema changes require a database version bump and migration.
-- Operational notes and build commands: [docs/UPDATE_LOG.md](docs/UPDATE_LOG.md).
+- Application ID tidak boleh berubah setelah rilis. Berubah berarti aplikasi dianggap baru dan data lama hilang.
+- Keystore dan `key.properties` tidak boleh hilang atau diganti. Simpan backup terenkripsi di luar repo; kalau hilang, update tidak bisa dipasang lagi di perangkat pengguna.
+- Keduanya tidak boleh di-commit (sudah dicakup `.gitignore`: `key.properties`, `*.jks`).
+- Semua build release memakai keystore yang sama.
+
+### 8.2 Aturan update data
+
+- Perubahan skema database wajib menaikkan `AppConstants.databaseVersion` dan menambah blok `if (oldVersion < N)` di `Migrations.onUpgrade`.
+- Jangan mengubah atau menghapus kolom atau tabel yang sudah dirilis tanpa migrasi.
+- Sebelum rilis, uji upgrade dari APK versi sebelumnya (pasang di atasnya, bukan uninstall) dan pastikan data masih tampil.
+- Jangan memanggil `LocalDataResetService` dari alur update.
+- Nama kategori bawaan tersimpan dalam bahasa Inggris di database; tampilannya lewat `CategoryModel.displayName`.
+
+### 8.3 Build release
+
+Naikkan `version` di `pubspec.yaml` setiap rilis (angka setelah `+` harus selalu naik). Versi di Splash dan Profil dibaca otomatis dari sana.
+
+```powershell
+# APK per arsitektur (arm64-v8a untuk HP modern, armeabi-v7a untuk HP lama)
+flutter build apk --release --split-per-abi --android-skip-build-dependency-validation
+
+# hanya arm64
+flutter build apk --release --split-per-abi --target-platform android-arm64 --android-skip-build-dependency-validation
+
+# jalankan langsung di HP yang tersambung (otomatis sesuai arsitektur HP, tanpa hot reload)
+flutter run --release
+
+# Play Store
+flutter build appbundle --release
+```
+
+Hasil: `build\app\outputs\flutter-apk\app-arm64-v8a-release.apk`. Flutter menambah versionCode per arsitektur (arm64 = 2xxx, armeabi-v7a = 1xxx, x86_64 = 4xxx).
+
+Ikon aplikasi dibuat ulang dengan `dart run flutter_launcher_icons` dari `assets/logo/app_icon.png` dan `app_icon_foreground.png`.
+
+### 8.4 Terjemahan
+
+Kunci terjemahan adalah teks Indonesia (`'Laporan'.tr`); terjemahan Inggris ada di `lib/core/i18n/en/`. `test/translations_coverage_test.dart` gagal bila ada teks `.tr` tanpa terjemahan Inggris.
+
+## 9. Riwayat Versi
+
+### 1.1.4+6 (Oktober 2026)
+
+- **Tren pengeluaran (Beranda):** satu batang per hari dalam satu bulan kalender (28, 29, 30, atau 31 hari menurut kalender), pita dua warna per pekan (Senin sampai Minggu), garis dan keterangan rata-rata per hari, total di bawah, dan ketuk batang untuk melihat tanggal dan nominal. Bulan dipilih dengan panah; hanya bulan yang punya transaksi dan bulan ini yang bisa dikunjungi. Kartu ini tidak mengikuti periode Beranda.
+- **Beranda:** chip periode dihapus; periode dipilih lewat tombol tanggal di app bar ("Bulan ini" ada di pemilih).
+- **Profil:** nama diubah lewat pensil kecil di kartu profil (kartu "Nama tampilan" dihapus); keterangan diganti jumlah transaksi tercatat.
+- **Urutan:** Transaksi dan Anggaran memakai satu komponen `SortChip` di app bar; Anggaran punya Nama Z-A.
+- **Laporan:** per bulan dengan panah; bulan tanpa transaksi tetap menampilkan semua kartu dengan isi kosong.
+- **Kinerja:** profil, tren, laporan, dashboard, dan anggaran tidak lagi memuat seluruh transaksi; yang dibaca hanya periode yang dibutuhkan (`count`, `getAll(range:)`). Batas rentang dihitung dalam UTC dari hari kalender lokal, jadi transaksi dini hari tetap di harinya.
+
+### 1.1.3+5
+
+- Layar Welcome back dirombak (sapaan sesuai jam, kartu angka tersamar, tombol sidik jari di bawah).
+- Ikon aplikasi baru: huruf T Fraunces bold di atas tinta.
+- Versi di Splash dan Profil otomatis.
+- Anggaran terarsip: daftar dimuat saat dibuka dan hanya berisi yang diarsipkan; periode form anggaran dirapikan (tanpa "30 hari").
+
+### 1.1.2+4
+
+- Bahasa Indonesia/Inggris di Profil; nama bulan, tanggal, dan nama kategori bawaan ikut bahasa.
+- Auto-detect: notifikasi yang masuk saat app tertutup ditahan sementara di sisi native (maks. 50 item, 24 jam), diambil Dart saat app dibuka, lalu dihapus. Simpan otomatis berfungsi (dicatat ke kategori "Other"). Dedupe memakai waktu posting persis dan jendela 2 menit; parser lebih ketat (saldo, "ke rekening").
+- Kata konfirmasi hapus data mengikuti bahasa (HAPUS / DELETE).
+
+### 1.1.0+2
+
+- Auto-detect: BRImo dan Jago ditambahkan; status izin di-refresh saat kembali dari Settings.
+- Drafts: confirm tanpa kategori memilih kategori dulu.
+
+### Tally v4
+
+- Nama tampilan Tally. PIN cadangan opsional (hash + salt, secure storage), lockout dibagi dengan biometrik.
+- Skema database v3: tabel `recurring_rules` dan `drafts`.
+- Recurring (mode auto membuat transaksi, mode ask membuat draft), Drafts, Auto-detect Android (BCA, GoPay, ShopeePay, DANA; teks mentah tidak disimpan), Recap bulanan dan tahunan.
+- Keputusan: batas harian recap = total budget keseluruhan dibagi jumlah hari; quiet streak dihitung sejak transaksi pertama; total recurring (mingguan x52/12, tahunan /12); Forgot PIN hanya bisa menghapus data.
+
+### 1.0.0+1
+
+- Offline-first personal finance untuk satu pengguna di satu perangkat; proteksi biometrik dengan lockout lima kali gagal selama lima menit.
+- Transaksi pemasukan dan pengeluaran, dashboard, anggaran dengan level peringatan 75% / 90% / 100%, laporan, kategori kustom, OCR struk di perangkat (ML Kit).
+- Ekspor data dihapus. Application ID menjadi `com.fillah.dompetku`; release signing memakai `upload-keystore.jks`.
+
+Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelumnya (tanpa uninstall).
