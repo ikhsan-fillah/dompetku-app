@@ -95,7 +95,7 @@ Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelu
 - Kata konfirmasi hapus data mengikuti bahasa: HAPUS (Indonesia) dan DELETE (Inggris).
 - Dibersihkan: `docs/FIX_PLAN.md` dan `xlsx_export_service.dart` (kosong) dihapus, `.gitattributes` ditambahkan, README dan spec v3 diberi catatan status.
 
-### Setelah 1.1.2+4 (Oktober 2026)
+### 1.1.3+5 (Oktober 2026)
 
 - Versi di Splash dan Profil dibaca otomatis dari paket terpasang (`package_info_plus`), jadi ikut naik mengikuti `version` di `pubspec.yaml`.
 - Layar Welcome back dirombak: sapaan sesuai jam (pagi 04.00-10.59, siang 11.00-14.59, sore 15.00-17.59, selain itu malam), kartu angka tersamar, dan tombol sidik jari di bawah. Layar pendek bisa di-scroll.
