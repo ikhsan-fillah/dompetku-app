@@ -118,6 +118,24 @@ void main() {
     expect(find.text('Rp75.000'), findsWidgets);
   });
 
+  testWidgets('kartu tren pemasukan tampil dan batangnya bisa diketuk', (
+    tester,
+  ) async {
+    await open(tester);
+
+    expect(find.text('Tren pemasukan'), findsOneWidget);
+    expect(find.text('1 pemasukan'), findsOneWidget);
+    expect(find.text('Ketuk batang'), findsOneWidget);
+
+    final bar = find.byKey(const ValueKey('trend-bar-0'));
+    await tester.ensureVisible(bar);
+    await tester.tap(bar);
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('500.000'), findsWidgets);
+    expect(find.text('Ketuk batang'), findsNothing);
+  });
+
   testWidgets('bulan berjalan tidak bisa maju, bulan lalu bisa dibuka', (
     tester,
   ) async {

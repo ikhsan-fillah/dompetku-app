@@ -10,6 +10,7 @@ import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_progress_bar.dart';
 import '../../../core/widgets/app_title_bar.dart';
+import '../../trend/widgets/income_trend_card.dart';
 import '../controllers/report_controller.dart';
 import '../widgets/report_visuals.dart';
 
@@ -158,6 +159,13 @@ class _Summary extends StatelessWidget {
             money: money,
           ),
         ),
+        if (data.incomeTrend != null) ...[
+          const SizedBox(height: 14),
+          IncomeTrendCard(
+            key: ValueKey(data.incomeTrend!.month),
+            trend: data.incomeTrend!,
+          ),
+        ],
         if (remaining != null) ...[
           const SizedBox(height: 14),
           _BudgetRemaining(value: money(remaining), negative: remaining < 0),

@@ -1,7 +1,10 @@
 import 'dart:math' as math;
 
-/// Pengeluaran per hari dalam satu bulan kalender. Panjang bulan (28, 29, 30,
-/// atau 31 hari) mengikuti kalender, bukan angka tetap.
+import '../../../core/constant/domain_enums.dart';
+
+/// Pengeluaran (atau pemasukan, menurut [type]) per hari dalam satu bulan
+/// kalender. Panjang bulan (28, 29, 30, atau 31 hari) mengikuti kalender,
+/// bukan angka tetap.
 class MonthlyTrend {
   const MonthlyTrend({
     required this.month,
@@ -9,6 +12,8 @@ class MonthlyTrend {
     required this.elapsedDays,
     required this.isCurrent,
     required this.daily,
+    this.type = TransactionType.expense,
+    this.transactionCount = 0,
   });
 
   /// Tanggal 1 pada bulan ini.
@@ -22,6 +27,10 @@ class MonthlyTrend {
 
   /// Panjangnya [daysInMonth]; hari yang belum berjalan bernilai 0.
   final List<int> daily;
+  final TransactionType type;
+
+  /// Jumlah transaksi sejenis yang dihitung pada bulan ini.
+  final int transactionCount;
 
   int get total => daily.fold(0, (sum, value) => sum + value);
 

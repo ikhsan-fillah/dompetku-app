@@ -46,7 +46,7 @@ class SpendingTrendCard extends StatelessWidget {
             const SizedBox(height: 12),
             const Divider(height: 1, thickness: 1, color: AppColors.line2),
             const SizedBox(height: 10),
-            _TotalLine(trend: trend),
+            TrendTotalLine(trend: trend),
           ],
         );
       }),
@@ -180,8 +180,9 @@ class _InfoLine extends StatelessWidget {
   }
 }
 
-class _TotalLine extends StatelessWidget {
-  const _TotalLine({required this.trend});
+/// Baris total di bawah grafik: "Total · 22 dari 31 hari" dan nominalnya.
+class TrendTotalLine extends StatelessWidget {
+  const TrendTotalLine({super.key, required this.trend});
 
   final MonthlyTrend trend;
 
@@ -222,11 +223,23 @@ class SpendingTrendChart extends StatelessWidget {
     required this.trend,
     required this.selected,
     required this.onTapDay,
+    this.accent = AppColors.ink,
+    this.peakColor = AppColors.spend,
+    this.showAverage = true,
   });
 
   final MonthlyTrend trend;
   final int? selected;
   final ValueChanged<int> onTapDay;
+
+  /// Warna dasar batang biasa; bawaan tinta untuk pengeluaran.
+  final Color accent;
+
+  /// Warna batang tertinggi.
+  final Color peakColor;
+
+  /// Menampilkan garis putus-putus rata-rata per hari.
+  final bool showAverage;
 
   static const chartHeight = 120.0;
   static const _bubbleRoom = 34.0;
@@ -235,11 +248,13 @@ class SpendingTrendChart extends StatelessWidget {
     if (index >= trend.elapsedDays) return AppColors.line2;
     if (trend.daily[index] == 0) return AppColors.line;
     if (index == selected) return AppColors.ink;
-    if (index == peakIndex) return AppColors.spend;
+    if (index == peakIndex) return peakColor;
     if (trend.isCurrent && index == trend.elapsedDays - 1) {
-      return AppColors.ink2;
+      return accent == AppColors.ink
+          ? AppColors.ink2
+          : accent.withValues(alpha: 0.65);
     }
-    return AppColors.ink.withValues(alpha: 0.32);
+    return accent.withValues(alpha: 0.32);
   }
 
   double _barHeight(int index) {
@@ -290,7 +305,7 @@ class SpendingTrendChart extends StatelessWidget {
                         ),
                     ],
                   ),
-                  if (trend.peakAmount > 0 && average > 0)
+                  if (showAverage && trend.peakAmount > 0 && average > 0)
                     Positioned(
                       left: 0,
                       right: 0,

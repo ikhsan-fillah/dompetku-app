@@ -12,12 +12,14 @@ class MonthlyTrendService {
     return DateTime(local.year, local.month);
   }
 
-  /// Menyusun tren pengeluaran harian untuk [month]. Hanya pengeluaran yang
-  /// dihitung, dan transaksi bertanggal setelah hari ini diabaikan.
+  /// Menyusun tren harian untuk [month]. Hanya transaksi berjenis [type]
+  /// (bawaan pengeluaran) yang dihitung, dan transaksi bertanggal setelah hari
+  /// ini diabaikan.
   MonthlyTrend build(
     Iterable<TransactionModel> transactions,
     DateTime month, {
     DateTime? now,
+    TransactionType type = TransactionType.expense,
   }) {
     final today = (now ?? DateTime.now()).toLocal();
     final first = DateTime(month.year, month.month);
@@ -31,12 +33,14 @@ class MonthlyTrendService {
         : days;
 
     final daily = List<int>.filled(days, 0);
+    var count = 0;
     for (final transaction in transactions) {
-      if (transaction.type != TransactionType.expense) continue;
+      if (transaction.type != type) continue;
       final date = transaction.transactionDate.toLocal();
       if (date.year != first.year || date.month != first.month) continue;
       if (date.day > elapsed) continue;
       daily[date.day - 1] += transaction.amount;
+      count++;
     }
     return MonthlyTrend(
       month: first,
@@ -44,6 +48,8 @@ class MonthlyTrendService {
       elapsedDays: elapsed,
       isCurrent: isCurrent,
       daily: daily,
+      type: type,
+      transactionCount: count,
     );
   }
 

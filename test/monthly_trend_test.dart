@@ -519,4 +519,38 @@ void main() {
       expect(find.text('Oct 2026'), findsOneWidget);
     });
   });
+  group('tren pemasukan', () {
+    test('type income menghitung pemasukan saja dan jumlah transaksinya', () {
+      final trend = service.build(
+        [
+          _tx(DateTime(2026, 10, 1), 5000000, type: TransactionType.income),
+          _tx(DateTime(2026, 10, 1), 250000, type: TransactionType.income),
+          _tx(DateTime(2026, 10, 12), 220000),
+          _tx(DateTime(2026, 10, 25), 999, type: TransactionType.income),
+        ],
+        DateTime(2026, 10),
+        now: _now,
+        type: TransactionType.income,
+      );
+
+      expect(trend.type, TransactionType.income);
+      expect(trend.daily[0], 5250000);
+      expect(trend.daily[11], 0);
+      expect(trend.total, 5250000);
+      // Yang bertanggal setelah hari ini tidak dihitung.
+      expect(trend.transactionCount, 2);
+    });
+
+    test('bawaan tetap pengeluaran', () {
+      final trend = service.build(
+        [_tx(DateTime(2026, 10, 1), 100, type: TransactionType.income)],
+        DateTime(2026, 10),
+        now: _now,
+      );
+
+      expect(trend.type, TransactionType.expense);
+      expect(trend.total, 0);
+      expect(trend.transactionCount, 0);
+    });
+  });
 }

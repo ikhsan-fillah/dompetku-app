@@ -1,11 +1,14 @@
 import 'package:get/get.dart';
 
+import '../../../core/constant/domain_enums.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/utils/date_range.dart';
 import '../../category/repositories/category_repository.dart';
 import '../../dashboard/models/dashboard_summary_model.dart';
 import '../../dashboard/services/financial_calculation_service.dart';
 import '../../transaction/repositories/transaction_repository.dart';
+import '../../trend/models/monthly_trend.dart';
+import '../../trend/services/monthly_trend_service.dart';
 
 class ReportData {
   const ReportData({
@@ -19,6 +22,7 @@ class ReportData {
     this.topMerchantCount = 0,
     this.dailySpending = const [],
     this.previousExpense = 0,
+    this.incomeTrend,
     this.isEmpty = false,
   });
 
@@ -34,6 +38,9 @@ class ReportData {
   /// Pengeluaran per hari, dimulai dari hari pertama rentang.
   final List<int> dailySpending;
   final int previousExpense;
+
+  /// Pemasukan per hari pada bulan laporan, untuk kartu Tren pemasukan.
+  final MonthlyTrend? incomeTrend;
 
   /// Tidak ada transaksi sama sekali pada periode. Laporan tetap tampil
   /// dengan isi kosong, bukan pesan saja.
@@ -176,6 +183,11 @@ class ReportController extends GetxController {
               ? (summary.expense == 0 ? 0 : 1)
               : (summary.expense - previousExpense) / previousExpense,
           previousExpense: previousExpense,
+          incomeTrend: const MonthlyTrendService().build(
+            transactions,
+            DateTime(selectedRange.start.year, selectedRange.start.month),
+            type: TransactionType.income,
+          ),
           isEmpty: isEmpty,
           dailySpending: dailySpending,
           dailyAverage: _calculations.dailyAverage(transactions, selectedRange),

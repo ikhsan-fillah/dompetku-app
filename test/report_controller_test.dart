@@ -364,6 +364,36 @@ void main() {
       expect(daily[0], 0);
     });
 
+    test('incomeTrend berisi pemasukan harian bulan laporan', () async {
+      transactions.items = [
+        _tx(TransactionType.income, 5000000, DateTime(2026, 9, 1)),
+        _tx(TransactionType.income, 300000, DateTime(2026, 9, 1)),
+        _tx(TransactionType.income, 700000, DateTime(2026, 8, 31)),
+        _tx(TransactionType.expense, 80000, DateTime(2026, 9, 2)),
+      ];
+
+      await controller.loadMonth(DateTime(2026, 9));
+
+      final trend = controller.state.value.data!.incomeTrend!;
+      expect(trend.month, DateTime(2026, 9));
+      expect(trend.type, TransactionType.income);
+      expect(trend.daily[0], 5300000);
+      expect(trend.total, 5300000);
+      expect(trend.transactionCount, 2);
+    });
+
+    test('bulan tanpa pemasukan tetap punya incomeTrend kosong', () async {
+      transactions.items = [
+        _tx(TransactionType.expense, 80000, DateTime(2026, 9, 2)),
+      ];
+
+      await controller.loadMonth(DateTime(2026, 9));
+
+      final trend = controller.state.value.data!.incomeTrend!;
+      expect(trend.total, 0);
+      expect(trend.transactionCount, 0);
+    });
+
     test('bulan tanpa pembanding tidak dianggap naik', () async {
       transactions.items = [
         _tx(TransactionType.expense, 80000, DateTime(2026, 9, 2)),
