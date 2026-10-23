@@ -34,16 +34,16 @@ class _Prefs extends SharedPrefsService {
 }
 
 class _Transactions implements TransactionRepository {
-  _Transactions(this.count, {this.fail = false});
+  _Transactions(this.total, {this.fail = false});
 
-  final int count;
+  final int total;
   final bool fail;
 
   @override
   Future<List<TransactionModel>> getAll({DateRange? range}) async {
     if (fail) throw StateError('db');
     return List.generate(
-      count,
+      total,
       (i) => TransactionModel(
         id: i + 1,
         type: TransactionType.expense,
@@ -55,6 +55,12 @@ class _Transactions implements TransactionRepository {
         updatedAt: DateTime(2026, 10, 1),
       ),
     );
+  }
+
+  @override
+  Future<int> count({DateRange? range}) async {
+    if (fail) throw StateError('db');
+    return total;
   }
 
   @override

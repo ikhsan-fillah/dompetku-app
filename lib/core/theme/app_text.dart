@@ -3,7 +3,7 @@ import 'package:google_fonts/google_fonts.dart';
 
 import 'app_colors.dart';
 
-/// Tipografi DOMPETKU_DESIGN_SPEC_v3 §2.2: Fraunces (judul/saldo), Manrope (teks), JetBrains Mono (angka).
+/// Tipografi README bagian 5: Fraunces (judul/saldo), Manrope (teks), JetBrains Mono (angka).
 abstract final class AppText {
   static const _tabular = [FontFeature.tabularFigures()];
 

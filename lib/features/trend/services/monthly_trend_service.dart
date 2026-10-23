@@ -47,18 +47,25 @@ class MonthlyTrendService {
     );
   }
 
-  /// Bulan yang bisa dipilih, urut dari yang terlama: bulan yang punya
-  /// transaksi (sampai bulan ini) ditambah bulan ini. Bulan depan tidak ada.
-  List<DateTime> availableMonths(
-    Iterable<TransactionModel> transactions, {
-    DateTime? now,
-  }) {
+  /// Rentang satu bulan penuh (tanggal 1 sampai hari terakhir).
+  static DateRange monthRange(DateTime month) => DateRange(
+    start: DateTime(month.year, month.month),
+    end: DateTime(month.year, month.month + 1, 0),
+  );
+
+  /// Semua bulan dari bulan transaksi pertama sampai bulan ini, urut dari yang
+  /// terlama. Pemanggil memeriksa mana yang punya transaksi. Tanpa transaksi
+  /// (atau tanggal pertama di masa depan) hanya bulan ini yang dikembalikan.
+  List<DateTime> candidateMonths(DateTime? firstTransaction, {DateTime? now}) {
     final current = monthOf(now ?? DateTime.now());
-    final months = <DateTime>{current};
-    for (final transaction in transactions) {
-      final month = monthOf(transaction.transactionDate);
-      if (!month.isAfter(current)) months.add(month);
+    if (firstTransaction == null) return [current];
+    var month = monthOf(firstTransaction);
+    if (month.isAfter(current)) return [current];
+    final months = <DateTime>[];
+    while (!month.isAfter(current)) {
+      months.add(month);
+      month = DateTime(month.year, month.month + 1);
     }
-    return months.toList()..sort();
+    return months;
   }
 }

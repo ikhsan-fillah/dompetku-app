@@ -111,7 +111,7 @@ class ProfileController extends GetxController {
     final repository = _transactions;
     if (repository == null) return;
     try {
-      transactionCount.value = (await repository.getAll()).length;
+      transactionCount.value = await repository.count();
     } catch (_) {
       transactionCount.value = null;
     }

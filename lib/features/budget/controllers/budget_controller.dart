@@ -65,10 +65,7 @@ class BudgetController extends GetxController {
     }
     try {
       final budgets = await _repository.getAll();
-      final transactionRepository = _transactionRepository;
-      final transactions = transactionRepository == null
-          ? const <TransactionModel>[]
-          : await transactionRepository.getAll();
+      final transactions = await _loadTransactions(budgets);
       if (requestId != _requestId) return;
       final items = [
         for (final budget in budgets)
@@ -90,10 +87,7 @@ class BudgetController extends GetxController {
     try {
       final all = await _repository.getAll(includeArchived: true);
       final budgets = all.where((budget) => budget.isArchived).toList();
-      final transactionRepository = _transactionRepository;
-      final transactions = transactionRepository == null
-          ? const <TransactionModel>[]
-          : await transactionRepository.getAll();
+      final transactions = await _loadTransactions(budgets);
       final items = [
         for (final budget in budgets)
           BudgetViewModel(budget: budget, used: _usedFor(budget, transactions)),
@@ -106,6 +100,23 @@ class BudgetController extends GetxController {
         'Gagal memuat anggaran terarsip.'.tr,
       );
     }
+  }
+
+  /// Hanya transaksi dalam rentang gabungan anggaran yang dibaca, bukan semua.
+  Future<List<TransactionModel>> _loadTransactions(
+    List<BudgetModel> budgets,
+  ) async {
+    final repository = _transactionRepository;
+    if (repository == null || budgets.isEmpty) return const [];
+    var start = budgets.first.startDate;
+    var end = budgets.first.endDate;
+    for (final budget in budgets) {
+      if (budget.startDate.isBefore(start)) start = budget.startDate;
+      if (budget.endDate.isAfter(end)) end = budget.endDate;
+    }
+    return repository.getAll(
+      range: DateRange(start: start, end: end),
+    );
   }
 
   int _usedFor(BudgetModel budget, List<TransactionModel> transactions) {

@@ -10,6 +10,13 @@ import 'package:dompetku_app/features/transaction/repositories/transaction_repos
 import 'package:flutter_test/flutter_test.dart';
 
 class _FakeTransactionRepository implements TransactionRepository {
+  @override
+  Future<int> count({DateRange? range}) async => items.length;
+
+  @override
+  Future<DateTime?> firstTransactionDate() async =>
+      items.isEmpty ? null : items.first.transactionDate;
+
   _FakeTransactionRepository(this.items);
 
   List<TransactionModel> items;
@@ -141,9 +148,17 @@ void main() {
     expect(controller.range.value.end, september.end);
   });
 
-  test('empty bila tidak ada transaksi pada rentang', () async {
+  test('tanpa transaksi tetap success dengan data kosong', () async {
     await controller.load(september);
-    expect(controller.state.value.status, ResourceStatus.empty);
+
+    expect(controller.state.value.status, ResourceStatus.success);
+    final report = controller.state.value.data!;
+    expect(report.isEmpty, isTrue);
+    expect(report.summary.income, 0);
+    expect(report.summary.expense, 0);
+    expect(report.expensesByCategory, isEmpty);
+    expect(report.dailyAverage, 0);
+    expect(report.highestSpendingDay, isNull);
   });
 
   test('success menghitung ringkasan dan kategori secara menurun', () async {
@@ -359,14 +374,18 @@ void main() {
       expect(controller.state.value.data!.previousExpense, 0);
     });
 
-    test('bulan tanpa transaksi menghasilkan state kosong', () async {
+    test('bulan tanpa transaksi tetap success, ditandai kosong', () async {
       transactions.items = [
         _tx(TransactionType.expense, 80000, DateTime(2026, 8, 2)),
       ];
 
       await controller.loadMonth(DateTime(2026, 9));
 
-      expect(controller.state.value.status, ResourceStatus.empty);
+      expect(controller.state.value.status, ResourceStatus.success);
+      final report = controller.state.value.data!;
+      expect(report.isEmpty, isTrue);
+      expect(report.previousExpense, 80000);
+      expect(report.dailySpending.every((value) => value == 0), isTrue);
     });
   });
 }

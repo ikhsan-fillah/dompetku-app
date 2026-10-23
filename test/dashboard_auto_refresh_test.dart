@@ -12,6 +12,12 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
 
 class _FakeTransactions implements TransactionRepository {
+  @override
+  Future<int> count({DateRange? range}) async => 1;
+
+  @override
+  Future<DateTime?> firstTransactionDate() async => DateTime.now();
+
   int getAllCalls = 0;
 
   @override

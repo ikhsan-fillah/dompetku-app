@@ -34,5 +34,6 @@ const Map<String, String> enReport = {
   'Hari pengeluaran terbesar': 'Highest spending day',
   'Merchant teratas': 'Top merchant',
   'Rincian pengeluaran': 'Expense breakdown',
+  'Belum ada pengeluaran pada bulan ini.': 'No expenses this month yet.',
   '@percent% dari pengeluaran': '@percent% of expenses',
 };

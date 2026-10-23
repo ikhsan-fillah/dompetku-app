@@ -16,16 +16,52 @@ class TransactionLocalDataSource implements TransactionPageRepository {
     final database = await _appDatabase.database;
     final rows = await database.query(
       DatabaseTables.transactions,
-      where: range == null
-          ? null
-          : 'date(${DatabaseColumns.transactionDate}) BETWEEN date(?) AND date(?)',
-      whereArgs: range == null
-          ? null
-          : [range.start.toIso8601String(), range.end.toIso8601String()],
+      where: range == null ? null : _rangeSql(DatabaseColumns.transactionDate),
+      whereArgs: range == null ? null : _rangeArgs(range),
       orderBy:
           '${DatabaseColumns.transactionDate} DESC, ${DatabaseColumns.id} DESC',
     );
     return rows.map(TransactionModel.fromMap).toList();
+  }
+
+  /// Tanggal disimpan dalam UTC, sedangkan rentang adalah hari kalender
+  /// lokal. Membandingkan batas UTC dari awal hari pertama sampai awal hari
+  /// sesudah hari terakhir menjaga transaksi dini hari tetap di harinya, dan
+  /// bisa memakai indeks tanggal. Awalan "Z" dibuang supaya urutan teksnya
+  /// tetap benar untuk nilai dengan mikrodetik.
+  static String _rangeSql(String column) => '$column >= ? AND $column < ?';
+
+  static List<Object?> _rangeArgs(DateRange range) {
+    String bound(DateTime localDay) {
+      final iso = localDay.toUtc().toIso8601String();
+      return iso.endsWith('Z') ? iso.substring(0, iso.length - 1) : iso;
+    }
+
+    return [
+      bound(DateTime(range.start.year, range.start.month, range.start.day)),
+      bound(DateTime(range.end.year, range.end.month, range.end.day + 1)),
+    ];
+  }
+
+  /// Jumlah transaksi (semua jenis), opsional pada [range].
+  Future<int> count({DateRange? range}) async {
+    final database = await _appDatabase.database;
+    final rows = await database.rawQuery(
+      '''SELECT COUNT(*) AS c FROM ${DatabaseTables.transactions}
+         ${range == null ? '' : 'WHERE ${_rangeSql(DatabaseColumns.transactionDate)}'}''',
+      [if (range != null) ..._rangeArgs(range)],
+    );
+    return (rows.first['c'] as num).toInt();
+  }
+
+  /// Waktu transaksi paling awal, atau null bila belum ada.
+  Future<DateTime?> firstTransactionDate() async {
+    final database = await _appDatabase.database;
+    final rows = await database.rawQuery(
+      'SELECT MIN(${DatabaseColumns.transactionDate}) AS first FROM ${DatabaseTables.transactions}',
+    );
+    final value = rows.first['first'] as String?;
+    return value == null ? null : DateTime.parse(value);
   }
 
   Future<TransactionModel?> getById(int id) async {
@@ -87,14 +123,8 @@ class TransactionLocalDataSource implements TransactionPageRepository {
       '''SELECT COALESCE(SUM(${DatabaseColumns.amount}), 0) AS total
          FROM ${DatabaseTables.transactions}
          WHERE ${DatabaseColumns.type} = ?
-         ${range == null ? '' : 'AND date(${DatabaseColumns.transactionDate}) BETWEEN date(?) AND date(?)'}''',
-      [
-        type.name,
-        if (range != null) ...[
-          range.start.toIso8601String(),
-          range.end.toIso8601String(),
-        ],
-      ],
+         ${range == null ? '' : 'AND ${_rangeSql(DatabaseColumns.transactionDate)}'}''',
+      [type.name, if (range != null) ..._rangeArgs(range)],
     );
     return (result.first['total'] as num).toInt();
   }
@@ -149,14 +179,8 @@ class TransactionLocalDataSource implements TransactionPageRepository {
       '''SELECT COALESCE(SUM(${DatabaseColumns.amount}), 0) AS total,
          COUNT(*) AS count FROM ${DatabaseTables.transactions}
          WHERE ${DatabaseColumns.categoryId} = ?
-         ${range == null ? '' : 'AND date(${DatabaseColumns.transactionDate}) BETWEEN date(?) AND date(?)'}''',
-      [
-        categoryId,
-        if (range != null) ...[
-          range.start.toIso8601String(),
-          range.end.toIso8601String(),
-        ],
-      ],
+         ${range == null ? '' : 'AND ${_rangeSql(DatabaseColumns.transactionDate)}'}''',
+      [categoryId, if (range != null) ..._rangeArgs(range)],
     );
     return CategoryTransactionSummary(
       total: (rows.first['total'] as num).toInt(),
@@ -178,13 +202,8 @@ class TransactionLocalDataSource implements TransactionPageRepository {
       );
     }
     if (request.range != null) {
-      clauses.add(
-        'date(t.${DatabaseColumns.transactionDate}) BETWEEN date(?) AND date(?)',
-      );
-      args.addAll([
-        request.range!.start.toIso8601String(),
-        request.range!.end.toIso8601String(),
-      ]);
+      clauses.add(_rangeSql('t.${DatabaseColumns.transactionDate}'));
+      args.addAll(_rangeArgs(request.range!));
     }
     final query = request.query.trim().toLowerCase();
     if (query.isNotEmpty) {

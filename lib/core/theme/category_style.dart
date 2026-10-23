@@ -5,7 +5,7 @@ import 'app_colors.dart';
 
 /// Menerjemahkan data kategori di database ke ikon dan warna tampilan.
 /// Warna dan kunci ikon yang tersimpan di database tetap dipertahankan; warna
-/// seed lama dipetakan ke palet kategori DOMPETKU_DESIGN_SPEC_v3 §2.1.
+/// seed lama dipetakan ke palet kategori README bagian 5.
 abstract final class CategoryStyle {
   static IconData icon(String key) => _icons[key] ?? LucideIcons.layoutGrid;
 
