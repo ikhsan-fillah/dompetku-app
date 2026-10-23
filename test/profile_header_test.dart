@@ -140,6 +140,21 @@ void main() {
     expect(find.text('I'), findsOneWidget);
   });
 
+  testWidgets('isian nama bening supaya teks krem terbaca di kartu tinta', (
+    tester,
+  ) async {
+    await open(tester);
+
+    await tester.tap(find.byIcon(LucideIcons.pencil));
+    await tester.pumpAndSettle();
+
+    final decoration = tester
+        .widget<TextField>(find.byType(TextField))
+        .decoration!;
+    expect(decoration.filled, isFalse);
+    expect(decoration.fillColor, Colors.transparent);
+  });
+
   testWidgets('batal tidak mengubah nama', (tester) async {
     prefs.name = 'Ikzy';
     final controller = await open(tester);

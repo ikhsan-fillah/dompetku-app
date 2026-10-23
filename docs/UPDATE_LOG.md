@@ -104,4 +104,6 @@ Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelu
 - Form anggaran: pilihan periode jadi dua segmen (Bulan ini, Bulan depan) dan tanggal mulai/selesai dalam satu kartu. Pilihan "30 hari" dihapus.
 - Urutan di Transaksi dan Anggaran memakai satu komponen bersama, `SortChip`: chip di app bar (ikon urut + label singkat + panah) yang membuka menu kecil berisi label lengkap. Anggaran kini punya urutan Nama Z-A.
 - Profil: kartu "Nama tampilan" dihapus. Nama diubah langsung di kartu profil lewat pensil kecil di sudut nama (✓ simpan, ✕ batal). Keterangan "1 dompet · data tersimpan…" diganti jumlah transaksi tercatat.
+- Profil: isian nama di kartu tinta dibuat bening (sebelumnya berlatar krem sehingga teks krem tidak terbaca).
+- Chip urutan: garis, latar, tinggi, dan sudut disamakan dengan tombol ikon app bar (tombol arsip), tidak lagi bergaris hitam.
 
