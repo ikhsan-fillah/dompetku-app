@@ -106,4 +106,5 @@ Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelu
 - Profil: kartu "Nama tampilan" dihapus. Nama diubah langsung di kartu profil lewat pensil kecil di sudut nama (✓ simpan, ✕ batal). Keterangan "1 dompet · data tersimpan…" diganti jumlah transaksi tercatat.
 - Profil: isian nama di kartu tinta dibuat bening (sebelumnya berlatar krem sehingga teks krem tidak terbaca).
 - Chip urutan: garis, latar, tinggi, dan sudut disamakan dengan tombol ikon app bar (tombol arsip), tidak lagi bergaris hitam.
+- Beranda, kartu Tren pengeluaran dibuat ulang: satu batang per hari dalam satu bulan kalender (28, 29, 30, atau 31 hari menurut kalender), pita dua warna per pekan (Senin-Minggu), garis dan keterangan rata-rata per hari, total di bawah, dan ketuk batang untuk melihat tanggal dan nominal. Bulan dipilih dengan panah; hanya bulan yang punya transaksi (dan bulan ini) yang bisa dikunjungi, tanpa bulan depan. Kartu ini tidak lagi mengikuti chip periode Beranda. Kode lama (`SpendingBars`, `TrendBucket`) dihapus.
 

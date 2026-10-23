@@ -39,20 +39,6 @@ class RecentTransactionItem {
   final DateTime date;
 }
 
-class TrendBucket {
-  const TrendBucket({
-    required this.label,
-    required this.start,
-    required this.end,
-    required this.amount,
-  });
-
-  final String label;
-  final DateTime start;
-  final DateTime end;
-  final int amount;
-}
-
 class DashboardInsight {
   const DashboardInsight({required this.message});
 

@@ -16,9 +16,9 @@ import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../recap/widgets/recap_home_line.dart';
 import '../../dashboard/models/dashboard_summary_model.dart';
 import '../../dashboard/widgets/expense_donut.dart';
-import '../../dashboard/widgets/spending_bars.dart';
 import '../../drafts/widgets/drafts_banner.dart';
 import '../../shell/controllers/main_shell_controller.dart';
+import '../../trend/widgets/spending_trend_card.dart';
 import '../widgets/category_cards_grid.dart';
 import '../widgets/home_app_bar.dart';
 import '../widgets/insight_banner.dart';
@@ -107,15 +107,7 @@ class HomePage extends StatelessWidget {
               ],
             ),
           ),
-          AppCard(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                SectionHeader(title: 'Tren pengeluaran'.tr),
-                SpendingBars(buckets: data.trendBuckets),
-              ],
-            ),
-          ),
+          const SpendingTrendCard(),
           if (data.favorites.isNotEmpty) ...[
             SectionHeader(title: 'Kategori favorit'.tr),
             CategoryCardsGrid(

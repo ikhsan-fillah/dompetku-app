@@ -1,12 +1,10 @@
 import 'package:get/get.dart';
-import 'dart:math' as math;
 
 import '../../../core/constant/domain_enums.dart';
 import '../../../core/utils/date_range.dart';
 import '../../category/models/category_model.dart';
 import '../../transaction/models/transaction_model.dart';
 import '../models/dashboard_view_models.dart';
-import '../models/spending_trend_point.dart';
 
 /// Perhitungan murni untuk kartu-kartu Beranda.
 class DashboardInsightsService {
@@ -172,52 +170,4 @@ class DashboardInsightsService {
       }),
     );
   }
-
-  /// Mengelompokkan pengeluaran harian menjadi paling banyak [maxBars] batang.
-  List<TrendBucket> trendBuckets({
-    required List<SpendingTrendPoint> points,
-    required DateRange range,
-    int maxBars = 15,
-  }) {
-    if (points.isEmpty) return const [];
-    final amounts = {
-      for (final point in points)
-        DateTime(point.date.year, point.date.month, point.date.day):
-            point.amount,
-    };
-    final first = points.first.date;
-    final start = range.dayCount <= 400
-        ? range.start
-        : DateTime(first.year, first.month, first.day);
-    final totalDays = _daysBetween(start, range.end) + 1;
-    if (totalDays <= 0) return const [];
-    final size = math.max(1, (totalDays / maxBars).ceil());
-    final buckets = <TrendBucket>[];
-    for (var offset = 0; offset < totalDays; offset += size) {
-      final last = math.min(offset + size - 1, totalDays - 1);
-      final bucketStart = DateTime(start.year, start.month, start.day + offset);
-      final bucketEnd = DateTime(start.year, start.month, start.day + last);
-      var sum = 0;
-      for (var day = offset; day <= last; day++) {
-        sum += amounts[DateTime(start.year, start.month, start.day + day)] ?? 0;
-      }
-      buckets.add(
-        TrendBucket(
-          label: totalDays <= 31
-              ? '${bucketStart.day}'
-              : '${bucketStart.day}/${bucketStart.month}',
-          start: bucketStart,
-          end: bucketEnd,
-          amount: sum,
-        ),
-      );
-    }
-    return buckets;
-  }
-
-  int _daysBetween(DateTime from, DateTime to) => DateTime.utc(
-    to.year,
-    to.month,
-    to.day,
-  ).difference(DateTime.utc(from.year, from.month, from.day)).inDays;
 }

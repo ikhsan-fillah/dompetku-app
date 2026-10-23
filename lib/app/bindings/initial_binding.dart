@@ -30,6 +30,7 @@ import 'package:dompetku_app/features/dashboard/services/financial_calculation_s
 import 'package:dompetku_app/features/profile/controllers/profile_controller.dart';
 import 'package:dompetku_app/features/report/controllers/report_controller.dart';
 import 'package:dompetku_app/features/transaction/controllers/transaction_controller.dart';
+import 'package:dompetku_app/features/trend/controllers/spending_trend_controller.dart';
 import 'package:dompetku_app/features/transaction/data/transaction_local_data_source.dart';
 import 'package:dompetku_app/features/transaction/repositories/transaction_repository.dart';
 import 'package:dompetku_app/features/transaction/repositories/transaction_repository_impl.dart';
@@ -109,6 +110,10 @@ class InitialBinding extends Bindings {
       }
     };
     Get.put(auth, permanent: true);
+    Get.lazyPut(
+      () => SpendingTrendController(Get.find<TransactionRepository>()),
+      fenix: true,
+    );
     Get.lazyPut(() => CategoryController(Get.find()), fenix: true);
     Get.lazyPut(() => TransactionController(Get.find()), fenix: true);
     Get.lazyPut(() => BudgetController(Get.find()), fenix: true);

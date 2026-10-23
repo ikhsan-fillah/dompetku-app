@@ -19,7 +19,6 @@ class DashboardData {
     required this.trend,
     required this.previousPeriodExpenseChange,
     required this.expenses,
-    this.trendBuckets = const [],
     this.favorites = const [],
     this.recent = const [],
     this.insight,
@@ -29,7 +28,6 @@ class DashboardData {
   final List<SpendingTrendPoint> trend;
   final double previousPeriodExpenseChange;
   final List<ExpenseSlice> expenses;
-  final List<TrendBucket> trendBuckets;
   final List<CategoryCardData> favorites;
   final List<RecentTransactionItem> recent;
   final DashboardInsight? insight;
@@ -116,7 +114,6 @@ class DashboardController extends GetxController {
               balance: 0,
             ),
             trend: const [],
-            trendBuckets: _zeroTrendBuckets(selected),
             previousPeriodExpenseChange: 0,
             expenses: [
               for (final card in cards)
@@ -146,7 +143,6 @@ class DashboardController extends GetxController {
         DashboardData(
           summary: _calculations.summary(transactions, selected),
           trend: trend,
-          trendBuckets: _insights.trendBuckets(points: trend, range: selected),
           previousPeriodExpenseChange: _calculations
               .previousPeriodExpenseChange(transactions, selected),
           expenses: _breakdown.build(totals, categories),
@@ -170,18 +166,5 @@ class DashboardController extends GetxController {
       if (requestId != _requestId) return;
       state.value = ResourceState.error('Gagal memuat ringkasan dashboard.'.tr);
     }
-  }
-
-  List<TrendBucket> _zeroTrendBuckets(DateRange selected) {
-    final end = selected.end.toLocal();
-    return [
-      for (var offset = 6; offset >= 0; offset--)
-        TrendBucket(
-          label: '${DateTime(end.year, end.month, end.day - offset).day}',
-          start: DateTime(end.year, end.month, end.day - offset),
-          end: DateTime(end.year, end.month, end.day - offset),
-          amount: 0,
-        ),
-    ];
   }
 }
