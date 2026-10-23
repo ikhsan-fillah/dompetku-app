@@ -1,9 +1,7 @@
 import 'package:dompetku_app/core/theme/app_theme.dart';
-import 'package:dompetku_app/core/utils/date_range.dart';
 import 'package:dompetku_app/features/dashboard/models/expense_slice.dart';
 import 'package:dompetku_app/features/dashboard/widgets/budget_ring.dart';
 import 'package:dompetku_app/features/dashboard/widgets/expense_donut.dart';
-import 'package:dompetku_app/features/home/widgets/period_chips.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -93,24 +91,5 @@ void main() {
     );
     expect(find.text('140%'), findsOneWidget);
     expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('chip periode memanggil onSelect dengan preset yang dipilih', (
-    tester,
-  ) async {
-    DateRangePreset? picked;
-    await tester.pumpWidget(
-      _host(
-        PeriodChips(
-          selected: DateRangePreset.month,
-          onSelect: (preset) => picked = preset,
-        ),
-      ),
-    );
-
-    await tester.tap(find.text('3 Bulan'));
-    expect(picked, DateRangePreset.threeMonths);
-    await tester.tap(find.text('Hari ini'));
-    expect(picked, DateRangePreset.today);
   });
 }

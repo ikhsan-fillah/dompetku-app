@@ -7,7 +7,6 @@ import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
-import '../../../core/utils/date_range.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_state_view.dart';
@@ -22,8 +21,6 @@ import '../../trend/widgets/spending_trend_card.dart';
 import '../widgets/category_cards_grid.dart';
 import '../widgets/home_app_bar.dart';
 import '../widgets/insight_banner.dart';
-import '../widgets/period_chips.dart';
-import '../widgets/period_picker_sheet.dart';
 import '../widgets/recent_transactions_card.dart';
 
 /// Isi tab Beranda. Data dimuat ulang otomatis; tidak ada tombol refresh.
@@ -34,13 +31,6 @@ class HomePage extends StatelessWidget {
     if (Get.isRegistered<MainShellController>()) {
       Get.find<MainShellController>().select(index);
     }
-  }
-
-  Future<void> _pickCustomRange(
-    BuildContext context,
-    DashboardController controller,
-  ) async {
-    await PeriodPickerSheet.show(context, controller);
   }
 
   /// Data yang ditampilkan: data asli atau data nol pada periode kosong.
@@ -146,19 +136,6 @@ class HomePage extends StatelessWidget {
                 130,
               ),
               children: [
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppSpacing.gap),
-                  child: PeriodChips(
-                    selected: controller.preset.value,
-                    onSelect: (preset) {
-                      if (preset == DateRangePreset.custom) {
-                        _pickCustomRange(context, controller);
-                      } else {
-                        controller.setPreset(preset);
-                      }
-                    },
-                  ),
-                ),
                 if (data != null) ...[_BalanceCard(data: data)],
                 const DraftsBanner(),
                 const RecapHomeLine(),
