@@ -1,10 +1,8 @@
 import 'package:dompetku_app/core/theme/app_theme.dart';
 import 'package:dompetku_app/core/utils/date_range.dart';
-import 'package:dompetku_app/features/dashboard/models/dashboard_view_models.dart';
 import 'package:dompetku_app/features/dashboard/models/expense_slice.dart';
 import 'package:dompetku_app/features/dashboard/widgets/budget_ring.dart';
 import 'package:dompetku_app/features/dashboard/widgets/expense_donut.dart';
-import 'package:dompetku_app/features/dashboard/widgets/spending_bars.dart';
 import 'package:dompetku_app/features/home/widgets/period_chips.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -95,28 +93,6 @@ void main() {
     );
     expect(find.text('140%'), findsOneWidget);
     expect(tester.takeException(), isNull);
-  });
-
-  testWidgets('mengetuk batang menampilkan nilai persisnya', (tester) async {
-    final buckets = [
-      for (var i = 1; i <= 3; i++)
-        TrendBucket(
-          label: '$i',
-          start: DateTime(2026, 9, i),
-          end: DateTime(2026, 9, i),
-          amount: i * 100,
-        ),
-    ];
-    await tester.pumpWidget(_host(SpendingBars(buckets: buckets)));
-    expect(find.text('Ketuk batang untuk melihat nilai'), findsOneWidget);
-
-    final bars = find.descendant(
-      of: find.byType(SpendingBars),
-      matching: find.byType(GestureDetector),
-    );
-    await tester.tap(bars.at(1));
-    await tester.pump();
-    expect(find.textContaining('Rp 200'), findsOneWidget);
   });
 
   testWidgets('chip periode memanggil onSelect dengan preset yang dipilih', (

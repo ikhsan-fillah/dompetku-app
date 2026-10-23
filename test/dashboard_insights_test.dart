@@ -1,7 +1,6 @@
 import 'package:dompetku_app/core/constant/domain_enums.dart';
 import 'package:dompetku_app/core/utils/date_range.dart';
 import 'package:dompetku_app/features/category/models/category_model.dart';
-import 'package:dompetku_app/features/dashboard/models/spending_trend_point.dart';
 import 'package:dompetku_app/features/dashboard/services/dashboard_insights_service.dart';
 import 'package:dompetku_app/features/transaction/models/transaction_model.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -129,34 +128,6 @@ void main() {
         categories: [_cat(1, 'Makanan')],
       );
       expect(insight, isNull);
-    });
-  });
-
-  group('trendBuckets', () {
-    test('satu bulan menjadi 15 batang dengan label tanggal ganjil', () {
-      final range = DateRange(
-        start: DateTime(2026, 9, 1),
-        end: DateTime(2026, 9, 29),
-      );
-      final points = [
-        for (var day = 1; day <= 29; day++)
-          SpendingTrendPoint(date: DateTime(2026, 9, day), amount: 100),
-      ];
-      final buckets = _service.trendBuckets(points: points, range: range);
-      expect(buckets.length, 15);
-      expect(buckets.first.label, '1');
-      expect(buckets.last.label, '29');
-      expect(buckets.first.amount, 200);
-      expect(buckets.last.amount, 100);
-      expect(buckets.fold<int>(0, (sum, b) => sum + b.amount), 2900);
-    });
-
-    test('tanpa data menghasilkan daftar kosong', () {
-      final range = DateRange(
-        start: DateTime(2026, 9, 1),
-        end: DateTime(2026, 9, 29),
-      );
-      expect(_service.trendBuckets(points: const [], range: range), isEmpty);
     });
   });
 }

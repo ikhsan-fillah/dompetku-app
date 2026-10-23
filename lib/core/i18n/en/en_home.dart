@@ -5,6 +5,11 @@ const Map<String, String> enHome = {
   'Urut dari terbesar ke terkecil · ketuk untuk detail':
       'Largest to smallest · tap for details',
   'Tren pengeluaran': 'Spending trend',
+  'Rata-rata @amount per hari': 'Average @amount per day',
+  'Ketuk batang': 'Tap a bar',
+  'Total · @elapsed dari @days hari': 'Total · @elapsed of @days days',
+  'Total · @days hari': 'Total · @days days',
+  '@date · @amount': '@date · @amount',
   'Kategori favorit': 'Favorite categories',
   'Tidak ada transaksi pada periode ini. Coba pilih periode lain.':
       'No transactions in this period. Try another period.',
