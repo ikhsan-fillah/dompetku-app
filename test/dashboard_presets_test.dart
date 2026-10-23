@@ -19,6 +19,9 @@ class _Transactions implements TransactionRepository {
   Future<List<TransactionModel>> getAll({DateRange? range}) async => items;
 
   @override
+  Future<int> count({DateRange? range}) async => items.length;
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

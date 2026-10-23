@@ -94,9 +94,14 @@ class DashboardController extends GetxController {
     }
     try {
       final selected = range.value;
-      final transactions = await _transactions.getAll();
+      // Hanya periode terpilih dan periode pembandingnya yang dibaca.
+      final comparison = selected.previousEquivalentPeriod;
+      final transactions = await _transactions.getAll(
+        range: DateRange(start: comparison.start, end: selected.end),
+      );
+      final totalCount = await _transactions.count();
       if (requestId != _requestId) return;
-      hasAnyTransactions.value = transactions.isNotEmpty;
+      hasAnyTransactions.value = totalCount > 0;
       final current = transactions
           .where((item) => selected.contains(item.transactionDate))
           .toList();

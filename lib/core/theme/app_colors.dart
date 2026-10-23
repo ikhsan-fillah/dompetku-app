@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-/// Token warna "Paper & Ink" (DOMPETKU_DESIGN_SPEC_v3 §2.1). Hanya light mode.
+/// Token warna "Paper & Ink" (README bagian 5). Hanya light mode.
 abstract final class AppColors {
   static const paper = Color(0xFFF4EFE4);
   static const paper2 = Color(0xFFEBE4D4);

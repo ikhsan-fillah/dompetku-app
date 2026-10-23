@@ -19,6 +19,7 @@ class ReportData {
     this.topMerchantCount = 0,
     this.dailySpending = const [],
     this.previousExpense = 0,
+    this.isEmpty = false,
   });
 
   final DashboardSummaryModel summary;
@@ -33,6 +34,10 @@ class ReportData {
   /// Pengeluaran per hari, dimulai dari hari pertama rentang.
   final List<int> dailySpending;
   final int previousExpense;
+
+  /// Tidak ada transaksi sama sekali pada periode. Laporan tetap tampil
+  /// dengan isi kosong, bukan pesan saja.
+  final bool isEmpty;
 }
 
 class ReportCategoryTotal {
@@ -98,17 +103,22 @@ class ReportController extends GetxController {
     range.value = selectedRange;
     state.value = const ResourceState.loading();
     try {
-      final transactions = await _transactions.getAll();
-      final currentTransactions = transactions
-          .where(
-            (transaction) =>
-                selectedRange.contains(transaction.transactionDate),
-          )
-          .toList();
-      if (currentTransactions.isEmpty) {
-        state.value = const ResourceState.empty();
-        return;
-      }
+      // Hanya periode terpilih dan pembandingnya yang dibaca dari database.
+      final comparison =
+          previousRange ?? selectedRange.previousEquivalentPeriod;
+      final transactions = await _transactions.getAll(
+        range: DateRange(
+          start: comparison.start.isBefore(selectedRange.start)
+              ? comparison.start
+              : selectedRange.start,
+          end: comparison.end.isAfter(selectedRange.end)
+              ? comparison.end
+              : selectedRange.end,
+        ),
+      );
+      final isEmpty = !transactions.any(
+        (transaction) => selectedRange.contains(transaction.transactionDate),
+      );
 
       final categories = await _categories.getAll(includeArchived: true);
       final categoriesById = {
@@ -166,6 +176,7 @@ class ReportController extends GetxController {
               ? (summary.expense == 0 ? 0 : 1)
               : (summary.expense - previousExpense) / previousExpense,
           previousExpense: previousExpense,
+          isEmpty: isEmpty,
           dailySpending: dailySpending,
           dailyAverage: _calculations.dailyAverage(transactions, selectedRange),
           highestSpendingDay: highDay,

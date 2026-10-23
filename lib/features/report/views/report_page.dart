@@ -141,6 +141,7 @@ class _Summary extends StatelessWidget {
                 ),
               const SizedBox(height: 16),
               _ChangeInsight(
+                isEmptyMonth: data.isEmpty,
                 change: data.expenseChange,
                 hasPrevious: data.previousExpense > 0,
                 isCurrentMonth: isCurrentMonth,
@@ -161,31 +162,23 @@ class _Summary extends StatelessWidget {
           const SizedBox(height: 14),
           _BudgetRemaining(value: money(remaining), negative: remaining < 0),
         ],
-        if (data.dailySpending.any((value) => value > 0)) ...[
-          const SizedBox(height: 14),
-          _SectionCard(
-            title: 'Pengeluaran harian'.tr,
-            child: DailySpendingBars(
-              values: data.dailySpending,
-              start: start,
-              money: money,
-            ),
-          ),
-        ],
-        if (data.dailyAverage > 0 ||
-            data.highestSpendingDay != null ||
-            data.topMerchant != null) ...[
-          const SizedBox(height: 14),
-          _SpendingStats(data: data, money: money),
-        ],
-        if (data.expensesByCategory.isNotEmpty) ...[
-          const SizedBox(height: 14),
-          _CategoryBreakdown(
-            items: data.expensesByCategory,
-            total: summary.expense,
+        const SizedBox(height: 14),
+        _SectionCard(
+          title: 'Pengeluaran harian'.tr,
+          child: DailySpendingBars(
+            values: data.dailySpending,
+            start: start,
             money: money,
           ),
-        ],
+        ),
+        const SizedBox(height: 14),
+        _SpendingStats(data: data, money: money),
+        const SizedBox(height: 14),
+        _CategoryBreakdown(
+          items: data.expensesByCategory,
+          total: summary.expense,
+          money: money,
+        ),
       ],
     );
   }
@@ -217,13 +210,16 @@ class _ChangeInsight extends StatelessWidget {
     required this.change,
     required this.hasPrevious,
     required this.isCurrentMonth,
+    required this.isEmptyMonth,
   });
 
+  final bool isEmptyMonth;
   final double change;
   final bool hasPrevious;
   final bool isCurrentMonth;
 
   String _message() {
+    if (isEmptyMonth) return 'Belum ada transaksi pada bulan ini'.tr;
     if (!hasPrevious) {
       return 'Belum ada pengeluaran bulan lalu sebagai pembanding.'.tr;
     }
@@ -248,7 +244,7 @@ class _ChangeInsight extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final neutral = !hasPrevious || change.abs() < 0.005;
+    final neutral = isEmptyMonth || !hasPrevious || change.abs() < 0.005;
     final decreased = change < 0;
     final background = neutral
         ? AppColors.paper2
@@ -353,31 +349,29 @@ class _SpendingStats extends StatelessWidget {
     title: 'Statistik pengeluaran'.tr,
     child: Column(
       children: [
-        if (data.dailyAverage > 0)
-          _StatRow(
-            icon: LucideIcons.calculator,
-            label: 'Rata-rata harian'.tr,
-            value: '@amount / hari'.trParams({
-              'amount': money(data.dailyAverage.round()),
-            }),
-          ),
-        if (data.highestSpendingDay != null) ...[
-          if (data.dailyAverage > 0) const SizedBox(height: 12),
-          _StatRow(
-            icon: LucideIcons.calendarX,
-            label: 'Hari pengeluaran terbesar'.tr,
-            value:
-                '${_dayLabel(data.highestSpendingDay!)} · ${money(data.highestSpendingDayAmount)}',
-          ),
-        ],
-        if (data.topMerchant != null) ...[
-          const SizedBox(height: 12),
-          _StatRow(
-            icon: LucideIcons.store,
-            label: 'Merchant teratas'.tr,
-            value: '${data.topMerchant} · ${data.topMerchantCount}x',
-          ),
-        ],
+        _StatRow(
+          icon: LucideIcons.calculator,
+          label: 'Rata-rata harian'.tr,
+          value: '@amount / hari'.trParams({
+            'amount': money(data.dailyAverage.round()),
+          }),
+        ),
+        const SizedBox(height: 12),
+        _StatRow(
+          icon: LucideIcons.calendarX,
+          label: 'Hari pengeluaran terbesar'.tr,
+          value: data.highestSpendingDay == null
+              ? '—'
+              : '${_dayLabel(data.highestSpendingDay!)} · ${money(data.highestSpendingDayAmount)}',
+        ),
+        const SizedBox(height: 12),
+        _StatRow(
+          icon: LucideIcons.store,
+          label: 'Merchant teratas'.tr,
+          value: data.topMerchant == null
+              ? '—'
+              : '${data.topMerchant} · ${data.topMerchantCount}x',
+        ),
       ],
     ),
   );
@@ -446,6 +440,17 @@ class _CategoryBreakdown extends StatelessWidget {
     title: 'Rincian pengeluaran'.tr,
     child: Column(
       children: [
+        if (items.isEmpty)
+          Padding(
+            padding: const EdgeInsets.symmetric(vertical: 4),
+            child: Align(
+              alignment: Alignment.centerLeft,
+              child: Text(
+                'Belum ada pengeluaran pada bulan ini.'.tr,
+                style: AppText.body(size: 12, color: AppColors.ink2),
+              ),
+            ),
+          ),
         for (var index = 0; index < items.length; index++) ...[
           _CategoryRow(item: items[index], total: total, money: money),
           if (index < items.length - 1) const SizedBox(height: 14),

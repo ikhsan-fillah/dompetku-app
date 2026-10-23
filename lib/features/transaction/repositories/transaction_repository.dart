@@ -65,4 +65,10 @@ abstract interface class TransactionRepository {
   Future<void> delete(int id);
   Future<List<TransactionModel>> getByCategory(int categoryId);
   Future<int> getTotal({required TransactionType type, DateRange? range});
+
+  /// Jumlah transaksi, opsional pada [range] (hari kalender lokal).
+  Future<int> count({DateRange? range});
+
+  /// Waktu transaksi paling awal, atau null bila belum ada.
+  Future<DateTime?> firstTransactionDate();
 }

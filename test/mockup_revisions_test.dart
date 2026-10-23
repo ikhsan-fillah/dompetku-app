@@ -96,6 +96,13 @@ class _FakeCategoryRepository implements CategoryRepository {
 }
 
 class _FakeTransactionRepository implements TransactionRepository {
+  @override
+  Future<int> count({DateRange? range}) async => inserted.length;
+
+  @override
+  Future<DateTime?> firstTransactionDate() async =>
+      inserted.isEmpty ? null : inserted.first.transactionDate;
+
   final List<TransactionModel> inserted = [];
 
   @override

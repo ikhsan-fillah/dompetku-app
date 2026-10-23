@@ -42,6 +42,13 @@ class TransactionRepositoryImpl
   }
 
   @override
+  Future<int> count({DateRange? range}) => _dataSource.count(range: range);
+
+  @override
+  Future<DateTime?> firstTransactionDate() =>
+      _dataSource.firstTransactionDate();
+
+  @override
   Future<List<TransactionModel>> getPage(TransactionPageRequest request) =>
       _dataSource.getPage(request);
 

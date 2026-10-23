@@ -135,7 +135,15 @@ void main() {
     final previous = DateTime(now.year, now.month - 1);
     expect(Get.find<ReportController>().month.value, previous);
     expect(find.text(AppLanguage.monthLong(previous.month)), findsOneWidget);
+    // Bulan kosong tetap menampilkan semua kartu, bukan hanya pesan.
     expect(find.text('Belum ada transaksi pada bulan ini'), findsOneWidget);
+    expect(find.byType(SpendingRing), findsOneWidget);
+    expect(find.byType(IncomeExpenseBars), findsOneWidget);
+    expect(find.byType(DailySpendingBars), findsOneWidget);
+    expect(find.text('Statistik pengeluaran'), findsOneWidget);
+    expect(find.text('Rincian pengeluaran'), findsOneWidget);
+    expect(find.text('Belum ada pengeluaran pada bulan ini.'), findsOneWidget);
+    expect(find.text('Muat ulang'), findsNothing);
   });
 
   testWidgets('tidak overflow di layar sempit', (tester) async {
