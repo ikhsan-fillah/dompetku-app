@@ -7,4 +7,5 @@ abstract interface class BudgetRepository {
   Future<void> update(BudgetModel budget);
   Future<void> archive(int id);
   Future<void> restore(int id);
+  Future<void> delete(int id);
 }

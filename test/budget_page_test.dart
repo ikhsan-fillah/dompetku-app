@@ -17,10 +17,17 @@ class _Budgets implements BudgetRepository {
   _Budgets(this.items);
 
   final List<BudgetModel> items;
+  final deleted = <int>[];
 
   @override
   Future<List<BudgetModel>> getAll({bool includeArchived = false}) async =>
       items.where((budget) => !budget.isArchived).toList();
+
+  @override
+  Future<void> delete(int id) async {
+    deleted.add(id);
+    items.removeWhere((budget) => budget.id == id);
+  }
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
@@ -124,30 +131,62 @@ void main() {
       expect(find.textContaining('Food & Drink'), findsOneWidget);
     });
 
-    testWidgets('hanya 3 anggaran tampil, sisanya lewat Lihat semua', (
-      tester,
-    ) async {
+    testWidgets('semua anggaran tampil walau lebih dari 3', (tester) async {
       await open(tester, [
         for (var i = 1; i <= 5; i++) _budget(i, 'Anggaran $i'),
       ]);
 
-      expect(find.textContaining('Food & Drink'), findsNWidgets(3));
-      expect(find.text('Lihat semua (5)'), findsOneWidget);
-
-      await tester.ensureVisible(find.text('Lihat semua (5)'));
-      await tester.tap(find.text('Lihat semua (5)'));
-      await tester.pumpAndSettle();
-
-      expect(find.text('Tampilkan lebih sedikit'), findsOneWidget);
       expect(find.textContaining('Food & Drink'), findsNWidgets(5));
+      expect(find.textContaining('Lihat semua'), findsNothing);
     });
 
-    testWidgets('3 anggaran atau kurang tidak punya tombol Lihat semua', (
-      tester,
-    ) async {
-      await open(tester, [for (var i = 1; i <= 3; i++) _budget(i, 'A$i')]);
+    testWidgets('anggaran bisa dihapus setelah konfirmasi', (tester) async {
+      final repository = _Budgets([_budget(1, 'makan'), _budget(2, 'jajan')]);
+      Get.put(BudgetController(repository, categories: _Categories()));
+      await tester.pumpWidget(
+        GetMaterialApp(
+          theme: AppTheme.light,
+          home: const Scaffold(body: BudgetPage()),
+        ),
+      );
+      await tester.runAsync(pumpEventQueue);
+      await tester.pumpAndSettle();
 
-      expect(find.textContaining('Lihat semua'), findsNothing);
+      await tester.tap(find.text('makan'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hapus'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hapus anggaran?'), findsOneWidget);
+      await tester.tap(find.text('Hapus'));
+      await tester.runAsync(pumpEventQueue);
+      await tester.pumpAndSettle();
+
+      expect(repository.deleted, [1]);
+      expect(find.text('makan'), findsNothing);
+      expect(find.text('jajan'), findsOneWidget);
+    });
+
+    testWidgets('batal di konfirmasi tidak menghapus', (tester) async {
+      final repository = _Budgets([_budget(1, 'makan')]);
+      Get.put(BudgetController(repository, categories: _Categories()));
+      await tester.pumpWidget(
+        GetMaterialApp(
+          theme: AppTheme.light,
+          home: const Scaffold(body: BudgetPage()),
+        ),
+      );
+      await tester.runAsync(pumpEventQueue);
+      await tester.pumpAndSettle();
+
+      await tester.tap(find.text('makan'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Hapus'));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Batal'));
+      await tester.pumpAndSettle();
+
+      expect(repository.deleted, isEmpty);
+      expect(find.text('makan'), findsOneWidget);
     });
   });
 }

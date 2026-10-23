@@ -20,6 +20,7 @@ import '../../../core/i18n/app_language.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
 import '../services/budget_list_service.dart';
+import '../widgets/confirm_delete_budget.dart';
 
 class BudgetPage extends GetView<BudgetController> {
   const BudgetPage({super.key});
@@ -152,6 +153,21 @@ class BudgetPage extends GetView<BudgetController> {
                 _confirmArchive(context, item);
               },
             ),
+            ListTile(
+              leading: const Icon(
+                LucideIcons.trash2,
+                size: 18,
+                color: AppColors.spend,
+              ),
+              title: Text(
+                'Hapus'.tr,
+                style: AppText.body(size: 14, color: AppColors.spend),
+              ),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                confirmDeleteBudget(context, controller, item);
+              },
+            ),
           ],
         ),
       ),
@@ -164,10 +180,6 @@ class BudgetPage extends GetView<BudgetController> {
 
   List<Widget> _sections(BuildContext context) {
     final items = controller.visibleItems;
-    final collapsible = items.length > BudgetController.collapsedCount;
-    final shown = collapsible && !controller.showAll.value
-        ? items.take(BudgetController.collapsedCount).toList()
-        : items;
     final totals = _totals(items);
     final level = BudgetStatus.levelFor(
       BudgetStatus.percentUsed(used: totals.used, limit: totals.limit),
@@ -186,34 +198,13 @@ class BudgetPage extends GetView<BudgetController> {
               'Per kategori'.tr,
               style: AppText.body(size: 13, weight: FontWeight.w700),
             ),
-            for (var i = 0; i < shown.length; i++)
+            for (var i = 0; i < items.length; i++)
               _BudgetRow(
-                item: shown[i],
+                item: items[i],
                 money: _money,
-                categoryName: _categoryName(shown[i]),
-                last: i == shown.length - 1 && !collapsible,
-                onTap: () => _showActions(context, shown[i]),
-              ),
-            if (collapsible)
-              Align(
-                alignment: Alignment.centerLeft,
-                child: TextButton(
-                  onPressed: controller.toggleShowAll,
-                  style: TextButton.styleFrom(
-                    foregroundColor: AppColors.ink,
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    minimumSize: const Size(0, 36),
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    controller.showAll.value
-                        ? 'Tampilkan lebih sedikit'.tr
-                        : 'Lihat semua (@count)'.trParams({
-                            'count': '${items.length}',
-                          }),
-                    style: AppText.body(size: 12.5, weight: FontWeight.w700),
-                  ),
-                ),
+                categoryName: _categoryName(items[i]),
+                last: i == items.length - 1,
+                onTap: () => _showActions(context, items[i]),
               ),
           ],
         ),

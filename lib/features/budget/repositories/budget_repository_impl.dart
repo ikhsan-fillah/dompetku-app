@@ -26,4 +26,7 @@ class BudgetRepositoryImpl implements BudgetRepository {
 
   @override
   Future<void> restore(int id) => _dataSource.restore(id);
+
+  @override
+  Future<void> delete(int id) => _dataSource.delete(id);
 }

@@ -11,6 +11,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/category_icon_box.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
+import '../widgets/confirm_delete_budget.dart';
 
 /// Layar daftar anggaran terarsip dengan opsi pulihkan.
 class BudgetArchivePage extends StatefulWidget {
@@ -140,6 +141,11 @@ class _BudgetArchivePageState extends State<BudgetArchivePage> {
                       item: current.data![index],
                       money: _money,
                       onRestore: () => _confirmRestore(current.data![index]),
+                      onDelete: () => confirmDeleteBudget(
+                        context,
+                        controller,
+                        current.data![index],
+                      ),
                     ),
                   ),
                 ),
@@ -157,11 +163,13 @@ class _ArchivedCard extends StatelessWidget {
     required this.item,
     required this.money,
     required this.onRestore,
+    required this.onDelete,
   });
 
   final BudgetViewModel item;
   final String Function(int) money;
   final VoidCallback onRestore;
+  final VoidCallback onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -210,6 +218,15 @@ class _ArchivedCard extends StatelessWidget {
             icon: const Icon(LucideIcons.undo2, size: 16),
             label: Text('Pulihkan'.tr),
             style: TextButton.styleFrom(foregroundColor: AppColors.ink),
+          ),
+          IconButton(
+            tooltip: 'Hapus'.tr,
+            onPressed: onDelete,
+            icon: const Icon(
+              LucideIcons.trash2,
+              size: 18,
+              color: AppColors.spend,
+            ),
           ),
         ],
       ),

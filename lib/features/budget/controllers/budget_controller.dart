@@ -19,16 +19,12 @@ class BudgetController extends GetxController {
   }) : _transactions = transactions,
        _categories = categories;
 
-  /// Jumlah anggaran yang tampil sebelum "Lihat semua" dibuka.
-  static const collapsedCount = 3;
-
   final BudgetRepository _repository;
   final TransactionRepository? _transactions;
   final CategoryRepository? _categories;
   final state = const ResourceState<List<BudgetViewModel>>.idle().obs;
   final archived = const ResourceState<List<BudgetViewModel>>.idle().obs;
   final sort = BudgetSort.persentaseTerpakaiTertinggi.obs;
-  final showAll = false.obs;
 
   /// Nama tampil kategori menurut id, untuk judul baris anggaran.
   final categoryNames = <int, String>{}.obs;
@@ -73,8 +69,6 @@ class BudgetController extends GetxController {
           : null);
 
   void setSort(BudgetSort value) => sort.value = value;
-
-  void toggleShowAll() => showAll.value = !showAll.value;
 
   Future<void> _loadCategoryNames() async {
     final repository = _categoryRepository;
@@ -182,6 +176,22 @@ class BudgetController extends GetxController {
       return true;
     } catch (_) {
       state.value = ResourceState.error('Gagal mengarsipkan anggaran.'.tr);
+      return false;
+    }
+  }
+
+  /// Menghapus anggaran permanen, baik yang aktif maupun yang terarsip.
+  Future<bool> delete(int id) async {
+    try {
+      await _repository.delete(id);
+      if (Get.isRegistered<DataRefreshService>()) {
+        Get.find<DataRefreshService>().bump();
+      } else {
+        await load(silent: true);
+      }
+      return true;
+    } catch (_) {
+      state.value = ResourceState.error('Gagal menghapus anggaran.'.tr);
       return false;
     }
   }

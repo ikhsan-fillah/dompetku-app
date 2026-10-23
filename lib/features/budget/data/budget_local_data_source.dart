@@ -63,4 +63,15 @@ class BudgetLocalDataSource {
   Future<void> archive(int id) => _setArchived(id, true);
 
   Future<void> restore(int id) => _setArchived(id, false);
+
+  /// Menghapus anggaran permanen. Transaksi tidak ikut terhapus karena tidak
+  /// ada yang merujuk ke tabel anggaran.
+  Future<void> delete(int id) async {
+    final database = await _appDatabase.database;
+    await database.delete(
+      DatabaseTables.budgets,
+      where: '${DatabaseColumns.id} = ?',
+      whereArgs: [id],
+    );
+  }
 }
