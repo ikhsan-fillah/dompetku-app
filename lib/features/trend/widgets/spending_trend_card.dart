@@ -426,6 +426,11 @@ class _BubbleLayout extends SingleChildLayoutDelegate {
   final double centerX;
   final double barTop;
 
+  // Tanpa ini gelembung ikut memenuhi seluruh grafik (batasnya ketat).
+  @override
+  BoxConstraints getConstraintsForChild(BoxConstraints constraints) =>
+      constraints.loosen();
+
   @override
   Offset getPositionForChild(Size size, Size childSize) {
     final maxLeft = size.width - childSize.width;
