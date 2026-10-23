@@ -164,6 +164,23 @@ void main() {
                 .decoration
             as BoxDecoration;
 
+    final chipBox = tester.getSize(
+      find
+          .descendant(
+            of: find.byType(SortChip<_Order>),
+            matching: find.byType(Container),
+          )
+          .last,
+    );
+    final buttonBox = tester.getSize(
+      find.descendant(
+        of: find.byType(AppBarIconButton),
+        matching: find.byType(DecoratedBox),
+      ),
+    );
+
+    expect(buttonBox, const Size(38, 38));
+    expect(buttonBox.height, chipBox.height);
     expect(chip.border, button.border);
     expect(chip.color, button.color);
     expect(chip.borderRadius, button.borderRadius);

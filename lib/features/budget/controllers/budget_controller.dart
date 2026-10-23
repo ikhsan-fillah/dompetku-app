@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../../../core/services/data_refresh_service.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/utils/date_range.dart';
+import '../../category/repositories/category_repository.dart';
 import '../../transaction/models/transaction_model.dart';
 import '../../transaction/repositories/transaction_repository.dart';
 import '../models/budget_model.dart';
@@ -11,14 +12,26 @@ import '../repositories/budget_repository.dart';
 import '../services/budget_list_service.dart';
 
 class BudgetController extends GetxController {
-  BudgetController(this._repository, {TransactionRepository? transactions})
-    : _transactions = transactions;
+  BudgetController(
+    this._repository, {
+    TransactionRepository? transactions,
+    CategoryRepository? categories,
+  }) : _transactions = transactions,
+       _categories = categories;
+
+  /// Jumlah anggaran yang tampil sebelum "Lihat semua" dibuka.
+  static const collapsedCount = 3;
 
   final BudgetRepository _repository;
   final TransactionRepository? _transactions;
+  final CategoryRepository? _categories;
   final state = const ResourceState<List<BudgetViewModel>>.idle().obs;
   final archived = const ResourceState<List<BudgetViewModel>>.idle().obs;
   final sort = BudgetSort.persentaseTerpakaiTertinggi.obs;
+  final showAll = false.obs;
+
+  /// Nama tampil kategori menurut id, untuk judul baris anggaran.
+  final categoryNames = <int, String>{}.obs;
   final _listService = const BudgetListService();
 
   List<BudgetViewModel> get visibleItems => _listService.sort(
@@ -53,7 +66,29 @@ class BudgetController extends GetxController {
     super.onClose();
   }
 
+  CategoryRepository? get _categoryRepository =>
+      _categories ??
+      (Get.isRegistered<CategoryRepository>()
+          ? Get.find<CategoryRepository>()
+          : null);
+
   void setSort(BudgetSort value) => sort.value = value;
+
+  void toggleShowAll() => showAll.value = !showAll.value;
+
+  Future<void> _loadCategoryNames() async {
+    final repository = _categoryRepository;
+    if (repository == null) return;
+    try {
+      final all = await repository.getAll(includeArchived: true);
+      categoryNames.assignAll({
+        for (final category in all)
+          if (category.id != null) category.id!: category.displayName,
+      });
+    } catch (_) {
+      // Tanpa nama kategori judul baris memakai nama anggaran saja.
+    }
+  }
 
   Future<void> load({bool silent = false}) async {
     final requestId = ++_requestId;
@@ -64,6 +99,7 @@ class BudgetController extends GetxController {
       await loadArchived();
     }
     try {
+      await _loadCategoryNames();
       final budgets = await _repository.getAll();
       final transactions = await _loadTransactions(budgets);
       if (requestId != _requestId) return;
@@ -85,6 +121,7 @@ class BudgetController extends GetxController {
       archived.value = const ResourceState.loading();
     }
     try {
+      await _loadCategoryNames();
       final all = await _repository.getAll(includeArchived: true);
       final budgets = all.where((budget) => budget.isArchived).toList();
       final transactions = await _loadTransactions(budgets);

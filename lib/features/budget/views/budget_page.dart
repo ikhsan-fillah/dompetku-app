@@ -9,13 +9,11 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/budget_status.dart';
 import '../../../core/widgets/app_bar_icon_button.dart';
-import '../../../core/widgets/app_chip.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_page_header.dart';
 import '../../../core/widgets/app_progress_bar.dart';
 import '../../../core/widgets/budget_level_style.dart';
-import '../../../core/widgets/category_icon_box.dart';
 import '../../../core/widgets/sort_chip.dart';
 import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../../../core/i18n/app_language.dart';
@@ -123,8 +121,53 @@ class BudgetPage extends GetView<BudgetController> {
     ),
   );
 
+  Future<void> _showActions(BuildContext context, BudgetViewModel item) {
+    final title = item.labelsFor(_categoryName(item)).title;
+    return showModalBottomSheet<void>(
+      context: context,
+      backgroundColor: AppColors.card,
+      showDragHandle: true,
+      builder: (sheetContext) => SafeArea(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
+              child: Text(title, style: AppText.display(size: 20)),
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.pencil, size: 18),
+              title: Text('Edit'.tr, style: AppText.body(size: 14)),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _openForm(item);
+              },
+            ),
+            ListTile(
+              leading: const Icon(LucideIcons.archive, size: 18),
+              title: Text('Arsipkan'.tr, style: AppText.body(size: 14)),
+              onTap: () {
+                Navigator.of(sheetContext).pop();
+                _confirmArchive(context, item);
+              },
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  String? _categoryName(BudgetViewModel item) => item.isOverall
+      ? 'Total'.tr
+      : controller.categoryNames[item.budget.categoryId];
+
   List<Widget> _sections(BuildContext context) {
     final items = controller.visibleItems;
+    final collapsible = items.length > BudgetController.collapsedCount;
+    final shown = collapsible && !controller.showAll.value
+        ? items.take(BudgetController.collapsedCount).toList()
+        : items;
     final totals = _totals(items);
     final level = BudgetStatus.levelFor(
       BudgetStatus.percentUsed(used: totals.used, limit: totals.limit),
@@ -143,13 +186,34 @@ class BudgetPage extends GetView<BudgetController> {
               'Per kategori'.tr,
               style: AppText.body(size: 13, weight: FontWeight.w700),
             ),
-            for (var i = 0; i < items.length; i++)
+            for (var i = 0; i < shown.length; i++)
               _BudgetRow(
-                item: items[i],
+                item: shown[i],
                 money: _money,
-                last: i == items.length - 1,
-                onEdit: () => _openForm(items[i]),
-                onArchive: () => _confirmArchive(context, items[i]),
+                categoryName: _categoryName(shown[i]),
+                last: i == shown.length - 1 && !collapsible,
+                onTap: () => _showActions(context, shown[i]),
+              ),
+            if (collapsible)
+              Align(
+                alignment: Alignment.centerLeft,
+                child: TextButton(
+                  onPressed: controller.toggleShowAll,
+                  style: TextButton.styleFrom(
+                    foregroundColor: AppColors.ink,
+                    padding: const EdgeInsets.symmetric(vertical: 8),
+                    minimumSize: const Size(0, 36),
+                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                  ),
+                  child: Text(
+                    controller.showAll.value
+                        ? 'Tampilkan lebih sedikit'.tr
+                        : 'Lihat semua (@count)'.trParams({
+                            'count': '${items.length}',
+                          }),
+                    style: AppText.body(size: 12.5, weight: FontWeight.w700),
+                  ),
+                ),
               ),
           ],
         ),
@@ -396,30 +460,33 @@ class _ThresholdBanner extends StatelessWidget {
 String _date(DateTime value) =>
     '${value.day.toString().padLeft(2, '0')}/${value.month.toString().padLeft(2, '0')}';
 
-String _categoryLabel(BudgetViewModel item) {
-  if (item.isOverall) return 'Total'.tr;
-  final name = item.budget.name;
-  for (final prefix in const ['Anggaran ', 'Budget ']) {
-    if (name.startsWith(prefix)) return name.substring(prefix.length);
+String _plain(int value) {
+  final digits = value.abs().toString();
+  final buffer = StringBuffer(value < 0 ? '-' : '');
+  for (var i = 0; i < digits.length; i++) {
+    if (i > 0 && (digits.length - i) % 3 == 0) buffer.write('.');
+    buffer.write(digits[i]);
   }
-  return name;
+  return buffer.toString();
 }
 
-/// Baris anggaran di dalam kartu "Per kategori".tr (spec §3.26).
+/// Baris anggaran di dalam kartu "Per kategori".tr: satu judul, persen di
+/// kanan, lalu periode dan status, bar, dan pemakaian. Ketuk untuk Edit atau
+/// Arsipkan.
 class _BudgetRow extends StatelessWidget {
   const _BudgetRow({
     required this.item,
     required this.money,
+    required this.categoryName,
     required this.last,
-    required this.onEdit,
-    required this.onArchive,
+    required this.onTap,
   });
 
   final BudgetViewModel item;
   final String Function(int) money;
+  final String? categoryName;
   final bool last;
-  final VoidCallback onEdit;
-  final VoidCallback onArchive;
+  final VoidCallback onTap;
 
   @override
   Widget build(BuildContext context) {
@@ -439,120 +506,82 @@ class _BudgetRow extends StatelessWidget {
         'amount': money(-item.remaining),
       }),
     };
+    final labels = item.labelsFor(categoryName);
     final period =
         '${_date(item.budget.startDate)} – ${_date(item.budget.endDate)}';
+    final subtitle = [
+      if (labels.category != null) labels.category!,
+      period,
+      status,
+    ].join(' · ');
     final note = item.budget.note?.trim();
 
-    return Container(
-      padding: const EdgeInsets.symmetric(vertical: 12),
-      decoration: last
-          ? null
-          : const BoxDecoration(
-              border: Border(bottom: BorderSide(color: AppColors.line2)),
-            ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          CategoryIconBox(
-            icon: item.isOverall ? LucideIcons.wallet : LucideIcons.layers,
-            color: AppColors.ink,
-          ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
+    return InkWell(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(vertical: 12),
+        decoration: last
+            ? null
+            : const BoxDecoration(
+                border: Border(bottom: BorderSide(color: AppColors.line2)),
+              ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
               children: [
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        item.budget.name,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.body(
-                          size: 12.5,
-                          weight: FontWeight.w700,
-                        ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    StatusPill(
-                      label: level.label,
-                      background: level.background,
-                      foreground: level.foreground,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  '${_categoryLabel(item)} · $period',
-                  style: AppText.body(size: 10.5, color: AppColors.mut),
-                ),
-                const SizedBox(height: 8),
-                AppProgressBar(
-                  value: item.percent / 100,
-                  color: level.solid,
-                  height: 6,
-                ),
-                const SizedBox(height: 6),
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        '@used dari @limit'.trParams({
-                          'used': money(item.used),
-                          'limit': money(item.budget.amountLimit),
-                        }),
-                        style: AppText.mono(
-                          size: 11,
-                          weight: FontWeight.w400,
-                          color: AppColors.mut,
-                        ),
-                      ),
-                    ),
-                    Text(
-                      '$percentText%',
-                      style: AppText.mono(size: 11, color: level.foreground),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  status,
-                  style: AppText.body(size: 10.5, color: AppColors.ink2),
-                ),
-                if (note != null && note.isNotEmpty) ...[
-                  const SizedBox(height: 4),
-                  Text(
-                    item.budget.note!,
-                    maxLines: 2,
+                Expanded(
+                  child: Text(
+                    labels.title,
+                    maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: AppText.body(size: 11, color: AppColors.mut),
+                    style: AppText.body(size: 13.5, weight: FontWeight.w700),
                   ),
-                ],
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '$percentText%',
+                  style: AppText.mono(size: 12, color: level.foreground),
+                ),
               ],
             ),
-          ),
-          PopupMenuButton<String>(
-            icon: const Icon(
-              LucideIcons.ellipsis,
-              size: 18,
-              color: AppColors.mut,
+            const SizedBox(height: 2),
+            Text(
+              subtitle,
+              style: AppText.body(size: 10.5, color: AppColors.mut),
             ),
-            color: AppColors.card,
-            onSelected: (value) => value == 'edit' ? onEdit() : onArchive(),
-            itemBuilder: (_) => [
-              PopupMenuItem(
-                value: 'edit',
-                child: Text('Edit'.tr, style: AppText.body(size: 13)),
+            const SizedBox(height: 8),
+            AppProgressBar(
+              value: (item.percent / 100).clamp(0.0, 1.0).toDouble(),
+              color: level.solid,
+              height: 6,
+            ),
+            const SizedBox(height: 6),
+            Text(
+              '@used dari @limit'.trParams({
+                'used': _plain(item.used),
+                'limit': _plain(item.budget.amountLimit),
+              }),
+              style: AppText.mono(
+                size: 11,
+                weight: FontWeight.w400,
+                color: AppColors.mut,
               ),
-              PopupMenuItem(
-                value: 'archive',
-                child: Text('Arsipkan'.tr, style: AppText.body(size: 13)),
+            ),
+            if (note != null && note.isNotEmpty) ...[
+              const SizedBox(height: 4),
+              Text(
+                note,
+                maxLines: 2,
+                overflow: TextOverflow.ellipsis,
+                style: AppText.body(size: 11, color: AppColors.mut),
               ),
             ],
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

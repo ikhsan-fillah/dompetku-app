@@ -24,6 +24,8 @@ const Map<String, String> enBudget = {
   '@used dari @limit · keseluruhan': '@used of @limit · overall',
   'Arsipkan anggaran?': 'Archive budget?',
   'Per kategori': 'By category',
+  'Lihat semua (@count)': 'See all (@count)',
+  'Tampilkan lebih sedikit': 'Show less',
   'Sudah 75% terpakai': '75% used',
   'Masih ada waktu untuk mengatur ritme':
       'There is still time to adjust your pace',
