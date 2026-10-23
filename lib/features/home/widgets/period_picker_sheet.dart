@@ -43,6 +43,7 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
   static List<(DateRangePreset, String)> get _presets => [
     (DateRangePreset.today, 'Hari ini'.tr),
     (DateRangePreset.week, '1 Minggu'.tr),
+    (DateRangePreset.currentMonth, 'Bulan ini'.tr),
     (DateRangePreset.month, '1 Bulan'.tr),
     (DateRangePreset.threeMonths, '3 Bulan'.tr),
     (DateRangePreset.yearToDate, 'Tahun ini'.tr),

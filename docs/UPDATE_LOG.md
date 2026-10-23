@@ -112,4 +112,5 @@ Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelu
 
 - Rilis berisi perubahan sejak 1.1.3: tren pengeluaran bulanan, perbaikan isian nama profil, dan chip urutan senada tombol app bar.
 - Tren pengeluaran: gelembung hari terpilih tidak lagi membesar menutupi grafik; ukurannya mengikuti teksnya.
+- Beranda: baris chip periode (Hari ini, 1 Minggu, dst.) dihapus; periode dipilih lewat tombol tanggal di app bar. "Bulan ini" ditambahkan ke pemilih supaya tetap bisa dipilih kembali.
 
