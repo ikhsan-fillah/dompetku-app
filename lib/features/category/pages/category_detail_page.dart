@@ -12,6 +12,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_title_bar.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/category_icon_box.dart';
+import '../../../core/widgets/sort_chip.dart';
 import '../../transaction/models/transaction_model.dart';
 import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../controllers/category_detail_controller.dart';
@@ -62,26 +63,23 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                   style: AppText.display(size: 26),
                 ),
               ),
-              action: Obx(() {
-                final selectedSort = controller.sort.value;
-                return PopupMenuButton<CategoryTransactionSort>(
-                  tooltip: 'Urutkan transaksi'.tr,
-                  icon: const Icon(LucideIcons.arrowUpDown, size: 20),
+              // Chip urutan yang sama dengan Transaksi dan Anggaran.
+              action: Obx(
+                () => SortChip<CategoryTransactionSort>(
+                  value: controller.sort.value,
+                  options: CategoryTransactionSort.values,
+                  chipLabel: (sort) => switch (sort) {
+                    CategoryTransactionSort.newest => 'Terbaru'.tr,
+                    CategoryTransactionSort.oldest => 'Terlama'.tr,
+                  },
+                  menuLabel: (sort) => switch (sort) {
+                    CategoryTransactionSort.newest => 'Tanggal terbaru'.tr,
+                    CategoryTransactionSort.oldest => 'Tanggal terlama'.tr,
+                  },
                   onSelected: controller.setSort,
-                  itemBuilder: (context) => [
-                    CheckedPopupMenuItem(
-                      value: CategoryTransactionSort.newest,
-                      checked: selectedSort == CategoryTransactionSort.newest,
-                      child: Text('Tanggal terbaru'.tr),
-                    ),
-                    CheckedPopupMenuItem(
-                      value: CategoryTransactionSort.oldest,
-                      checked: selectedSort == CategoryTransactionSort.oldest,
-                      child: Text('Tanggal terlama'.tr),
-                    ),
-                  ],
-                );
-              }),
+                  tooltip: 'Urutkan transaksi'.tr,
+                ),
+              ),
             ),
             Expanded(
               child: Obx(() {
@@ -124,7 +122,9 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
         AppSpacing.page,
         120,
       ),
-      itemCount: groups.length + 2 + (controller.isLoadingMore.value ? 1 : 0),
+      // Indikator di bawah hanya saat halaman berikutnya sedang dimuat;
+      // sebelumnya selalu ada, jadi layar tampak memuat terus.
+      itemCount: groups.length + 1 + (controller.isLoadingMore.value ? 1 : 0),
       itemBuilder: (context, index) {
         if (index == 0) {
           return AppCard(
