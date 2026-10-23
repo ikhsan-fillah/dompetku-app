@@ -317,6 +317,15 @@ Kunci terjemahan adalah teks Indonesia (`'Laporan'.tr`); terjemahan Inggris ada 
 
 ## 9. Riwayat Versi
 
+### 1.1.5+8 (Oktober 2026)
+
+- **Dialog:** semua dialog konfirmasi dan isian memakai `AppDialog` dengan dua `AppButton` (Batal outline, aksi hitam atau merah).
+- **Laporan:** kartu Tren pemasukan (batang hijau per hari) mengikuti bulan Laporan.
+- **Kategori:** favorit maksimal 4 per jenis dan selalu di urutan atas; bintang terisi; arsip diganti hapus (transaksi pindah ke "Other", anggaran kategori itu ikut terhapus).
+- **Pemilih tanggal:** lembar kalender sendiri untuk satu tanggal, rentang kustom di Beranda, dan lompat bulan.
+- **Perbaikan:** kategori tampil saat pindah ke tab Anggaran di Catat Keuangan; jarak header Transaksi dan Anggaran sama dengan Beranda.
+- **Auto-detect:** tambah OVO, LinkAja, Livin' by Mandiri, BNI Mobile, BSI Mobile, blu by BCA, SeaBank, dan Jenius.
+
 ### 1.1.5+7 (Oktober 2026)
 
 - **Anggaran:** judul baris memakai nama kategori sebenarnya dan tidak lagi tampil dua kali; kartu "Per kategori" lebih bersih (persen di kanan, periode dan status satu baris, ketuk baris untuk Edit, Arsipkan, atau Hapus); semua anggaran tampil; anggaran bisa dihapus permanen (aktif maupun terarsip), transaksi tidak ikut terhapus.
