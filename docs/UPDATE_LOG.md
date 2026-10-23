@@ -111,3 +111,5 @@ Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelu
 ### 1.1.4+6 (Oktober 2026)
 
 - Rilis berisi perubahan sejak 1.1.3: tren pengeluaran bulanan, perbaikan isian nama profil, dan chip urutan senada tombol app bar.
+- Tren pengeluaran: gelembung hari terpilih tidak lagi membesar menutupi grafik; ukurannya mengikuti teksnya.
+

@@ -397,6 +397,24 @@ void main() {
       expect(find.text('12 Okt · Rp 220.000'), findsNothing);
     });
 
+    testWidgets('gelembung berukuran seperti teksnya, bukan seluruh grafik', (
+      tester,
+    ) async {
+      await open(tester);
+
+      await tester.tap(find.byKey(const ValueKey('trend-bar-11')));
+      await tester.pumpAndSettle();
+
+      final text = find.text('12 Okt · Rp 220.000');
+      final bubble = find
+          .ancestor(of: text, matching: find.byType(Container))
+          .first;
+      final size = tester.getSize(bubble);
+      expect(size.height, lessThan(40));
+      expect(size.width, lessThan(220));
+      expect(size.width, greaterThan(tester.getSize(text).width));
+    });
+
     testWidgets('batang hari yang belum berjalan tidak bisa dipilih', (
       tester,
     ) async {
