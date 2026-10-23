@@ -10,7 +10,7 @@ import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_progress_bar.dart';
 import '../../../core/widgets/app_title_bar.dart';
-import '../../trend/widgets/income_trend_card.dart';
+import '../../trend/widgets/report_trend_card.dart';
 import '../controllers/report_controller.dart';
 import '../widgets/report_visuals.dart';
 
@@ -92,7 +92,6 @@ class _ReportPageState extends State<ReportPage> {
                   onRefresh: controller.reload,
                   child: _Summary(
                     data: current.data!,
-                    start: controller.range.value.start,
                     isCurrentMonth: _isCurrentMonth(controller.month.value),
                     money: _money,
                   ),
@@ -109,13 +108,11 @@ class _ReportPageState extends State<ReportPage> {
 class _Summary extends StatelessWidget {
   const _Summary({
     required this.data,
-    required this.start,
     required this.isCurrentMonth,
     required this.money,
   });
 
   final ReportData data;
-  final DateTime start;
   final bool isCurrentMonth;
   final String Function(int) money;
 
@@ -161,8 +158,8 @@ class _Summary extends StatelessWidget {
         ),
         if (data.incomeTrend != null) ...[
           const SizedBox(height: 14),
-          IncomeTrendCard(
-            key: ValueKey(data.incomeTrend!.month),
+          ReportTrendCard(
+            key: ValueKey('income-${data.incomeTrend!.month}'),
             trend: data.incomeTrend!,
           ),
         ],
@@ -170,15 +167,13 @@ class _Summary extends StatelessWidget {
           const SizedBox(height: 14),
           _BudgetRemaining(value: money(remaining), negative: remaining < 0),
         ],
-        const SizedBox(height: 14),
-        _SectionCard(
-          title: 'Pengeluaran harian'.tr,
-          child: DailySpendingBars(
-            values: data.dailySpending,
-            start: start,
-            money: money,
+        if (data.spendingTrend != null) ...[
+          const SizedBox(height: 14),
+          ReportTrendCard(
+            key: ValueKey('spending-${data.spendingTrend!.month}'),
+            trend: data.spendingTrend!,
           ),
-        ),
+        ],
         const SizedBox(height: 14),
         _SpendingStats(data: data, money: money),
         const SizedBox(height: 14),

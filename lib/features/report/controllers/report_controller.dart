@@ -20,8 +20,8 @@ class ReportData {
     this.highestSpendingDayAmount = 0,
     this.topMerchant,
     this.topMerchantCount = 0,
-    this.dailySpending = const [],
     this.previousExpense = 0,
+    this.spendingTrend,
     this.incomeTrend,
     this.isEmpty = false,
   });
@@ -35,9 +35,10 @@ class ReportData {
   final String? topMerchant;
   final int topMerchantCount;
 
-  /// Pengeluaran per hari, dimulai dari hari pertama rentang.
-  final List<int> dailySpending;
   final int previousExpense;
+
+  /// Pengeluaran per hari pada bulan laporan, untuk kartu Tren pengeluaran.
+  final MonthlyTrend? spendingTrend;
 
   /// Pemasukan per hari pada bulan laporan, untuk kartu Tren pemasukan.
   final MonthlyTrend? incomeTrend;
@@ -158,22 +159,11 @@ class ReportController extends GetxController {
             previousRange ?? selectedRange.previousEquivalentPeriod,
           )
           .expense;
-      final dailyByDate = {
-        for (final point in _calculations.dailyExpenses(
-          transactions,
-          selectedRange,
-        ))
-          point.date: point.amount,
-      };
-      final dailySpending = [
-        for (var i = 0; i < selectedRange.dayCount; i++)
-          dailyByDate[DateTime(
-                selectedRange.start.year,
-                selectedRange.start.month,
-                selectedRange.start.day + i,
-              )] ??
-              0,
-      ];
+      final reportMonth = DateTime(
+        selectedRange.start.year,
+        selectedRange.start.month,
+      );
+      const trends = MonthlyTrendService();
 
       state.value = ResourceState.success(
         ReportData(
@@ -183,13 +173,13 @@ class ReportController extends GetxController {
               ? (summary.expense == 0 ? 0 : 1)
               : (summary.expense - previousExpense) / previousExpense,
           previousExpense: previousExpense,
-          incomeTrend: const MonthlyTrendService().build(
+          spendingTrend: trends.build(transactions, reportMonth),
+          incomeTrend: trends.build(
             transactions,
-            DateTime(selectedRange.start.year, selectedRange.start.month),
+            reportMonth,
             type: TransactionType.income,
           ),
           isEmpty: isEmpty,
-          dailySpending: dailySpending,
           dailyAverage: _calculations.dailyAverage(transactions, selectedRange),
           highestSpendingDay: highDay,
           highestSpendingDayAmount: highDayAmount,

@@ -1,52 +1,12 @@
 import 'package:dompetku_app/core/constant/domain_enums.dart';
-import 'package:dompetku_app/core/i18n/app_language.dart';
-import 'package:dompetku_app/core/i18n/app_translations.dart';
-import 'package:dompetku_app/core/services/data_refresh_service.dart';
 import 'package:dompetku_app/core/theme/app_theme.dart';
-import 'package:dompetku_app/core/utils/date_range.dart';
 import 'package:dompetku_app/features/transaction/models/transaction_model.dart';
-import 'package:dompetku_app/features/transaction/repositories/transaction_repository.dart';
-import 'package:dompetku_app/features/trend/controllers/spending_trend_controller.dart';
 import 'package:dompetku_app/features/trend/services/monthly_trend_service.dart';
-import 'package:dompetku_app/features/trend/widgets/spending_trend_card.dart';
+import 'package:dompetku_app/features/trend/models/monthly_trend.dart';
+import 'package:dompetku_app/features/trend/widgets/report_trend_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
-
-class _Transactions implements TransactionRepository {
-  _Transactions(this.items);
-
-  List<TransactionModel> items;
-  int getAllCalls = 0;
-  final queriedRanges = <DateRange?>[];
-
-  List<TransactionModel> _within(DateRange? range) => [
-    for (final item in items)
-      if (range == null || range.contains(item.transactionDate)) item,
-  ];
-
-  @override
-  Future<List<TransactionModel>> getAll({DateRange? range}) async {
-    getAllCalls++;
-    queriedRanges.add(range);
-    return _within(range);
-  }
-
-  @override
-  Future<int> count({DateRange? range}) async => _within(range).length;
-
-  @override
-  Future<DateTime?> firstTransactionDate() async {
-    if (items.isEmpty) return null;
-    return items
-        .map((item) => item.transactionDate)
-        .reduce((a, b) => a.isBefore(b) ? a : b);
-  }
-
-  @override
-  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
-}
 
 TransactionModel _tx(
   DateTime date,
@@ -214,171 +174,30 @@ void main() {
     });
   });
 
-  group('SpendingTrendController', () {
-    late _Transactions repository;
-
-    SpendingTrendController build() {
-      repository = _Transactions([
-        _tx(DateTime(2025, 2, 10), 50000),
-        _tx(DateTime(2026, 8, 4), 70000),
-        _tx(DateTime(2026, 10, 12), 220000),
-        _tx(DateTime(2026, 10, 1), 100000),
-      ]);
-      return Get.put(SpendingTrendController(repository, clock: () => _now));
-    }
-
-    tearDown(Get.reset);
-
-    test(
-      'hanya membaca satu bulan dari database, bukan semua transaksi',
-      () async {
-        final controller = build();
-        await pumpEventQueue();
-        await controller.previousMonth();
-
-        expect(repository.queriedRanges, isNotEmpty);
-        expect(
-          repository.queriedRanges.every((range) => range != null),
-          isTrue,
-        );
-        final last = repository.queriedRanges.last!;
-        expect(last.start, DateTime(2026, 8));
-        expect(last.end, DateTime(2026, 8, 31));
-      },
+  group('ReportTrendCard', () {
+    final trend = service.build(
+      [_tx(DateTime(2026, 10, 12), 220000), _tx(DateTime(2026, 10, 1), 100000)],
+      DateTime(2026, 10),
+      now: _now,
     );
 
-    test('mulai di bulan ini dan tidak bisa maju', () async {
-      final controller = build();
-      await pumpEventQueue();
-
-      expect(controller.month.value, DateTime(2026, 10));
-      expect(controller.canGoNext, isFalse);
-      expect(controller.canGoPrevious, isTrue);
-      expect(controller.trend.value!.total, 320000);
-    });
-
-    test('panah kiri melompati bulan tanpa transaksi', () async {
-      final controller = build();
-      await pumpEventQueue();
-
-      await controller.previousMonth();
-      expect(controller.month.value, DateTime(2026, 8));
-      expect(controller.trend.value!.daysInMonth, 31);
-
-      await controller.previousMonth();
-      expect(controller.month.value, DateTime(2025, 2));
-      expect(controller.trend.value!.daysInMonth, 28);
-      expect(controller.canGoPrevious, isFalse);
-    });
-
-    test('panah kanan kembali sampai bulan ini lalu berhenti', () async {
-      final controller = build();
-      await pumpEventQueue();
-      await controller.previousMonth();
-      await controller.previousMonth();
-
-      await controller.nextMonth();
-      await controller.nextMonth();
-      await controller.nextMonth();
-
-      expect(controller.month.value, DateTime(2026, 10));
-    });
-
-    test('mengetuk batang memilih, mengetuk lagi melepas', () async {
-      final controller = build();
-      await pumpEventQueue();
-
-      controller.selectDay(11);
-      expect(controller.selectedDay.value, 11);
-      controller.selectDay(11);
-      expect(controller.selectedDay.value, isNull);
-    });
-
-    test('hari yang belum berjalan tidak bisa dipilih', () async {
-      final controller = build();
-      await pumpEventQueue();
-
-      controller.selectDay(25);
-
-      expect(controller.selectedDay.value, isNull);
-    });
-
-    test('pindah bulan melepas pilihan hari', () async {
-      final controller = build();
-      await pumpEventQueue();
-      controller.selectDay(3);
-
-      await controller.previousMonth();
-
-      expect(controller.selectedDay.value, isNull);
-    });
-
-    test('data berubah memuat ulang lewat DataRefreshService', () async {
-      Get.put(DataRefreshService());
-      final controller = build();
-      await pumpEventQueue();
-      expect(controller.trend.value!.total, 320000);
-
-      repository.items = [
-        ...repository.items,
-        _tx(DateTime(2026, 10, 2), 5000),
-      ];
-      Get.find<DataRefreshService>().bump();
-      await pumpEventQueue();
-
-      expect(controller.trend.value!.total, 325000);
-    });
-
-    test('bulan terpilih yang hilang kembali ke bulan ini', () async {
-      final controller = build();
-      await pumpEventQueue();
-      await controller.previousMonth();
-      await controller.previousMonth();
-      expect(controller.month.value, DateTime(2025, 2));
-
-      repository.items = [_tx(DateTime(2026, 10, 12), 1000)];
-      await controller.load();
-
-      expect(controller.month.value, DateTime(2026, 10));
-    });
-  });
-
-  group('SpendingTrendCard', () {
-    late _Transactions repository;
-
-    setUp(() {
-      Get.testMode = true;
-      repository = _Transactions([
-        _tx(DateTime(2025, 2, 10), 50000),
-        _tx(DateTime(2026, 8, 4), 70000),
-        _tx(DateTime(2026, 10, 12), 220000),
-        _tx(DateTime(2026, 10, 1), 100000),
-      ]);
-      Get.put(SpendingTrendController(repository, clock: () => _now));
-    });
-
-    tearDown(Get.reset);
-
-    // Pemuatan memakai beberapa await berurutan; beri kesempatan selesai
-    // sebelum frame berikutnya.
-    Future<void> settle(WidgetTester tester) async {
-      await tester.runAsync(pumpEventQueue);
-      await tester.pumpAndSettle();
-    }
-
-    Future<void> open(WidgetTester tester, {double width = 390}) async {
+    Future<void> open(
+      WidgetTester tester,
+      MonthlyTrend value, {
+      double width = 390,
+    }) async {
       tester.view.physicalSize = Size(width, 900);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       await tester.pumpWidget(
         GetMaterialApp(
           theme: AppTheme.light,
-          home: const Scaffold(
-            body: SingleChildScrollView(child: SpendingTrendCard()),
+          home: Scaffold(
+            body: SingleChildScrollView(child: ReportTrendCard(trend: value)),
           ),
         ),
       );
-      await settle(tester);
+      await tester.pumpAndSettle();
     }
 
     int barCount() => find
@@ -389,83 +208,53 @@ void main() {
         .evaluate()
         .length;
 
-    testWidgets('judul, bulan, rata-rata, dan total ditampilkan', (
+    testWidgets('judul, rata-rata, dan total, tanpa panah bulan', (
       tester,
     ) async {
-      await open(tester);
+      await open(tester, trend);
 
       expect(find.text('Tren pengeluaran'), findsOneWidget);
-      expect(find.text('Okt 2026'), findsOneWidget);
       expect(find.text('Rata-rata Rp 14.545 per hari'), findsOneWidget);
       expect(find.text('Total · 22 dari 31 hari'), findsOneWidget);
       expect(find.text('Rp 320.000'), findsOneWidget);
       expect(find.text('Ketuk batang'), findsOneWidget);
+      expect(find.bySemanticsLabel('Bulan sebelumnya'), findsNothing);
     });
 
     testWidgets('jumlah batang sama dengan jumlah hari bulan itu', (
       tester,
     ) async {
-      await open(tester);
+      await open(tester, trend);
       expect(barCount(), 31);
 
-      await tester.tap(find.byIcon(LucideIcons.chevronLeft));
-      await settle(tester);
-      expect(find.text('Agu 2026'), findsOneWidget);
-      expect(barCount(), 31);
-      expect(find.text('Total · 31 hari'), findsOneWidget);
-
-      await tester.tap(find.byIcon(LucideIcons.chevronLeft));
-      await settle(tester);
-      expect(find.text('Feb 2025'), findsOneWidget);
+      await open(tester, service.build(const [], DateTime(2025, 2), now: _now));
       expect(barCount(), 28);
       expect(find.text('Total · 28 hari'), findsOneWidget);
-    });
-
-    testWidgets('panah kanan mati di bulan ini', (tester) async {
-      await open(tester);
-
-      await tester.tap(find.byIcon(LucideIcons.chevronRight));
-      await settle(tester);
-
-      expect(find.text('Okt 2026'), findsOneWidget);
-    });
-
-    testWidgets('panah kiri mati di bulan paling awal', (tester) async {
-      await open(tester);
-      await tester.tap(find.byIcon(LucideIcons.chevronLeft));
-      await settle(tester);
-      await tester.tap(find.byIcon(LucideIcons.chevronLeft));
-      await settle(tester);
-
-      await tester.tap(find.byIcon(LucideIcons.chevronLeft));
-      await settle(tester);
-
-      expect(find.text('Feb 2025'), findsOneWidget);
     });
 
     testWidgets('mengetuk batang menampilkan tanggal dan nominal', (
       tester,
     ) async {
-      await open(tester);
+      await open(tester, trend);
 
       await tester.tap(find.byKey(const ValueKey('trend-bar-11')));
-      await settle(tester);
+      await tester.pumpAndSettle();
 
       expect(find.text('12 Okt · Rp 220.000'), findsOneWidget);
       expect(find.text('Ketuk batang'), findsNothing);
 
       await tester.tap(find.byKey(const ValueKey('trend-bar-11')));
-      await settle(tester);
+      await tester.pumpAndSettle();
       expect(find.text('12 Okt · Rp 220.000'), findsNothing);
     });
 
     testWidgets('gelembung berukuran seperti teksnya, bukan seluruh grafik', (
       tester,
     ) async {
-      await open(tester);
+      await open(tester, trend);
 
       await tester.tap(find.byKey(const ValueKey('trend-bar-11')));
-      await settle(tester);
+      await tester.pumpAndSettle();
 
       final text = find.text('12 Okt · Rp 220.000');
       final bubble = find
@@ -480,10 +269,10 @@ void main() {
     testWidgets('batang hari yang belum berjalan tidak bisa dipilih', (
       tester,
     ) async {
-      await open(tester);
+      await open(tester, trend);
 
       await tester.tap(find.byKey(const ValueKey('trend-bar-27')));
-      await settle(tester);
+      await tester.pumpAndSettle();
 
       expect(find.textContaining('Okt ·'), findsNothing);
     });
@@ -491,34 +280,40 @@ void main() {
     testWidgets('gelembung tetap di dalam kartu untuk batang di tepi', (
       tester,
     ) async {
-      await open(tester);
+      await open(tester, trend);
 
       await tester.tap(find.byKey(const ValueKey('trend-bar-0')));
-      await settle(tester);
+      await tester.pumpAndSettle();
 
       expect(find.text('1 Okt · Rp 100.000'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
     testWidgets('tanpa overflow di layar sempit', (tester) async {
-      await open(tester, width: 320);
+      await open(tester, trend, width: 320);
 
       expect(tester.takeException(), isNull);
     });
 
-    testWidgets('label bulan mengikuti bahasa Inggris', (tester) async {
-      Get.addTranslations(AppTranslations().keys);
-      Get.locale = AppLanguage.localeFor(AppLanguage.english);
-      addTearDown(() {
-        Get.locale = null;
-        Get.clearTranslations();
-      });
+    testWidgets('pemasukan memakai judul dan keterangan jumlah', (
+      tester,
+    ) async {
+      await open(
+        tester,
+        service.build(
+          [_tx(DateTime(2026, 10, 1), 5000000, type: TransactionType.income)],
+          DateTime(2026, 10),
+          now: _now,
+          type: TransactionType.income,
+        ),
+      );
 
-      await open(tester);
-
-      expect(find.text('Oct 2026'), findsOneWidget);
+      expect(find.text('Tren pemasukan'), findsOneWidget);
+      expect(find.text('1 pemasukan'), findsOneWidget);
+      expect(find.textContaining('Rata-rata'), findsNothing);
     });
   });
+
   group('tren pemasukan', () {
     test('type income menghitung pemasukan saja dan jumlah transaksinya', () {
       final trend = service.build(

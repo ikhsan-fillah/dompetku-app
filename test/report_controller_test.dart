@@ -351,7 +351,7 @@ void main() {
       expect(report.expenseChange, closeTo(-0.25, 0.0001));
     });
 
-    test('dailySpending berisi satu nilai per hari dalam bulan', () async {
+    test('spendingTrend berisi pengeluaran harian bulan laporan', () async {
       transactions.items = [
         _tx(TransactionType.expense, 70000, DateTime(2026, 9, 2)),
         _tx(TransactionType.expense, 30000, DateTime(2026, 9, 2)),
@@ -360,11 +360,12 @@ void main() {
 
       await controller.loadMonth(DateTime(2026, 9));
 
-      final daily = controller.state.value.data!.dailySpending;
-      expect(daily.length, 30);
-      expect(daily[1], 100000);
-      expect(daily[29], 5000);
-      expect(daily[0], 0);
+      final trend = controller.state.value.data!.spendingTrend!;
+      expect(trend.type, TransactionType.expense);
+      expect(trend.daily.length, 30);
+      expect(trend.daily[1], 100000);
+      expect(trend.daily[29], 5000);
+      expect(trend.daily[0], 0);
     });
 
     test('incomeTrend berisi pemasukan harian bulan laporan', () async {
@@ -418,7 +419,7 @@ void main() {
       final report = controller.state.value.data!;
       expect(report.isEmpty, isTrue);
       expect(report.previousExpense, 80000);
-      expect(report.dailySpending.every((value) => value == 0), isTrue);
+      expect(report.spendingTrend!.total, 0);
     });
   });
 }

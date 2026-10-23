@@ -10,6 +10,7 @@ import 'package:dompetku_app/features/report/views/report_page.dart';
 import 'package:dompetku_app/features/report/widgets/report_visuals.dart';
 import 'package:dompetku_app/features/transaction/models/transaction_model.dart';
 import 'package:dompetku_app/features/transaction/repositories/transaction_repository.dart';
+import 'package:dompetku_app/features/trend/widgets/report_trend_card.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:get/get.dart';
@@ -111,7 +112,8 @@ void main() {
 
     expect(find.byType(SpendingRing), findsOneWidget);
     expect(find.byType(IncomeExpenseBars), findsOneWidget);
-    expect(find.byType(DailySpendingBars), findsOneWidget);
+    expect(find.text('Tren pengeluaran'), findsOneWidget);
+    expect(find.text('Pengeluaran harian'), findsNothing);
     expect(find.text('Statistik pengeluaran'), findsOneWidget);
     expect(find.text('Statistik belanja'), findsNothing);
     expect(find.text('Rincian pengeluaran'), findsOneWidget);
@@ -125,15 +127,23 @@ void main() {
 
     expect(find.text('Tren pemasukan'), findsOneWidget);
     expect(find.text('1 pemasukan'), findsOneWidget);
-    expect(find.text('Ketuk batang'), findsOneWidget);
+    // Kartu pengeluaran dan pemasukan sama-sama punya petunjuk.
+    expect(find.text('Ketuk batang'), findsNWidgets(2));
 
-    final bar = find.byKey(const ValueKey('trend-bar-0'));
+    final card = find.ancestor(
+      of: find.text('Tren pemasukan'),
+      matching: find.byType(ReportTrendCard),
+    );
+    final bar = find.descendant(
+      of: card,
+      matching: find.byKey(const ValueKey('trend-bar-0')),
+    );
     await tester.ensureVisible(bar);
     await tester.tap(bar);
     await tester.pumpAndSettle();
 
     expect(find.textContaining('500.000'), findsWidgets);
-    expect(find.text('Ketuk batang'), findsNothing);
+    expect(find.text('Ketuk batang'), findsOneWidget);
   });
 
   testWidgets('bulan berjalan tidak bisa maju, bulan lalu bisa dibuka', (
@@ -157,7 +167,8 @@ void main() {
     expect(find.text('Belum ada transaksi pada bulan ini'), findsOneWidget);
     expect(find.byType(SpendingRing), findsOneWidget);
     expect(find.byType(IncomeExpenseBars), findsOneWidget);
-    expect(find.byType(DailySpendingBars), findsOneWidget);
+    expect(find.text('Tren pengeluaran'), findsOneWidget);
+    expect(find.text('Pengeluaran harian'), findsNothing);
     expect(find.text('Statistik pengeluaran'), findsOneWidget);
     expect(find.text('Rincian pengeluaran'), findsOneWidget);
     expect(find.text('Belum ada pengeluaran pada bulan ini.'), findsOneWidget);
