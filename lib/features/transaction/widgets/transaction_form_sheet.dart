@@ -210,11 +210,10 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
       budget.amountDigits.value = amount;
       budget.name.value = title;
       budget.note.value = note;
-      if (budget.categoryId.value == null &&
-          budget.availableCategories.isNotEmpty) {
-        budget.categoryId.value = budget.availableCategories.first.id;
-      }
       budget.error.value = null;
+      // Lembar bisa dibuka dari tab Pengeluaran, jadi kategori anggaran belum
+      // tentu pernah dimuat.
+      budget.ensureCategories();
     } else {
       _controller.amountDigits.value = amount;
       _controller.title.value = title;
@@ -442,9 +441,12 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
             _Label('Kategori'.tr),
             Obx(
               () => _CategoryRow(
+                // toList() membaca isinya di dalam Obx supaya daftar ikut
+                // diperbarui begitu kategori selesai dimuat.
                 options: _isBudget
-                    ? _budgetController?.availableCategories ?? const []
-                    : c.availableCategories,
+                    ? _budgetController?.availableCategories.toList() ??
+                          const []
+                    : c.availableCategories.toList(),
                 selected: _isBudget
                     ? _budgetController?.categoryId.value
                     : c.categoryId.value,

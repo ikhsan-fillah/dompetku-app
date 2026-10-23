@@ -53,6 +53,17 @@ class BudgetFormController extends GetxController {
     }
   }
 
+  /// Memuat ulang kategori dan memilih yang pertama bila pilihan saat ini
+  /// kosong atau sudah tidak ada. Dipanggil saat lembar input pindah ke tab
+  /// Anggaran tanpa lewat [startNew] (mis. dibuka dari tab Pengeluaran).
+  Future<void> ensureCategories() async {
+    await _loadCategories();
+    final ids = availableCategories.map((c) => c.id).toSet();
+    if (!ids.contains(categoryId.value)) {
+      categoryId.value = availableCategories.firstOrNull?.id;
+    }
+  }
+
   Future<void> startNew({DateTime? now}) async {
     final today = _day(now ?? DateTime.now());
     _editing = null;

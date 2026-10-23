@@ -1,6 +1,8 @@
 import 'package:dompetku_app/core/constant/domain_enums.dart';
 import 'package:dompetku_app/core/theme/app_theme.dart';
 import 'package:dompetku_app/core/utils/date_range.dart';
+import 'package:dompetku_app/features/budget/controllers/budget_form_controller.dart';
+import 'package:dompetku_app/features/budget/repositories/budget_repository.dart';
 import 'package:dompetku_app/features/category/models/category_model.dart';
 import 'package:dompetku_app/features/category/repositories/category_repository.dart';
 import 'package:dompetku_app/features/receipt/services/receipt_ocr_service.dart';
@@ -42,6 +44,11 @@ class _Categories implements CategoryRepository {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
+class _Budgets implements BudgetRepository {
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
 class _NoopReceiptTextRecognizer implements ReceiptTextRecognizer {
   @override
   Future<String> recognize(String imagePath) async => '';
@@ -66,10 +73,14 @@ CategoryModel _cat(int id, String name, TransactionType type) {
   );
 }
 
-Future<_Transactions> _openSheet(WidgetTester tester) async {
+Future<_Transactions> _openSheet(
+  WidgetTester tester, {
+  bool withBudget = false,
+}) async {
   await tester.binding.setSurfaceSize(const Size(500, 900));
   addTearDown(() => tester.binding.setSurfaceSize(null));
   final repository = _Transactions();
+  if (withBudget) Get.put(BudgetFormController(_Budgets(), _Categories()));
   Get.put(
     TransactionFormController(
       repository,
@@ -151,6 +162,31 @@ void main() {
       expect(find.text('Nominal harus lebih dari nol.'), findsOneWidget);
       expect(find.text('Catat Keuangan'), findsOneWidget);
       expect(repository.inserted, isEmpty);
+    },
+  );
+
+  testWidgets(
+    'pindah ke tab Anggaran dari Pengeluaran tetap menampilkan kategori',
+    (tester) async {
+      await _openSheet(tester, withBudget: true);
+
+      final tab = find.text('Anggaran').first;
+      await tester.tap(tab);
+      await tester.runAsync(pumpEventQueue);
+      await tester.pumpAndSettle();
+
+      expect(find.text('Makanan'), findsOneWidget);
+      expect(find.text('Transportasi'), findsOneWidget);
+      expect(find.text('Gaji'), findsNothing);
+      expect(
+        Get.find<BudgetFormController>().categoryId.value,
+        1,
+        reason: 'kategori pertama terpilih supaya anggaran bisa dibuat',
+      );
+
+      // Kembali ke Pengeluaran supaya mode terakhir tidak bocor ke tes lain.
+      await tester.tap(find.text('Pengeluaran').first);
+      await tester.pumpAndSettle();
     },
   );
 
