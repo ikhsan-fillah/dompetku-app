@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/date_label.dart';
+import '../../../core/widgets/app_page_header.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../profile/controllers/profile_controller.dart';
 import 'period_picker_sheet.dart';
@@ -30,7 +31,7 @@ class HomeAppBar extends StatelessWidget {
         AppSpacing.page,
         8,
         AppSpacing.page,
-        10,
+        AppPageHeader.bottomGap,
       ),
       child: Row(
         children: [

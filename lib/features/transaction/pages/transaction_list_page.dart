@@ -237,7 +237,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
         Padding(
           padding: const EdgeInsets.fromLTRB(
             AppSpacing.page,
-            2,
+            4,
             AppSpacing.page,
             2,
           ),
