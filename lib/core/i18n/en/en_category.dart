@@ -12,15 +12,19 @@ const Map<String, String> enCategory = {
   'Daftar kategori': 'Categories',
   '@total · @count transaksi': '@total · @count transactions',
   'Terjadi kesalahan.': 'Something went wrong.',
-  'Arsipkan kategori?': 'Archive category?',
+  'Hapus kategori?': 'Delete category?',
   'Arsipkan': 'Archive',
   'Gagal memuat kategori.': 'Failed to load categories.',
   'Gagal menyimpan kategori.': 'Failed to save the category.',
-  'Gagal mengarsipkan kategori.': 'Failed to archive the category.',
+  'Gagal menghapus kategori.': 'Failed to delete the category.',
+  'Maksimal @count kategori favorit.': 'Up to @count favorite categories.',
+  '@count dari @max favorit · tampil di Beranda':
+      '@count of @max favorites · shown on Home',
   'Gagal mengubah urutan kategori.': 'Failed to reorder categories.',
   'Belum ada kategori.': 'No categories yet.',
-  'Bawaan · tidak bisa dihapus bila dipakai':
-      'Default · cannot be deleted if used',
+  'Bawaan': 'Default',
+  'Bawaan · penampung, tidak bisa dihapus':
+      'Default · holds moved transactions, cannot be deleted',
   'Kustom': 'Custom',
   'Hapus dari favorit': 'Remove from favorites',
   'Jadikan favorit': 'Make favorite',
@@ -28,8 +32,8 @@ const Map<String, String> enCategory = {
   'Tambah kategori': 'Add category',
   'Pengeluaran': 'Expenses',
   'Pemasukan': 'Income',
-  '"@name" tidak muncul lagi untuk transaksi baru. Transaksi lama tetap aman.':
-      '"@name" will no longer appear for new transactions. Existing transactions stay safe.',
+  '"@name" dihapus permanen. Transaksinya dipindah ke kategori @other, dan anggaran khusus kategori ini ikut dihapus.':
+      '"@name" will be deleted permanently. Its transactions move to @other, and budgets for this category are deleted too.',
   'Nama kategori wajib diisi.': 'Category name is required.',
   'Edit kategori': 'Edit category',
   'Tutup': 'Close',

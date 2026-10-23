@@ -60,6 +60,69 @@ class CategoryLocalDataSource {
     );
   }
 
+  /// Menghapus kategori permanen dalam satu transaksi database.
+  ///
+  /// Transaksi dan transaksi berulang yang memakainya dipindah ke kategori
+  /// bawaan "Other" sejenis, draf dilepas dari kategorinya, dan anggaran khusus
+  /// kategori ini ikut dihapus. Kategori "Other" bawaan sendiri tidak bisa
+  /// dihapus karena menjadi penampung.
+  Future<void> delete(int id) async {
+    final database = await _appDatabase.database;
+    await database.transaction((txn) async {
+      final rows = await txn.query(
+        DatabaseTables.categories,
+        where: '${DatabaseColumns.id} = ?',
+        whereArgs: [id],
+        limit: 1,
+      );
+      if (rows.isEmpty) return;
+      final category = CategoryModel.fromMap(rows.first);
+      if (category.isFallback) {
+        throw StateError('Kategori penampung tidak bisa dihapus');
+      }
+      final fallback = await txn.query(
+        DatabaseTables.categories,
+        columns: [DatabaseColumns.id],
+        where:
+            '${DatabaseColumns.type} = ? AND ${DatabaseColumns.isDefault} = 1 '
+            'AND ${DatabaseColumns.name} = ? AND ${DatabaseColumns.id} != ?',
+        whereArgs: [category.type.name, CategoryModel.fallbackName, id],
+        limit: 1,
+      );
+      if (fallback.isEmpty) {
+        throw StateError('Kategori penampung tidak ditemukan');
+      }
+      final fallbackId = fallback.first[DatabaseColumns.id] as int;
+      for (final table in [
+        DatabaseTables.transactions,
+        DatabaseTables.recurringRules,
+      ]) {
+        await txn.update(
+          table,
+          {DatabaseColumns.categoryId: fallbackId},
+          where: '${DatabaseColumns.categoryId} = ?',
+          whereArgs: [id],
+        );
+      }
+      await txn.update(
+        DatabaseTables.drafts,
+        {DatabaseColumns.categoryId: null},
+        where: '${DatabaseColumns.categoryId} = ?',
+        whereArgs: [id],
+      );
+      await txn.delete(
+        DatabaseTables.budgets,
+        where: '${DatabaseColumns.categoryId} = ?',
+        whereArgs: [id],
+      );
+      await txn.delete(
+        DatabaseTables.categories,
+        where: '${DatabaseColumns.id} = ?',
+        whereArgs: [id],
+      );
+    });
+  }
+
   Future<void> reorder(List<int> orderedIds) async {
     final database = await _appDatabase.database;
     final batch = database.batch();

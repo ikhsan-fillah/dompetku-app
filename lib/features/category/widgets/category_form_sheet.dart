@@ -136,7 +136,10 @@ class _CategoryFormSheetState extends State<CategoryFormSheet> {
     }
 
     setState(() {
-      _error = controller.state.value.message ?? 'Gagal menyimpan kategori.'.tr;
+      _error =
+          controller.lastError.value ??
+          controller.state.value.message ??
+          'Gagal menyimpan kategori.'.tr;
     });
   }
 

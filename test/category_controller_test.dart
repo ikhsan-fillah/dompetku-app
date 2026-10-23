@@ -99,9 +99,18 @@ class _FakeCategoryRepository implements CategoryRepository {
   }
 
   @override
+  Future<void> delete(int id) async {
+    _check();
+    items.removeWhere((c) => c.id == id);
+  }
+
+  @override
   Future<void> reorder(List<int> orderedIds) async {
     _check();
     lastReorder = orderedIds;
+    items.sort(
+      (a, b) => orderedIds.indexOf(a.id!).compareTo(orderedIds.indexOf(b.id!)),
+    );
   }
 }
 
@@ -195,27 +204,124 @@ void main() {
     expect(controller.state.value.message, 'Gagal menyimpan kategori.');
   });
 
-  test('archive menyembunyikan kategori dari daftar aktif', () async {
+  test('delete menghapus kategori dari daftar', () async {
     repository.items.addAll([
       _category(1, 'Makan', TransactionType.expense),
       _category(2, 'Belanja', TransactionType.expense),
     ]);
     await controller.load();
 
-    final archived = await controller.archive(1);
+    final deleted = await controller.delete(1);
 
-    expect(archived, isTrue);
+    expect(deleted, isTrue);
     expect(controller.state.value.data!.map((c) => c.name), ['Belanja']);
-    expect(repository.items.length, 2);
+    expect(repository.items.length, 1);
   });
 
-  test('archive menangani kegagalan repository', () async {
+  test('delete gagal memberi pesan tanpa mengganti daftar', () async {
+    repository.items.add(_category(1, 'Makan', TransactionType.expense));
+    await controller.load();
     repository.fail = true;
 
-    final archived = await controller.archive(1);
+    final deleted = await controller.delete(1);
 
-    expect(archived, isFalse);
-    expect(controller.state.value.message, 'Gagal mengarsipkan kategori.');
+    expect(deleted, isFalse);
+    expect(controller.lastError.value, 'Gagal menghapus kategori.');
+    expect(controller.state.value.data, isNotEmpty);
+  });
+
+  group('favorit', () {
+    List<String> names() =>
+        controller.visibleCategories.map((c) => c.name).toList();
+
+    CategoryModel byName(String name) =>
+        controller.visibleCategories.firstWhere((c) => c.name == name);
+
+    test('favorit baru naik ke atas, di ujung blok favorit', () async {
+      repository.items.addAll([
+        _category(1, 'A', TransactionType.expense),
+        _category(2, 'B', TransactionType.expense),
+        _category(3, 'C', TransactionType.expense),
+        _category(4, 'D', TransactionType.expense),
+      ]);
+      await controller.load();
+
+      await controller.toggleFavorite(byName('C'));
+      expect(names(), ['C', 'A', 'B', 'D']);
+
+      await controller.toggleFavorite(byName('D'));
+      expect(names(), ['C', 'D', 'A', 'B']);
+      expect(byName('C').isFavorite && byName('D').isFavorite, isTrue);
+    });
+
+    test('melepas favorit memindahkannya ke awal daftar biasa', () async {
+      repository.items.addAll([
+        _category(1, 'A', TransactionType.expense),
+        _category(2, 'B', TransactionType.expense),
+        _category(3, 'C', TransactionType.expense),
+      ]);
+      await controller.load();
+      await controller.toggleFavorite(byName('B'));
+      await controller.toggleFavorite(byName('C'));
+      expect(names(), ['B', 'C', 'A']);
+
+      await controller.toggleFavorite(byName('B'));
+
+      expect(names(), ['C', 'B', 'A']);
+      expect(byName('B').isFavorite, isFalse);
+    });
+
+    test('maksimal 4 favorit per jenis', () async {
+      repository.items.addAll([
+        for (var i = 1; i <= 5; i++)
+          _category(i, 'K$i', TransactionType.expense),
+        _category(6, 'Gaji', TransactionType.income),
+      ]);
+      await controller.load();
+      for (var i = 1; i <= 4; i++) {
+        expect(await controller.toggleFavorite(byName('K$i')), isTrue);
+      }
+
+      final fifth = await controller.toggleFavorite(byName('K5'));
+
+      expect(fifth, isFalse);
+      expect(controller.lastError.value, 'Maksimal 4 kategori favorit.');
+      expect(byName('K5').isFavorite, isFalse);
+      expect(controller.favoriteCount(TransactionType.expense), 4);
+      expect(controller.state.value.data, isNotEmpty);
+
+      // Jenis lain punya jatahnya sendiri.
+      controller.setType(TransactionType.income);
+      expect(await controller.toggleFavorite(byName('Gaji')), isTrue);
+    });
+
+    test('geser kategori biasa ke atas tetap di bawah favorit', () async {
+      repository.items.addAll([
+        _category(1, 'A', TransactionType.expense),
+        _category(2, 'B', TransactionType.expense),
+        _category(3, 'C', TransactionType.expense),
+      ]);
+      await controller.load();
+      await controller.toggleFavorite(byName('A'));
+
+      await controller.moveWithinType(2, 0);
+
+      expect(names(), ['A', 'C', 'B']);
+    });
+
+    test('favoritesFirst menjaga urutan dalam tiap blok', () {
+      final a = _category(1, 'A', TransactionType.expense);
+      final b = _category(2, 'B', TransactionType.expense);
+      final c = _category(3, 'C', TransactionType.expense);
+
+      final ordered = CategoryController.favoritesFirst(
+        [a, b, c],
+        changedId: 3,
+        nowFavorite: true,
+      );
+
+      expect(ordered.map((x) => x.name), ['C', 'A', 'B']);
+    });
   });
 
   test('toggleFavorite membalik status favorit', () async {

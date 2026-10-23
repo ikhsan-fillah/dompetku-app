@@ -19,6 +19,9 @@ abstract final class AppColors {
   static const warn = Color(0xFF9A6A12);
   static const warnSoft = Color(0xFFF4E8CB);
   static const crit = Color(0xFF9C3B12);
+
+  /// Bintang kategori favorit (amber gelap, kontras di atas kartu).
+  static const favorite = Color(0xFFB8801A);
   static const critSoft = Color(0xFFF3DDD0);
 
   static const receiptPaper = Color(0xFFFFFEFA);

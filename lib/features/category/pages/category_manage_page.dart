@@ -19,7 +19,8 @@ import '../widgets/category_form_sheet.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/widgets/app_dialog.dart';
 
-/// Halaman kelola kategori: filter tipe, favorit, urutan, dan arsip.
+/// Halaman kelola kategori: filter tipe, favorit (maks. 4, selalu di atas),
+/// urutan, dan hapus.
 class CategoryManagePage extends StatefulWidget {
   const CategoryManagePage({super.key});
 
@@ -49,7 +50,10 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
   );
 
   void _showError() {
-    final message = _controller.state.value.message ?? 'Terjadi kesalahan.'.tr;
+    final message =
+        _controller.lastError.value ??
+        _controller.state.value.message ??
+        'Terjadi kesalahan.'.tr;
     ScaffoldMessenger.of(
       context,
     ).showSnackBar(SnackBar(content: Text(message)));
@@ -72,19 +76,23 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
     if (!mounted || !ok) return;
   }
 
-  Future<void> _confirmArchive(CategoryModel category) async {
+  Future<void> _confirmDelete(CategoryModel category) async {
     final id = category.id;
-    if (id == null) return;
+    if (id == null || category.isFallback) return;
     final confirmed = await showAppConfirm(
       context,
-      title: 'Arsipkan kategori?'.tr,
+      title: 'Hapus kategori?'.tr,
       message:
-          '"@name" tidak muncul lagi untuk transaksi baru. Transaksi lama tetap aman.'
-              .trParams({'name': category.displayName}),
-      confirmLabel: 'Arsipkan'.tr,
+          '"@name" dihapus permanen. Transaksinya dipindah ke kategori @other, dan anggaran khusus kategori ini ikut dihapus.'
+              .trParams({
+                'name': category.displayName,
+                'other': CategoryModel.fallbackName.tr,
+              }),
+      confirmLabel: 'Hapus'.tr,
+      danger: true,
     );
     if (!confirmed) return;
-    final ok = await _controller.archive(id);
+    final ok = await _controller.delete(id);
     if (!mounted) return;
     if (!ok) {
       _showError();
@@ -183,8 +191,10 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                       ),
                       const SizedBox(height: 2),
                       Text(
-                        category.isDefault
-                            ? 'Bawaan · tidak bisa dihapus bila dipakai'.tr
+                        category.isFallback
+                            ? 'Bawaan · penampung, tidak bisa dihapus'.tr
+                            : category.isDefault
+                            ? 'Bawaan'.tr
                             : 'Kustom'.tr,
                         style: AppText.body(size: 10.5, color: AppColors.mut),
                       ),
@@ -196,10 +206,20 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                       ? 'Hapus dari favorit'.tr
                       : 'Jadikan favorit'.tr,
                   onPressed: () => _toggleFavorite(category),
-                  icon: Icon(
-                    LucideIcons.star,
-                    size: 20,
-                    color: category.isFavorite ? AppColors.ink : AppColors.line,
+                  icon: AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 180),
+                    transitionBuilder: (child, animation) =>
+                        ScaleTransition(scale: animation, child: child),
+                    child: Icon(
+                      category.isFavorite
+                          ? Icons.star_rounded
+                          : Icons.star_outline_rounded,
+                      key: ValueKey(category.isFavorite),
+                      size: 24,
+                      color: category.isFavorite
+                          ? AppColors.favorite
+                          : AppColors.mut,
+                    ),
                   ),
                 ),
                 PopupMenuButton<String>(
@@ -213,17 +233,21 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                       _showAddOrEditForm(category);
                       return;
                     }
-                    _confirmArchive(category);
+                    _confirmDelete(category);
                   },
                   itemBuilder: (_) => [
                     PopupMenuItem<String>(
                       value: 'edit',
                       child: Text('Edit'.tr),
                     ),
-                    PopupMenuItem<String>(
-                      value: 'archive',
-                      child: Text('Arsipkan'.tr),
-                    ),
+                    if (!category.isFallback)
+                      PopupMenuItem<String>(
+                        value: 'delete',
+                        child: Text(
+                          'Hapus'.tr,
+                          style: AppText.body(size: 14, color: AppColors.spend),
+                        ),
+                      ),
                   ],
                 ),
               ],
@@ -274,7 +298,40 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                 ),
               ),
             ),
-            const SizedBox(height: 14),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(
+                AppSpacing.page,
+                10,
+                AppSpacing.page,
+                10,
+              ),
+              child: Obx(() {
+                _controller.state.value;
+                final count = _controller.favoriteCount(
+                  _controller.selectedType.value,
+                );
+                return Row(
+                  children: [
+                    const Icon(
+                      Icons.star_rounded,
+                      size: 16,
+                      color: AppColors.favorite,
+                    ),
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        '@count dari @max favorit · tampil di Beranda'
+                            .trParams({
+                              'count': '$count',
+                              'max': '${CategoryController.maxFavorites}',
+                            }),
+                        style: AppText.body(size: 11.5, color: AppColors.ink2),
+                      ),
+                    ),
+                  ],
+                );
+              }),
+            ),
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.symmetric(

@@ -50,6 +50,9 @@ class _FakeCategoryRepository implements CategoryRepository {
   Future<void> archive(int id) async {}
 
   @override
+  Future<void> delete(int id) async {}
+
+  @override
   Future<void> reorder(List<int> orderedIds) async {}
 }
 

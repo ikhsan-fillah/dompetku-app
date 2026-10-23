@@ -25,5 +25,8 @@ class CategoryRepositoryImpl implements CategoryRepository {
   Future<void> archive(int id) => _dataSource.archive(id);
 
   @override
+  Future<void> delete(int id) => _dataSource.delete(id);
+
+  @override
   Future<void> reorder(List<int> orderedIds) => _dataSource.reorder(orderedIds);
 }

@@ -33,6 +33,12 @@ class CategoryModel {
   /// ditampilkan apa adanya.
   String get displayName => isDefault ? name.tr : name;
 
+  /// Nama kategori bawaan yang menampung transaksi dari kategori terhapus.
+  static const fallbackName = 'Other';
+
+  /// Kategori "Other" bawaan: penampung, jadi tidak bisa dihapus.
+  bool get isFallback => isDefault && name == fallbackName;
+
   factory CategoryModel.fromMap(Map<String, Object?> map) {
     return CategoryModel(
       id: map[DatabaseColumns.id] as int?,

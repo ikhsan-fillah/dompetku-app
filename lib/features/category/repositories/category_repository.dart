@@ -6,5 +6,6 @@ abstract interface class CategoryRepository {
   Future<int> insert(CategoryModel category);
   Future<void> update(CategoryModel category);
   Future<void> archive(int id);
+  Future<void> delete(int id);
   Future<void> reorder(List<int> orderedIds);
 }

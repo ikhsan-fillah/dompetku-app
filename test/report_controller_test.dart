@@ -76,6 +76,9 @@ class _FakeCategoryRepository implements CategoryRepository {
   Future<void> archive(int id) => throw UnimplementedError();
 
   @override
+  Future<void> delete(int id) => throw UnimplementedError();
+
+  @override
   Future<void> reorder(List<int> orderedIds) => throw UnimplementedError();
 }
 
