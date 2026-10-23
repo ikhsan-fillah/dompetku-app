@@ -317,6 +317,12 @@ Kunci terjemahan adalah teks Indonesia (`'Laporan'.tr`); terjemahan Inggris ada 
 
 ## 9. Riwayat Versi
 
+### 1.1.5+7 (Oktober 2026)
+
+- **Anggaran:** judul baris memakai nama kategori sebenarnya dan tidak lagi tampil dua kali; kartu "Per kategori" lebih bersih (persen di kanan, periode dan status satu baris, ketuk baris untuk Edit, Arsipkan, atau Hapus); semua anggaran tampil; anggaran bisa dihapus permanen (aktif maupun terarsip), transaksi tidak ikut terhapus.
+- **App bar:** tombol ikon (mis. arsip) persis 38x38 dengan area ketuk 44, sama tinggi dengan chip urutan.
+- **Beranda dan Laporan:** perubahan 1.1.4+6 yang belum masuk APK (chip periode dihapus, baca database per periode, laporan bulan kosong tetap tampil) ikut dirilis di sini.
+
 ### 1.1.4+6 (Oktober 2026)
 
 - **Tren pengeluaran (Beranda):** satu batang per hari dalam satu bulan kalender (28, 29, 30, atau 31 hari menurut kalender), pita dua warna per pekan (Senin sampai Minggu), garis dan keterangan rata-rata per hari, total di bawah, dan ketuk batang untuk melihat tanggal dan nominal. Bulan dipilih dengan panah; hanya bulan yang punya transaksi dan bulan ini yang bisa dikunjungi. Kartu ini tidak mengikuti periode Beranda.
