@@ -1,4 +1,6 @@
+import 'package:dompetku_app/core/theme/app_colors.dart';
 import 'package:dompetku_app/core/theme/app_theme.dart';
+import 'package:dompetku_app/core/widgets/app_bar_icon_button.dart';
 import 'package:dompetku_app/core/widgets/sort_chip.dart';
 import 'package:dompetku_app/features/budget/services/budget_list_service.dart';
 import 'package:flutter/material.dart';
@@ -111,6 +113,61 @@ void main() {
     );
 
     expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('chip sama dengan tombol ikon app bar: garis, latar, tinggi', (
+    tester,
+  ) async {
+    await tester.pumpWidget(
+      MaterialApp(
+        theme: AppTheme.light,
+        home: Scaffold(
+          body: Row(
+            children: [
+              SortChip<_Order>(
+                value: _Order.newest,
+                options: _Order.values,
+                chipLabel: (o) => _chip[o]!,
+                menuLabel: (o) => _menu[o]!,
+                onSelected: (_) {},
+                tooltip: 'Urutkan',
+              ),
+              AppBarIconButton(
+                icon: LucideIcons.archive,
+                tooltip: 'Arsip',
+                onPressed: () {},
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+
+    final chip = tester
+        .widgetList<Container>(
+          find.descendant(
+            of: find.byType(SortChip<_Order>),
+            matching: find.byType(Container),
+          ),
+        )
+        .map((c) => c.decoration)
+        .whereType<BoxDecoration>()
+        .firstWhere((d) => d.border != null);
+    final button =
+        tester
+                .widget<DecoratedBox>(
+                  find.descendant(
+                    of: find.byType(AppBarIconButton),
+                    matching: find.byType(DecoratedBox),
+                  ),
+                )
+                .decoration
+            as BoxDecoration;
+
+    expect(chip.border, button.border);
+    expect(chip.color, button.color);
+    expect(chip.borderRadius, button.borderRadius);
+    expect((chip.border as Border).top.color, AppColors.line);
   });
 
   test('anggaran punya semua urutan termasuk Nama Z-A', () {

@@ -86,18 +86,19 @@ class SortChip<T> extends StatelessWidget {
             ),
           ),
       ],
-      // Area ketuk 44 px, chip terlihat 36 px.
+      // Area ketuk 44 px; tinggi, warna, dan garis chip sama dengan
+      // [AppBarIconButton] di sebelahnya (mis. tombol arsip).
       child: Container(
         height: 44,
         alignment: Alignment.center,
         child: Container(
-          height: 36,
+          height: AppSpacing.iconButton,
           constraints: const BoxConstraints(maxWidth: _maxChipWidth),
           padding: const EdgeInsets.symmetric(horizontal: 12),
           decoration: BoxDecoration(
             color: AppColors.card,
-            borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: AppColors.ink),
+            borderRadius: BorderRadius.circular(AppRadius.smallButton),
+            border: Border.all(color: AppColors.line),
           ),
           child: Row(
             mainAxisSize: MainAxisSize.min,

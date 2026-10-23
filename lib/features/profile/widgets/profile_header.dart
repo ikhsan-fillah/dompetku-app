@@ -178,6 +178,9 @@ class _ProfileHeaderState extends State<ProfileHeader> {
                 cursorColor: AppColors.paper,
                 style: AppText.display(size: 22, color: AppColors.paper),
                 decoration: InputDecoration(
+                  // Tema memberi isian latar krem; di kartu tinta harus bening.
+                  filled: false,
+                  fillColor: Colors.transparent,
                   isDense: true,
                   contentPadding: const EdgeInsets.symmetric(vertical: 6),
                   hintText: DisplayName.fallback,
