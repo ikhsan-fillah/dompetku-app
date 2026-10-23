@@ -10,6 +10,7 @@ import '../../../core/widgets/app_title_bar.dart';
 import '../../../core/widgets/app_button.dart';
 import '../controllers/budget_form_controller.dart';
 import '../models/budget_model.dart';
+import '../../../core/widgets/app_date_picker.dart';
 
 class BudgetFormPage extends StatefulWidget {
   const BudgetFormPage({super.key, this.budget});
@@ -54,10 +55,10 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
     final current = start
         ? controller.startDate.value
         : controller.endDate.value;
-    final selected = await showDatePicker(
-      context: context,
+    final selected = await showAppDatePicker(
+      context,
       initialDate: current,
-      firstDate: DateTime(2020),
+      firstDate: start ? DateTime(2020) : controller.startDate.value,
       lastDate: DateTime(2100),
     );
     if (selected != null) {

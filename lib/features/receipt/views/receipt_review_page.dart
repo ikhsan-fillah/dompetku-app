@@ -15,6 +15,7 @@ import '../../transaction/models/transaction_model.dart';
 import '../../transaction/repositories/transaction_repository.dart';
 import '../services/receipt_ocr_service.dart';
 import '../../../core/widgets/app_dialog.dart';
+import '../../../core/widgets/app_date_picker.dart';
 
 /// Item struk untuk visualisasi kertas struk
 class ReceiptLineItem {
@@ -120,8 +121,8 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
   }
 
   Future<void> _editDate() async {
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await showAppDatePicker(
+      context,
       initialDate: _date,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),

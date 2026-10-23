@@ -7,6 +7,7 @@ import '../../../core/theme/app_text.dart';
 import '../../../core/utils/date_label.dart';
 import '../../../core/utils/date_range.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
+import '../../../core/widgets/app_date_picker.dart';
 
 /// Popover / Bottom sheet pilihan periode sesuai mockup:
 /// - Preset periode: Hari ini, 1 Minggu, 1 Bulan, 3 Bulan, Tahun ini
@@ -72,31 +73,21 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
     await widget.controller.setPreset(preset);
   }
 
-  Future<void> _pickStartDate() async {
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _customStart,
-      firstDate: DateTime(2000),
-      lastDate: _customEnd.isBefore(DateTime.now())
-          ? _customEnd
-          : DateTime.now(),
-    );
-    if (picked != null) {
-      setState(() => _customStart = picked);
-    }
-  }
-
-  Future<void> _pickEndDate() async {
+  /// Membuka kalender rentang (B); [editEnd] mengaktifkan kolom "Sampai".
+  Future<void> _pickRange({required bool editEnd}) async {
     final now = DateTime.now();
-    final today = DateTime(now.year, now.month, now.day);
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: _customEnd.isAfter(today) ? today : _customEnd,
-      firstDate: _customStart,
-      lastDate: today,
+    final picked = await showAppDateRangePicker(
+      context,
+      initialRange: DateTimeRange(start: _customStart, end: _customEnd),
+      firstDate: DateTime(2000),
+      lastDate: DateTime(now.year, now.month, now.day),
+      editEnd: editEnd,
     );
     if (picked != null) {
-      setState(() => _customEnd = picked);
+      setState(() {
+        _customStart = picked.start;
+        _customEnd = picked.end;
+      });
     }
   }
 
@@ -148,7 +139,7 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
                   child: _DateBox(
                     label: 'Mulai'.tr,
                     value: _formatDate(_customStart),
-                    onTap: _pickStartDate,
+                    onTap: () => _pickRange(editEnd: false),
                   ),
                 ),
                 const SizedBox(width: 12),
@@ -156,7 +147,7 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
                   child: _DateBox(
                     label: 'Selesai'.tr,
                     value: _formatDate(_customEnd),
-                    onTap: _pickEndDate,
+                    onTap: () => _pickRange(editEnd: true),
                   ),
                 ),
               ],

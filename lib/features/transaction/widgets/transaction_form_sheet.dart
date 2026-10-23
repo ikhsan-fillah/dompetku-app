@@ -21,6 +21,7 @@ import '../../receipt/services/receipt_ocr_service.dart';
 import '../../receipt/views/receipt_review_page.dart';
 import '../controllers/transaction_form_controller.dart';
 import '../models/transaction_model.dart';
+import '../../../core/widgets/app_date_picker.dart';
 
 /// Membuka sheet tambah/edit transaksi. Mengembalikan true bila tersimpan.
 enum FinancialInputMode { expense, income, budget }
@@ -234,8 +235,8 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
 
   Future<void> _pickDate() async {
     if (_isBudget) return;
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await showAppDatePicker(
+      context,
       initialDate: _controller.date.value,
       firstDate: DateTime(2000),
       lastDate: DateTime.now(),
@@ -247,10 +248,11 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
     final budget = _budgetController;
     if (budget == null) return;
     final current = start ? budget.startDate.value : budget.endDate.value;
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await showAppDatePicker(
+      context,
       initialDate: current,
-      firstDate: DateTime(2000),
+      // Tanggal selesai tidak boleh sebelum tanggal mulai.
+      firstDate: start ? DateTime(2000) : budget.startDate.value,
       lastDate: DateTime(2100),
     );
     if (picked != null) {

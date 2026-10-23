@@ -16,6 +16,7 @@ import '../../category/models/category_model.dart';
 import '../../category/repositories/category_repository.dart';
 import '../controllers/recurring_form_controller.dart';
 import '../models/recurring_rule.dart';
+import '../../../core/widgets/app_date_picker.dart';
 
 /// Sheet tambah recurring (§9.2). Simpan menutup sheet bila berhasil.
 Future<bool> showRecurringAddSheet(
@@ -93,8 +94,8 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
 
   Future<void> _pickStartDate() async {
     final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
+    final picked = await showAppDatePicker(
+      context,
       initialDate: _form.startDate.value ?? now,
       firstDate: DateTime(now.year - 1),
       lastDate: DateTime(now.year + 5),
