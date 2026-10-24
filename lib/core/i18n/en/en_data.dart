@@ -71,6 +71,11 @@ const Map<String, String> enData = {
       'Tap to record it now. Takes 10 seconds.',
   'Mengingatkan mencatat bila hari ini belum ada transaksi.':
       'Reminds you to record when there are no transactions today.',
+  // Draf
+  '@count draf dikonfirmasi': '@count drafts confirmed',
+  '@count draf belum berkategori, konfirmasi satu per satu.':
+      '@count drafts have no category, confirm them one by one.',
+  '@amount · @when': '@amount · @when',
   // Geser & urungkan
   'Anggaran dihapus': 'Budget deleted',
   'Anggaran diarsipkan': 'Budget archived',

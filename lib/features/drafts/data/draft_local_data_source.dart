@@ -71,7 +71,11 @@ class DraftLocalDataSource {
     final database = await _appDatabase.database;
     await database.update(
       _table,
-      {'amount': draft.amount, 'merchant': draft.merchant},
+      {
+        'amount': draft.amount,
+        'merchant': draft.merchant,
+        'category_id': draft.categoryId,
+      },
       where: '${DatabaseColumns.id} = ?',
       whereArgs: [id],
     );

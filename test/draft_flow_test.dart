@@ -93,16 +93,19 @@ void main() {
     expect(await drafts.getPending(), isEmpty);
   });
 
-  test('Dismiss tidak memunculkan draft lagi, dan dedupe mencegahnya', () async {
-    await drafts.insertIfNew(_draft());
-    final draft = (await drafts.getPending()).single;
+  test(
+    'Dismiss tidak memunculkan draft lagi, dan dedupe mencegahnya',
+    () async {
+      await drafts.insertIfNew(_draft());
+      final draft = (await drafts.getPending()).single;
 
-    await controller.dismiss(draft);
-    await drafts.insertIfNew(_draft());
+      await controller.dismiss(draft);
+      await drafts.insertIfNew(_draft());
 
-    expect(await drafts.getPending(), isEmpty);
-    expect(tx.inserted, isEmpty);
-  });
+      expect(await drafts.getPending(), isEmpty);
+      expect(tx.inserted, isEmpty);
+    },
+  );
 
   test('draft dengan dedupe_key sama tidak dobel', () async {
     await drafts.insertIfNew(_draft());
@@ -135,5 +138,66 @@ void main() {
 
     expect(tx.inserted.single.amount, 20000);
     expect(tx.inserted.single.title, 'Kopi');
+  });
+
+  test(
+    'tanggal transaksi mengikuti waktu notifikasi, bukan konfirmasi',
+    () async {
+      await drafts.insertIfNew(_draft());
+      final draft = (await drafts.getPending()).single;
+
+      await controller.confirm(draft);
+
+      expect(
+        tx.inserted.single.transactionDate,
+        DateTime.utc(2026, 9, 1, 10).toLocal(),
+      );
+    },
+  );
+
+  test('editAndConfirm bisa memilih kategori langsung', () async {
+    await drafts.insertIfNew(
+      DraftModel(
+        source: 'GoPay',
+        kind: TransactionType.expense,
+        amount: 15000,
+        detectedAt: DateTime.utc(2026, 9, 1, 10),
+        dedupeKey: 'k-edit',
+      ),
+    );
+    final draft = (await drafts.getPending()).single;
+    expect(draft.categoryId, isNull);
+
+    final ok = await controller.editAndConfirm(
+      draft,
+      amount: 18000,
+      merchant: 'Bensin',
+      categoryId: 1,
+    );
+
+    expect(ok, isTrue);
+    expect(tx.inserted.single.categoryId, 1);
+    expect(tx.inserted.single.amount, 18000);
+  });
+
+  test('Konfirmasi semua melewati draf tanpa kategori', () async {
+    await drafts.insertIfNew(_draft(key: 'a'));
+    await drafts.insertIfNew(
+      DraftModel(
+        source: 'BRI',
+        kind: TransactionType.expense,
+        amount: 5000,
+        detectedAt: DateTime.utc(2026, 9, 1, 11),
+        dedupeKey: 'b',
+      ),
+    );
+    await controller.load();
+
+    final result = await controller.confirmAll();
+
+    expect(result.confirmed, 1);
+    expect(result.skipped, 1);
+    expect(tx.inserted, hasLength(1));
+    expect(await drafts.getPending(), hasLength(1));
   });
 }

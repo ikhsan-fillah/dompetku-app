@@ -62,13 +62,19 @@ class DraftController extends GetxController {
     }
   }
 
-  /// Ubah nominal dan nama, lalu konfirmasi. Draft ikut dikonfirmasi.
+  /// Ubah nominal, nama, dan kategori, lalu konfirmasi. Tanggal transaksi
+  /// tetap waktu notifikasi terbaca, bukan waktu konfirmasi.
   Future<bool> editAndConfirm(
     DraftModel draft, {
     required int amount,
     required String merchant,
+    int? categoryId,
   }) async {
-    final updated = draft.copyWith(amount: amount, merchant: merchant);
+    final updated = draft.copyWith(
+      amount: amount,
+      merchant: merchant,
+      categoryId: categoryId,
+    );
     try {
       await _drafts.update(updated);
     } catch (_) {
@@ -93,11 +99,20 @@ class DraftController extends GetxController {
     return all.where((c) => c.type == kind && !c.isArchived).toList();
   }
 
-  Future<void> confirmAll() async {
+  /// Mengonfirmasi semua draf yang sudah berkategori. Mengembalikan jumlah
+  /// yang tercatat dan yang dilewati karena belum punya kategori.
+  Future<({int confirmed, int skipped})> confirmAll() async {
     final current = state.value.data ?? const <DraftModel>[];
+    var confirmed = 0;
+    var skipped = 0;
     for (final draft in current) {
-      await confirm(draft);
+      if (draft.categoryId == null) {
+        skipped++;
+        continue;
+      }
+      if (await confirm(draft)) confirmed++;
     }
+    return (confirmed: confirmed, skipped: skipped);
   }
 
   /// Baris tidak dihapus, supaya dedupe_key mencegah deteksi ulang.

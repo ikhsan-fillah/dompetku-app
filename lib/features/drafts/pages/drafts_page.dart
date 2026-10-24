@@ -1,13 +1,19 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/constant/domain_enums.dart';
 import '../../../core/state/resource_state.dart';
 import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
+import '../../../core/utils/date_label.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_title_bar.dart';
+import '../../category/models/category_model.dart';
+import '../../category/widgets/category_picker.dart';
 import '../controllers/draft_controller.dart';
 import '../models/draft_model.dart';
 import '../../../core/widgets/app_dialog.dart';
@@ -17,6 +23,26 @@ import '../../../core/widgets/app_toast.dart';
 class DraftsPage extends StatelessWidget {
   const DraftsPage({super.key});
 
+  Future<void> _confirmAll(
+    BuildContext context,
+    DraftController controller,
+  ) async {
+    final result = await controller.confirmAll();
+    if (!context.mounted) return;
+    AppToast.show(
+      context: context,
+      title: '@count draf dikonfirmasi'.trParams({
+        'count': '${result.confirmed}',
+      }),
+      message: result.skipped == 0
+          ? null
+          : '@count draf belum berkategori, konfirmasi satu per satu.'.trParams(
+              {'count': '${result.skipped}'},
+            ),
+      kind: result.skipped == 0 ? ToastKind.success : ToastKind.info,
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final controller = Get.find<DraftController>();
@@ -25,7 +51,21 @@ class DraftsPage extends StatelessWidget {
       body: SafeArea(
         child: Column(
           children: [
-            AppTitleBar(title: 'Draf'.tr),
+            Obx(() {
+              final count = controller.state.value.data?.length ?? 0;
+              return AppTitleBar(
+                title: 'Draf'.tr,
+                // Tombol sama dengan Konfirmasi di kartu draf.
+                action: count > 1
+                    ? AppButton(
+                        label: 'Konfirmasi semua'.tr,
+                        icon: LucideIcons.checkCheck,
+                        expand: false,
+                        onPressed: () => _confirmAll(context, controller),
+                      )
+                    : null,
+              );
+            }),
             Expanded(
               child: Obx(() {
                 final state = controller.state.value;
@@ -68,21 +108,6 @@ class DraftsPage extends StatelessWidget {
                     return ListView(
                       padding: const EdgeInsets.all(16),
                       children: [
-                        if (items.length > 1)
-                          Align(
-                            alignment: Alignment.centerRight,
-                            child: TextButton(
-                              onPressed: controller.confirmAll,
-                              child: Text(
-                                'Konfirmasi semua'.tr,
-                                style: AppText.body(
-                                  size: 12.5,
-                                  weight: FontWeight.w700,
-                                  color: AppColors.ink,
-                                ),
-                              ),
-                            ),
-                          ),
                         for (final draft in items) _DraftCard(draft: draft),
                         const SizedBox(height: 12),
                         Text(
@@ -107,6 +132,19 @@ class _DraftCard extends StatelessWidget {
 
   final DraftModel draft;
 
+  /// Waktu notifikasi terbaca; tanggal ini yang dipakai transaksinya.
+  String get _when {
+    final at = draft.detectedAt.toLocal();
+    final time =
+        '${at.hour.toString().padLeft(2, '0')}.'
+        '${at.minute.toString().padLeft(2, '0')}';
+    return '${DateLabel.relativeDay(at)} · $time';
+  }
+
+  void _showError(BuildContext context, String message) {
+    AppToast.show(context: context, title: message, kind: ToastKind.error);
+  }
+
   Future<void> _confirm(
     BuildContext context,
     DraftController controller,
@@ -119,65 +157,37 @@ class _DraftCard extends StatelessWidget {
     }
     final ok = await controller.confirm(target);
     if (!ok && context.mounted) {
-      final message =
-          controller.error.value ?? 'Gagal mengonfirmasi. Coba lagi.'.tr;
-      AppToast.show(context: context, title: message, kind: ToastKind.error);
+      _showError(
+        context,
+        controller.error.value ?? 'Gagal mengonfirmasi. Coba lagi.'.tr,
+      );
     }
   }
 
+  /// Ubah nama, nominal, dan kategori dalam satu dialog, lalu konfirmasi.
   Future<void> _edit(BuildContext context, DraftController controller) async {
-    final amount = TextEditingController(text: draft.amount.toString());
-    final name = TextEditingController(text: draft.merchant ?? '');
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (dialogContext) => AppDialog(
-        title: 'Ubah draf'.tr,
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            TextField(
-              controller: name,
-              decoration: InputDecoration(labelText: 'Nama'.tr),
-            ),
-            const SizedBox(height: 12),
-            TextField(
-              controller: amount,
-              keyboardType: TextInputType.number,
-              decoration: InputDecoration(
-                labelText: 'Jumlah (IDR)'.tr,
-                prefixText: 'Rp ',
-              ),
-            ),
-          ],
-        ),
-        confirmLabel: 'Simpan & konfirmasi'.tr,
-        onCancel: () => Navigator.of(dialogContext).pop(false),
-        onConfirm: () => Navigator.of(dialogContext).pop(true),
-      ),
-    );
-    final value = int.tryParse(amount.text.replaceAll(RegExp(r'[^0-9]'), ''));
-    final merchant = name.text;
-    amount.dispose();
-    name.dispose();
-    if (ok != true || value == null || value <= 0) return;
+    final categories = await controller.expenseCategories(kind: draft.kind);
     if (!context.mounted) return;
-    var target = draft;
-    if (draft.categoryId == null) {
-      final categoryId = await _pickCategory(context, controller);
-      if (categoryId == null) return;
-      target = draft.copyWith(categoryId: categoryId);
-    }
+    final result = await showDialog<_DraftEdit>(
+      context: context,
+      builder: (_) => _EditDraftDialog(draft: draft, categories: categories),
+    );
+    if (result == null || !context.mounted) return;
     final saved = await controller.editAndConfirm(
-      target,
-      amount: value,
-      merchant: merchant,
+      draft,
+      amount: result.amount,
+      merchant: result.merchant,
+      categoryId: result.categoryId,
     );
     if (!saved && context.mounted) {
-      final message = controller.error.value ?? 'Gagal menyimpan perubahan.'.tr;
-      AppToast.show(context: context, title: message, kind: ToastKind.error);
+      _showError(
+        context,
+        controller.error.value ?? 'Gagal menyimpan perubahan.'.tr,
+      );
     }
   }
 
+  /// Lembar pilih kategori (ikon + nama), sama dengan lembar lain di app.
   Future<int?> _pickCategory(
     BuildContext context,
     DraftController controller,
@@ -186,20 +196,43 @@ class _DraftCard extends StatelessWidget {
     if (!context.mounted) return null;
     return showModalBottomSheet<int>(
       context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
       backgroundColor: AppColors.card,
-      builder: (sheetContext) => SafeArea(
-        child: ListView(
-          shrinkWrap: true,
-          padding: const EdgeInsets.all(16),
+      elevation: 0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
+        side: BorderSide(color: AppColors.line),
+      ),
+      builder: (sheetContext) => SingleChildScrollView(
+        padding: const EdgeInsets.fromLTRB(
+          AppSpacing.page,
+          0,
+          AppSpacing.page,
+          AppSpacing.page,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Pilih kategori'.tr, style: AppText.display(size: 20)),
-            const SizedBox(height: 8),
-            for (final category in categories)
-              ListTile(
-                contentPadding: EdgeInsets.zero,
-                title: Text(category.displayName),
-                onTap: () => Navigator.of(sheetContext).pop(category.id),
-              ),
+            Text('Pilih kategori'.tr, style: AppText.display(size: 22)),
+            const SizedBox(height: 4),
+            Text(
+              '@amount · @when'.trParams({
+                'amount': formatIdr(draft.amount),
+                'when': _when,
+              }),
+              style: AppText.body(size: 12.5, color: AppColors.mut),
+            ),
+            const SizedBox(height: 16),
+            CategoryPicker(
+              options: categories,
+              selected: null,
+              wrap: true,
+              onSelect: (id) => Navigator.of(sheetContext).pop(id),
+            ),
           ],
         ),
       ),
@@ -221,9 +254,25 @@ class _DraftCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text(
-            draft.source.tr,
-            style: AppText.body(size: 11, color: AppColors.mut),
+          Row(
+            children: [
+              Expanded(
+                child: Text(
+                  draft.source.tr,
+                  style: AppText.body(size: 11, color: AppColors.mut),
+                ),
+              ),
+              const Icon(LucideIcons.clock, size: 12, color: AppColors.mut),
+              const SizedBox(width: 4),
+              Text(
+                _when,
+                style: AppText.mono(
+                  size: 11,
+                  color: AppColors.mut,
+                  letterSpacing: 0,
+                ),
+              ),
+            ],
           ),
           const SizedBox(height: 4),
           Text(
@@ -262,6 +311,122 @@ class _DraftCard extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Hasil dialog Ubah draf.
+class _DraftEdit {
+  const _DraftEdit({
+    required this.merchant,
+    required this.amount,
+    required this.categoryId,
+  });
+
+  final String merchant;
+  final int amount;
+  final int categoryId;
+}
+
+/// Dialog Ubah draf: nama, nominal, dan kategori langsung di satu tempat.
+/// Tombol simpan aktif setelah nominal valid dan kategori dipilih.
+class _EditDraftDialog extends StatefulWidget {
+  const _EditDraftDialog({required this.draft, required this.categories});
+
+  final DraftModel draft;
+  final List<CategoryModel> categories;
+
+  @override
+  State<_EditDraftDialog> createState() => _EditDraftDialogState();
+}
+
+class _EditDraftDialogState extends State<_EditDraftDialog> {
+  late final _name = TextEditingController(text: widget.draft.merchant ?? '');
+  late final _amount = TextEditingController(
+    text: formatIdrPlain(widget.draft.amount),
+  );
+  late int? _categoryId = widget.draft.categoryId;
+
+  int? get _value =>
+      int.tryParse(_amount.text.replaceAll(RegExp(r'[^0-9]'), ''));
+
+  @override
+  void dispose() {
+    _name.dispose();
+    _amount.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final value = _value;
+    final categoryId = _categoryId;
+    final valid = value != null && value > 0 && categoryId != null;
+    return AppDialog(
+      title: 'Ubah draf'.tr,
+      content: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          TextField(
+            controller: _name,
+            decoration: InputDecoration(labelText: 'Nama'.tr),
+          ),
+          const SizedBox(height: 12),
+          TextField(
+            controller: _amount,
+            keyboardType: TextInputType.number,
+            inputFormatters: [_Thousands()],
+            onChanged: (_) => setState(() {}),
+            decoration: InputDecoration(
+              labelText: 'Jumlah (IDR)'.tr,
+              prefixText: 'Rp ',
+            ),
+          ),
+          const SizedBox(height: 18),
+          Text(
+            'Kategori'.tr,
+            style: AppText.body(
+              size: 12,
+              weight: FontWeight.w700,
+              color: AppColors.ink2,
+            ),
+          ),
+          const SizedBox(height: 8),
+          CategoryPicker(
+            options: widget.categories,
+            selected: categoryId,
+            onSelect: (id) => setState(() => _categoryId = id),
+          ),
+        ],
+      ),
+      confirmLabel: 'Simpan & konfirmasi'.tr,
+      onCancel: () => Navigator.of(context).pop(),
+      onConfirm: valid
+          ? () => Navigator.of(context).pop(
+              _DraftEdit(
+                merchant: _name.text,
+                amount: value,
+                categoryId: categoryId,
+              ),
+            )
+          : null,
+    );
+  }
+}
+
+class _Thousands extends TextInputFormatter {
+  @override
+  TextEditingValue formatEditUpdate(
+    TextEditingValue oldValue,
+    TextEditingValue newValue,
+  ) {
+    final digits = newValue.text.replaceAll(RegExp(r'[^0-9]'), '');
+    if (digits.isEmpty) return const TextEditingValue();
+    final text = formatIdrPlain(int.parse(digits));
+    return TextEditingValue(
+      text: text,
+      selection: TextSelection.collapsed(offset: text.length),
     );
   }
 }
