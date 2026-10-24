@@ -50,13 +50,18 @@ class BudgetWidgetProvider : HomeWidgetProvider() {
                 setTextViewText(R.id.widget_budget_percent, widgetData.getString("budget_percent", "0%"))
                 setTextViewText(R.id.widget_budget_caption, widgetData.getString("budget_caption", "terpakai"))
                 setTextViewText(R.id.widget_budget_left, widgetData.getString("budget_left", ""))
-                setProgressBar(R.id.widget_budget_bar, 100, widgetData.getInt("budget_progress", 0), false)
+                setProgressBar(R.id.widget_budget_bar, 100, progressOf(widgetData), false)
                 setOnClickPendingIntent(R.id.widget_root, launch(context, "tally://anggaran"))
             }
             appWidgetManager.updateAppWidget(id, views)
         }
     }
 }
+
+/// Angka bisa tersimpan sebagai Int atau Long; getInt pada Long akan crash
+/// dan widget tampil "Tidak dapat memuat widget".
+private fun progressOf(widgetData: SharedPreferences): Int =
+    ((widgetData.all["budget_progress"] as? Number)?.toInt() ?: 0).coerceIn(0, 100)
 
 private fun launch(context: Context, uri: String) =
     HomeWidgetLaunchIntent.getActivity(context, MainActivity::class.java, Uri.parse(uri))

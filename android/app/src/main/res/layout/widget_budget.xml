@@ -37,7 +37,8 @@
         android:textColor="@color/tally_paper"
         android:textSize="11sp" />
 
-    <View
+    <!-- Pengisi ruang: View polos tidak diizinkan di RemoteViews. -->
+    <FrameLayout
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1" />
