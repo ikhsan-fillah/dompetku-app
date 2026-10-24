@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import 'app_colors.dart';
+import 'duotone_icon.dart';
 
 /// Menerjemahkan data kategori di database ke ikon dan warna tampilan.
 /// Warna dan kunci ikon yang tersimpan di database tetap dipertahankan; warna
@@ -10,6 +11,28 @@ abstract final class CategoryStyle {
   static IconData icon(String key) => _icons[key] ?? LucideIcons.layoutGrid;
 
   static Color color(int stored) => _palette[stored] ?? Color(stored);
+
+  /// Ikon Phosphor duotone untuk kotak kategori.
+  static DuotoneIcon duotone(String key) =>
+      _duotone[key] ?? DuotoneIcon.squaresFour;
+
+  static const Map<String, DuotoneIcon> _duotone = {
+    'restaurant': DuotoneIcon.forkKnife,
+    'directions_car': DuotoneIcon.bus,
+    'shopping_bag': DuotoneIcon.shoppingBag,
+    'receipt_long': DuotoneIcon.receipt,
+    'health_and_safety': DuotoneIcon.heart,
+    'school': DuotoneIcon.graduationCap,
+    'fitness_center': DuotoneIcon.barbell,
+    'movie': DuotoneIcon.filmSlate,
+    'family_restroom': DuotoneIcon.usersThree,
+    'more_horiz': DuotoneIcon.dotsThree,
+    'payments': DuotoneIcon.wallet,
+    'work': DuotoneIcon.briefcase,
+    'business_center': DuotoneIcon.briefcase,
+    'trending_up': DuotoneIcon.trendUp,
+    'card_giftcard': DuotoneIcon.gift,
+  };
 
   static const Map<String, IconData> _icons = {
     'restaurant': LucideIcons.utensils,

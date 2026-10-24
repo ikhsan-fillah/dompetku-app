@@ -57,15 +57,15 @@ class _Row extends StatelessWidget {
       padding: const EdgeInsets.symmetric(vertical: 9),
       child: Row(
         children: [
-          CategoryIconBox(
-            icon: income
-                ? LucideIcons.arrowDown
-                : CategoryStyle.icon(item.iconKey),
-            color: income
-                ? AppColors.earn
-                : CategoryStyle.color(item.colorValue),
-            size: 36,
-          ),
+          income
+              ? const CategoryIconBox(
+                  icon: LucideIcons.arrowDown,
+                  color: AppColors.earn,
+                )
+              : CategoryIconBox.category(
+                  iconKey: item.iconKey,
+                  color: CategoryStyle.color(item.colorValue),
+                ),
           const SizedBox(width: 11),
           Expanded(
             child: Column(

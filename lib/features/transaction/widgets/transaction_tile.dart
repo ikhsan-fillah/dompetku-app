@@ -43,14 +43,15 @@ class TransactionTile extends StatelessWidget {
             padding: const EdgeInsets.symmetric(vertical: 9),
             child: Row(
               children: [
-                CategoryIconBox(
-                  icon: income
-                      ? LucideIcons.arrowDownLeft
-                      : CategoryStyle.icon(item.iconKey),
-                  color: income
-                      ? AppColors.earn
-                      : CategoryStyle.color(item.colorValue),
-                ),
+                income
+                    ? const CategoryIconBox(
+                        icon: LucideIcons.arrowDownLeft,
+                        color: AppColors.earn,
+                      )
+                    : CategoryIconBox.category(
+                        iconKey: item.iconKey,
+                        color: CategoryStyle.color(item.colorValue),
+                      ),
                 const SizedBox(width: 11),
                 Expanded(
                   child: Column(

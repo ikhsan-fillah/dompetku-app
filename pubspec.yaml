@@ -46,3 +46,11 @@ dev_dependencies:
 
 flutter:
   uses-material-design: true
+
+  # Ikon kategori Phosphor duotone (MIT, lihat assets/fonts/PHOSPHOR_LICENSE.txt).
+  # Paket phosphor_flutter tidak lagi cocok dengan Flutter terbaru, jadi
+  # fontnya disertakan langsung.
+  fonts:
+    - family: PhosphorDuotone
+      fonts:
+        - asset: assets/fonts/Phosphor-Duotone.ttf

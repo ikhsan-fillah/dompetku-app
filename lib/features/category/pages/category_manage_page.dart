@@ -14,10 +14,13 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/category_icon_box.dart';
 import '../controllers/category_controller.dart';
 import '../models/category_model.dart';
-import '../utils/category_icons.dart';
 import '../widgets/category_form_sheet.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/widgets/app_dialog.dart';
+import '../../../core/widgets/app_toast.dart';
+import '../../../core/services/app_haptics.dart';
+import '../../../core/widgets/motion.dart';
+import '../../../core/theme/category_style.dart';
 
 /// Halaman kelola kategori: filter tipe, favorit (maks. 4, selalu di atas),
 /// urutan, dan hapus.
@@ -54,12 +57,11 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
         _controller.lastError.value ??
         _controller.state.value.message ??
         'Terjadi kesalahan.'.tr;
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    AppToast.show(context: context, title: message, kind: ToastKind.error);
   }
 
   Future<void> _toggleFavorite(CategoryModel category) async {
+    AppHaptics.select();
     final ok = await _controller.toggleFavorite(category);
     if (!mounted || ok) return;
     _showError();
@@ -174,9 +176,9 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                   ),
                 ),
                 const SizedBox(width: 10),
-                CategoryIconBox(
-                  icon: CategoryIcons.of(category.iconKey),
-                  color: Color(category.colorValue),
+                CategoryIconBox.category(
+                  iconKey: category.iconKey,
+                  color: CategoryStyle.color(category.colorValue),
                 ),
                 const SizedBox(width: 12),
                 Expanded(
@@ -206,10 +208,8 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
                       ? 'Hapus dari favorit'.tr
                       : 'Jadikan favorit'.tr,
                   onPressed: () => _toggleFavorite(category),
-                  icon: AnimatedSwitcher(
-                    duration: const Duration(milliseconds: 180),
-                    transitionBuilder: (child, animation) =>
-                        ScaleTransition(scale: animation, child: child),
+                  icon: PopOnChange(
+                    trigger: category.isFavorite,
                     child: Icon(
                       category.isFavorite
                           ? Icons.star_rounded

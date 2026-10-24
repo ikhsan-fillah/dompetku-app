@@ -17,7 +17,8 @@ import '../../transaction/models/transaction_model.dart';
 import '../../transaction/widgets/transaction_form_sheet.dart';
 import '../controllers/category_detail_controller.dart';
 import '../services/category_detail_service.dart';
-import '../utils/category_icons.dart';
+import '../../../core/widgets/app_skeleton.dart';
+import '../../../core/theme/category_style.dart';
 
 class CategoryDetailPage extends StatefulWidget {
   const CategoryDetailPage({super.key});
@@ -85,9 +86,8 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
               child: Obx(() {
                 final current = controller.state.value;
                 return switch (current.status) {
-                  ResourceStatus.idle || ResourceStatus.loading => const Center(
-                    child: CircularProgressIndicator(),
-                  ),
+                  ResourceStatus.idle ||
+                  ResourceStatus.loading => const ListSkeleton(),
                   ResourceStatus.error => AppErrorView(
                     message:
                         current.message ??
@@ -130,9 +130,11 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
           return AppCard(
             child: Row(
               children: [
-                CategoryIconBox(
-                  icon: CategoryIcons.of(category?.iconKey ?? 'more_horiz'),
-                  color: Color(category?.colorValue ?? 0xFF90A4AE),
+                CategoryIconBox.category(
+                  iconKey: category?.iconKey ?? 'more_horiz',
+                  color: CategoryStyle.color(
+                    category?.colorValue ?? 0xFF90A4AE,
+                  ),
                   size: 44,
                 ),
                 const SizedBox(width: 12),

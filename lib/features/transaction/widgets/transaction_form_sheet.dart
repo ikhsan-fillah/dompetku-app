@@ -942,8 +942,8 @@ class _CategoryChoice extends StatelessWidget {
           ),
           child: Column(
             children: [
-              CategoryIconBox(
-                icon: CategoryStyle.icon(category.iconKey),
+              CategoryIconBox.category(
+                iconKey: category.iconKey,
                 color: CategoryStyle.color(category.colorValue),
               ),
               const SizedBox(height: 4),

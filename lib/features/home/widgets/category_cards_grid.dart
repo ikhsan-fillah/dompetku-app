@@ -61,8 +61,8 @@ class _CategoryCard extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          CategoryIconBox(
-            icon: CategoryStyle.icon(item.iconKey),
+          CategoryIconBox.category(
+            iconKey: item.iconKey,
             color: color,
             size: 32,
           ),
