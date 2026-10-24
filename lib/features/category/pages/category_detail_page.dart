@@ -201,41 +201,60 @@ class _TransactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isIncome = transaction.type.name == 'income';
+    // Kartu rapat: tinggi sama dengan kartu di halaman Transaksi.
     return AppCard(
       margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
-      child: ListTile(
-        contentPadding: EdgeInsets.zero,
-        title: Text(
-          transaction.title,
-          style: AppText.body(size: 13, weight: FontWeight.w700),
-        ),
-        subtitle: Text(
-          [
-            '${transaction.transactionDate.toLocal().hour.toString().padLeft(2, '0')}:${transaction.transactionDate.toLocal().minute.toString().padLeft(2, '0')}',
-            if (transaction.merchantOrSource?.isNotEmpty == true)
-              transaction.merchantOrSource!,
-            if (transaction.paymentMethod != null)
-              transaction.paymentMethod!.name,
-          ].join(' · '),
-          style: AppText.body(size: 10.5, color: AppColors.mut),
-        ),
-        trailing: ConstrainedBox(
-          constraints: const BoxConstraints(maxWidth: 132),
-          child: FittedBox(
-            fit: BoxFit.scaleDown,
-            alignment: Alignment.centerRight,
-            child: Text(
-              '${isIncome ? '+' : '-'}${formatIdr(transaction.amount)}',
-              style: AppText.mono(
-                size: 12.5,
-                weight: FontWeight.w500,
-                color: isIncome ? AppColors.earn : AppColors.spend,
+      padding: const EdgeInsets.symmetric(horizontal: 14),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(AppRadius.smallButton),
+        onTap: () => showTransactionSheet(context, edit: transaction),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 11),
+          child: Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      transaction.title,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.body(size: 13, weight: FontWeight.w700),
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      [
+                        '${transaction.transactionDate.toLocal().hour.toString().padLeft(2, '0')}:${transaction.transactionDate.toLocal().minute.toString().padLeft(2, '0')}',
+                        if (transaction.merchantOrSource?.isNotEmpty == true)
+                          transaction.merchantOrSource!,
+                        if (transaction.paymentMethod != null)
+                          transaction.paymentMethod!.name,
+                      ].join(' · '),
+                      style: AppText.body(size: 10.5, color: AppColors.mut),
+                    ),
+                  ],
+                ),
               ),
-            ),
+              const SizedBox(width: 8),
+              ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 132),
+                child: FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerRight,
+                  child: Text(
+                    '${isIncome ? '+' : '-'}${formatIdr(transaction.amount)}',
+                    style: AppText.mono(
+                      size: 12.5,
+                      weight: FontWeight.w500,
+                      color: isIncome ? AppColors.earn : AppColors.spend,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
-        onTap: () => showTransactionSheet(context, edit: transaction),
       ),
     );
   }
