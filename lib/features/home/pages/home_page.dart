@@ -21,6 +21,8 @@ import '../widgets/category_cards_grid.dart';
 import '../widgets/home_app_bar.dart';
 import '../widgets/insight_banner.dart';
 import '../widgets/recent_transactions_card.dart';
+import '../../../core/widgets/app_skeleton.dart';
+import '../../../core/widgets/motion.dart';
 
 /// Isi tab Beranda. Data dimuat ulang otomatis; tidak ada tombol refresh.
 class HomePage extends StatelessWidget {
@@ -64,10 +66,7 @@ class HomePage extends StatelessWidget {
       case ResourceStatus.idle:
       case ResourceStatus.loading:
         return const [
-          Padding(
-            padding: EdgeInsets.symmetric(vertical: 60),
-            child: Center(child: CircularProgressIndicator()),
-          ),
+          Padding(padding: EdgeInsets.only(top: 4), child: HomeSkeleton()),
         ];
       case ResourceStatus.error:
         return [
@@ -134,13 +133,21 @@ class HomePage extends StatelessWidget {
                 130,
               ),
               children: [
-                if (data != null) ...[_BalanceCard(data: data)],
+                if (data != null) FadeSlideIn(child: _BalanceCard(data: data)),
                 const DraftsBanner(),
                 const RecapHomeLine(),
                 if (!controller.hasTransactionsInPeriod.value &&
                     controller.hasAnyTransactions.value)
                   const _EmptyPeriodNote(),
-                ..._content(context, state, data, controller),
+                ...[
+                  for (final (i, child) in _content(
+                    context,
+                    state,
+                    data,
+                    controller,
+                  ).indexed)
+                    FadeSlideIn(index: i + 1, child: child),
+                ],
               ],
             );
           }),
@@ -211,9 +218,9 @@ class _BalanceCard extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text(
-              formatIdrPlain(summary.balance),
-              maxLines: 1,
+            child: AnimatedAmount(
+              value: summary.balance,
+              format: formatIdrPlain,
               style: AppText.display(
                 size: 38,
                 color: AppColors.paper,

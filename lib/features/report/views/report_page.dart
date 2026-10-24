@@ -13,6 +13,8 @@ import '../../../core/widgets/app_title_bar.dart';
 import '../../trend/widgets/report_trend_card.dart';
 import '../controllers/report_controller.dart';
 import '../widgets/report_visuals.dart';
+import '../../../core/widgets/app_skeleton.dart';
+import '../../../core/widgets/motion.dart';
 
 class ReportPage extends StatefulWidget {
   const ReportPage({super.key});
@@ -72,9 +74,8 @@ class _ReportPageState extends State<ReportPage> {
             child: Obx(() {
               final current = controller.state.value;
               return switch (current.status) {
-                ResourceStatus.idle || ResourceStatus.loading => const Center(
-                  child: CircularProgressIndicator(color: AppColors.ink),
-                ),
+                ResourceStatus.idle ||
+                ResourceStatus.loading => const ListSkeleton(),
                 ResourceStatus.empty => _Message(
                   icon: LucideIcons.chartColumn,
                   text: 'Belum ada transaksi pada bulan ini'.tr,
@@ -120,69 +121,74 @@ class _Summary extends StatelessWidget {
   Widget build(BuildContext context) {
     final summary = data.summary;
     final remaining = summary.remainingBudget;
+    final cards = <Widget>[
+      AppCard(
+        margin: EdgeInsets.zero,
+        padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+        child: Column(
+          children: [
+            if (data.expensesByCategory.isEmpty || summary.expense == 0)
+              SpendingRing(items: const [], total: 0, totalLabel: money(0))
+            else
+              SpendingRing(
+                items: data.expensesByCategory,
+                total: summary.expense,
+                totalLabel: money(summary.expense),
+                money: money,
+              ),
+            const SizedBox(height: 16),
+            _ChangeInsight(
+              isEmptyMonth: data.isEmpty,
+              change: data.expenseChange,
+              hasPrevious: data.previousExpense > 0,
+              isCurrentMonth: isCurrentMonth,
+            ),
+          ],
+        ),
+      ),
+      const SizedBox(height: 14),
+      _SectionCard(
+        title: 'Pemasukan vs pengeluaran'.tr,
+        child: IncomeExpenseBars(
+          income: summary.income,
+          expense: summary.expense,
+          money: money,
+        ),
+      ),
+      if (data.incomeTrend != null) ...[
+        const SizedBox(height: 14),
+        ReportTrendCard(
+          key: ValueKey('income-${data.incomeTrend!.month}'),
+          trend: data.incomeTrend!,
+        ),
+      ],
+      if (remaining != null) ...[
+        const SizedBox(height: 14),
+        _BudgetRemaining(value: money(remaining), negative: remaining < 0),
+      ],
+      if (data.spendingTrend != null) ...[
+        const SizedBox(height: 14),
+        ReportTrendCard(
+          key: ValueKey('spending-${data.spendingTrend!.month}'),
+          trend: data.spendingTrend!,
+        ),
+      ],
+      const SizedBox(height: 14),
+      _SpendingStats(data: data, money: money),
+      const SizedBox(height: 14),
+      _CategoryBreakdown(
+        items: data.expensesByCategory,
+        total: summary.expense,
+        money: money,
+      ),
+    ];
+    var index = 0;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
       children: [
-        AppCard(
-          margin: EdgeInsets.zero,
-          padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
-          child: Column(
-            children: [
-              if (data.expensesByCategory.isEmpty || summary.expense == 0)
-                SpendingRing(items: const [], total: 0, totalLabel: money(0))
-              else
-                SpendingRing(
-                  items: data.expensesByCategory,
-                  total: summary.expense,
-                  totalLabel: money(summary.expense),
-                  money: money,
-                ),
-              const SizedBox(height: 16),
-              _ChangeInsight(
-                isEmptyMonth: data.isEmpty,
-                change: data.expenseChange,
-                hasPrevious: data.previousExpense > 0,
-                isCurrentMonth: isCurrentMonth,
-              ),
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        _SectionCard(
-          title: 'Pemasukan vs pengeluaran'.tr,
-          child: IncomeExpenseBars(
-            income: summary.income,
-            expense: summary.expense,
-            money: money,
-          ),
-        ),
-        if (data.incomeTrend != null) ...[
-          const SizedBox(height: 14),
-          ReportTrendCard(
-            key: ValueKey('income-${data.incomeTrend!.month}'),
-            trend: data.incomeTrend!,
-          ),
-        ],
-        if (remaining != null) ...[
-          const SizedBox(height: 14),
-          _BudgetRemaining(value: money(remaining), negative: remaining < 0),
-        ],
-        if (data.spendingTrend != null) ...[
-          const SizedBox(height: 14),
-          ReportTrendCard(
-            key: ValueKey('spending-${data.spendingTrend!.month}'),
-            trend: data.spendingTrend!,
-          ),
-        ],
-        const SizedBox(height: 14),
-        _SpendingStats(data: data, money: money),
-        const SizedBox(height: 14),
-        _CategoryBreakdown(
-          items: data.expensesByCategory,
-          total: summary.expense,
-          money: money,
-        ),
+        for (final card in cards)
+          card is SizedBox ? card : FadeSlideIn(index: index++, child: card),
       ],
     );
   }
