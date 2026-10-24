@@ -13,6 +13,7 @@ class SharedPrefsService {
   static const _kWidgetHideAmounts = 'widgetHideAmounts';
   static const _kDailyReminder = 'dailyReminderEnabled';
   static const _kDailyReminderMinutes = 'dailyReminderMinutes';
+  static const _kLastBackupAt = 'lastBackupAt';
 
   Future<bool> getIsRegistered() async {
     final prefs = await SharedPreferences.getInstance();
@@ -144,6 +145,18 @@ class SharedPrefsService {
   Future<void> setDailyReminderMinutes(int value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setInt(_kDailyReminderMinutes, value);
+  }
+
+  /// Waktu cadangan .tally terakhir dibuat di HP ini.
+  Future<DateTime?> getLastBackupAt() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getString(_kLastBackupAt);
+    return value == null ? null : DateTime.tryParse(value)?.toLocal();
+  }
+
+  Future<void> setLastBackupAt(DateTime value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_kLastBackupAt, value.toUtc().toIso8601String());
   }
 
   Future<void> clearAll() async {

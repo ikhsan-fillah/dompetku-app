@@ -34,6 +34,13 @@ import '../../features/transaction/controllers/transaction_form_controller.dart'
 import 'app_routes.dart';
 import '../../features/goals/pages/goals_page.dart';
 import '../../features/recurring/services/recurring_reminders.dart';
+import '../../features/backup/pages/backup_page.dart';
+import '../../features/backup/controllers/backup_controller.dart';
+import '../../features/backup/services/backup_service.dart';
+import '../../core/database/app_database.dart';
+import '../../core/services/shared_prefs_service.dart';
+import '../../features/category/repositories/category_repository.dart';
+import '../../features/budget/repositories/budget_repository.dart';
 
 class AppPages {
   static final pages = <GetPage>[
@@ -110,6 +117,22 @@ class AppPages {
       ),
     ),
     GetPage(name: AppRoutes.pinUnlock, page: () => const PinUnlockPage()),
+    GetPage(
+      name: AppRoutes.backup,
+      page: () => const BackupPage(),
+      middlewares: [FinancialRouteGuard()],
+      binding: BindingsBuilder(() {
+        Get.lazyPut(
+          () => BackupController(
+            backup: BackupService(Get.find<AppDatabase>()),
+            preferences: Get.find<SharedPrefsService>(),
+            transactions: Get.find<TransactionRepository>(),
+            categories: Get.find<CategoryRepository>(),
+            budgets: Get.find<BudgetRepository>(),
+          ),
+        );
+      }),
+    ),
     GetPage(
       name: AppRoutes.goals,
       page: () => const GoalsPage(),

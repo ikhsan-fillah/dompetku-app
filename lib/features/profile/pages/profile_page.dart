@@ -405,6 +405,15 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
+              SettingsTile(
+                icon: LucideIcons.archive,
+                title: 'Cadangan data'.tr,
+                subtitle: 'Cadangkan, pulihkan, ekspor Excel'.tr,
+                iconBackground: AppColors.paper2,
+                iconColor: AppColors.ink,
+                trailing: _chevron,
+                onTap: () => Get.toNamed(AppRoutes.backup),
+              ),
               Obx(
                 () => SettingsTile(
                   icon: LucideIcons.trash2,
