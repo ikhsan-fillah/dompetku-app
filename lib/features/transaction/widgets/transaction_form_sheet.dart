@@ -7,13 +7,10 @@ import '../../../core/constant/domain_enums.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
-import '../../../core/theme/category_style.dart';
 import '../../../core/utils/date_label.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_chip.dart';
 import '../../../core/widgets/app_text_field.dart';
-import '../../../core/widgets/category_icon_box.dart';
-import '../../category/models/category_model.dart';
 import '../../budget/controllers/budget_form_controller.dart';
 import '../../budget/models/budget_model.dart';
 import '../../receipt/services/receipt_image_picker.dart';
@@ -25,6 +22,7 @@ import '../../../core/widgets/app_date_picker.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../controllers/transaction_controller.dart';
 import '../../budget/controllers/budget_controller.dart';
+import '../../category/widgets/category_picker.dart';
 
 /// Membuka sheet tambah/edit transaksi. Mengembalikan true bila tersimpan.
 enum FinancialInputMode { expense, income, budget }
@@ -502,7 +500,7 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
               Obx(() => _DateRow(date: c.date.value, onTap: _pickDate)),
             _Label('Kategori'.tr),
             Obx(
-              () => _CategoryRow(
+              () => CategoryPicker(
                 // toList() membaca isinya di dalam Obx supaya daftar ikut
                 // diperbarui begitu kategori selesai dimuat.
                 options: _isBudget
@@ -921,102 +919,6 @@ class _DateRow extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-class _CategoryRow extends StatelessWidget {
-  const _CategoryRow({
-    required this.options,
-    required this.selected,
-    required this.onSelect,
-  });
-
-  final List<CategoryModel> options;
-  final int? selected;
-  final ValueChanged<int> onSelect;
-
-  @override
-  Widget build(BuildContext context) {
-    if (options.isEmpty) {
-      return Padding(
-        padding: EdgeInsets.symmetric(vertical: 8),
-        child: Text(
-          'Belum ada kategori untuk jenis ini.'.tr,
-          style: AppText.body(size: 12, color: AppColors.mut),
-        ),
-      );
-    }
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      child: Row(
-        children: [
-          for (final category in options)
-            Padding(
-              padding: const EdgeInsets.only(right: 8),
-              child: _CategoryChoice(
-                category: category,
-                selected: category.id == selected,
-                onTap: () => onSelect(category.id!),
-              ),
-            ),
-        ],
-      ),
-    );
-  }
-}
-
-class _CategoryChoice extends StatelessWidget {
-  const _CategoryChoice({
-    required this.category,
-    required this.selected,
-    required this.onTap,
-  });
-
-  final CategoryModel category;
-  final bool selected;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return Semantics(
-      button: true,
-      selected: selected,
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.smallButton),
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          width: 60,
-          padding: const EdgeInsets.symmetric(vertical: 6),
-          decoration: BoxDecoration(
-            color: selected ? AppColors.paper2 : Colors.transparent,
-            borderRadius: BorderRadius.circular(AppRadius.smallButton),
-            border: Border.all(
-              color: selected ? AppColors.ink : Colors.transparent,
-            ),
-          ),
-          child: Column(
-            children: [
-              CategoryIconBox.category(
-                iconKey: category.iconKey,
-                color: CategoryStyle.color(category.colorValue),
-              ),
-              const SizedBox(height: 4),
-              Text(
-                category.displayName,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.body(
-                  size: 10,
-                  weight: selected ? FontWeight.w700 : FontWeight.w400,
-                  color: selected ? AppColors.ink : AppColors.mut,
-                ),
-              ),
-            ],
           ),
         ),
       ),
