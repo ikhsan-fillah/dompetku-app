@@ -18,6 +18,7 @@ import '../controllers/draft_controller.dart';
 import '../models/draft_model.dart';
 import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/app_compact_button.dart';
 
 /// Daftar draft hasil deteksi. Confirm, Edit (lewat Confirm), atau Dismiss.
 class DraftsPage extends StatelessWidget {
@@ -55,12 +56,11 @@ class DraftsPage extends StatelessWidget {
               final count = controller.state.value.data?.length ?? 0;
               return AppTitleBar(
                 title: 'Draf'.tr,
-                // Tombol sama dengan Konfirmasi di kartu draf.
+                // Setinggi tombol kembali, gaya sama dengan Konfirmasi kartu.
                 action: count > 1
-                    ? AppButton(
+                    ? AppCompactButton(
                         label: 'Konfirmasi semua'.tr,
                         icon: LucideIcons.checkCheck,
-                        expand: false,
                         onPressed: () => _confirmAll(context, controller),
                       )
                     : null,
@@ -283,29 +283,33 @@ class _DraftCard extends StatelessWidget {
             const SizedBox(height: 2),
             Text(draft.merchant!, style: AppText.body(size: 13)),
           ],
-          const SizedBox(height: 12),
+          const SizedBox(height: 6),
+          // Semua tombol berlatar dan setinggi tombol app bar: aksi utama
+          // hitam, aksi pendamping abu kertas.
           Row(
             children: [
               Expanded(
-                child: AppButton(
+                child: AppCompactButton(
                   label: 'Konfirmasi'.tr,
+                  icon: LucideIcons.check,
                   expand: true,
                   onPressed: () => _confirm(context, controller),
                 ),
               ),
-              TextButton(
+              const SizedBox(width: 6),
+              AppCompactButton(
+                label: 'Edit'.tr,
+                icon: LucideIcons.pencil,
+                kind: AppCompactButtonKind.soft,
                 onPressed: () => _edit(context, controller),
-                child: Text(
-                  'Edit'.tr,
-                  style: AppText.body(size: 12.5, color: AppColors.ink),
-                ),
               ),
-              TextButton(
+              const SizedBox(width: 6),
+              AppCompactButton(
+                label: 'Abaikan'.tr,
+                icon: LucideIcons.x,
+                kind: AppCompactButtonKind.soft,
+                foreground: AppColors.ink2,
                 onPressed: () => controller.dismiss(draft),
-                child: Text(
-                  'Abaikan'.tr,
-                  style: AppText.body(size: 12.5, color: AppColors.mut),
-                ),
               ),
             ],
           ),
