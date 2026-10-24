@@ -26,6 +26,17 @@ class TransactionController extends GetxController {
   final filter = TransactionTypeFilter.all.obs;
   final sort = TransactionSort.terbaru.obs;
   final query = ''.obs;
+
+  /// Saringan dari lembar "Urutkan & saring".
+  final categoryIds = <int>{}.obs;
+  final minAmount = RxnInt();
+  final maxAmount = RxnInt();
+  final filterRange = Rxn<DateRange>();
+
+  int get activeFilterCount =>
+      (categoryIds.isEmpty ? 0 : 1) +
+      (minAmount.value != null || maxAmount.value != null ? 1 : 0) +
+      (filterRange.value == null ? 0 : 1);
   final hasMore = true.obs;
   final isLoadingMore = false.obs;
 
@@ -87,6 +98,47 @@ class TransactionController extends GetxController {
     _resetPagedLoad();
   }
 
+  /// Menerapkan urutan dan saringan sekaligus, lalu memuat ulang.
+  void applySortFilter({
+    required TransactionSort sort,
+    required Set<int> categoryIds,
+    int? minAmount,
+    int? maxAmount,
+    DateRange? range,
+  }) {
+    this.sort.value = sort;
+    this.categoryIds.assignAll(categoryIds);
+    this.minAmount.value = minAmount;
+    this.maxAmount.value = maxAmount;
+    filterRange.value = range;
+    _resetPagedLoad();
+  }
+
+  /// Jumlah hasil bila saringan diterapkan (untuk tombol "Tampilkan N").
+  Future<int?> countFor({
+    required Set<int> categoryIds,
+    int? minAmount,
+    int? maxAmount,
+    DateRange? range,
+  }) async {
+    final pageRepository = _pageRepository;
+    if (pageRepository == null) return null;
+    try {
+      return await pageRepository.countPage(
+        TransactionPageRequest(
+          range: range ?? this.range.value,
+          filter: filter.value,
+          query: query.value,
+          categoryIds: categoryIds,
+          minAmount: minAmount,
+          maxAmount: maxAmount,
+        ),
+      );
+    } catch (_) {
+      return null;
+    }
+  }
+
   void setQuery(String value) {
     query.value = value;
     if (_pageRepository == null) return;
@@ -117,11 +169,14 @@ class TransactionController extends GetxController {
       if (pageRepository != null) {
         final page = await pageRepository.getPage(
           TransactionPageRequest(
-            range: range.value,
+            range: filterRange.value ?? range.value,
             filter: filter.value,
             query: query.value,
             sort: sort.value,
             limit: pageSize,
+            categoryIds: {...categoryIds},
+            minAmount: minAmount.value,
+            maxAmount: maxAmount.value,
           ),
         );
         final categoryRepository = _categoryRepository;
@@ -165,12 +220,15 @@ class TransactionController extends GetxController {
     try {
       final page = await pageRepository.getPage(
         TransactionPageRequest(
-          range: range.value,
+          range: filterRange.value ?? range.value,
           filter: filter.value,
           query: query.value,
           sort: sort.value,
           limit: pageSize,
           offset: _loadedCount,
+          categoryIds: {...categoryIds},
+          minAmount: minAmount.value,
+          maxAmount: maxAmount.value,
         ),
       );
       final current = state.value.data ?? const <TransactionModel>[];

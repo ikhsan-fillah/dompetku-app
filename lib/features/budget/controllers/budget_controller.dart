@@ -10,6 +10,8 @@ import '../models/budget_model.dart';
 import '../models/budget_view_model.dart';
 import '../repositories/budget_repository.dart';
 import '../services/budget_list_service.dart';
+import '../../category/models/category_model.dart';
+import '../../../core/constant/domain_enums.dart';
 
 class BudgetController extends GetxController {
   BudgetController(
@@ -33,10 +35,23 @@ class BudgetController extends GetxController {
   final categoryNames = <int, String>{}.obs;
   final _listService = const BudgetListService();
 
-  List<BudgetViewModel> get visibleItems => _listService.sort(
-    state.value.data ?? const <BudgetViewModel>[],
-    sort.value,
-  );
+  /// Saring kategori dari lembar "Urutkan & saring" (kosong = semua).
+  final categoryFilter = <int>{}.obs;
+
+  /// Kategori pengeluaran untuk pilihan saringan.
+  final expenseCategories = <CategoryModel>[].obs;
+
+  List<BudgetViewModel> get visibleItems => _listService.sort([
+    for (final item in state.value.data ?? const <BudgetViewModel>[])
+      if (categoryFilter.isEmpty ||
+          categoryFilter.contains(item.budget.categoryId))
+        item,
+  ], sort.value);
+
+  void applySortFilter(BudgetSort value, Set<int> categories) {
+    sort.value = value;
+    categoryFilter.assignAll(categories);
+  }
 
   Worker? _refreshWorker;
   int _requestId = 0;
@@ -85,6 +100,14 @@ class BudgetController extends GetxController {
         for (final category in all)
           if (category.id != null) category.id!: category.displayName,
       });
+      expenseCategories.assignAll(
+        all.where(
+          (c) =>
+              c.id != null &&
+              !c.isArchived &&
+              c.type == TransactionType.expense,
+        ),
+      );
     } catch (_) {
       // Tanpa nama kategori judul baris memakai nama anggaran saja.
     }

@@ -24,6 +24,10 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/app_skeleton.dart';
 import '../../../core/widgets/motion.dart';
 import '../../../core/widgets/swipe_actions.dart';
+import '../../../core/widgets/sort_filter_sheet.dart';
+import '../../../core/theme/category_style.dart';
+import '../../../core/constant/domain_enums.dart';
+import '../../../core/utils/date_range.dart';
 
 /// Tab Transaksi: cari, filter jenis, ringkasan, dan daftar per hari.
 class TransactionListPage extends StatefulWidget {
@@ -91,6 +95,59 @@ class _TransactionListPageState extends State<TransactionListPage> {
       actionLabel: 'Urungkan'.tr,
       onAction: () => _controller.restore(removed),
       duration: const Duration(seconds: 4),
+    );
+  }
+
+  /// Satu lembar untuk urutan dan saringan (kategori, nominal, tanggal).
+  Future<void> _openSortFilter() async {
+    final c = _controller;
+    final type = c.filter.value;
+    final categories = [
+      for (final category in c.categories)
+        if (!category.isArchived &&
+            category.id != null &&
+            (type == TransactionTypeFilter.all ||
+                (type == TransactionTypeFilter.income) ==
+                    (category.type == TransactionType.income)))
+          FilterCategory(
+            id: category.id!,
+            name: category.displayName,
+            iconKey: category.iconKey,
+            color: CategoryStyle.color(category.colorValue),
+          ),
+    ];
+    final range = c.filterRange.value;
+    DateRange? toRange(DateTimeRange? value) =>
+        value == null ? null : DateRange(start: value.start, end: value.end);
+    final result = await showSortFilterSheet<TransactionSort>(
+      context,
+      value: SortFilterValue(
+        sort: c.sort.value,
+        categoryIds: {...c.categoryIds},
+        minAmount: c.minAmount.value,
+        maxAmount: c.maxAmount.value,
+        range: range == null
+            ? null
+            : DateTimeRange(start: range.start, end: range.end),
+      ),
+      defaultSort: TransactionSort.terbaru,
+      sortOptions: TransactionSort.values,
+      sortLabel: _sortLabel,
+      categories: categories,
+      countFor: (value) => c.countFor(
+        categoryIds: value.categoryIds,
+        minAmount: value.minAmount,
+        maxAmount: value.maxAmount,
+        range: toRange(value.range),
+      ),
+    );
+    if (result == null) return;
+    c.applySortFilter(
+      sort: result.sort,
+      categoryIds: result.categoryIds,
+      minAmount: result.minAmount,
+      maxAmount: result.maxAmount,
+      range: toRange(result.range),
     );
   }
 
@@ -233,13 +290,11 @@ class _TransactionListPageState extends State<TransactionListPage> {
           title: 'Transaksi'.tr,
           actions: [
             Obx(
-              () => SortChip<TransactionSort>(
-                value: _controller.sort.value,
-                options: TransactionSort.values,
-                chipLabel: _sortChipLabel,
-                menuLabel: _sortLabel,
-                onSelected: _controller.setSort,
-                tooltip: 'Urutkan transaksi'.tr,
+              () => SortFilterChip(
+                label: _sortChipLabel(_controller.sort.value),
+                activeCount: _controller.activeFilterCount,
+                tooltip: 'Urutkan & saring'.tr,
+                onTap: _openSortFilter,
               ),
             ),
           ],

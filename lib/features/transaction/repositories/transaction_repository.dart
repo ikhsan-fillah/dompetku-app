@@ -14,6 +14,9 @@ class TransactionPageRequest {
     this.offset = 0,
     this.categoryId,
     this.dateSort = TransactionDateSort.newest,
+    this.categoryIds = const {},
+    this.minAmount,
+    this.maxAmount,
   });
 
   final DateRange? range;
@@ -24,6 +27,11 @@ class TransactionPageRequest {
   final int offset;
   final int? categoryId;
   final TransactionDateSort dateSort;
+
+  /// Saringan dari lembar "Urutkan & saring".
+  final Set<int> categoryIds;
+  final int? minAmount;
+  final int? maxAmount;
 }
 
 enum TransactionDateSort { newest, oldest }
@@ -44,6 +52,9 @@ class TransactionSummary {
 
 abstract interface class TransactionPageRepository {
   Future<List<TransactionModel>> getPage(TransactionPageRequest request);
+
+  /// Jumlah transaksi yang cocok dengan saringan [request].
+  Future<int> countPage(TransactionPageRequest request);
 
   Future<TransactionSummary> getSummary({
     DateRange? range,

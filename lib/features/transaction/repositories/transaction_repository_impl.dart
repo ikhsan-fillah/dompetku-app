@@ -53,6 +53,10 @@ class TransactionRepositoryImpl
       _dataSource.getPage(request);
 
   @override
+  Future<int> countPage(TransactionPageRequest request) =>
+      _dataSource.countPage(request);
+
+  @override
   Future<TransactionSummary> getSummary({
     DateRange? range,
     TransactionTypeFilter filter = TransactionTypeFilter.all,

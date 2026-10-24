@@ -25,6 +25,8 @@ import '../../../core/widgets/app_skeleton.dart';
 import '../../../core/widgets/motion.dart';
 import '../../../core/widgets/swipe_actions.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/sort_filter_sheet.dart';
+import '../../../core/theme/category_style.dart';
 
 class BudgetPage extends GetView<BudgetController> {
   const BudgetPage({super.key});
@@ -210,13 +212,11 @@ class _Header extends StatelessWidget {
       title: 'Anggaran'.tr,
       actions: [
         Obx(
-          () => SortChip<BudgetSort>(
-            value: controller.sort.value,
-            options: BudgetSort.values,
-            chipLabel: _sortChipLabel,
-            menuLabel: _sortLabel,
-            onSelected: controller.setSort,
-            tooltip: 'Urutkan anggaran'.tr,
+          () => SortFilterChip(
+            label: _sortChipLabel(controller.sort.value),
+            activeCount: controller.categoryFilter.isEmpty ? 0 : 1,
+            tooltip: 'Urutkan & saring'.tr,
+            onTap: () => _openSortFilter(context),
           ),
         ),
         const SizedBox(width: 4),
@@ -227,6 +227,34 @@ class _Header extends StatelessWidget {
         ),
       ],
     );
+  }
+}
+
+extension on _Header {
+  Future<void> _openSortFilter(BuildContext context) async {
+    final result = await showSortFilterSheet<BudgetSort>(
+      context,
+      value: SortFilterValue(
+        sort: controller.sort.value,
+        categoryIds: {...controller.categoryFilter},
+      ),
+      defaultSort: BudgetSort.persentaseTerpakaiTertinggi,
+      sortOptions: BudgetSort.values,
+      sortLabel: _sortLabel,
+      showAmount: false,
+      showDate: false,
+      categories: [
+        for (final category in controller.expenseCategories)
+          FilterCategory(
+            id: category.id!,
+            name: category.displayName,
+            iconKey: category.iconKey,
+            color: CategoryStyle.color(category.colorValue),
+          ),
+      ],
+    );
+    if (result == null) return;
+    controller.applySortFilter(result.sort, result.categoryIds);
   }
 }
 

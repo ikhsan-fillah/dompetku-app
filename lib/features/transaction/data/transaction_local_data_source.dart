@@ -146,6 +146,20 @@ class TransactionLocalDataSource implements TransactionPageRepository {
   }
 
   @override
+  Future<int> countPage(TransactionPageRequest request) async {
+    final database = await _appDatabase.database;
+    final filter = _where(request);
+    final rows = await database.rawQuery(
+      '''SELECT COUNT(*) AS n FROM ${DatabaseTables.transactions} t
+         LEFT JOIN ${DatabaseTables.categories} c
+           ON c.${DatabaseColumns.id} = t.${DatabaseColumns.categoryId}
+         WHERE ${filter.sql}''',
+      filter.args,
+    );
+    return (rows.first['n'] as num).toInt();
+  }
+
+  @override
   Future<TransactionSummary> getSummary({
     DateRange? range,
     TransactionTypeFilter filter = TransactionTypeFilter.all,
@@ -194,6 +208,19 @@ class TransactionLocalDataSource implements TransactionPageRepository {
     if (request.categoryId != null) {
       clauses.add('t.${DatabaseColumns.categoryId} = ?');
       args.add(request.categoryId);
+    }
+    if (request.categoryIds.isNotEmpty) {
+      final marks = List.filled(request.categoryIds.length, '?').join(', ');
+      clauses.add('t.${DatabaseColumns.categoryId} IN ($marks)');
+      args.addAll(request.categoryIds);
+    }
+    if (request.minAmount != null) {
+      clauses.add('t.${DatabaseColumns.amount} >= ?');
+      args.add(request.minAmount);
+    }
+    if (request.maxAmount != null) {
+      clauses.add('t.${DatabaseColumns.amount} <= ?');
+      args.add(request.maxAmount);
     }
     if (request.filter != TransactionTypeFilter.all) {
       clauses.add('t.${DatabaseColumns.type} = ?');

@@ -130,3 +130,100 @@ class SortChip<T> extends StatelessWidget {
     );
   }
 }
+
+/// Chip urutan yang membuka lembar "Urutkan & saring". Tampilannya sama dengan
+/// [SortChip]; bila ada saringan aktif, garisnya menebal dan ada lencana
+/// jumlah saringan.
+class SortFilterChip extends StatelessWidget {
+  const SortFilterChip({
+    super.key,
+    required this.label,
+    required this.activeCount,
+    required this.onTap,
+    required this.tooltip,
+  });
+
+  final String label;
+  final int activeCount;
+  final VoidCallback onTap;
+  final String tooltip;
+
+  @override
+  Widget build(BuildContext context) {
+    final active = activeCount > 0;
+    return Tooltip(
+      message: tooltip,
+      child: Semantics(
+        button: true,
+        label: active ? '$tooltip ($activeCount)' : tooltip,
+        excludeSemantics: true,
+        child: InkWell(
+          onTap: onTap,
+          borderRadius: BorderRadius.circular(AppRadius.smallButton),
+          child: Container(
+            height: 44,
+            alignment: Alignment.center,
+            child: Container(
+              height: AppSpacing.iconButton,
+              constraints: const BoxConstraints(maxWidth: 170),
+              padding: const EdgeInsets.symmetric(horizontal: 12),
+              decoration: BoxDecoration(
+                color: AppColors.card,
+                borderRadius: BorderRadius.circular(AppRadius.smallButton),
+                border: Border.all(
+                  color: active ? AppColors.ink : AppColors.line,
+                  width: active ? 1.5 : 1,
+                ),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  const Icon(
+                    LucideIcons.arrowUpDown,
+                    size: 15,
+                    color: AppColors.ink,
+                  ),
+                  const SizedBox(width: 6),
+                  Flexible(
+                    child: Text(
+                      label,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.body(size: 12.5, weight: FontWeight.w700),
+                    ),
+                  ),
+                  const SizedBox(width: 6),
+                  if (active)
+                    Container(
+                      constraints: const BoxConstraints(minWidth: 18),
+                      height: 18,
+                      padding: const EdgeInsets.symmetric(horizontal: 5),
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: AppColors.ink,
+                        borderRadius: BorderRadius.circular(9),
+                      ),
+                      child: Text(
+                        '$activeCount',
+                        style: AppText.body(
+                          size: 10.5,
+                          weight: FontWeight.w700,
+                          color: AppColors.paper,
+                        ),
+                      ),
+                    )
+                  else
+                    const Icon(
+                      LucideIcons.chevronDown,
+                      size: 14,
+                      color: AppColors.ink,
+                    ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+}

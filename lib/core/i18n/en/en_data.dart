@@ -1,5 +1,19 @@
 /// Cadangan, ekspor Excel, urutkan & saring, pengingat, dan aksi geser.
 const Map<String, String> enData = {
+  // Urutkan & saring
+  'Urutkan & saring': 'Sort & filter',
+  'Reset': 'Reset',
+  'URUTKAN': 'SORT',
+  'KATEGORI': 'CATEGORY',
+  'NOMINAL': 'AMOUNT',
+  'TANGGAL': 'DATE',
+  'Semua kategori': 'All categories',
+  'Minimal': 'Minimum',
+  'Tanpa batas': 'No limit',
+  'Semua tanggal': 'All dates',
+  '@count hari': '@count days',
+  'Hapus tanggal': 'Clear date',
+  'Tampilkan @count hasil': 'Show @count results',
   // Geser & urungkan
   'Anggaran dihapus': 'Budget deleted',
   'Anggaran diarsipkan': 'Budget archived',
