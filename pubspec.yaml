@@ -5,7 +5,7 @@ description: "Tally: offline-first personal finance app."
 publish_to: "none"
 
 
-version: 1.1.5+9
+version: 1.2.0+10
 
 
 environment:

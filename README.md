@@ -317,6 +317,24 @@ Kunci terjemahan adalah teks Indonesia (`'Laporan'.tr`); terjemahan Inggris ada 
 
 ## 9. Riwayat Versi
 
+### 1.2.0+10 (Oktober 2026)
+
+- **Tabungan:** halaman tujuan tabungan (total terkumpul, progres, target tanggal, setor/ambil, perayaan saat tercapai), dibuka dari pintasan baru di Beranda (Laporan, Tabungan, Berulang, Rekap) dan dari Profil. Database v5 (tabel `savings_goals`).
+- **Geser kartu:** Edit dan Hapus lewat geser di Transaksi, Anggaran, Berulang, Tabungan, dan Kategori; ketuk kartu membuka Edit. Hapus langsung dengan toast Urungkan (kategori tetap minta konfirmasi). Duplikat transaksi dan Arsipkan anggaran ada di lembar Edit.
+- **Urutkan & saring:** satu lembar dari chip urutan: urutan (baris geser), kategori sebagai ikon bernama terpisah pengeluaran/pemasukan, rentang nominal, dan tanggal via kalender rentang. Tombol menampilkan jumlah hasil.
+- **Notifikasi:** ikon logo Tally; ketuk pengingat berulang membuka Catat Keuangan terisi; pengingat harian "Sudah catat pengeluaran hari ini?" (bawaan 21.00, hanya bila hari itu belum ada transaksi) dengan sakelar dan jam di Profil.
+- **Cadangan data:** cadangan seluruh data sebagai berkas `.tally`, pulihkan dengan pratinjau dan konfirmasi, serta ekspor `.xlsx` rapi (lembar Transaksi, Per kategori, Anggaran). Foto struk tidak ikut.
+- **Draf:** kartu menampilkan tanggal dan jam notifikasi terbaca (tanggal transaksi mengikuti ini, bukan waktu konfirmasi); Konfirmasi semua di app bar; kategori dipilih langsung di dialog Ubah draf.
+- **Tampilan:** angka nominal bergulir per digit; animasi mikro di Beranda dan Laporan; toast di atas menggantikan snackbar; skeleton loading dan getaran halus; ikon kategori Phosphor duotone; kartu detail kategori lebih rapat.
+- **Lainnya:** widget layar utama Android (saldo dan anggaran); pengingat transaksi berulang (hari H atau sehari sebelum).
+
+### 1.1.5+9 (Oktober 2026)
+
+- **Laporan:** tren pengeluaran pindah ke Laporan; cincin kategori bisa diketuk.
+- **Anggaran:** tanggal dipilih dengan kalender rentang; batang progres membulat.
+- **Berulang:** bisa diedit dari kartu; teks jadwal diperbaiki.
+- **Tampilan:** semua lembar bawah memakai gaya lembar Catat Keuangan; detail kategori tidak lagi tampak memuat terus.
+
 ### 1.1.5+8 (Oktober 2026)
 
 - **Dialog:** semua dialog konfirmasi dan isian memakai `AppDialog` dengan dua `AppButton` (Batal outline, aksi hitam atau merah).
