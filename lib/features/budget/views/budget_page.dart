@@ -20,11 +20,11 @@ import '../../../core/i18n/app_language.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
 import '../services/budget_list_service.dart';
-import '../widgets/confirm_delete_budget.dart';
 import '../../../core/widgets/card_actions.dart';
-import '../../../core/widgets/motion.dart';
-import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_skeleton.dart';
+import '../../../core/widgets/motion.dart';
+import '../../../core/widgets/swipe_actions.dart';
+import '../../../core/widgets/app_toast.dart';
 
 class BudgetPage extends GetView<BudgetController> {
   const BudgetPage({super.key});
@@ -48,21 +48,21 @@ class BudgetPage extends GetView<BudgetController> {
     await controller.load(silent: true);
   }
 
-  Future<void> _confirmArchive(
-    BuildContext context,
-    BudgetViewModel item,
-  ) async {
-    final confirmed = await showAppConfirm(
-      context,
-      title: 'Arsipkan anggaran?'.tr,
-      message:
-          '"@name" dipindahkan ke arsip. Riwayat transaksi tidak ikut terhapus.'
-              .trParams({'name': item.budget.name}),
-      confirmLabel: 'Arsipkan'.tr,
+  /// Hapus langsung tanpa dialog; toast Urungkan mengembalikannya.
+  Future<void> _delete(BudgetViewModel item) async {
+    final id = item.budget.id;
+    if (id == null) return;
+    controller.expandedId.value = null;
+    final ok = await controller.delete(id);
+    if (!ok) return;
+    AppToast.show(
+      title: 'Anggaran dihapus'.tr,
+      message: item.budget.name,
+      kind: ToastKind.undo,
+      actionLabel: 'Urungkan'.tr,
+      onAction: () => controller.restoreDeleted(item.budget),
+      duration: const Duration(seconds: 4),
     );
-    if (confirmed) {
-      await controller.archive(item.budget.id!);
-    }
   }
 
   @override
@@ -132,32 +132,33 @@ class BudgetPage extends GetView<BudgetController> {
               style: AppText.body(size: 13, weight: FontWeight.w700),
             ),
             for (var i = 0; i < items.length; i++)
-              _BudgetRow(
-                item: items[i],
-                money: _money,
-                categoryName: _categoryName(items[i]),
-                last: i == items.length - 1,
-                expanded: controller.expandedId.value == items[i].budget.id,
-                onTap: () => controller.toggleExpanded(items[i].budget.id),
-                actions: [
-                  CardAction(
-                    label: 'Edit'.tr,
-                    icon: LucideIcons.pencil,
-                    onTap: () => _openForm(items[i]),
-                  ),
-                  CardAction(
-                    label: 'Arsipkan'.tr,
-                    icon: LucideIcons.archive,
-                    onTap: () => _confirmArchive(context, items[i]),
-                  ),
-                  CardAction(
-                    label: 'Hapus'.tr,
-                    icon: LucideIcons.trash2,
-                    danger: true,
-                    onTap: () =>
-                        confirmDeleteBudget(context, controller, items[i]),
-                  ),
-                ],
+              SwipeActions(
+                key: ValueKey('budget-${items[i].budget.id}'),
+                groupTag: 'budgets',
+                radius: 8,
+                onEdit: () => _openForm(items[i]),
+                onDelete: () => _delete(items[i]),
+                child: _BudgetRow(
+                  item: items[i],
+                  money: _money,
+                  categoryName: _categoryName(items[i]),
+                  last: i == items.length - 1,
+                  expanded: controller.expandedId.value == items[i].budget.id,
+                  onTap: () => controller.toggleExpanded(items[i].budget.id),
+                  actions: [
+                    CardAction(
+                      label: 'Edit'.tr,
+                      icon: LucideIcons.pencil,
+                      onTap: () => _openForm(items[i]),
+                    ),
+                    CardAction(
+                      label: 'Hapus'.tr,
+                      icon: LucideIcons.trash2,
+                      danger: true,
+                      onTap: () => _delete(items[i]),
+                    ),
+                  ],
+                ),
               ),
           ],
         ),
@@ -418,8 +419,8 @@ String _plain(int value) {
 }
 
 /// Baris anggaran di dalam kartu "Per kategori".tr: satu judul, persen di
-/// kanan, lalu periode dan status, bar, dan pemakaian. Ketuk untuk Edit atau
-/// Arsipkan.
+/// kanan, lalu periode dan status, bar, dan pemakaian. Geser atau ketuk untuk
+/// Edit dan Hapus; Arsipkan ada di lembar Edit.
 class _BudgetRow extends StatelessWidget {
   const _BudgetRow({
     required this.item,

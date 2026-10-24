@@ -13,9 +13,10 @@ import '../controllers/recurring_controller.dart';
 import '../models/recurring_rule.dart';
 import '../services/recurring_totals.dart';
 import 'recurring_add_sheet.dart';
-import '../../../core/widgets/app_dialog.dart';
-import '../../../core/widgets/motion.dart';
 import '../../../core/widgets/card_actions.dart';
+import '../../../core/widgets/motion.dart';
+import '../../../core/widgets/swipe_actions.dart';
+import '../../../core/widgets/app_toast.dart';
 
 /// Daftar recurring: item aktif/nonaktif lewat sakelar. Nonaktif tidak dihapus.
 class RecurringPage extends StatelessWidget {
@@ -166,16 +167,8 @@ class _TotalCard extends StatelessWidget {
   }
 }
 
-Future<bool> _confirmDelete(BuildContext context) => showAppConfirm(
-  context,
-  title: 'Hapus transaksi berulang?'.tr,
-  message: 'Transaksi sebelumnya tetap ada. Hanya jadwalnya yang dihapus.'.tr,
-  confirmLabel: 'Hapus'.tr,
-  danger: true,
-);
-
-/// Kartu aturan: geser ke kiri untuk hapus, atau ketuk untuk memunculkan
-/// tombol Edit dan Hapus seperti kartu transaksi.
+/// Kartu aturan: geser ke kiri atau ketuk untuk Edit dan Hapus, sama dengan
+/// kartu transaksi. Hapus bisa diurungkan.
 class _DismissibleRule extends StatelessWidget {
   const _DismissibleRule({
     required this.rule,
@@ -193,25 +186,27 @@ class _DismissibleRule extends StatelessWidget {
   }
 
   Future<void> _delete(BuildContext context) async {
-    if (await _confirmDelete(context)) await controller.remove(rule.id!);
+    controller.expandedId.value = null;
+    final ok = await controller.remove(rule.id!);
+    if (!ok) return;
+    AppToast.show(
+      title: 'Transaksi berulang dihapus'.tr,
+      message: rule.name,
+      kind: ToastKind.undo,
+      actionLabel: 'Urungkan'.tr,
+      onAction: () => controller.restoreRule(rule),
+      duration: const Duration(seconds: 4),
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    return Dismissible(
-      key: ValueKey(rule.id),
-      direction: DismissDirection.endToStart,
-      confirmDismiss: (_) => _confirmDelete(context),
-      onDismissed: (_) => controller.remove(rule.id!),
-      background: Container(
-        alignment: Alignment.centerRight,
-        padding: const EdgeInsets.only(right: 20),
-        decoration: BoxDecoration(
-          color: AppColors.spendSoft,
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: const Icon(LucideIcons.trash2, color: AppColors.spend),
-      ),
+    return SwipeActions(
+      key: ValueKey('rule-${rule.id}'),
+      groupTag: 'recurring',
+      radius: 12,
+      onEdit: () => _edit(context),
+      onDelete: () => _delete(context),
       child: _RuleTile(
         rule: rule,
         expanded: expanded,

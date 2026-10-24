@@ -30,6 +30,12 @@ class _Budgets implements BudgetRepository {
   }
 
   @override
+  Future<int> insert(BudgetModel budget) async {
+    items.add(budget);
+    return budget.id ?? items.length;
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -140,7 +146,9 @@ void main() {
       expect(find.textContaining('Lihat semua'), findsNothing);
     });
 
-    testWidgets('anggaran bisa dihapus setelah konfirmasi', (tester) async {
+    testWidgets('Hapus langsung menghapus dengan toast Urungkan', (
+      tester,
+    ) async {
       final repository = _Budgets([_budget(1, 'makan'), _budget(2, 'jajan')]);
       Get.put(BudgetController(repository, categories: _Categories()));
       await tester.pumpWidget(
@@ -152,26 +160,25 @@ void main() {
       await tester.runAsync(pumpEventQueue);
       await tester.pumpAndSettle();
 
-      expect(find.text('Arsipkan'), findsNothing);
       await tester.tap(find.text('makan'));
       await tester.pumpAndSettle();
-      // Aksi muncul di bawah kartu, bukan di lembar bawah baru.
+      // Aksi muncul di bawah kartu: Edit dan Hapus (arsip ada di lembar Edit).
       expect(find.byType(BottomSheet), findsNothing);
       expect(find.text('Edit'), findsOneWidget);
-      expect(find.text('Arsipkan'), findsOneWidget);
+      expect(find.text('Arsipkan'), findsNothing);
       await tester.tap(find.text('Hapus'));
-      await tester.pumpAndSettle();
-      expect(find.text('Hapus anggaran?'), findsOneWidget);
-      await tester.tap(find.text('Hapus').last);
       await tester.runAsync(pumpEventQueue);
-      await tester.pumpAndSettle();
+      await tester.pump(const Duration(milliseconds: 300));
 
+      expect(find.text('Hapus anggaran?'), findsNothing);
       expect(repository.deleted, [1]);
-      expect(find.text('makan'), findsNothing);
+      expect(find.text('Anggaran dihapus'), findsOneWidget);
       expect(find.text('jajan'), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
     });
 
-    testWidgets('batal di konfirmasi tidak menghapus', (tester) async {
+    testWidgets('Urungkan mengembalikan anggaran yang dihapus', (tester) async {
       final repository = _Budgets([_budget(1, 'makan')]);
       Get.put(BudgetController(repository, categories: _Categories()));
       await tester.pumpWidget(
@@ -186,11 +193,16 @@ void main() {
       await tester.tap(find.text('makan'));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Hapus'));
-      await tester.pumpAndSettle();
-      await tester.tap(find.text('Batal'));
+      await tester.runAsync(pumpEventQueue);
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text('Urungkan'));
+      await tester.runAsync(pumpEventQueue);
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.pump(const Duration(seconds: 5));
       await tester.pumpAndSettle();
 
-      expect(repository.deleted, isEmpty);
+      expect(repository.items.map((b) => b.name), ['makan']);
       expect(find.text('makan'), findsOneWidget);
     });
   });

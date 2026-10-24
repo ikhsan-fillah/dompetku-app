@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:get/get.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_slidable/flutter_slidable.dart';
 import 'app/bindings/initial_binding.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
@@ -98,6 +99,9 @@ class _MyAppState extends State<MyApp> with WidgetsBindingObserver {
       initialBinding: InitialBinding(),
       initialRoute: AppRoutes.splash,
       getPages: AppPages.pages,
+      // Kartu yang digeser menutup sendiri saat kartu lain dibuka.
+      builder: (context, child) =>
+          SlidableAutoCloseBehavior(child: child ?? const SizedBox()),
     );
   }
 }

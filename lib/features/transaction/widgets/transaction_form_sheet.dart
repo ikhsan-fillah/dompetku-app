@@ -23,6 +23,8 @@ import '../controllers/transaction_form_controller.dart';
 import '../models/transaction_model.dart';
 import '../../../core/widgets/app_date_picker.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../controllers/transaction_controller.dart';
+import '../../budget/controllers/budget_controller.dart';
 
 /// Membuka sheet tambah/edit transaksi. Mengembalikan true bila tersimpan.
 enum FinancialInputMode { expense, income, budget }
@@ -319,6 +321,43 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
     );
   }
 
+  /// Aksi ketiga transaksi (selain Edit dan Hapus) ada di lembar Edit.
+  Future<void> _duplicate() async {
+    final transaction = widget.editingTransaction;
+    if (transaction == null || !Get.isRegistered<TransactionController>()) {
+      return;
+    }
+    final ok = await Get.find<TransactionController>().duplicate(transaction);
+    if (!mounted) return;
+    Navigator.of(context).pop(false);
+    AppToast.show(
+      title: ok
+          ? 'Transaksi diduplikat ke hari ini'.tr
+          : 'Gagal menggandakan.'.tr,
+      kind: ok ? ToastKind.success : ToastKind.error,
+    );
+  }
+
+  /// Aksi ketiga anggaran: arsipkan, dengan Urungkan.
+  Future<void> _archiveBudget() async {
+    final budget = widget.editingBudget;
+    final id = budget?.id;
+    if (id == null || !Get.isRegistered<BudgetController>()) return;
+    final controller = Get.find<BudgetController>();
+    final ok = await controller.archive(id);
+    if (!mounted) return;
+    Navigator.of(context).pop(false);
+    if (!ok) return;
+    AppToast.show(
+      title: 'Anggaran diarsipkan'.tr,
+      message: budget!.name,
+      kind: ToastKind.undo,
+      actionLabel: 'Urungkan'.tr,
+      onAction: () => controller.restore(id),
+      duration: const Duration(seconds: 4),
+    );
+  }
+
   Future<void> _save() async {
     final ok = _isBudget
         ? await _budgetController?.save() ?? false
@@ -590,6 +629,24 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
                     : _save,
               ),
             ),
+            if (widget.editingTransaction != null) ...[
+              const SizedBox(height: 10),
+              AppButton(
+                kind: AppButtonKind.outline,
+                label: 'Duplikat transaksi ini'.tr,
+                icon: LucideIcons.copy,
+                onPressed: _duplicate,
+              ),
+            ],
+            if (widget.editingBudget != null) ...[
+              const SizedBox(height: 10),
+              AppButton(
+                kind: AppButtonKind.outline,
+                label: 'Arsipkan anggaran ini'.tr,
+                icon: LucideIcons.archive,
+                onPressed: _archiveBudget,
+              ),
+            ],
           ],
         ),
       ),

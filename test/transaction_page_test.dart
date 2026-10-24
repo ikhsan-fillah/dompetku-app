@@ -32,6 +32,12 @@ class _Transactions implements TransactionRepository {
   }
 
   @override
+  Future<int> insert(TransactionModel transaction) async {
+    items.add(transaction);
+    return transaction.id ?? items.length;
+  }
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
@@ -163,7 +169,7 @@ void main() {
     expect(find.text('Tidak ada hasil'), findsOneWidget);
   });
 
-  testWidgets('mengetuk baris menampilkan aksi dan hapus butuh konfirmasi', (
+  testWidgets('mengetuk baris menampilkan Edit dan Hapus; hapus tanpa dialog', (
     tester,
   ) async {
     final repository = await _open(tester);
@@ -171,38 +177,37 @@ void main() {
     await tester.tap(find.text('Kopi'));
     await tester.pumpAndSettle();
     expect(find.text('Edit'), findsOneWidget);
-    expect(find.text('Duplikat'), findsOneWidget);
+    // Duplikat pindah ke lembar Edit.
+    expect(find.text('Duplikat'), findsNothing);
 
     await tester.tap(find.text('Hapus'));
-    await tester.pumpAndSettle();
-    expect(find.text('Hapus transaksi?'), findsOneWidget);
-    expect(repository.deleted, isEmpty);
+    await tester.runAsync(pumpEventQueue);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
-    await tester.tap(
-      find.descendant(
-        of: find.byType(AlertDialog),
-        matching: find.text('Hapus'),
-      ),
-    );
-    await tester.pumpAndSettle();
-
+    expect(find.byType(AlertDialog), findsNothing);
     expect(repository.deleted, [1]);
+    expect(find.text('Transaksi dihapus'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
     expect(find.text('Kopi'), findsNothing);
-    expect(find.text('Transaksi dihapus.'), findsNothing);
   });
 
-  testWidgets('membatalkan hapus tidak menghapus apa pun', (tester) async {
+  testWidgets('Urungkan mengembalikan transaksi yang dihapus', (tester) async {
     final repository = await _open(tester);
 
     await tester.tap(find.text('Kopi'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Hapus'));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Batal'));
+    await tester.runAsync(pumpEventQueue);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+    await tester.tap(find.text('Urungkan'));
+    await tester.runAsync(pumpEventQueue);
+    await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
 
-    expect(repository.deleted, isEmpty);
-    expect(find.text('Kopi'), findsOneWidget);
+    expect(repository.items.map((t) => t.title), contains('Kopi'));
   });
 
   testWidgets('tanpa transaksi menampilkan ajakan menambah', (tester) async {

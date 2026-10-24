@@ -64,6 +64,20 @@ class RecurringController extends GetxController {
     }
   }
 
+  /// Mengembalikan aturan yang baru dihapus (tombol Urungkan).
+  Future<bool> restoreRule(RecurringRule rule) async {
+    try {
+      await _store.insert(rule);
+      await load();
+      return true;
+    } catch (_) {
+      state.value = ResourceState.error(
+        'Gagal mengembalikan transaksi berulang.'.tr,
+      );
+      return false;
+    }
+  }
+
   Future<bool> setActive(int id, bool active) async {
     try {
       await _store.setActive(id, active);

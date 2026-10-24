@@ -20,10 +20,10 @@ import '../controllers/transaction_controller.dart';
 import '../services/transaction_list_service.dart';
 import '../widgets/transaction_form_sheet.dart';
 import '../widgets/transaction_tile.dart';
-import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/widgets/motion.dart';
 import '../../../core/widgets/app_skeleton.dart';
+import '../../../core/widgets/motion.dart';
+import '../../../core/widgets/swipe_actions.dart';
 
 /// Tab Transaksi: cari, filter jenis, ringkasan, dan daftar per hari.
 class TransactionListPage extends StatefulWidget {
@@ -72,24 +72,8 @@ class _TransactionListPageState extends State<TransactionListPage> {
     await showTransactionSheet(context, edit: model);
   }
 
-  Future<void> _duplicate(int id) async {
-    final model = _controller.findById(id);
-    if (model == null) return;
-    final ok = await _controller.duplicate(model);
-    if (!mounted) return;
-    _expanded.value = null;
-    if (!ok) _snack('Gagal menggandakan.'.tr);
-  }
-
+  /// Hapus langsung tanpa dialog; toast Urungkan mengembalikannya.
   Future<void> _delete(int id) async {
-    final confirmed = await showAppConfirm(
-      context,
-      title: 'Hapus transaksi?'.tr,
-      message: 'Transaksi ini akan dihapus permanen.'.tr,
-      confirmLabel: 'Hapus'.tr,
-      danger: true,
-    );
-    if (!confirmed) return;
     final removed = _controller.findById(id);
     final ok = await _controller.delete(id);
     if (!mounted) return;
@@ -212,16 +196,27 @@ class _TransactionListPageState extends State<TransactionListPage> {
               );
             }
             final item = entry.item!;
-            return AppCard(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-              margin: const EdgeInsets.only(bottom: 4),
-              child: TransactionTile(
-                item: item,
-                expanded: expandedId == item.id,
-                onTap: () => _toggle(item.id),
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 4),
+              child: SwipeActions(
+                key: ValueKey('tx-${item.id}'),
+                groupTag: 'transactions',
                 onEdit: () => _edit(item.id),
-                onDuplicate: () => _duplicate(item.id),
                 onDelete: () => _delete(item.id),
+                child: AppCard(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 4,
+                  ),
+                  margin: EdgeInsets.zero,
+                  child: TransactionTile(
+                    item: item,
+                    expanded: expandedId == item.id,
+                    onTap: () => _toggle(item.id),
+                    onEdit: () => _edit(item.id),
+                    onDelete: () => _delete(item.id),
+                  ),
+                ),
               ),
             );
           },

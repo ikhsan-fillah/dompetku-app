@@ -11,7 +11,8 @@ import '../../../core/widgets/card_actions.dart';
 import '../../../core/widgets/category_icon_box.dart';
 import '../../dashboard/models/dashboard_view_models.dart';
 
-/// Satu baris transaksi. Bila [expanded], tampil aksi Edit, Duplikat, dan Hapus.
+/// Satu baris transaksi. Bila [expanded], tampil aksi Edit dan Hapus (sama
+/// dengan tombol geser); Duplikat ada di lembar Edit.
 class TransactionTile extends StatelessWidget {
   const TransactionTile({
     super.key,
@@ -19,7 +20,6 @@ class TransactionTile extends StatelessWidget {
     required this.expanded,
     required this.onTap,
     required this.onEdit,
-    required this.onDuplicate,
     required this.onDelete,
   });
 
@@ -27,7 +27,6 @@ class TransactionTile extends StatelessWidget {
   final bool expanded;
   final VoidCallback onTap;
   final VoidCallback onEdit;
-  final VoidCallback onDuplicate;
   final VoidCallback onDelete;
 
   @override
@@ -93,11 +92,6 @@ class TransactionTile extends StatelessWidget {
               label: 'Edit'.tr,
               icon: LucideIcons.pencil,
               onTap: onEdit,
-            ),
-            CardAction(
-              label: 'Duplikat'.tr,
-              icon: LucideIcons.copy,
-              onTap: onDuplicate,
             ),
             CardAction(
               label: 'Hapus'.tr,

@@ -202,6 +202,22 @@ class BudgetController extends GetxController {
     }
   }
 
+  /// Mengembalikan anggaran yang baru dihapus (tombol Urungkan).
+  Future<bool> restoreDeleted(BudgetModel budget) async {
+    try {
+      await _repository.insert(budget);
+      if (Get.isRegistered<DataRefreshService>()) {
+        Get.find<DataRefreshService>().bump();
+      } else {
+        await load(silent: true);
+      }
+      return true;
+    } catch (_) {
+      state.value = ResourceState.error('Gagal mengembalikan anggaran.'.tr);
+      return false;
+    }
+  }
+
   /// Memulihkan anggaran terarsip kembali ke daftar aktif.
   Future<bool> restore(int id) async {
     try {

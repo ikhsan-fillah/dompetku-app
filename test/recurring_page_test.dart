@@ -102,7 +102,7 @@ void main() {
     expect(find.text('Edit'), findsNothing);
   });
 
-  testWidgets('Hapus dari kartu meminta konfirmasi lalu menghapus', (
+  testWidgets('Hapus dari kartu langsung menghapus dengan toast Urungkan', (
     tester,
   ) async {
     final store = _Store([_rule()]);
@@ -111,13 +111,15 @@ void main() {
     await tester.tap(find.text('Listrik'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Hapus'));
-    await tester.pumpAndSettle();
-    expect(find.text('Hapus transaksi berulang?'), findsOneWidget);
+    await tester.runAsync(pumpEventQueue);
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
 
-    await tester.tap(find.text('Hapus').last);
-    await tester.pumpAndSettle();
-
+    expect(find.text('Hapus transaksi berulang?'), findsNothing);
     expect(store.deleted, [1]);
+    expect(find.text('Transaksi berulang dihapus'), findsOneWidget);
+    await tester.pump(const Duration(seconds: 5));
+    await tester.pumpAndSettle();
   });
 
   testWidgets('sakelar menonaktifkan tanpa menghapus item', (tester) async {

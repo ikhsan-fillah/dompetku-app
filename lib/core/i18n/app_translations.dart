@@ -6,6 +6,7 @@ import 'en/en_automation.dart';
 import 'en/en_budget.dart';
 import 'en/en_category.dart';
 import 'en/en_common.dart';
+import 'en/en_data.dart';
 import 'en/en_home.dart';
 import 'en/en_profile.dart';
 import 'en/en_recap.dart';
@@ -24,6 +25,7 @@ final Map<String, String> englishStrings = {
   ...enRecap,
   ...enAutomation,
   ...enProfile,
+  ...enData,
 };
 
 final Map<String, String> _english = {

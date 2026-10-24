@@ -21,6 +21,7 @@ import '../../../core/widgets/app_toast.dart';
 import '../../../core/services/app_haptics.dart';
 import '../../../core/widgets/motion.dart';
 import '../../../core/theme/category_style.dart';
+import '../../../core/widgets/swipe_actions.dart';
 
 /// Halaman kelola kategori: filter tipe, favorit (maks. 4, selalu di atas),
 /// urutan, dan hapus.
@@ -152,105 +153,96 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
       },
       itemBuilder: (context, index) {
         final category = items[index];
-        return AppCard(
+        return Padding(
           key: ValueKey(category.id),
-          margin: const EdgeInsets.only(bottom: 10),
-          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
-          child: InkWell(
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            onTap: () => Get.toNamed(
-              AppRoutes.categoryDetail,
-              arguments: {'categoryId': category.id},
-            ),
-            child: Row(
-              children: [
-                ReorderableDragStartListener(
-                  index: index,
-                  child: const Padding(
-                    padding: EdgeInsets.symmetric(vertical: 8, horizontal: 2),
-                    child: Icon(
-                      LucideIcons.gripVertical,
-                      color: AppColors.line,
-                      size: 18,
-                    ),
-                  ),
+          padding: const EdgeInsets.only(bottom: 10),
+          child: SwipeActions(
+            groupTag: 'categories',
+            onEdit: () => _showAddOrEditForm(category),
+            onDelete: category.isFallback
+                ? null
+                : () => _confirmDelete(category),
+            child: AppCard(
+              margin: EdgeInsets.zero,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 4),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(AppRadius.card),
+                onTap: () => Get.toNamed(
+                  AppRoutes.categoryDetail,
+                  arguments: {'categoryId': category.id},
                 ),
-                const SizedBox(width: 10),
-                CategoryIconBox.category(
-                  iconKey: category.iconKey,
-                  color: CategoryStyle.color(category.colorValue),
-                ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        category.displayName,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
-                        style: AppText.body(size: 13, weight: FontWeight.w700),
-                      ),
-                      const SizedBox(height: 2),
-                      Text(
-                        category.isFallback
-                            ? 'Bawaan · penampung, tidak bisa dihapus'.tr
-                            : category.isDefault
-                            ? 'Bawaan'.tr
-                            : 'Kustom'.tr,
-                        style: AppText.body(size: 10.5, color: AppColors.mut),
-                      ),
-                    ],
-                  ),
-                ),
-                IconButton(
-                  tooltip: category.isFavorite
-                      ? 'Hapus dari favorit'.tr
-                      : 'Jadikan favorit'.tr,
-                  onPressed: () => _toggleFavorite(category),
-                  icon: PopOnChange(
-                    trigger: category.isFavorite,
-                    child: Icon(
-                      category.isFavorite
-                          ? Icons.star_rounded
-                          : Icons.star_outline_rounded,
-                      key: ValueKey(category.isFavorite),
-                      size: 24,
-                      color: category.isFavorite
-                          ? AppColors.favorite
-                          : AppColors.mut,
-                    ),
-                  ),
-                ),
-                PopupMenuButton<String>(
-                  icon: const Icon(
-                    LucideIcons.ellipsis,
-                    color: AppColors.mut,
-                    size: 18,
-                  ),
-                  onSelected: (value) {
-                    if (value == 'edit') {
-                      _showAddOrEditForm(category);
-                      return;
-                    }
-                    _confirmDelete(category);
-                  },
-                  itemBuilder: (_) => [
-                    PopupMenuItem<String>(
-                      value: 'edit',
-                      child: Text('Edit'.tr),
-                    ),
-                    if (!category.isFallback)
-                      PopupMenuItem<String>(
-                        value: 'delete',
-                        child: Text(
-                          'Hapus'.tr,
-                          style: AppText.body(size: 14, color: AppColors.spend),
+                child: Row(
+                  children: [
+                    ReorderableDragStartListener(
+                      index: index,
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(
+                          vertical: 8,
+                          horizontal: 2,
+                        ),
+                        child: Icon(
+                          LucideIcons.gripVertical,
+                          color: AppColors.line,
+                          size: 18,
                         ),
                       ),
+                    ),
+                    const SizedBox(width: 10),
+                    CategoryIconBox.category(
+                      iconKey: category.iconKey,
+                      color: CategoryStyle.color(category.colorValue),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            category.displayName,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: AppText.body(
+                              size: 13,
+                              weight: FontWeight.w700,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            category.isFallback
+                                ? 'Bawaan · penampung, tidak bisa dihapus'.tr
+                                : category.isDefault
+                                ? 'Bawaan'.tr
+                                : 'Kustom'.tr,
+                            style: AppText.body(
+                              size: 10.5,
+                              color: AppColors.mut,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    IconButton(
+                      tooltip: category.isFavorite
+                          ? 'Hapus dari favorit'.tr
+                          : 'Jadikan favorit'.tr,
+                      onPressed: () => _toggleFavorite(category),
+                      icon: PopOnChange(
+                        trigger: category.isFavorite,
+                        child: Icon(
+                          category.isFavorite
+                              ? Icons.star_rounded
+                              : Icons.star_outline_rounded,
+                          key: ValueKey(category.isFavorite),
+                          size: 24,
+                          color: category.isFavorite
+                              ? AppColors.favorite
+                              : AppColors.mut,
+                        ),
+                      ),
+                    ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         );
