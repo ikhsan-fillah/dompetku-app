@@ -14,6 +14,20 @@ const Map<String, String> enData = {
   '@count hari': '@count days',
   'Hapus tanggal': 'Clear date',
   'Tampilkan @count hasil': 'Show @count results',
+  // Pengingat
+  'Pengingat harian': 'Daily reminder',
+  'Pukul @time bila hari itu belum ada catatan':
+      'At @time if nothing was recorded that day',
+  'Mati': 'Off',
+  'Jam pengingat': 'Reminder time',
+  'Muncul hanya bila hari itu belum ada transaksi.':
+      'Only shows when there are no transactions that day.',
+  'Gagal menyimpan pengingat.': 'Failed to save the reminder.',
+  'Sudah catat pengeluaran hari ini?': 'Recorded your spending today?',
+  'Ketuk untuk langsung mencatat. Cuma 10 detik.':
+      'Tap to record it now. Takes 10 seconds.',
+  'Mengingatkan mencatat bila hari ini belum ada transaksi.':
+      'Reminds you to record when there are no transactions today.',
   // Geser & urungkan
   'Anggaran dihapus': 'Budget deleted',
   'Anggaran diarsipkan': 'Budget archived',

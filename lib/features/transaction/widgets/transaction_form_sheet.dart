@@ -36,6 +36,7 @@ Future<bool> showTransactionSheet(
   TransactionModel? edit,
   BudgetModel? editBudget,
   FinancialInputMode? initialMode,
+  TransactionPrefill? prefill,
 }) async {
   final requestedMode = initialMode ?? _lastInputMode;
   final controller = Get.find<TransactionFormController>();
@@ -56,6 +57,7 @@ Future<bool> showTransactionSheet(
         initialType: requestedMode == FinancialInputMode.income
             ? TransactionType.income
             : TransactionType.expense,
+        prefill: prefill,
       );
     }
   }

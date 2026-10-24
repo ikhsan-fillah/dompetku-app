@@ -43,6 +43,8 @@ import 'package:dompetku_app/features/shell/controllers/main_shell_controller.da
 import 'package:dompetku_app/features/transaction/widgets/transaction_form_sheet.dart';
 import 'package:dompetku_app/features/goals/controllers/goals_controller.dart';
 import 'package:dompetku_app/features/goals/data/goal_repository.dart';
+import '../../features/transaction/controllers/transaction_form_controller.dart';
+import '../../features/recurring/models/recurring_rule.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -94,6 +96,13 @@ class InitialBinding extends Bindings {
       RecurringReminderService(
         store: Get.find<RecurringRepositoryImpl>(),
         transactions: Get.find<TransactionRepository>(),
+        dailyConfig: () async {
+          final prefs = Get.find<SharedPrefsService>();
+          return DailyReminderConfig(
+            enabled: await prefs.getDailyReminderEnabled(),
+            minutes: await prefs.getDailyReminderMinutes(),
+          );
+        },
       ),
       permanent: true,
     );
@@ -136,6 +145,34 @@ class InitialBinding extends Bindings {
       if (auth.isUnlocked.value) unawaited(recordFromReminder());
     };
 
+    // Badan notifikasi diketuk: buka Catat Keuangan (terisi untuk berulang).
+    Future<void> openFromReminder() async {
+      final open = reminders.takePendingOpen();
+      if (open == null) return;
+      final ruleId = open.ruleId;
+      final rule = ruleId == null ? null : await reminders.ruleById(ruleId);
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      final context = Get.context;
+      if (context == null || !context.mounted) return;
+      await showTransactionSheet(
+        context,
+        initialMode: rule?.type == RecurringType.income
+            ? FinancialInputMode.income
+            : FinancialInputMode.expense,
+        prefill: rule == null
+            ? null
+            : TransactionPrefill(
+                title: rule.name,
+                amount: rule.amount,
+                categoryId: rule.categoryId,
+              ),
+      );
+    }
+
+    reminders.onOpenRequested = () {
+      if (auth.isUnlocked.value) unawaited(openFromReminder());
+    };
+
     // Ketukan widget: jalankan setelah kunci dibuka dan Beranda tampil.
     Future<void> runWidgetAction() async {
       final action = widgets.takePendingAction();
@@ -165,6 +202,7 @@ class InitialBinding extends Bindings {
         Get.find<AutoDetectService>().start();
       }
       await recordFromReminder();
+      unawaited(openFromReminder());
       unawaited(runWidgetAction());
       await RecurringRunner(
         rules: Get.find<RecurringRepositoryImpl>(),

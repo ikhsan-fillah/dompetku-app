@@ -11,6 +11,8 @@ class SharedPrefsService {
   static const _kLanguage = 'language';
   static const _kHaptics = 'hapticsEnabled';
   static const _kWidgetHideAmounts = 'widgetHideAmounts';
+  static const _kDailyReminder = 'dailyReminderEnabled';
+  static const _kDailyReminderMinutes = 'dailyReminderMinutes';
 
   Future<bool> getIsRegistered() async {
     final prefs = await SharedPreferences.getInstance();
@@ -119,6 +121,29 @@ class SharedPrefsService {
   Future<void> setWidgetHideAmounts(bool value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setBool(_kWidgetHideAmounts, value);
+  }
+
+  /// Pengingat harian "Sudah catat pengeluaran hari ini?" (bawaan: aktif).
+  Future<bool> getDailyReminderEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_kDailyReminder) ?? true;
+  }
+
+  Future<void> setDailyReminderEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kDailyReminder, value);
+  }
+
+  /// Jam pengingat harian dalam menit sejak tengah malam (bawaan 21.00).
+  Future<int> getDailyReminderMinutes() async {
+    final prefs = await SharedPreferences.getInstance();
+    final value = prefs.getInt(_kDailyReminderMinutes) ?? 21 * 60;
+    return value.clamp(0, 24 * 60 - 1);
+  }
+
+  Future<void> setDailyReminderMinutes(int value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setInt(_kDailyReminderMinutes, value);
   }
 
   Future<void> clearAll() async {

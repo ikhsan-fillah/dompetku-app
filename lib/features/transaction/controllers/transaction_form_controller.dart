@@ -11,6 +11,19 @@ import '../models/transaction_model.dart';
 import '../repositories/transaction_repository.dart';
 
 /// State dan aturan form tambah/edit transaksi.
+/// Isian awal form Catat Keuangan.
+class TransactionPrefill {
+  const TransactionPrefill({
+    required this.title,
+    required this.amount,
+    this.categoryId,
+  });
+
+  final String title;
+  final int amount;
+  final int? categoryId;
+}
+
 class TransactionFormController extends GetxController {
   TransactionFormController(
     this._transactions,
@@ -84,12 +97,22 @@ class TransactionFormController extends GetxController {
         (favorite.isNotEmpty ? favorite.first : options.first).id;
   }
 
+  /// Form baru. [prefill] mengisi judul, nominal, dan kategori (mis. dari
+  /// notifikasi transaksi berulang); tanggal tetap hari ini.
   Future<void> startNew({
     TransactionType initialType = TransactionType.expense,
+    TransactionPrefill? prefill,
   }) async {
     _reset(initialType);
     await _loadCategories();
     _selectDefaultCategory();
+    if (prefill == null) return;
+    title.value = prefill.title;
+    if (prefill.amount > 0) amountDigits.value = prefill.amount.toString();
+    final category = prefill.categoryId;
+    if (category != null && availableCategories.any((c) => c.id == category)) {
+      categoryId.value = category;
+    }
   }
 
   Future<void> startEdit(TransactionModel transaction) async {

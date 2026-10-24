@@ -11,6 +11,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../transaction/repositories/transaction_repository.dart';
 import '../../../core/services/app_haptics.dart';
 import '../../widget/home_widget_service.dart';
+import '../../recurring/services/recurring_reminders.dart';
 
 class ProfileController extends GetxController {
   ProfileController(
@@ -45,6 +46,10 @@ class ProfileController extends GetxController {
 
   /// Widget layar utama menyamarkan nominal.
   final widgetHideAmounts = true.obs;
+
+  /// Pengingat harian dan jamnya (menit sejak tengah malam).
+  final dailyReminder = true.obs;
+  final dailyReminderMinutes = (21 * 60).obs;
   final displayName = ''.obs;
 
   /// Jumlah semua transaksi tercatat; null sebelum dimuat atau bila gagal.
@@ -98,6 +103,7 @@ class ProfileController extends GetxController {
     displayName.value = await _preferences.getDisplayName();
     // Tidak ditunggu: pengaturan widget tidak boleh menahan Profil tampil.
     unawaited(_loadWidgetHideAmounts());
+    unawaited(_loadDailyReminder());
     final seconds = await _preferences.getAutoLockSeconds();
     autoLockSeconds.value = autoLockOptions.contains(seconds) ? seconds : 0;
   }
@@ -177,6 +183,42 @@ class ProfileController extends GetxController {
     } catch (_) {
       error.value = 'Gagal menyimpan pengaturan widget.'.tr;
     }
+  }
+
+  Future<void> _loadDailyReminder() async {
+    try {
+      dailyReminder.value = await _preferences.getDailyReminderEnabled();
+      dailyReminderMinutes.value = await _preferences.getDailyReminderMinutes();
+    } catch (_) {
+      // Tetap memakai bawaan (aktif, 21.00).
+    }
+  }
+
+  Future<void> setDailyReminder(bool value) async {
+    dailyReminder.value = value;
+    try {
+      await _preferences.setDailyReminderEnabled(value);
+      await _rescheduleReminders(requestPermission: value);
+    } catch (_) {
+      error.value = 'Gagal menyimpan pengingat.'.tr;
+    }
+  }
+
+  Future<void> setDailyReminderMinutes(int value) async {
+    dailyReminderMinutes.value = value;
+    try {
+      await _preferences.setDailyReminderMinutes(value);
+      await _rescheduleReminders(requestPermission: false);
+    } catch (_) {
+      error.value = 'Gagal menyimpan pengingat.'.tr;
+    }
+  }
+
+  Future<void> _rescheduleReminders({required bool requestPermission}) async {
+    if (!Get.isRegistered<RecurringReminderService>()) return;
+    final reminders = Get.find<RecurringReminderService>();
+    if (requestPermission) await reminders.requestPermission();
+    await reminders.reschedule();
   }
 
   Future<void> setDisplayName(String value) async {

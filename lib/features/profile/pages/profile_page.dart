@@ -61,6 +61,68 @@ class _ProfilePageState extends State<ProfilePage> {
 
   void _openCategories() => Get.toNamed(AppRoutes.categories);
 
+  static String _formatMinutes(int minutes) =>
+      '${(minutes ~/ 60).toString().padLeft(2, '0')}.'
+      '${(minutes % 60).toString().padLeft(2, '0')}';
+
+  /// Pilihan jam pengingat harian: 17.00 sampai 23.00 tiap 30 menit.
+  Future<void> _pickReminderTime() async {
+    final current = _controller.dailyReminderMinutes.value;
+    final picked = await showModalBottomSheet<int>(
+      context: context,
+      showDragHandle: true,
+      backgroundColor: AppColors.card,
+      elevation: 0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
+        side: BorderSide(color: AppColors.line),
+      ),
+      builder: (sheetContext) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(
+            AppSpacing.page,
+            0,
+            AppSpacing.page,
+            AppSpacing.page,
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                'Jam pengingat'.tr,
+                style: AppText.display(size: 22, weight: FontWeight.w600),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                'Muncul hanya bila hari itu belum ada transaksi.'.tr,
+                style: AppText.body(size: 12.5, color: AppColors.mut),
+              ),
+              const SizedBox(height: 16),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  for (var m = 17 * 60; m <= 23 * 60; m += 30)
+                    _TimeChip(
+                      label: _formatMinutes(m),
+                      selected: m == current,
+                      onTap: () => Navigator.of(sheetContext).pop(m),
+                    ),
+                ],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+    if (picked != null && picked != current) {
+      await _controller.setDailyReminderMinutes(picked);
+    }
+  }
+
   Future<void> _confirmReset() async {
     final confirmationController = TextEditingController();
     var canDelete = false;
@@ -281,6 +343,47 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               Obx(
                 () => SettingsTile(
+                  icon: LucideIcons.bellRing,
+                  title: 'Pengingat harian'.tr,
+                  subtitle: _controller.dailyReminder.value
+                      ? 'Pukul @time bila hari itu belum ada catatan'.trParams({
+                          'time': _formatMinutes(
+                            _controller.dailyReminderMinutes.value,
+                          ),
+                        })
+                      : 'Mati'.tr,
+                  iconBackground: AppColors.paper2,
+                  iconColor: AppColors.ink,
+                  trailing: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      if (_controller.dailyReminder.value)
+                        _TimeChip(
+                          label: _formatMinutes(
+                            _controller.dailyReminderMinutes.value,
+                          ),
+                          onTap: _pickReminderTime,
+                        ),
+                      Switch.adaptive(
+                        value: _controller.dailyReminder.value,
+                        activeTrackColor: AppColors.ink,
+                        activeThumbColor: AppColors.paper,
+                        inactiveTrackColor: AppColors.line,
+                        inactiveThumbColor: Colors.white,
+                        trackOutlineColor: WidgetStateProperty.all(
+                          Colors.transparent,
+                        ),
+                        onChanged: _controller.setDailyReminder,
+                      ),
+                    ],
+                  ),
+                  onTap: () => _controller.setDailyReminder(
+                    !_controller.dailyReminder.value,
+                  ),
+                ),
+              ),
+              Obx(
+                () => SettingsTile(
                   icon: LucideIcons.eyeOff,
                   title: 'Sembunyikan nominal di widget'.tr,
                   subtitle: 'Widget layar utama menampilkan Rp ••••'.tr,
@@ -366,6 +469,47 @@ class _LanguageDropdown extends StatelessWidget {
       onChanged: (code) {
         if (code != null && code != value) onChanged(code);
       },
+    ),
+  );
+}
+
+/// Chip jam (mono) untuk pengingat harian.
+class _TimeChip extends StatelessWidget {
+  const _TimeChip({
+    required this.label,
+    required this.onTap,
+    this.selected = false,
+  });
+
+  final String label;
+  final VoidCallback onTap;
+  final bool selected;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    button: true,
+    selected: selected,
+    child: InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(AppRadius.smallButton),
+      child: Container(
+        constraints: const BoxConstraints(minHeight: 36, minWidth: 64),
+        padding: const EdgeInsets.symmetric(horizontal: 12),
+        alignment: Alignment.center,
+        decoration: BoxDecoration(
+          color: selected ? AppColors.ink : AppColors.paper2,
+          borderRadius: BorderRadius.circular(AppRadius.smallButton),
+        ),
+        child: Text(
+          label,
+          style: AppText.mono(
+            size: 12.5,
+            weight: FontWeight.w600,
+            color: selected ? AppColors.paper : AppColors.ink,
+            letterSpacing: 0,
+          ),
+        ),
+      ),
     ),
   );
 }

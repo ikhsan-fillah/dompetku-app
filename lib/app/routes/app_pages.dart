@@ -33,6 +33,7 @@ import '../../features/splash/pages/splash_page.dart';
 import '../../features/transaction/controllers/transaction_form_controller.dart';
 import 'app_routes.dart';
 import '../../features/goals/pages/goals_page.dart';
+import '../../features/recurring/services/recurring_reminders.dart';
 
 class AppPages {
   static final pages = <GetPage>[
@@ -44,7 +45,13 @@ class AppPages {
       middlewares: [FinancialRouteGuard()],
       binding: BindingsBuilder(() {
         if (!Get.isRegistered<DataRefreshService>()) {
-          Get.put(DataRefreshService(), permanent: true);
+          final refresh = Get.put(DataRefreshService(), permanent: true);
+          // Pengingat harian bergantung pada ada/tidaknya transaksi hari ini.
+          debounce<int>(refresh.version, (_) {
+            if (Get.isRegistered<RecurringReminderService>()) {
+              Get.find<RecurringReminderService>().reschedule();
+            }
+          }, time: const Duration(seconds: 2));
         }
         Get.put(MainShellController());
         Get.lazyPut(
@@ -136,9 +143,7 @@ class AppPages {
       page: () => const RecurringPage(),
       middlewares: [FinancialRouteGuard()],
       binding: BindingsBuilder(() {
-        Get.put(
-          RecurringController(Get.find<RecurringRepositoryImpl>()),
-        );
+        Get.put(RecurringController(Get.find<RecurringRepositoryImpl>()));
         Get.put(RecurringFormController(Get.find<RecurringRepositoryImpl>()));
       }),
     ),
