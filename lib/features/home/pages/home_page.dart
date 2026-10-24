@@ -23,6 +23,7 @@ import '../widgets/insight_banner.dart';
 import '../widgets/recent_transactions_card.dart';
 import '../../../core/widgets/app_skeleton.dart';
 import '../../../core/widgets/motion.dart';
+import '../widgets/home_shortcuts.dart';
 
 /// Isi tab Beranda. Data dimuat ulang otomatis; tidak ada tombol refresh.
 class HomePage extends StatelessWidget {
@@ -134,6 +135,8 @@ class HomePage extends StatelessWidget {
               ),
               children: [
                 if (data != null) FadeSlideIn(child: _BalanceCard(data: data)),
+                if (data != null)
+                  const FadeSlideIn(index: 1, child: HomeShortcuts()),
                 const DraftsBanner(),
                 const RecapHomeLine(),
                 if (!controller.hasTransactionsInPeriod.value &&

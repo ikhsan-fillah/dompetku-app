@@ -72,6 +72,7 @@ class Migrations {
     );
 
     await createRecurringAndDrafts(db);
+    await createSavingsGoals(db);
     await _seedCategories(db);
   }
 
@@ -101,6 +102,26 @@ class Migrations {
         );
       }
     }
+    if (oldVersion < 5) {
+      await createSavingsGoals(db);
+    }
+  }
+
+  /// Tujuan tabungan (v5).
+  static Future<void> createSavingsGoals(Database db) async {
+    await db.execute('''
+      CREATE TABLE IF NOT EXISTS ${DatabaseTables.savingsGoals} (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        emoji TEXT NOT NULL,
+        target_amount INTEGER NOT NULL CHECK (target_amount > 0),
+        saved_amount INTEGER NOT NULL DEFAULT 0,
+        target_date TEXT,
+        completed_at TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      )
+    ''');
   }
 
   static Future<void> createRecurringAndDrafts(Database db) async {

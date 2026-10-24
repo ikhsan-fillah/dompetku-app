@@ -50,7 +50,7 @@ void main() {
     );
     final names = tables.map((row) => row['name']).toSet();
 
-    expect(AppConstants.databaseVersion, 4);
+    expect(AppConstants.databaseVersion, 5);
     expect(names, containsAll(['recurring_rules', 'drafts']));
   });
 

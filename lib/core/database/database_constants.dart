@@ -4,6 +4,7 @@ class DatabaseTables {
   static const budgets = 'budgets';
   static const recurringRules = 'recurring_rules';
   static const drafts = 'drafts';
+  static const savingsGoals = 'savings_goals';
 
   const DatabaseTables._();
 }

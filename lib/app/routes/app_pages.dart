@@ -32,6 +32,7 @@ import '../../features/shell/pages/main_shell_page.dart';
 import '../../features/splash/pages/splash_page.dart';
 import '../../features/transaction/controllers/transaction_form_controller.dart';
 import 'app_routes.dart';
+import '../../features/goals/pages/goals_page.dart';
 
 class AppPages {
   static final pages = <GetPage>[
@@ -102,6 +103,11 @@ class AppPages {
       ),
     ),
     GetPage(name: AppRoutes.pinUnlock, page: () => const PinUnlockPage()),
+    GetPage(
+      name: AppRoutes.goals,
+      page: () => const GoalsPage(),
+      middlewares: [FinancialRouteGuard()],
+    ),
     GetPage(
       name: AppRoutes.recaps,
       page: () => const RecapsPage(),

@@ -16,4 +16,5 @@ abstract class AppRoutes {
   static const drafts = '/drafts';
   static const autoDetect = '/auto-detect';
   static const recaps = '/recaps';
+  static const goals = '/goals';
 }

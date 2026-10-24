@@ -41,6 +41,8 @@ import 'package:get/get.dart';
 import 'package:dompetku_app/features/widget/home_widget_service.dart';
 import 'package:dompetku_app/features/shell/controllers/main_shell_controller.dart';
 import 'package:dompetku_app/features/transaction/widgets/transaction_form_sheet.dart';
+import 'package:dompetku_app/features/goals/controllers/goals_controller.dart';
+import 'package:dompetku_app/features/goals/data/goal_repository.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -180,6 +182,11 @@ class InitialBinding extends Bindings {
     Get.lazyPut(() => CategoryController(Get.find()), fenix: true);
     Get.lazyPut(() => TransactionController(Get.find()), fenix: true);
     Get.lazyPut(() => BudgetController(Get.find()), fenix: true);
+    Get.lazyPut<GoalRepository>(
+      () => GoalRepositoryImpl(Get.find<AppDatabase>()),
+      fenix: true,
+    );
+    Get.lazyPut(() => GoalsController(Get.find<GoalRepository>()), fenix: true);
     Get.lazyPut(
       () => DashboardController(Get.find(), Get.find(), Get.find()),
       fenix: true,

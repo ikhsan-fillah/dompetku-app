@@ -180,6 +180,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 onTap: () => Get.toNamed(AppRoutes.report),
               ),
               SettingsTile(
+                icon: LucideIcons.piggyBank,
+                title: 'Tabungan'.tr,
+                subtitle: 'Tujuan, target, dan setoran'.tr,
+                iconBackground: AppColors.paper2,
+                iconColor: AppColors.ink,
+                trailing: _chevron,
+                onTap: () => Get.toNamed(AppRoutes.goals),
+              ),
+              SettingsTile(
                 icon: LucideIcons.repeat,
                 title: 'Transaksi berulang'.tr,
                 subtitle: 'Tagihan dan langganan berulang'.tr,

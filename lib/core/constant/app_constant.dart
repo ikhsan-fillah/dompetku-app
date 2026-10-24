@@ -1,7 +1,7 @@
 class AppConstants {
   static const currencyCode = 'IDR';
   static const databaseName = 'dompetku.db';
-  static const databaseVersion = 4;
+  static const databaseVersion = 5;
   static const maxBiometricFailures = 5;
   static const biometricLockoutMinutes = 5;
   static const defaultDashboardStartDay = 1;
