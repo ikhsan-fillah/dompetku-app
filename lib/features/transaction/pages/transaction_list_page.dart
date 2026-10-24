@@ -21,6 +21,8 @@ import '../services/transaction_list_service.dart';
 import '../widgets/transaction_form_sheet.dart';
 import '../widgets/transaction_tile.dart';
 import '../../../core/widgets/app_dialog.dart';
+import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/app_skeleton.dart';
 
 /// Tab Transaksi: cari, filter jenis, ringkasan, dan daftar per hari.
 class TransactionListPage extends StatefulWidget {
@@ -55,9 +57,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
   }
 
   void _snack(String message) {
-    ScaffoldMessenger.of(
-      context,
-    ).showSnackBar(SnackBar(content: Text(message)));
+    AppToast.show(context: context, title: message, kind: ToastKind.error);
   }
 
   void _toggle(int id) {
@@ -89,10 +89,24 @@ class _TransactionListPageState extends State<TransactionListPage> {
       danger: true,
     );
     if (!confirmed) return;
+    final removed = _controller.findById(id);
     final ok = await _controller.delete(id);
     if (!mounted) return;
     _expanded.value = null;
-    if (!ok) _snack('Gagal menghapus transaksi.'.tr);
+    if (!ok) {
+      _snack('Gagal menghapus transaksi.'.tr);
+      return;
+    }
+    if (removed == null) return;
+    AppToast.show(
+      context: context,
+      title: 'Transaksi dihapus'.tr,
+      message: '${removed.title} · ${formatIdr(removed.amount)}',
+      kind: ToastKind.undo,
+      actionLabel: 'Urungkan'.tr,
+      onAction: () => _controller.restore(removed),
+      duration: const Duration(seconds: 4),
+    );
   }
 
   String _groupLabel(DateTime date) {
@@ -126,7 +140,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
     switch (state.status) {
       case ResourceStatus.idle:
       case ResourceStatus.loading:
-        return const Center(child: CircularProgressIndicator());
+        return const ListSkeleton();
       case ResourceStatus.error:
         return AppErrorView(
           message: state.message ?? 'Gagal memuat transaksi.'.tr,

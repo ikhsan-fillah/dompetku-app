@@ -11,6 +11,7 @@ import '../../../core/widgets/app_title_bar.dart';
 import '../controllers/draft_controller.dart';
 import '../models/draft_model.dart';
 import '../../../core/widgets/app_dialog.dart';
+import '../../../core/widgets/app_toast.dart';
 
 /// Daftar draft hasil deteksi. Confirm, Edit (lewat Confirm), atau Dismiss.
 class DraftsPage extends StatelessWidget {
@@ -120,9 +121,7 @@ class _DraftCard extends StatelessWidget {
     if (!ok && context.mounted) {
       final message =
           controller.error.value ?? 'Gagal mengonfirmasi. Coba lagi.'.tr;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      AppToast.show(context: context, title: message, kind: ToastKind.error);
     }
   }
 
@@ -175,9 +174,7 @@ class _DraftCard extends StatelessWidget {
     );
     if (!saved && context.mounted) {
       final message = controller.error.value ?? 'Gagal menyimpan perubahan.'.tr;
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(message)));
+      AppToast.show(context: context, title: message, kind: ToastKind.error);
     }
   }
 

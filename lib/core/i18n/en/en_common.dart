@@ -48,6 +48,8 @@ const Map<String, String> enCommon = {
   'SAB': 'SAT',
   'MIN': 'SUN',
   'Senin': 'Monday',
+  'Memuat': 'Loading',
+  'Urungkan': 'Undo',
   'Selasa': 'Tuesday',
   'Rabu': 'Wednesday',
   'Kamis': 'Thursday',

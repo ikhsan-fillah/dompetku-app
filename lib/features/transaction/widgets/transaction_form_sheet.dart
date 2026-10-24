@@ -22,6 +22,7 @@ import '../../receipt/views/receipt_review_page.dart';
 import '../controllers/transaction_form_controller.dart';
 import '../models/transaction_model.dart';
 import '../../../core/widgets/app_date_picker.dart';
+import '../../../core/widgets/app_toast.dart';
 
 /// Membuka sheet tambah/edit transaksi. Mengembalikan true bila tersimpan.
 enum FinancialInputMode { expense, income, budget }
@@ -89,6 +90,23 @@ Future<bool> showTransactionSheet(
   );
   if (saved == true && edit == null && editBudget == null) {
     _lastInputMode = requestedMode;
+  }
+  if (saved == true && context.mounted) {
+    final mode = editBudget != null
+        ? FinancialInputMode.budget
+        : edit != null
+        ? (edit.type == TransactionType.income
+              ? FinancialInputMode.income
+              : FinancialInputMode.expense)
+        : requestedMode;
+    AppToast.show(
+      context: context,
+      title: switch (mode) {
+        FinancialInputMode.expense => 'Pengeluaran tersimpan'.tr,
+        FinancialInputMode.income => 'Pemasukan tersimpan'.tr,
+        FinancialInputMode.budget => 'Anggaran tersimpan'.tr,
+      },
+    );
   }
   return saved == true;
 }
@@ -292,14 +310,12 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
         offset: _controller.title.value.length,
       ),
     );
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
-          result.receipt!.isComplete
-              ? 'Data struk terisi. Periksa sebelum menyimpan.'.tr
-              : 'Sebagian data struk terisi. Lengkapi dan periksa kembali.'.tr,
-        ),
-      ),
+    AppToast.show(
+      context: context,
+      title: result.receipt!.isComplete
+          ? 'Data struk terisi. Periksa sebelum menyimpan.'.tr
+          : 'Sebagian data struk terisi. Lengkapi dan periksa kembali.'.tr,
+      kind: ToastKind.info,
     );
   }
 

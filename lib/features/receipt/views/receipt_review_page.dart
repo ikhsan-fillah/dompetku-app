@@ -16,6 +16,7 @@ import '../../transaction/repositories/transaction_repository.dart';
 import '../services/receipt_ocr_service.dart';
 import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_date_picker.dart';
+import '../../../core/widgets/app_toast.dart';
 
 /// Item struk untuk visualisasi kertas struk
 class ReceiptLineItem {
@@ -241,11 +242,10 @@ class _ReceiptReviewPageState extends State<ReceiptReviewPage> {
       }
     } catch (_) {
       if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Gagal menyimpan transaksi. Coba lagi.'.tr),
-            backgroundColor: AppColors.spend,
-          ),
+        AppToast.show(
+          context: context,
+          title: 'Gagal menyimpan transaksi. Coba lagi.'.tr,
+          kind: ToastKind.error,
         );
         setState(() => _saving = false);
       }

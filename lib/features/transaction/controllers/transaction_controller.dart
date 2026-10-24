@@ -234,6 +234,18 @@ class TransactionController extends GetxController {
     }
   }
 
+  /// Mengembalikan transaksi yang baru dihapus (tombol Urungkan).
+  Future<bool> restore(TransactionModel transaction) async {
+    try {
+      await _repository.insert(transaction);
+      await _afterMutation();
+      return true;
+    } catch (_) {
+      state.value = ResourceState.error('Gagal mengembalikan transaksi.'.tr);
+      return false;
+    }
+  }
+
   /// Menggandakan transaksi ke hari ini.
   Future<bool> duplicate(TransactionModel transaction) async {
     try {
