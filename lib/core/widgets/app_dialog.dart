@@ -66,6 +66,8 @@ class AppDialog extends StatelessWidget {
                 ),
               ),
             if (message != null && content != null) const SizedBox(height: 16),
+            // Jarak judul ke isian sama dengan jarak isian ke tombol (18).
+            if (message == null && content != null) const SizedBox(height: 10),
             ?content,
           ],
         ),
