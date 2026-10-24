@@ -23,6 +23,7 @@ import '../services/budget_list_service.dart';
 import '../widgets/confirm_delete_budget.dart';
 import '../../../core/widgets/card_actions.dart';
 import '../../../core/widgets/app_dialog.dart';
+import '../../../core/widgets/app_skeleton.dart';
 
 class BudgetPage extends GetView<BudgetController> {
   const BudgetPage({super.key});
@@ -77,9 +78,8 @@ class BudgetPage extends GetView<BudgetController> {
           child: Obx(() {
             final current = controller.state.value;
             return switch (current.status) {
-              ResourceStatus.idle || ResourceStatus.loading => const Center(
-                child: CircularProgressIndicator(),
-              ),
+              ResourceStatus.idle ||
+              ResourceStatus.loading => const ListSkeleton(rows: 3),
               ResourceStatus.empty => _Empty(onCreate: _openForm),
               ResourceStatus.error => _Error(
                 message: current.message ?? 'Gagal memuat anggaran.'.tr,

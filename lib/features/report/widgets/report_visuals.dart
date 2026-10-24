@@ -9,6 +9,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
 import '../controllers/report_controller.dart';
+import '../../../core/services/app_haptics.dart';
 
 /// Pemilih bulan: panah kiri/kanan dengan nama bulan di tengah.
 class MonthSwitcher extends StatelessWidget {
@@ -170,6 +171,7 @@ class _SpendingRingState extends State<SpendingRing> {
             onTapUp: (details) {
               final index = _sliceAt(details.localPosition, side);
               if (index == null) return;
+              AppHaptics.select();
               setState(() => _selected = _selected == index ? null : index);
             },
             child: SizedBox.square(

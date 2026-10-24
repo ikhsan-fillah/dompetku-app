@@ -9,6 +9,8 @@ class SharedPrefsService {
   static const _kDisplayName = 'displayName';
   static const _kAutoLockSeconds = 'autoLockSeconds';
   static const _kLanguage = 'language';
+  static const _kHaptics = 'hapticsEnabled';
+  static const _kWidgetHideAmounts = 'widgetHideAmounts';
 
   Future<bool> getIsRegistered() async {
     final prefs = await SharedPreferences.getInstance();
@@ -96,6 +98,27 @@ class SharedPrefsService {
   Future<void> setLanguage(String value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kLanguage, value);
+  }
+
+  Future<bool> getHapticsEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_kHaptics) ?? true;
+  }
+
+  Future<void> setHapticsEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kHaptics, value);
+  }
+
+  /// Widget layar utama menyamarkan nominal (bawaan: ya, karena app dikunci).
+  Future<bool> getWidgetHideAmounts() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_kWidgetHideAmounts) ?? true;
+  }
+
+  Future<void> setWidgetHideAmounts(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kWidgetHideAmounts, value);
   }
 
   Future<void> clearAll() async {

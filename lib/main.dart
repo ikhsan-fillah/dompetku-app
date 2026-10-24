@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'app/bindings/initial_binding.dart';
 import 'app/routes/app_pages.dart';
 import 'app/routes/app_routes.dart';
+import 'core/services/app_haptics.dart';
 import 'core/services/app_lock_service.dart';
 import 'core/i18n/app_language.dart';
 import 'core/i18n/app_translations.dart';
@@ -26,6 +27,7 @@ Future<void> main() async {
     ),
   );
   await AppVersion.init();
+  await AppHaptics.load();
   final language = await SharedPrefsService().getLanguage();
   runApp(MyApp(language: language));
 }
