@@ -19,6 +19,9 @@ class RecurringFormController extends GetxController {
   final mode = RecurringMode.ask.obs;
   final amountVaries = false.obs;
   final startDate = Rxn<DateTime>();
+
+  /// Pengingat: null mati, 0 hari itu, 1 sehari sebelum.
+  final remindDaysBefore = RxnInt();
   final saving = false.obs;
   final error = Rxn<String>();
   RecurringRule? _editing;
@@ -36,6 +39,7 @@ class RecurringFormController extends GetxController {
     mode.value = RecurringMode.ask;
     amountVaries.value = false;
     startDate.value = null;
+    remindDaysBefore.value = null;
     error.value = null;
     saving.value = false;
   }
@@ -50,6 +54,7 @@ class RecurringFormController extends GetxController {
     frequency.value = rule.frequency;
     mode.value = rule.mode;
     startDate.value = rule.startDate;
+    remindDaysBefore.value = rule.remindDaysBefore;
     error.value = null;
     saving.value = false;
   }
@@ -95,6 +100,7 @@ class RecurringFormController extends GetxController {
         mode: mode.value,
         isActive: editing?.isActive ?? true,
         lastGeneratedOn: editing?.lastGeneratedOn,
+        remindDaysBefore: remindDaysBefore.value,
         createdAt: editing?.createdAt ?? now,
         updatedAt: now,
       );

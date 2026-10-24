@@ -88,6 +88,19 @@ class Migrations {
     if (oldVersion < 3) {
       await createRecurringAndDrafts(db);
     }
+    if (oldVersion < 4) {
+      // Tabel yang baru dibuat di langkah v3 sudah punya kolom ini.
+      final columns = await db.rawQuery(
+        'PRAGMA table_info(${DatabaseTables.recurringRules})',
+      );
+      final hasColumn = columns.any((c) => c['name'] == 'remind_days_before');
+      if (!hasColumn) {
+        await db.execute(
+          'ALTER TABLE ${DatabaseTables.recurringRules} '
+          'ADD COLUMN remind_days_before INTEGER',
+        );
+      }
+    }
   }
 
   static Future<void> createRecurringAndDrafts(Database db) async {
@@ -103,6 +116,7 @@ class Migrations {
         weekday INTEGER,
         start_date TEXT NOT NULL,
         mode TEXT NOT NULL CHECK (mode IN ('ask', 'auto')),
+        remind_days_before INTEGER,
         is_active INTEGER NOT NULL DEFAULT 1,
         last_generated_on TEXT,
         created_at TEXT NOT NULL,

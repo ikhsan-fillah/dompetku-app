@@ -18,6 +18,7 @@ class RecurringRule {
     required this.mode,
     required this.isActive,
     this.lastGeneratedOn,
+    this.remindDaysBefore,
     required this.createdAt,
     required this.updatedAt,
   });
@@ -34,6 +35,9 @@ class RecurringRule {
   final RecurringMode mode;
   final bool isActive;
   final DateTime? lastGeneratedOn;
+
+  /// Pengingat notifikasi: null mati, 0 di hari transaksi, 1 sehari sebelum.
+  final int? remindDaysBefore;
   final DateTime createdAt;
   final DateTime updatedAt;
 
@@ -50,6 +54,7 @@ class RecurringRule {
     mode: mode,
     isActive: isActive,
     lastGeneratedOn: day,
+    remindDaysBefore: remindDaysBefore,
     createdAt: createdAt,
     updatedAt: updatedAt,
   );

@@ -1,7 +1,10 @@
+import 'dart:async';
+
 import 'package:get/get.dart';
 
 import '../../../core/state/resource_state.dart';
 import '../models/recurring_rule.dart';
+import '../services/recurring_reminders.dart';
 
 /// Antarmuka penyimpanan yang dipakai controller dan layar (mudah di-test).
 abstract interface class RecurringStore {
@@ -38,6 +41,11 @@ class RecurringController extends GetxController {
       state.value = rules.isEmpty
           ? const ResourceState.empty()
           : ResourceState.success(rules);
+      // Setiap perubahan aturan berakhir di load(), jadi jadwal pengingat
+      // diperbarui di sini.
+      if (Get.isRegistered<RecurringReminderService>()) {
+        unawaited(Get.find<RecurringReminderService>().reschedule());
+      }
     } catch (_) {
       state.value = ResourceState.error('Gagal memuat transaksi berulang.'.tr);
     }

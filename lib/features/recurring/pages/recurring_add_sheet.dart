@@ -16,6 +16,7 @@ import '../../category/models/category_model.dart';
 import '../../category/repositories/category_repository.dart';
 import '../controllers/recurring_form_controller.dart';
 import '../models/recurring_rule.dart';
+import '../services/recurring_reminders.dart';
 import '../../../core/widgets/app_date_picker.dart';
 
 /// Sheet tambah atau ubah recurring (§9.2). [edit] mengisi form dengan aturan
@@ -113,6 +114,11 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
       lastDate: DateTime(now.year + 5),
     );
     if (picked != null) _form.startDate.value = picked;
+  }
+
+  Future<void> _requestNotificationPermission() async {
+    if (!Get.isRegistered<RecurringReminderService>()) return;
+    await Get.find<RecurringReminderService>().requestPermission();
   }
 
   void _select(VoidCallback change) {
@@ -217,6 +223,16 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
                 m == RecurringMode.ask ? 'Tanya dulu'.tr : 'Catat otomatis'.tr,
             color: (_) => AppColors.ink,
             onSelect: (m) => _select(() => _form.mode.value = m),
+          ),
+          _Label('Pengingat'.tr),
+          _ReminderSection(
+            daysBefore: _form.remindDaysBefore.value,
+            onChanged: (value) async {
+              if (value != null && _form.remindDaysBefore.value == null) {
+                await _requestNotificationPermission();
+              }
+              _select(() => _form.remindDaysBefore.value = value);
+            },
           ),
           Obx(() {
             final message = _form.error.value;
@@ -464,8 +480,8 @@ class _CategoryChoice extends StatelessWidget {
           ),
           child: Column(
             children: [
-              CategoryIconBox(
-                icon: CategoryStyle.icon(category.iconKey),
+              CategoryIconBox.category(
+                iconKey: category.iconKey,
                 color: CategoryStyle.color(category.colorValue),
               ),
               const SizedBox(height: 4),
@@ -489,3 +505,77 @@ class _CategoryChoice extends StatelessWidget {
 
 /// Nominal ditampilkan dengan format IDR di label (dipakai di tampilan lain).
 String recurringAmountLabel(int amount) => formatIdr(amount);
+
+/// "Ingatkan aku": sakelar dan pilihan waktu pengingat.
+class _ReminderSection extends StatelessWidget {
+  const _ReminderSection({required this.daysBefore, required this.onChanged});
+
+  /// null mati, 0 hari itu, 1 sehari sebelum.
+  final int? daysBefore;
+  final ValueChanged<int?> onChanged;
+
+  @override
+  Widget build(BuildContext context) {
+    final on = daysBefore != null;
+    return Container(
+      padding: const EdgeInsets.fromLTRB(14, 6, 8, 12),
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.circular(AppRadius.field),
+        border: Border.all(color: AppColors.line),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Ingatkan aku'.tr,
+                      style: AppText.body(size: 13, weight: FontWeight.w700),
+                    ),
+                    Text(
+                      'Notifikasi di hari transaksi'.tr,
+                      style: AppText.body(size: 11, color: AppColors.mut),
+                    ),
+                  ],
+                ),
+              ),
+              Switch.adaptive(
+                value: on,
+                activeTrackColor: AppColors.ink,
+                activeThumbColor: AppColors.paper,
+                inactiveTrackColor: AppColors.line,
+                inactiveThumbColor: Colors.white,
+                trackOutlineColor: WidgetStateProperty.all(Colors.transparent),
+                onChanged: (value) => onChanged(value ? 0 : null),
+              ),
+            ],
+          ),
+          if (on) ...[
+            const SizedBox(height: 8),
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: [
+                AppChip(
+                  label: 'Hari itu · 08.00'.tr,
+                  selected: daysBefore == 0,
+                  onTap: () => onChanged(0),
+                ),
+                AppChip(
+                  label: '1 hari sebelum'.tr,
+                  selected: daysBefore == 1,
+                  onTap: () => onChanged(1),
+                ),
+              ],
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}

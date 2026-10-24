@@ -49,6 +49,24 @@ const Map<String, String> enAutomation = {
   'Jumlah (Rp), contoh: 55000': 'Amount (Rp), e.g. 55000',
   'Berulang setiap': 'Repeats',
   'Saat tanggalnya tiba': 'On the scheduled date',
+  'Pengingat': 'Reminder',
+  'Ingatkan aku': 'Remind me',
+  'Notifikasi di hari transaksi': 'Notification on the transaction day',
+  'Hari itu · 08.00': 'That day · 08:00',
+  '1 hari sebelum': '1 day before',
+  '@name hari ini · @amount': '@name today · @amount',
+  'Besok: @name · @amount': 'Tomorrow: @name · @amount',
+  'Transaksi berulang. Ketuk Catat untuk mencatatnya.':
+      'Recurring transaction. Tap Record to log it.',
+  'Transaksi berulang besok. Siapkan saldonya.':
+      'Recurring transaction tomorrow. Get the balance ready.',
+  'Pengingat transaksi berulang': 'Recurring transaction reminders',
+  'Mengingatkan transaksi berulang di tanggalnya.':
+      'Reminds you of recurring transactions on their date.',
+  'Catat': 'Record',
+  'Lewati': 'Skip',
+  '@name tercatat': '@name recorded',
+  'Dari pengingat transaksi berulang': 'From a recurring transaction reminder',
   'Simpan transaksi berulang': 'Save recurring transaction',
   'Mulai @date': 'Starts @date',
   // Deteksi otomatis

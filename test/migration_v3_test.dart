@@ -34,7 +34,7 @@ void main() {
     databaseFactory = databaseFactoryFfi;
   });
 
-  test('database versi 3 membuat tabel recurring_rules dan drafts', () async {
+  test('database terbaru membuat tabel recurring_rules dan drafts', () async {
     final db = await databaseFactoryFfi.openDatabase(
       inMemoryDatabasePath,
       options: OpenDatabaseOptions(
@@ -50,47 +50,50 @@ void main() {
     );
     final names = tables.map((row) => row['name']).toSet();
 
-    expect(AppConstants.databaseVersion, 3);
+    expect(AppConstants.databaseVersion, 4);
     expect(names, containsAll(['recurring_rules', 'drafts']));
   });
 
-  test('upgrade dari v2 mempertahankan data lama dan menambah tabel baru', () async {
-    final dir = await Directory.systemTemp.createTemp('tally_migration_');
-    addTearDown(() => dir.delete(recursive: true));
-    final path = '${dir.path}/upgrade.db';
-    final old = await _openV2(path);
-    await old.insert('transactions', {
-      'type': 'expense',
-      'title': 'Kopi',
-      'amount': 25000,
-      'currency': 'IDR',
-      'transaction_date': '2026-09-01T00:00:00.000Z',
-      'category_id': 1,
-      'created_at': '2026-09-01T00:00:00.000Z',
-      'updated_at': '2026-09-01T00:00:00.000Z',
-    });
-    await old.close();
+  test(
+    'upgrade dari v2 mempertahankan data lama dan menambah tabel baru',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('tally_migration_');
+      addTearDown(() => dir.delete(recursive: true));
+      final path = '${dir.path}/upgrade.db';
+      final old = await _openV2(path);
+      await old.insert('transactions', {
+        'type': 'expense',
+        'title': 'Kopi',
+        'amount': 25000,
+        'currency': 'IDR',
+        'transaction_date': '2026-09-01T00:00:00.000Z',
+        'category_id': 1,
+        'created_at': '2026-09-01T00:00:00.000Z',
+        'updated_at': '2026-09-01T00:00:00.000Z',
+      });
+      await old.close();
 
-    final upgraded = await databaseFactoryFfi.openDatabase(
-      path,
-      options: OpenDatabaseOptions(
-        version: 3,
-        onCreate: Migrations.onCreate,
-        onUpgrade: Migrations.onUpgrade,
-      ),
-    );
-    addTearDown(upgraded.close);
+      final upgraded = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 3,
+          onCreate: Migrations.onCreate,
+          onUpgrade: Migrations.onUpgrade,
+        ),
+      );
+      addTearDown(upgraded.close);
 
-    final rows = await upgraded.query('transactions');
-    expect(rows.length, 1);
-    expect(rows.first['title'], 'Kopi');
+      final rows = await upgraded.query('transactions');
+      expect(rows.length, 1);
+      expect(rows.first['title'], 'Kopi');
 
-    final tables = await upgraded.rawQuery(
-      "SELECT name FROM sqlite_master WHERE type = 'table'",
-    );
-    final names = tables.map((row) => row['name']).toSet();
-    expect(names, containsAll(['recurring_rules', 'drafts']));
-  });
+      final tables = await upgraded.rawQuery(
+        "SELECT name FROM sqlite_master WHERE type = 'table'",
+      );
+      final names = tables.map((row) => row['name']).toSet();
+      expect(names, containsAll(['recurring_rules', 'drafts']));
+    },
+  );
 
   test('tabel drafts menolak dedupe_key ganda', () async {
     final db = await databaseFactoryFfi.openDatabase(
@@ -115,5 +118,84 @@ void main() {
     await db.insert('drafts', draft);
 
     expect(() => db.insert('drafts', draft), throwsA(isA<DatabaseException>()));
+  });
+
+  test(
+    'upgrade v3 ke v4 menambah kolom pengingat tanpa kehilangan aturan',
+    () async {
+      final dir = await Directory.systemTemp.createTemp('tally_migration_v4_');
+      addTearDown(() => dir.delete(recursive: true));
+      final path = '${dir.path}/v3.db';
+      final v3 = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 3,
+          onCreate: (db, _) async {
+            await db.execute(
+              'CREATE TABLE categories (id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL)',
+            );
+            await db.execute('''
+            CREATE TABLE recurring_rules (
+              id INTEGER PRIMARY KEY AUTOINCREMENT, name TEXT NOT NULL,
+              type TEXT NOT NULL, category_id INTEGER NOT NULL,
+              amount INTEGER NOT NULL, frequency TEXT NOT NULL,
+              day_of_month INTEGER, weekday INTEGER, start_date TEXT NOT NULL,
+              mode TEXT NOT NULL, is_active INTEGER NOT NULL DEFAULT 1,
+              last_generated_on TEXT, created_at TEXT NOT NULL,
+              updated_at TEXT NOT NULL)
+          ''');
+            await db.insert('recurring_rules', {
+              'name': 'Spotify',
+              'type': 'expense',
+              'category_id': 1,
+              'amount': 55000,
+              'frequency': 'monthly',
+              'start_date': '2026-09-05',
+              'mode': 'ask',
+              'created_at': '2026-09-01',
+              'updated_at': '2026-09-01',
+            });
+          },
+        ),
+      );
+      await v3.close();
+
+      final upgraded = await databaseFactoryFfi.openDatabase(
+        path,
+        options: OpenDatabaseOptions(
+          version: 4,
+          onCreate: Migrations.onCreate,
+          onUpgrade: Migrations.onUpgrade,
+        ),
+      );
+      addTearDown(upgraded.close);
+
+      final rows = await upgraded.query('recurring_rules');
+      expect(rows.single['name'], 'Spotify');
+      expect(rows.single.containsKey('remind_days_before'), isTrue);
+      expect(rows.single['remind_days_before'], isNull);
+    },
+  );
+
+  test('upgrade dari v2 langsung ke v4 tidak gagal', () async {
+    final dir = await Directory.systemTemp.createTemp('tally_migration_v2v4_');
+    addTearDown(() => dir.delete(recursive: true));
+    final path = '${dir.path}/v2.db';
+    await (await _openV2(path)).close();
+
+    final upgraded = await databaseFactoryFfi.openDatabase(
+      path,
+      options: OpenDatabaseOptions(
+        version: 4,
+        onCreate: Migrations.onCreate,
+        onUpgrade: Migrations.onUpgrade,
+      ),
+    );
+    addTearDown(upgraded.close);
+
+    final columns = await upgraded.rawQuery(
+      'PRAGMA table_info(recurring_rules)',
+    );
+    expect(columns.map((c) => c['name']), contains('remind_days_before'));
   });
 }

@@ -81,6 +81,7 @@ class RecurringLocalDataSource {
     DatabaseColumns.lastGeneratedOn: rule.lastGeneratedOn == null
         ? null
         : _dateKey(rule.lastGeneratedOn!),
+    'remind_days_before': rule.remindDaysBefore,
     DatabaseColumns.createdAt: rule.createdAt.toUtc().toIso8601String(),
     DatabaseColumns.updatedAt: rule.updatedAt.toUtc().toIso8601String(),
   };
@@ -100,6 +101,7 @@ class RecurringLocalDataSource {
     lastGeneratedOn: map[DatabaseColumns.lastGeneratedOn] == null
         ? null
         : _parseDate(map[DatabaseColumns.lastGeneratedOn] as String),
+    remindDaysBefore: map['remind_days_before'] as int?,
     createdAt: DateTime.parse(map[DatabaseColumns.createdAt] as String),
     updatedAt: DateTime.parse(map[DatabaseColumns.updatedAt] as String),
   );

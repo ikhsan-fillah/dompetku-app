@@ -20,6 +20,16 @@ class RecurringGenerator {
     return dues;
   }
 
+  /// Tanggal transaksi berikutnya pada atau setelah [from], atau null bila
+  /// tidak ada dalam setahun ke depan.
+  DateTime? nextOn(RecurringRule rule, DateTime from) {
+    final day = _day(from);
+    for (final date in _occurrences(rule, day.add(const Duration(days: 400)))) {
+      if (!date.isBefore(day)) return date;
+    }
+    return null;
+  }
+
   Iterable<DateTime> _occurrences(RecurringRule rule, DateTime end) sync* {
     final start = _day(rule.startDate);
     switch (rule.frequency) {
