@@ -25,11 +25,8 @@ class PeriodPickerSheet extends StatefulWidget {
     return showModalBottomSheet<void>(
       context: context,
       isScrollControlled: true,
-      // Palet sama dengan lembar rentang kustom (kalender B).
-      backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      // Latar, garis, dan sudut mengikuti tema lembar (sama dengan Catat
+      // Keuangan dan kalender rentang).
       builder: (_) => PeriodPickerSheet(controller: controller),
     );
   }

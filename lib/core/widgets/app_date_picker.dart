@@ -29,11 +29,8 @@ Future<T?> _showSheet<T>(BuildContext context, Widget child) =>
     showModalBottomSheet<T>(
       context: context,
       isScrollControlled: true,
-      showDragHandle: true,
-      backgroundColor: AppColors.card,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-      ),
+      // Latar, garis, dan sudut mengikuti tema lembar (sama dengan Catat
+      // Keuangan).
       builder: (_) => child,
     );
 

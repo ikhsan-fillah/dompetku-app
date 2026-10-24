@@ -157,10 +157,14 @@ class AppTheme {
           borderSide: const BorderSide(color: AppColors.ink),
         ),
       ),
+      // Semua lembar bawah memakai gaya lembar Catat Keuangan: latar kartu,
+      // garis tipis, tanpa bayangan.
       bottomSheetTheme: const BottomSheetThemeData(
         backgroundColor: AppColors.card,
         surfaceTintColor: Colors.transparent,
         modalBackgroundColor: AppColors.card,
+        elevation: 0,
+        modalElevation: 0,
         showDragHandle: true,
         dragHandleColor: AppColors.line,
         dragHandleSize: Size(40, 4),
