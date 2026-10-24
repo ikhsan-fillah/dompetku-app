@@ -243,19 +243,24 @@ class _TransactionFormSheetState extends State<TransactionFormSheet> {
     if (picked != null) _controller.setDate(picked);
   }
 
+  /// Tanggal mulai dan selesai anggaran dipilih bersama di kalender rentang,
+  /// sama seperti periode kustom di Beranda. [start] menentukan kolom aktif.
   Future<void> _pickBudgetDate(bool start) async {
     final budget = _budgetController;
     if (budget == null) return;
-    final current = start ? budget.startDate.value : budget.endDate.value;
-    final picked = await showAppDatePicker(
+    final picked = await showAppDateRangePicker(
       context,
-      initialDate: current,
-      // Tanggal selesai tidak boleh sebelum tanggal mulai.
-      firstDate: start ? DateTime(2000) : budget.startDate.value,
+      initialRange: DateTimeRange(
+        start: budget.startDate.value,
+        end: budget.endDate.value,
+      ),
+      firstDate: DateTime(2000),
       lastDate: DateTime(2100),
+      editEnd: !start,
+      title: 'Periode anggaran'.tr,
     );
     if (picked != null) {
-      budget.setDates(start: start ? picked : null, end: start ? null : picked);
+      budget.setDates(start: picked.start, end: picked.end);
     }
   }
 

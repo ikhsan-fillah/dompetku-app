@@ -52,20 +52,19 @@ class _BudgetFormPageState extends State<BudgetFormPage> {
   }
 
   Future<void> _pickDate(bool start) async {
-    final current = start
-        ? controller.startDate.value
-        : controller.endDate.value;
-    final selected = await showAppDatePicker(
+    final picked = await showAppDateRangePicker(
       context,
-      initialDate: current,
-      firstDate: start ? DateTime(2020) : controller.startDate.value,
+      initialRange: DateTimeRange(
+        start: controller.startDate.value,
+        end: controller.endDate.value,
+      ),
+      firstDate: DateTime(2020),
       lastDate: DateTime(2100),
+      editEnd: !start,
+      title: 'Periode anggaran'.tr,
     );
-    if (selected != null) {
-      controller.setDates(
-        start: start ? selected : null,
-        end: start ? null : selected,
-      );
+    if (picked != null) {
+      controller.setDates(start: picked.start, end: picked.end);
     }
   }
 

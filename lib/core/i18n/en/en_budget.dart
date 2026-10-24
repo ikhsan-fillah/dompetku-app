@@ -24,6 +24,7 @@ const Map<String, String> enBudget = {
   '@used dari @limit · keseluruhan': '@used of @limit · overall',
   'Arsipkan anggaran?': 'Archive budget?',
   'Per kategori': 'By category',
+  'Periode anggaran': 'Budget period',
   'Hapus anggaran?': 'Delete budget?',
   '"@name" dihapus permanen dan tidak bisa dipulihkan. Riwayat transaksi tidak ikut terhapus.':
       '"@name" will be deleted permanently and cannot be restored. Transaction history is not deleted.',
