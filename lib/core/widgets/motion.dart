@@ -42,34 +42,148 @@ class FadeSlideIn extends StatelessWidget {
   }
 }
 
-/// Angka yang bergulir dari nilai lama ke nilai baru saat berubah.
+/// Teks angka yang bergulir per digit: saat teks berubah, hanya karakter
+/// yang berbeda yang bergeser naik (seperti odometer); karakter lain diam.
+/// Posisi dihitung dari kanan supaya satuan tetap sejajar. Di luar animasi
+/// tampil sebagai satu [Text] biasa.
+class RollingText extends StatefulWidget {
+  const RollingText(this.text, {super.key, required this.style});
+
+  final String text;
+  final TextStyle style;
+
+  @override
+  State<RollingText> createState() => _RollingTextState();
+}
+
+class _RollingTextState extends State<RollingText>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 320),
+  )..addStatusListener(_onStatus);
+  String? _from;
+
+  void _onStatus(AnimationStatus status) {
+    if (status == AnimationStatus.completed && mounted) {
+      setState(() => _from = null);
+    }
+  }
+
+  @override
+  void didUpdateWidget(RollingText old) {
+    super.didUpdateWidget(old);
+    if (old.text != widget.text && !_reduceMotion(context)) {
+      _from = old.text;
+      _controller.forward(from: 0);
+    }
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final from = _from;
+    if (from == null) {
+      return Text(widget.text, maxLines: 1, style: widget.style);
+    }
+    final next = widget.text.characters.toList();
+    final prev = from.characters.toList();
+    final shift = next.length - prev.length;
+    final curve = CurvedAnimation(
+      parent: _controller,
+      curve: Curves.easeOutCubic,
+    );
+    return Semantics(
+      label: widget.text,
+      excludeSemantics: true,
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          for (var i = 0; i < next.length; i++)
+            _RollingChar(
+              to: next[i],
+              from: i - shift >= 0 && i - shift < prev.length
+                  ? prev[i - shift]
+                  : null,
+              animation: curve,
+              style: widget.style,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _RollingChar extends StatelessWidget {
+  const _RollingChar({
+    required this.to,
+    required this.from,
+    required this.animation,
+    required this.style,
+  });
+
+  final String to;
+  final String? from;
+  final Animation<double> animation;
+  final TextStyle style;
+
+  @override
+  Widget build(BuildContext context) {
+    if (from == to) return Text(to, style: style);
+    return ClipRect(
+      child: AnimatedBuilder(
+        animation: animation,
+        builder: (context, _) {
+          final t = animation.value;
+          return Stack(
+            clipBehavior: Clip.none,
+            children: [
+              FractionalTranslation(
+                translation: Offset(0, 0.9 * (1 - t)),
+                child: Opacity(
+                  opacity: t,
+                  child: Text(to, style: style),
+                ),
+              ),
+              if (from != null)
+                Positioned.fill(
+                  child: FractionalTranslation(
+                    translation: Offset(0, -0.9 * t),
+                    child: Opacity(
+                      opacity: 1 - t,
+                      child: Text(from!, style: style, softWrap: false),
+                    ),
+                  ),
+                ),
+            ],
+          );
+        },
+      ),
+    );
+  }
+}
+
+/// Nominal yang bergulir per digit saat berubah (lihat [RollingText]).
 class AnimatedAmount extends StatelessWidget {
   const AnimatedAmount({
     super.key,
     required this.value,
     required this.format,
     required this.style,
-    this.maxLines = 1,
   });
 
   final int value;
   final String Function(int value) format;
   final TextStyle style;
-  final int maxLines;
 
   @override
-  Widget build(BuildContext context) {
-    if (_reduceMotion(context)) {
-      return Text(format(value), maxLines: maxLines, style: style);
-    }
-    return TweenAnimationBuilder<double>(
-      tween: Tween(end: value.toDouble()),
-      duration: const Duration(milliseconds: 380),
-      curve: Curves.easeOutCubic,
-      builder: (_, current, _) =>
-          Text(format(current.round()), maxLines: maxLines, style: style),
-    );
-  }
+  Widget build(BuildContext context) =>
+      RollingText(format(value), style: style);
 }
 
 /// Memantul sekali (membesar 1,25x lalu kembali) setiap [trigger] berubah,

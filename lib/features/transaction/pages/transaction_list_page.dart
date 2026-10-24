@@ -22,6 +22,7 @@ import '../widgets/transaction_form_sheet.dart';
 import '../widgets/transaction_tile.dart';
 import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/motion.dart';
 import '../../../core/widgets/app_skeleton.dart';
 
 /// Tab Transaksi: cari, filter jenis, ringkasan, dan daftar per hari.
@@ -366,7 +367,7 @@ class _SummaryItem extends StatelessWidget {
         FittedBox(
           fit: BoxFit.scaleDown,
           alignment: Alignment.centerLeft,
-          child: Text(
+          child: RollingText(
             formatIdr(amount),
             style: AppText.mono(
               size: 15,

@@ -6,6 +6,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/utils/formatter.dart';
 import '../models/monthly_trend.dart';
+import '../../../core/widgets/motion.dart';
 
 /// Baris total di bawah grafik: "Total · 22 dari 31 hari" dan nominalnya.
 class TrendTotalLine extends StatelessWidget {
@@ -29,7 +30,7 @@ class TrendTotalLine extends StatelessWidget {
             style: AppText.body(size: 11.5, color: AppColors.ink2),
           ),
         ),
-        Text(
+        RollingText(
           formatIdr(trend.total),
           style: AppText.mono(
             size: 13,

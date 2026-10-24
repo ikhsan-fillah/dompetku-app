@@ -14,6 +14,7 @@ import '../models/recurring_rule.dart';
 import '../services/recurring_totals.dart';
 import 'recurring_add_sheet.dart';
 import '../../../core/widgets/app_dialog.dart';
+import '../../../core/widgets/motion.dart';
 import '../../../core/widgets/card_actions.dart';
 
 /// Daftar recurring: item aktif/nonaktif lewat sakelar. Nonaktif tidak dihapus.
@@ -151,7 +152,7 @@ class _TotalCard extends StatelessWidget {
         children: [
           Text(label, style: AppText.body(size: 12, color: AppColors.mut)),
           const SizedBox(height: 6),
-          Text(
+          RollingText(
             formatIdr(value),
             style: AppText.mono(
               size: 15,

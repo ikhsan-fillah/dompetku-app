@@ -19,6 +19,7 @@ import '../controllers/category_detail_controller.dart';
 import '../services/category_detail_service.dart';
 import '../../../core/widgets/app_skeleton.dart';
 import '../../../core/theme/category_style.dart';
+import '../../../core/widgets/motion.dart';
 
 class CategoryDetailPage extends StatefulWidget {
   const CategoryDetailPage({super.key});
@@ -147,7 +148,7 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                         style: AppText.body(size: 14, weight: FontWeight.w700),
                       ),
                       const SizedBox(height: 2),
-                      Text(
+                      RollingText(
                         '@total · @count transaksi'.trParams({
                           'total': formatIdr(summary?.total ?? 0),
                           'count': '${summary?.count ?? 0}',

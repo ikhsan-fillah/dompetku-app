@@ -10,6 +10,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
 import '../controllers/report_controller.dart';
 import '../../../core/services/app_haptics.dart';
+import '../../../core/widgets/motion.dart';
 
 /// Pemilih bulan: panah kiri/kanan dengan nama bulan di tengah.
 class MonthSwitcher extends StatelessWidget {
@@ -199,7 +200,7 @@ class _SpendingRingState extends State<SpendingRing> {
                               ),
                             ),
                             const SizedBox(height: 2),
-                            Text(
+                            RollingText(
                               item == null
                                   ? widget.totalLabel
                                   : (widget.money?.call(item.amount) ??
@@ -384,7 +385,7 @@ class _FlowRow extends StatelessWidget {
               style: AppText.body(size: 11.5, color: AppColors.mut),
             ),
           ),
-          Text(
+          RollingText(
             value,
             style: AppText.mono(
               size: 12.5,

@@ -22,6 +22,7 @@ import '../models/budget_view_model.dart';
 import '../services/budget_list_service.dart';
 import '../widgets/confirm_delete_budget.dart';
 import '../../../core/widgets/card_actions.dart';
+import '../../../core/widgets/motion.dart';
 import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_skeleton.dart';
 
@@ -284,27 +285,27 @@ class _SummaryHero extends StatelessWidget {
           FittedBox(
             fit: BoxFit.scaleDown,
             alignment: Alignment.centerLeft,
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  TextSpan(
-                    text: money(used),
-                    style: AppText.display(
-                      size: 30,
-                      color: AppColors.paper,
-                      letterSpacing: -0.3,
-                    ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.baseline,
+              textBaseline: TextBaseline.alphabetic,
+              children: [
+                RollingText(
+                  money(used),
+                  style: AppText.display(
+                    size: 30,
+                    color: AppColors.paper,
+                    letterSpacing: -0.3,
                   ),
-                  TextSpan(
-                    text: ' / ${money(limit)}',
-                    style: AppText.mono(
-                      size: 12,
-                      weight: FontWeight.w400,
-                      color: muted,
-                    ),
+                ),
+                Text(
+                  ' / ${money(limit)}',
+                  style: AppText.mono(
+                    size: 12,
+                    weight: FontWeight.w400,
+                    color: muted,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           const SizedBox(height: 14),
@@ -318,13 +319,16 @@ class _SummaryHero extends StatelessWidget {
           Row(
             children: [
               Expanded(
-                child: Text(
-                  remaining < 0
-                      ? 'Melebihi @amount'.trParams({
-                          'amount': money(-remaining),
-                        })
-                      : 'Sisa @amount'.trParams({'amount': money(remaining)}),
-                  style: AppText.mono(size: 12.5, color: AppColors.paper),
+                child: Align(
+                  alignment: Alignment.centerLeft,
+                  child: RollingText(
+                    remaining < 0
+                        ? 'Melebihi @amount'.trParams({
+                            'amount': money(-remaining),
+                          })
+                        : 'Sisa @amount'.trParams({'amount': money(remaining)}),
+                    style: AppText.mono(size: 12.5, color: AppColors.paper),
+                  ),
                 ),
               ),
               Container(

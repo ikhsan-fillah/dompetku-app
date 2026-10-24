@@ -313,7 +313,7 @@ class _MiniPill extends StatelessWidget {
               FittedBox(
                 fit: BoxFit.scaleDown,
                 alignment: Alignment.centerLeft,
-                child: Text(
+                child: RollingText(
                   formatIdr(amount),
                   style: AppText.mono(size: 12.5, color: AppColors.paper),
                 ),
