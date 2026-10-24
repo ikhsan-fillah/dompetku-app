@@ -14,6 +14,21 @@ const Map<String, String> enProfile = {
   'Ikon, warna, urutan, favorit': 'Icon, color, order, favorites',
   'Perbandingan & insight': 'Comparison & insights',
   'Transaksi berulang': 'Recurring transactions',
+  'Getaran': 'Vibration',
+  'Sembunyikan nominal di widget': 'Hide amounts on the widget',
+  'Widget layar utama menampilkan Rp ••••':
+      'The home screen widget shows Rp ••••',
+  'Gagal menyimpan pengaturan widget.': 'Failed to save the widget setting.',
+  '@month · sisa saldo': '@month · balance left',
+  'Anggaran @month': 'Budget @month',
+  'belum ada anggaran': 'no budget yet',
+  'terpakai': 'used',
+  'sisa @amount': '@amount left',
+  'lewat @amount': '@amount over',
+  'Getar halus saat simpan, pilih, dan hapus':
+      'Gentle vibration when saving, picking, and deleting',
+  'Gagal menyimpan pengaturan getaran.':
+      'Failed to save the vibration setting.',
   'Tagihan dan langganan berulang': 'Recurring bills and subscriptions',
   'Rekap': 'Recaps',
   'Putar ulang bulan atau tahun mana pun': 'Replay any month or year',

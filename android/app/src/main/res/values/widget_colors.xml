@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Warna widget layar utama, sama dengan AppColors di Flutter. -->
+<resources>
+    <color name="tally_paper">#F4EFE4</color>
+    <color name="tally_paper2">#EBE4D4</color>
+    <color name="tally_card">#FFFCF5</color>
+    <color name="tally_ink">#1A2724</color>
+    <color name="tally_ink2">#44524E</color>
+    <color name="tally_mut">#7C847F</color>
+    <color name="tally_line">#D8D0BF</color>
+    <color name="tally_earn">#2E6B3C</color>
+    <color name="tally_spend">#A8432F</color>
+</resources>

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dompetku_app/features/recap/services/recap_calculation_service.dart';
 import 'package:dompetku_app/core/services/data_refresh_service.dart';
 import 'package:dompetku_app/core/database/app_database.dart';
@@ -12,6 +14,8 @@ import 'package:dompetku_app/features/autodetect/services/auto_detect_service.da
 import 'package:dompetku_app/features/recurring/data/recurring_local_data_source.dart';
 import 'package:dompetku_app/features/recurring/repositories/recurring_repository_impl.dart';
 import 'package:dompetku_app/features/recurring/services/recurring_generator.dart';
+import 'package:dompetku_app/features/recurring/services/recurring_reminders.dart';
+import 'package:dompetku_app/core/widgets/app_toast.dart';
 import 'package:dompetku_app/core/services/secure_storage_service.dart';
 import 'package:dompetku_app/core/services/shared_prefs_service.dart';
 import 'package:dompetku_app/features/auth/controllers/auth_controller.dart';
@@ -34,6 +38,9 @@ import 'package:dompetku_app/features/transaction/data/transaction_local_data_so
 import 'package:dompetku_app/features/transaction/repositories/transaction_repository.dart';
 import 'package:dompetku_app/features/transaction/repositories/transaction_repository_impl.dart';
 import 'package:get/get.dart';
+import 'package:dompetku_app/features/widget/home_widget_service.dart';
+import 'package:dompetku_app/features/shell/controllers/main_shell_controller.dart';
+import 'package:dompetku_app/features/transaction/widgets/transaction_form_sheet.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -81,6 +88,22 @@ class InitialBinding extends Bindings {
       ),
       permanent: true,
     );
+    final reminders = Get.put(
+      RecurringReminderService(
+        store: Get.find<RecurringRepositoryImpl>(),
+        transactions: Get.find<TransactionRepository>(),
+      ),
+      permanent: true,
+    );
+    unawaited(reminders.init());
+    final widgets = Get.put(
+      HomeWidgetService(
+        transactions: Get.find<TransactionRepository>(),
+        budgets: Get.find<BudgetRepository>(),
+      ),
+      permanent: true,
+    );
+    unawaited(widgets.init());
     final auth = AuthController(
       Get.find(),
       Get.find(),
@@ -94,16 +117,61 @@ class InitialBinding extends Bindings {
       ),
       permanent: true,
     );
+    // Tombol "Catat" di pengingat: catat setelah kunci dibuka.
+    Future<void> recordFromReminder() async {
+      final name = await reminders.consumePendingRecord();
+      if (name == null) return;
+      AppToast.show(
+        title: '@name tercatat'.trParams({'name': name}),
+        message: 'Dari pengingat transaksi berulang'.tr,
+      );
+      if (Get.isRegistered<DataRefreshService>()) {
+        Get.find<DataRefreshService>().bump();
+      }
+    }
+
+    reminders.onRecordRequested = () {
+      if (auth.isUnlocked.value) unawaited(recordFromReminder());
+    };
+
+    // Ketukan widget: jalankan setelah kunci dibuka dan Beranda tampil.
+    Future<void> runWidgetAction() async {
+      final action = widgets.takePendingAction();
+      if (action == null || action == WidgetAction.open) return;
+      await Future<void>.delayed(const Duration(milliseconds: 700));
+      if (action == WidgetAction.openBudget) {
+        if (Get.isRegistered<MainShellController>()) {
+          Get.find<MainShellController>().select(2);
+        }
+        return;
+      }
+      final context = Get.context;
+      if (context == null || !context.mounted) return;
+      await showTransactionSheet(
+        context,
+        initialMode: action == WidgetAction.addIncome
+            ? FinancialInputMode.income
+            : FinancialInputMode.expense,
+      );
+    }
+
+    widgets.onAction = () {
+      if (auth.isUnlocked.value) unawaited(runWidgetAction());
+    };
     auth.onUnlocked = () async {
       if (Get.isRegistered<AutoDetectService>()) {
         Get.find<AutoDetectService>().start();
       }
+      await recordFromReminder();
+      unawaited(runWidgetAction());
       await RecurringRunner(
         rules: Get.find<RecurringRepositoryImpl>(),
         transactions: Get.find<TransactionRepository>(),
         generator: const RecurringGenerator(),
         drafts: RecurringDraftSink(Get.find<DraftRepository>()),
       ).runDue(DateTime.now());
+      unawaited(reminders.reschedule());
+      unawaited(widgets.update());
       if (Get.isRegistered<DataRefreshService>()) {
         Get.find<DataRefreshService>().bump();
       }

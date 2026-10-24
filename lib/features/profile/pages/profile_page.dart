@@ -16,6 +16,7 @@ import '../controllers/profile_controller.dart';
 import '../widgets/profile_header.dart';
 import '../../../core/widgets/app_button.dart';
 import '../../../core/widgets/app_dialog.dart';
+import '../../../core/widgets/app_toast.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -135,13 +136,12 @@ class _ProfilePageState extends State<ProfilePage> {
       Get.offAllNamed(AppRoutes.login);
       return;
     }
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(
+    AppToast.show(
+      context: context,
+      title:
           _controller.error.value ??
-              'Gagal menghapus semua data. Coba lagi.'.tr,
-        ),
-      ),
+          'Gagal menghapus semua data. Coba lagi.'.tr,
+      kind: ToastKind.error,
     );
   }
 
@@ -244,6 +244,52 @@ class _ProfilePageState extends State<ProfilePage> {
                   trailing: _LanguageDropdown(
                     value: _controller.language.value,
                     onChanged: _controller.setLanguage,
+                  ),
+                ),
+              ),
+              Obx(
+                () => SettingsTile(
+                  icon: LucideIcons.vibrate,
+                  title: 'Getaran'.tr,
+                  subtitle: 'Getar halus saat simpan, pilih, dan hapus'.tr,
+                  iconBackground: AppColors.paper2,
+                  iconColor: AppColors.ink,
+                  trailing: Switch.adaptive(
+                    value: _controller.hapticsEnabled.value,
+                    activeTrackColor: AppColors.ink,
+                    activeThumbColor: AppColors.paper,
+                    inactiveTrackColor: AppColors.line,
+                    inactiveThumbColor: Colors.white,
+                    trackOutlineColor: WidgetStateProperty.all(
+                      Colors.transparent,
+                    ),
+                    onChanged: _controller.setHapticsEnabled,
+                  ),
+                  onTap: () => _controller.setHapticsEnabled(
+                    !_controller.hapticsEnabled.value,
+                  ),
+                ),
+              ),
+              Obx(
+                () => SettingsTile(
+                  icon: LucideIcons.eyeOff,
+                  title: 'Sembunyikan nominal di widget'.tr,
+                  subtitle: 'Widget layar utama menampilkan Rp ••••'.tr,
+                  iconBackground: AppColors.paper2,
+                  iconColor: AppColors.ink,
+                  trailing: Switch.adaptive(
+                    value: _controller.widgetHideAmounts.value,
+                    activeTrackColor: AppColors.ink,
+                    activeThumbColor: AppColors.paper,
+                    inactiveTrackColor: AppColors.line,
+                    inactiveThumbColor: Colors.white,
+                    trackOutlineColor: WidgetStateProperty.all(
+                      Colors.transparent,
+                    ),
+                    onChanged: _controller.setWidgetHideAmounts,
+                  ),
+                  onTap: () => _controller.setWidgetHideAmounts(
+                    !_controller.widgetHideAmounts.value,
                   ),
                 ),
               ),

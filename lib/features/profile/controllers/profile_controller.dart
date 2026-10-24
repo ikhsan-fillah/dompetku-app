@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart' show ThemeMode;
 import 'package:get/get.dart';
 
@@ -7,6 +9,8 @@ import '../../../core/services/shared_prefs_service.dart';
 import '../../../core/utils/display_name.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../transaction/repositories/transaction_repository.dart';
+import '../../../core/services/app_haptics.dart';
+import '../../widget/home_widget_service.dart';
 
 class ProfileController extends GetxController {
   ProfileController(
@@ -35,6 +39,12 @@ class ProfileController extends GetxController {
   final biometricEnabled = false.obs;
   final themeMode = defaultThemeMode.obs;
   final language = AppLanguage.defaultCode.obs;
+
+  /// Getaran halus; nilai awal dibaca saat app dibuka (lihat [AppHaptics]).
+  final hapticsEnabled = AppHaptics.enabled.obs;
+
+  /// Widget layar utama menyamarkan nominal.
+  final widgetHideAmounts = true.obs;
   final displayName = ''.obs;
 
   /// Jumlah semua transaksi tercatat; null sebelum dimuat atau bila gagal.
@@ -86,6 +96,8 @@ class ProfileController extends GetxController {
         ? savedLanguage
         : AppLanguage.defaultCode;
     displayName.value = await _preferences.getDisplayName();
+    // Tidak ditunggu: pengaturan widget tidak boleh menahan Profil tampil.
+    unawaited(_loadWidgetHideAmounts());
     final seconds = await _preferences.getAutoLockSeconds();
     autoLockSeconds.value = autoLockOptions.contains(seconds) ? seconds : 0;
   }
@@ -133,6 +145,37 @@ class ProfileController extends GetxController {
       return false;
     } finally {
       savingLanguage.value = false;
+    }
+  }
+
+  Future<void> setHapticsEnabled(bool value) async {
+    hapticsEnabled.value = value;
+    AppHaptics.enabled = value;
+    if (value) AppHaptics.select();
+    try {
+      await _preferences.setHapticsEnabled(value);
+    } catch (_) {
+      error.value = 'Gagal menyimpan pengaturan getaran.'.tr;
+    }
+  }
+
+  Future<void> _loadWidgetHideAmounts() async {
+    try {
+      widgetHideAmounts.value = await _preferences.getWidgetHideAmounts();
+    } catch (_) {
+      // Bawaan tetap disamarkan bila preferensi tidak terbaca.
+    }
+  }
+
+  Future<void> setWidgetHideAmounts(bool value) async {
+    widgetHideAmounts.value = value;
+    try {
+      await _preferences.setWidgetHideAmounts(value);
+      if (Get.isRegistered<HomeWidgetService>()) {
+        await Get.find<HomeWidgetService>().update();
+      }
+    } catch (_) {
+      error.value = 'Gagal menyimpan pengaturan widget.'.tr;
     }
   }
 

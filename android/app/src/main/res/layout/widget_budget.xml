@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget 2x2: persen anggaran bulan ini yang terpakai. -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg_ink"
+    android:orientation="vertical"
+    android:padding="14dp">
+
+    <TextView
+        android:id="@+id/widget_budget_label"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:alpha="0.7"
+        android:maxLines="1"
+        android:text="Anggaran"
+        android:textColor="@color/tally_paper"
+        android:textSize="11sp" />
+
+    <TextView
+        android:id="@+id/widget_budget_percent"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="2dp"
+        android:fontFamily="serif"
+        android:text="0%"
+        android:textColor="@color/tally_paper"
+        android:textSize="26sp" />
+
+    <TextView
+        android:id="@+id/widget_budget_caption"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:alpha="0.7"
+        android:text="terpakai"
+        android:textColor="@color/tally_paper"
+        android:textSize="11sp" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1" />
+
+    <ProgressBar
+        android:id="@+id/widget_budget_bar"
+        style="@android:style/Widget.ProgressBar.Horizontal"
+        android:layout_width="match_parent"
+        android:layout_height="6dp"
+        android:max="100"
+        android:progress="0"
+        android:progressBackgroundTint="#55F4EFE4"
+        android:progressTint="@color/tally_paper" />
+
+    <TextView
+        android:id="@+id/widget_budget_left"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:alpha="0.8"
+        android:fontFamily="monospace"
+        android:maxLines="1"
+        android:textColor="@color/tally_paper"
+        android:textSize="10sp" />
+</LinearLayout>

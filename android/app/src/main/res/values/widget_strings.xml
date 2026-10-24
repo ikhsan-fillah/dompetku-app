@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_balance_label">Saldo bulan ini dan catat cepat</string>
+    <string name="widget_budget_label">Anggaran bulan ini</string>
+</resources>
