@@ -5,6 +5,7 @@ import 'package:flutter_test/flutter_test.dart';
 
 class _Store implements RecurringStore {
   final List<RecurringRule> inserted = [];
+  final List<RecurringRule> updated = [];
   bool fail = false;
 
   @override
@@ -25,6 +26,12 @@ class _Store implements RecurringStore {
 
   @override
   Future<void> markGenerated(int id, DateTime day) async {}
+
+  @override
+  Future<void> update(RecurringRule rule) async {
+    if (fail) throw StateError('db');
+    updated.add(rule);
+  }
 }
 
 void main() {
@@ -104,5 +111,48 @@ void main() {
 
     expect(await form.save(), isFalse);
     expect(form.error.value, 'Gagal menyimpan. Coba lagi.');
+  });
+
+  test('startEdit lalu save memperbarui aturan, bukan menambah', () async {
+    final original = RecurringRule(
+      id: 7,
+      name: 'Spotify',
+      type: RecurringType.expense,
+      categoryId: 3,
+      amount: 55000,
+      frequency: RecurringFrequency.monthly,
+      dayOfMonth: 5,
+      startDate: DateTime(2026, 9, 5),
+      mode: RecurringMode.ask,
+      isActive: false,
+      lastGeneratedOn: DateTime(2026, 9, 5),
+      createdAt: DateTime.utc(2026, 9, 1),
+      updatedAt: DateTime.utc(2026, 9, 1),
+    );
+    form.startEdit(original);
+    expect(form.isEditing, isTrue);
+    expect(form.amountDigits.value, '55000');
+
+    form.amountDigits.value = '60000';
+    final ok = await form.save();
+
+    expect(ok, isTrue);
+    expect(store.inserted, isEmpty);
+    final saved = store.updated.single;
+    expect(saved.id, 7);
+    expect(saved.amount, 60000);
+    expect(saved.isActive, isFalse);
+    expect(saved.lastGeneratedOn, DateTime(2026, 9, 5));
+    expect(saved.createdAt, DateTime.utc(2026, 9, 1));
+  });
+
+  test('startNew mengosongkan form setelah edit', () {
+    form.name.value = 'Lama';
+    form.amountDigits.value = '1000';
+    form.startNew();
+
+    expect(form.isEditing, isFalse);
+    expect(form.name.value, '');
+    expect(form.amountDigits.value, '');
   });
 }

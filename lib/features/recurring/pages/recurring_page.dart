@@ -14,6 +14,7 @@ import '../models/recurring_rule.dart';
 import '../services/recurring_totals.dart';
 import 'recurring_add_sheet.dart';
 import '../../../core/widgets/app_dialog.dart';
+import '../../../core/widgets/card_actions.dart';
 
 /// Daftar recurring: item aktif/nonaktif lewat sakelar. Nonaktif tidak dihapus.
 class RecurringPage extends StatelessWidget {
@@ -28,7 +29,10 @@ class RecurringPage extends StatelessWidget {
         child: Column(
           children: [
             AppTitleBar(
-              title: 'Transaksi berulang'.tr,
+              // "Recurring transactions" terlalu panjang untuk satu baris.
+              title: AppLanguage.isEnglish
+                  ? 'Recurring'
+                  : 'Transaksi berulang'.tr,
               action: AppBarIconButton(
                 tooltip: 'Tambah transaksi berulang'.tr,
                 icon: LucideIcons.plus,
@@ -77,6 +81,7 @@ class RecurringPage extends StatelessWidget {
                             child: _DismissibleRule(
                               rule: rule,
                               controller: controller,
+                              expanded: controller.expandedId.value == rule.id,
                             ),
                           ),
                       ],
@@ -160,25 +165,42 @@ class _TotalCard extends StatelessWidget {
   }
 }
 
+Future<bool> _confirmDelete(BuildContext context) => showAppConfirm(
+  context,
+  title: 'Hapus transaksi berulang?'.tr,
+  message: 'Transaksi sebelumnya tetap ada. Hanya jadwalnya yang dihapus.'.tr,
+  confirmLabel: 'Hapus'.tr,
+  danger: true,
+);
+
+/// Kartu aturan: geser ke kiri untuk hapus, atau ketuk untuk memunculkan
+/// tombol Edit dan Hapus seperti kartu transaksi.
 class _DismissibleRule extends StatelessWidget {
-  const _DismissibleRule({required this.rule, required this.controller});
+  const _DismissibleRule({
+    required this.rule,
+    required this.controller,
+    required this.expanded,
+  });
 
   final RecurringRule rule;
   final RecurringController controller;
+  final bool expanded;
+
+  Future<void> _edit(BuildContext context) async {
+    final saved = await showRecurringAddSheet(context, edit: rule);
+    if (saved) await controller.load();
+  }
+
+  Future<void> _delete(BuildContext context) async {
+    if (await _confirmDelete(context)) await controller.remove(rule.id!);
+  }
 
   @override
   Widget build(BuildContext context) {
     return Dismissible(
       key: ValueKey(rule.id),
       direction: DismissDirection.endToStart,
-      confirmDismiss: (_) => showAppConfirm(
-        context,
-        title: 'Hapus transaksi berulang?'.tr,
-        message:
-            'Transaksi sebelumnya tetap ada. Hanya jadwalnya yang dihapus.'.tr,
-        confirmLabel: 'Hapus'.tr,
-        danger: true,
-      ),
+      confirmDismiss: (_) => _confirmDelete(context),
       onDismissed: (_) => controller.remove(rule.id!),
       background: Container(
         alignment: Alignment.centerRight,
@@ -191,30 +213,67 @@ class _DismissibleRule extends StatelessWidget {
       ),
       child: _RuleTile(
         rule: rule,
+        expanded: expanded,
+        onTap: () => controller.toggleExpanded(rule.id),
         onToggle: (value) => controller.setActive(rule.id!, value),
+        actions: [
+          CardAction(
+            label: 'Edit'.tr,
+            icon: LucideIcons.pencil,
+            onTap: () => _edit(context),
+          ),
+          CardAction(
+            label: 'Hapus'.tr,
+            icon: LucideIcons.trash2,
+            danger: true,
+            onTap: () => _delete(context),
+          ),
+        ],
       ),
     );
   }
 }
 
 class _RuleTile extends StatelessWidget {
-  const _RuleTile({required this.rule, required this.onToggle});
+  const _RuleTile({
+    required this.rule,
+    required this.expanded,
+    required this.onTap,
+    required this.onToggle,
+    required this.actions,
+  });
 
   final RecurringRule rule;
+  final bool expanded;
+  final VoidCallback onTap;
   final ValueChanged<bool> onToggle;
+  final List<CardAction> actions;
 
   bool get _isIncome => rule.type == RecurringType.income;
 
+  static const _weekdays = [
+    'Senin',
+    'Selasa',
+    'Rabu',
+    'Kamis',
+    'Jumat',
+    'Sabtu',
+    'Minggu',
+  ];
+
+  /// Jadwal berulang, bukan batas waktu: "tiap tanggal 5", "tiap Senin".
   String get _schedule => switch (rule.frequency) {
-    RecurringFrequency.monthly => 'Bulanan · jatuh tempo @day'.trParams({
+    RecurringFrequency.monthly => 'Bulanan · tiap tanggal @day'.trParams({
       'day': _dayLabel(rule.dayOfMonth ?? rule.startDate.day),
     }),
-    RecurringFrequency.weekly => 'Mingguan'.tr,
-    RecurringFrequency.yearly => 'Tahunan'.tr,
+    RecurringFrequency.weekly => 'Mingguan · tiap @weekday'.trParams({
+      'weekday': _weekdays[(rule.weekday ?? rule.startDate.weekday) - 1].tr,
+    }),
+    RecurringFrequency.yearly => 'Tahunan · tiap @date'.trParams({
+      'date':
+          '${rule.startDate.day} ${AppLanguage.monthShort(rule.startDate.month)}',
+    }),
   };
-
-  String get _mode =>
-      rule.mode == RecurringMode.ask ? 'Tanya dulu'.tr : 'Catat otomatis'.tr;
 
   /// Bahasa Inggris memakai akhiran urutan (5th); Indonesia cukup angka.
   static String _dayLabel(int day) =>
@@ -236,53 +295,67 @@ class _RuleTile extends StatelessWidget {
         ? '+ ${formatIdr(rule.amount)}'
         : '- ${formatIdr(rule.amount)}';
     return Container(
-      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: AppColors.card,
         borderRadius: BorderRadius.circular(12),
         border: Border.all(color: AppColors.line),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            width: 40,
-            height: 40,
-            decoration: BoxDecoration(
-              color: _isIncome ? AppColors.earn : AppColors.catBills,
-              borderRadius: BorderRadius.circular(10),
-            ),
-            child: Icon(
-              _isIncome ? LucideIcons.wallet : LucideIcons.receiptText,
-              size: 18,
-              color: AppColors.card,
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: onTap,
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(14, 14, 6, 14),
+              child: Row(
+                children: [
+                  Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: _isIncome ? AppColors.earn : AppColors.catBills,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Icon(
+                      _isIncome ? LucideIcons.wallet : LucideIcons.receiptText,
+                      size: 18,
+                      color: AppColors.card,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          rule.name,
+                          style: AppText.body(
+                            size: 14,
+                            weight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 3),
+                        Text(
+                          '$amountText · $_schedule',
+                          style: AppText.mono(size: 11, color: AppColors.mut),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Switch(
+                    value: rule.isActive,
+                    activeTrackColor: AppColors.ink,
+                    onChanged: onToggle,
+                  ),
+                ],
+              ),
             ),
           ),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  rule.name,
-                  style: AppText.body(size: 14, weight: FontWeight.w700),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  '$amountText · $_schedule',
-                  style: AppText.mono(size: 11, color: AppColors.mut),
-                ),
-                const SizedBox(height: 2),
-                Text(
-                  _mode,
-                  style: AppText.body(size: 11, color: AppColors.mut),
-                ),
-              ],
-            ),
-          ),
-          Switch(
-            value: rule.isActive,
-            activeTrackColor: AppColors.ink,
-            onChanged: onToggle,
+          CardActionBar(
+            expanded: expanded,
+            padding: const EdgeInsets.fromLTRB(66, 0, 14, 12),
+            actions: actions,
           ),
         ],
       ),

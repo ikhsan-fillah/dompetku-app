@@ -18,11 +18,19 @@ import '../controllers/recurring_form_controller.dart';
 import '../models/recurring_rule.dart';
 import '../../../core/widgets/app_date_picker.dart';
 
-/// Sheet tambah recurring (§9.2). Simpan menutup sheet bila berhasil.
+/// Sheet tambah atau ubah recurring (§9.2). [edit] mengisi form dengan aturan
+/// yang sudah ada. Simpan menutup sheet bila berhasil.
 Future<bool> showRecurringAddSheet(
   BuildContext context, {
   CategoryRepository? categories,
+  RecurringRule? edit,
 }) async {
+  final form = Get.find<RecurringFormController>();
+  if (edit == null) {
+    form.startNew();
+  } else {
+    form.startEdit(edit);
+  }
   final saved = await showModalBottomSheet<bool>(
     context: context,
     isScrollControlled: true,
@@ -53,8 +61,12 @@ class _RecurringAddBody extends StatefulWidget {
 class _RecurringAddBodyState extends State<_RecurringAddBody> {
   late final RecurringFormController _form =
       Get.find<RecurringFormController>();
-  final TextEditingController _name = TextEditingController();
-  final TextEditingController _amount = TextEditingController();
+  late final TextEditingController _name = TextEditingController(
+    text: _form.name.value,
+  );
+  late final TextEditingController _amount = TextEditingController(
+    text: _form.amountDigits.value,
+  );
   List<CategoryModel> _all = const [];
 
   @override
@@ -126,7 +138,9 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
             children: [
               Expanded(
                 child: Text(
-                  'Transaksi berulang baru'.tr,
+                  _form.isEditing
+                      ? 'Ubah transaksi berulang'.tr
+                      : 'Transaksi berulang baru'.tr,
                   style: AppText.display(size: 19),
                 ),
               ),
@@ -195,7 +209,7 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
               ),
             ],
           ),
-          _Label('Saat jatuh tempo'.tr),
+          _Label('Saat tanggalnya tiba'.tr),
           _Segment<RecurringMode>(
             options: RecurringMode.values,
             selected: _form.mode.value,
@@ -222,7 +236,9 @@ class _RecurringAddBodyState extends State<_RecurringAddBody> {
           const SizedBox(height: 12),
           Obx(
             () => AppButton(
-              label: 'Simpan transaksi berulang'.tr,
+              label: _form.isEditing
+                  ? 'Simpan perubahan'.tr
+                  : 'Simpan transaksi berulang'.tr,
               icon: Icons.check_rounded,
               loading: _form.saving.value,
               onPressed: _save,

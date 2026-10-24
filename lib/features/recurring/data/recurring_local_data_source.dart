@@ -22,6 +22,18 @@ class RecurringLocalDataSource {
     return database.insert(DatabaseTables.recurringRules, _toMap(rule));
   }
 
+  Future<void> update(RecurringRule rule) async {
+    final id = rule.id;
+    if (id == null) throw ArgumentError('Recurring id is required for update');
+    final database = await _appDatabase.database;
+    await database.update(
+      DatabaseTables.recurringRules,
+      _toMap(rule),
+      where: '${DatabaseColumns.id} = ?',
+      whereArgs: [id],
+    );
+  }
+
   Future<void> setActive(int id, bool active) async {
     final database = await _appDatabase.database;
     await database.update(

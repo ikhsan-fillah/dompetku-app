@@ -7,6 +7,7 @@ import '../models/recurring_rule.dart';
 abstract interface class RecurringStore {
   Future<List<RecurringRule>> getAll();
   Future<int> insert(RecurringRule rule);
+  Future<void> update(RecurringRule rule);
   Future<void> setActive(int id, bool active);
   Future<void> delete(int id);
   Future<void> markGenerated(int id, DateTime day);
@@ -17,6 +18,12 @@ class RecurringController extends GetxController {
 
   final RecurringStore _store;
   final state = const ResourceState<List<RecurringRule>>.idle().obs;
+
+  /// Aturan yang sedang menampilkan tombol Edit dan Hapus.
+  final expandedId = RxnInt();
+
+  void toggleExpanded(int? id) =>
+      expandedId.value = expandedId.value == id ? null : id;
 
   @override
   void onInit() {

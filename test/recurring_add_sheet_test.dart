@@ -30,6 +30,12 @@ class _Store implements RecurringStore {
 
   @override
   Future<void> markGenerated(int id, DateTime day) async {}
+
+  @override
+  Future<void> update(RecurringRule rule) async {
+    final index = items.indexWhere((r) => r.id == rule.id);
+    if (index >= 0) items[index] = rule;
+  }
 }
 
 class _Categories implements CategoryRepository {

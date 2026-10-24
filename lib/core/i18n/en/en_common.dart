@@ -47,4 +47,11 @@ const Map<String, String> enCommon = {
   'JUM': 'FRI',
   'SAB': 'SAT',
   'MIN': 'SUN',
+  'Senin': 'Monday',
+  'Selasa': 'Tuesday',
+  'Rabu': 'Wednesday',
+  'Kamis': 'Thursday',
+  'Jumat': 'Friday',
+  'Sabtu': 'Saturday',
+  'Minggu': 'Sunday',
 };

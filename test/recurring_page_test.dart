@@ -37,11 +37,19 @@ class _Store implements RecurringStore {
   @override
   Future<int> insert(RecurringRule rule) async => 1;
 
+  final deleted = <int>[];
+
   @override
-  Future<void> delete(int id) async {}
+  Future<void> delete(int id) async {
+    deleted.add(id);
+    items = items.where((r) => r.id != id).toList();
+  }
 
   @override
   Future<void> markGenerated(int id, DateTime day) async {}
+
+  @override
+  Future<void> update(RecurringRule rule) async {}
 }
 
 Future<void> _open(WidgetTester tester, _Store store) async {
@@ -70,8 +78,46 @@ void main() {
     expect(find.text('Listrik'), findsOneWidget);
     expect(find.text('Rp 438.000'), findsOneWidget);
     expect(find.text('Keluar per bulan'), findsOneWidget);
-    expect(find.text('- Rp 438.000 · Bulanan · jatuh tempo 5'), findsOneWidget);
-    expect(find.text('Tanya dulu'), findsOneWidget);
+    expect(
+      find.text('- Rp 438.000 · Bulanan · tiap tanggal 5'),
+      findsOneWidget,
+    );
+    // Mode pencatatan tidak lagi ditulis di kartu.
+    expect(find.text('Tanya dulu'), findsNothing);
+    expect(find.text('Catat otomatis'), findsNothing);
+  });
+
+  testWidgets('ketuk kartu memunculkan Edit dan Hapus', (tester) async {
+    await _open(tester, _Store([_rule()]));
+    expect(find.text('Edit'), findsNothing);
+
+    await tester.tap(find.text('Listrik'));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.text('Hapus'), findsOneWidget);
+
+    await tester.tap(find.text('Listrik'));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit'), findsNothing);
+  });
+
+  testWidgets('Hapus dari kartu meminta konfirmasi lalu menghapus', (
+    tester,
+  ) async {
+    final store = _Store([_rule()]);
+    await _open(tester, store);
+
+    await tester.tap(find.text('Listrik'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Hapus'));
+    await tester.pumpAndSettle();
+    expect(find.text('Hapus transaksi berulang?'), findsOneWidget);
+
+    await tester.tap(find.text('Hapus').last);
+    await tester.pumpAndSettle();
+
+    expect(store.deleted, [1]);
   });
 
   testWidgets('sakelar menonaktifkan tanpa menghapus item', (tester) async {

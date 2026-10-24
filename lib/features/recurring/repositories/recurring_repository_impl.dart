@@ -15,6 +15,9 @@ class RecurringRepositoryImpl implements RecurringRuleStore, RecurringStore {
   Future<int> insert(RecurringRule rule) => _dataSource.insert(rule);
 
   @override
+  Future<void> update(RecurringRule rule) => _dataSource.update(rule);
+
+  @override
   Future<void> setActive(int id, bool active) =>
       _dataSource.setActive(id, active);
 
