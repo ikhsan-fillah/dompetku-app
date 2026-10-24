@@ -20,7 +20,6 @@ import '../../../core/i18n/app_language.dart';
 import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
 import '../services/budget_list_service.dart';
-import '../../../core/widgets/card_actions.dart';
 import '../../../core/widgets/app_skeleton.dart';
 import '../../../core/widgets/motion.dart';
 import '../../../core/widgets/swipe_actions.dart';
@@ -54,7 +53,6 @@ class BudgetPage extends GetView<BudgetController> {
   Future<void> _delete(BudgetViewModel item) async {
     final id = item.budget.id;
     if (id == null) return;
-    controller.expandedId.value = null;
     final ok = await controller.delete(id);
     if (!ok) return;
     AppToast.show(
@@ -145,21 +143,7 @@ class BudgetPage extends GetView<BudgetController> {
                   money: _money,
                   categoryName: _categoryName(items[i]),
                   last: i == items.length - 1,
-                  expanded: controller.expandedId.value == items[i].budget.id,
-                  onTap: () => controller.toggleExpanded(items[i].budget.id),
-                  actions: [
-                    CardAction(
-                      label: 'Edit'.tr,
-                      icon: LucideIcons.pencil,
-                      onTap: () => _openForm(items[i]),
-                    ),
-                    CardAction(
-                      label: 'Hapus'.tr,
-                      icon: LucideIcons.trash2,
-                      danger: true,
-                      onTap: () => _delete(items[i]),
-                    ),
-                  ],
+                  onTap: () => _openForm(items[i]),
                 ),
               ),
           ],
@@ -455,9 +439,7 @@ class _BudgetRow extends StatelessWidget {
     required this.money,
     required this.categoryName,
     required this.last,
-    required this.expanded,
     required this.onTap,
-    required this.actions,
   });
 
   final BudgetViewModel item;
@@ -465,10 +447,8 @@ class _BudgetRow extends StatelessWidget {
   final String? categoryName;
   final bool last;
 
-  /// Ketuk kartu memunculkan aksi di bawahnya, seperti kartu transaksi.
-  final bool expanded;
+  /// Ketuk kartu untuk Edit; Hapus lewat geser.
   final VoidCallback onTap;
-  final List<CardAction> actions;
 
   @override
   Widget build(BuildContext context) {
@@ -573,7 +553,6 @@ class _BudgetRow extends StatelessWidget {
               ),
             ),
           ),
-          CardActionBar(expanded: expanded, actions: actions),
         ],
       ),
     );

@@ -87,19 +87,15 @@ void main() {
     expect(find.text('Catat otomatis'), findsNothing);
   });
 
-  testWidgets('ketuk kartu memunculkan Edit dan Hapus', (tester) async {
+  testWidgets('geser kartu memunculkan Edit dan Hapus', (tester) async {
     await _open(tester, _Store([_rule()]));
     expect(find.text('Edit'), findsNothing);
 
-    await tester.tap(find.text('Listrik'));
+    await tester.drag(find.text('Listrik'), const Offset(-300, 0));
     await tester.pumpAndSettle();
 
     expect(find.text('Edit'), findsOneWidget);
     expect(find.text('Hapus'), findsOneWidget);
-
-    await tester.tap(find.text('Listrik'));
-    await tester.pumpAndSettle();
-    expect(find.text('Edit'), findsNothing);
   });
 
   testWidgets('Hapus dari kartu langsung menghapus dengan toast Urungkan', (
@@ -108,7 +104,8 @@ void main() {
     final store = _Store([_rule()]);
     await _open(tester, store);
 
-    await tester.tap(find.text('Listrik'));
+    // Aksi hanya lewat geser kartu ke kiri.
+    await tester.drag(find.text('Listrik'), const Offset(-300, 0));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Hapus'));
     await tester.runAsync(pumpEventQueue);

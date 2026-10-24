@@ -42,7 +42,6 @@ class _TransactionListPageState extends State<TransactionListPage> {
       Get.find<TransactionController>();
   final TextEditingController _search = TextEditingController();
   final ScrollController _scroll = ScrollController();
-  final RxnInt _expanded = RxnInt();
 
   @override
   void dispose() {
@@ -65,14 +64,9 @@ class _TransactionListPageState extends State<TransactionListPage> {
     AppToast.show(context: context, title: message, kind: ToastKind.error);
   }
 
-  void _toggle(int id) {
-    _expanded.value = _expanded.value == id ? null : id;
-  }
-
   Future<void> _edit(int id) async {
     final model = _controller.findById(id);
     if (model == null) return;
-    _expanded.value = null;
     await showTransactionSheet(context, edit: model);
   }
 
@@ -81,7 +75,6 @@ class _TransactionListPageState extends State<TransactionListPage> {
     final removed = _controller.findById(id);
     final ok = await _controller.delete(id);
     if (!mounted) return;
-    _expanded.value = null;
     if (!ok) {
       _snack('Gagal menghapus transaksi.'.tr);
       return;
@@ -209,7 +202,6 @@ class _TransactionListPageState extends State<TransactionListPage> {
             message: 'Coba kata kunci atau filter lain.'.tr,
           );
         }
-        final expandedId = _expanded.value;
         final entries = <_TransactionEntry>[];
         if (result.isGrouped) {
           for (final group in result.groups) {
@@ -268,10 +260,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
                   margin: EdgeInsets.zero,
                   child: TransactionTile(
                     item: item,
-                    expanded: expandedId == item.id,
-                    onTap: () => _toggle(item.id),
-                    onEdit: () => _edit(item.id),
-                    onDelete: () => _delete(item.id),
+                    onTap: () => _edit(item.id),
                   ),
                 ),
               ),

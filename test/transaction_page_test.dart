@@ -169,12 +169,13 @@ void main() {
     expect(find.text('Tidak ada hasil'), findsOneWidget);
   });
 
-  testWidgets('mengetuk baris menampilkan Edit dan Hapus; hapus tanpa dialog', (
+  testWidgets('geser kartu menampilkan Edit dan Hapus; hapus tanpa dialog', (
     tester,
   ) async {
     final repository = await _open(tester);
 
-    await tester.tap(find.text('Kopi'));
+    // Aksi hanya lewat geser kartu ke kiri.
+    await tester.drag(find.text('Kopi'), const Offset(-300, 0));
     await tester.pumpAndSettle();
     expect(find.text('Edit'), findsOneWidget);
     // Duplikat pindah ke lembar Edit.
@@ -196,7 +197,8 @@ void main() {
   testWidgets('Urungkan mengembalikan transaksi yang dihapus', (tester) async {
     final repository = await _open(tester);
 
-    await tester.tap(find.text('Kopi'));
+    // Aksi hanya lewat geser kartu ke kiri.
+    await tester.drag(find.text('Kopi'), const Offset(-300, 0));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Hapus'));
     await tester.runAsync(pumpEventQueue);

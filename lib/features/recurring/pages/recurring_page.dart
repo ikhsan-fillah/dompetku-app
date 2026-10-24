@@ -13,7 +13,6 @@ import '../controllers/recurring_controller.dart';
 import '../models/recurring_rule.dart';
 import '../services/recurring_totals.dart';
 import 'recurring_add_sheet.dart';
-import '../../../core/widgets/card_actions.dart';
 import '../../../core/widgets/motion.dart';
 import '../../../core/widgets/swipe_actions.dart';
 import '../../../core/widgets/app_toast.dart';
@@ -83,7 +82,6 @@ class RecurringPage extends StatelessWidget {
                             child: _DismissibleRule(
                               rule: rule,
                               controller: controller,
-                              expanded: controller.expandedId.value == rule.id,
                             ),
                           ),
                       ],
@@ -167,18 +165,13 @@ class _TotalCard extends StatelessWidget {
   }
 }
 
-/// Kartu aturan: geser ke kiri atau ketuk untuk Edit dan Hapus, sama dengan
-/// kartu transaksi. Hapus bisa diurungkan.
+/// Kartu aturan: ketuk untuk Edit, geser ke kiri untuk Edit dan Hapus.
+/// Hapus bisa diurungkan.
 class _DismissibleRule extends StatelessWidget {
-  const _DismissibleRule({
-    required this.rule,
-    required this.controller,
-    required this.expanded,
-  });
+  const _DismissibleRule({required this.rule, required this.controller});
 
   final RecurringRule rule;
   final RecurringController controller;
-  final bool expanded;
 
   Future<void> _edit(BuildContext context) async {
     final saved = await showRecurringAddSheet(context, edit: rule);
@@ -186,7 +179,6 @@ class _DismissibleRule extends StatelessWidget {
   }
 
   Future<void> _delete(BuildContext context) async {
-    controller.expandedId.value = null;
     final ok = await controller.remove(rule.id!);
     if (!ok) return;
     AppToast.show(
@@ -209,22 +201,8 @@ class _DismissibleRule extends StatelessWidget {
       onDelete: () => _delete(context),
       child: _RuleTile(
         rule: rule,
-        expanded: expanded,
-        onTap: () => controller.toggleExpanded(rule.id),
+        onTap: () => _edit(context),
         onToggle: (value) => controller.setActive(rule.id!, value),
-        actions: [
-          CardAction(
-            label: 'Edit'.tr,
-            icon: LucideIcons.pencil,
-            onTap: () => _edit(context),
-          ),
-          CardAction(
-            label: 'Hapus'.tr,
-            icon: LucideIcons.trash2,
-            danger: true,
-            onTap: () => _delete(context),
-          ),
-        ],
       ),
     );
   }
@@ -233,17 +211,13 @@ class _DismissibleRule extends StatelessWidget {
 class _RuleTile extends StatelessWidget {
   const _RuleTile({
     required this.rule,
-    required this.expanded,
     required this.onTap,
     required this.onToggle,
-    required this.actions,
   });
 
   final RecurringRule rule;
-  final bool expanded;
   final VoidCallback onTap;
   final ValueChanged<bool> onToggle;
-  final List<CardAction> actions;
 
   bool get _isIncome => rule.type == RecurringType.income;
 
@@ -347,11 +321,6 @@ class _RuleTile extends StatelessWidget {
                 ],
               ),
             ),
-          ),
-          CardActionBar(
-            expanded: expanded,
-            padding: const EdgeInsets.fromLTRB(66, 0, 14, 12),
-            actions: actions,
           ),
         ],
       ),

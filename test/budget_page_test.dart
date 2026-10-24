@@ -160,10 +160,10 @@ void main() {
       await tester.runAsync(pumpEventQueue);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('makan'));
+      // Aksi hanya lewat geser kartu ke kiri.
+      await tester.drag(find.text('makan'), const Offset(-300, 0));
       await tester.pumpAndSettle();
-      // Aksi muncul di bawah kartu: Edit dan Hapus (arsip ada di lembar Edit).
-      expect(find.byType(BottomSheet), findsNothing);
+      // Arsip ada di lembar Edit, bukan di aksi geser.
       expect(find.text('Edit'), findsOneWidget);
       expect(find.text('Arsipkan'), findsNothing);
       await tester.tap(find.text('Hapus'));
@@ -190,7 +190,8 @@ void main() {
       await tester.runAsync(pumpEventQueue);
       await tester.pumpAndSettle();
 
-      await tester.tap(find.text('makan'));
+      // Aksi hanya lewat geser kartu ke kiri.
+      await tester.drag(find.text('makan'), const Offset(-300, 0));
       await tester.pumpAndSettle();
       await tester.tap(find.text('Hapus'));
       await tester.runAsync(pumpEventQueue);

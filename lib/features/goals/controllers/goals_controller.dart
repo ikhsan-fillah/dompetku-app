@@ -13,9 +13,6 @@ class GoalsController extends GetxController {
   final DateTime Function() _clock;
   final state = const ResourceState<List<SavingsGoal>>.idle().obs;
 
-  /// Tujuan yang sedang menampilkan tombol aksinya.
-  final expandedId = RxnInt();
-
   List<SavingsGoal> get goals => state.value.data ?? const <SavingsGoal>[];
 
   int get totalSaved => goals.fold(0, (sum, g) => sum + g.savedAmount);
@@ -27,9 +24,6 @@ class GoalsController extends GetxController {
     super.onInit();
     load();
   }
-
-  void toggleExpanded(int? id) =>
-      expandedId.value = expandedId.value == id ? null : id;
 
   Future<void> load() async {
     if (state.value.status != ResourceStatus.success) {
@@ -81,7 +75,6 @@ class GoalsController extends GetxController {
   Future<bool> delete(int id) async {
     try {
       await _repository.delete(id);
-      expandedId.value = null;
       await load();
       return true;
     } catch (_) {

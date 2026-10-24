@@ -23,10 +23,6 @@ class RecurringController extends GetxController {
   final state = const ResourceState<List<RecurringRule>>.idle().obs;
 
   /// Aturan yang sedang menampilkan tombol Edit dan Hapus.
-  final expandedId = RxnInt();
-
-  void toggleExpanded(int? id) =>
-      expandedId.value = expandedId.value == id ? null : id;
 
   @override
   void onInit() {

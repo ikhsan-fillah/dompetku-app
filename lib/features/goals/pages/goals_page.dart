@@ -15,7 +15,6 @@ import '../../../core/widgets/app_progress_bar.dart';
 import '../../../core/widgets/app_skeleton.dart';
 import '../../../core/widgets/app_title_bar.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/widgets/card_actions.dart';
 import '../../../core/widgets/motion.dart';
 import '../../../core/widgets/swipe_actions.dart';
 import '../controllers/goals_controller.dart';
@@ -116,37 +115,10 @@ class GoalsPage extends StatelessWidget {
                                     child: _GoalRow(
                                       goal: goals[i],
                                       last: i == goals.length - 1,
-                                      expanded:
-                                          controller.expandedId.value ==
-                                          goals[i].id,
-                                      onTap: () => controller.toggleExpanded(
-                                        goals[i].id,
+                                      onTap: () => showGoalDepositSheet(
+                                        context,
+                                        goals[i],
                                       ),
-                                      actions: [
-                                        CardAction(
-                                          label: 'Setor'.tr,
-                                          icon: LucideIcons.plus,
-                                          onTap: () => showGoalDepositSheet(
-                                            context,
-                                            goals[i],
-                                          ),
-                                        ),
-                                        CardAction(
-                                          label: 'Edit'.tr,
-                                          icon: LucideIcons.pencil,
-                                          onTap: () => showGoalFormSheet(
-                                            context,
-                                            goal: goals[i],
-                                          ),
-                                        ),
-                                        CardAction(
-                                          label: 'Hapus'.tr,
-                                          icon: LucideIcons.trash2,
-                                          danger: true,
-                                          onTap: () =>
-                                              _delete(controller, goals[i]),
-                                        ),
-                                      ],
                                     ),
                                   ),
                               ],
@@ -223,19 +195,13 @@ class _TotalHero extends StatelessWidget {
 }
 
 class _GoalRow extends StatelessWidget {
-  const _GoalRow({
-    required this.goal,
-    required this.last,
-    required this.expanded,
-    required this.onTap,
-    required this.actions,
-  });
+  const _GoalRow({required this.goal, required this.last, required this.onTap});
 
   final SavingsGoal goal;
   final bool last;
-  final bool expanded;
+
+  /// Ketuk untuk setor; Edit dan Hapus lewat geser.
   final VoidCallback onTap;
-  final List<CardAction> actions;
 
   Color get _color {
     if (goal.isReached || goal.percent >= 50) return AppColors.earn;
@@ -330,7 +296,6 @@ class _GoalRow extends StatelessWidget {
               ),
             ),
           ),
-          CardActionBar(expanded: expanded, actions: actions),
         ],
       ),
     );
