@@ -152,12 +152,17 @@ void main() {
       await tester.runAsync(pumpEventQueue);
       await tester.pumpAndSettle();
 
+      expect(find.text('Arsipkan'), findsNothing);
       await tester.tap(find.text('makan'));
       await tester.pumpAndSettle();
+      // Aksi muncul di bawah kartu, bukan di lembar bawah baru.
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(find.text('Edit'), findsOneWidget);
+      expect(find.text('Arsipkan'), findsOneWidget);
       await tester.tap(find.text('Hapus'));
       await tester.pumpAndSettle();
       expect(find.text('Hapus anggaran?'), findsOneWidget);
-      await tester.tap(find.text('Hapus'));
+      await tester.tap(find.text('Hapus').last);
       await tester.runAsync(pumpEventQueue);
       await tester.pumpAndSettle();
 

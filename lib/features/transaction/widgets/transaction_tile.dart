@@ -7,6 +7,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/theme/category_style.dart';
 import '../../../core/utils/formatter.dart';
+import '../../../core/widgets/card_actions.dart';
 import '../../../core/widgets/category_icon_box.dart';
 import '../../dashboard/models/dashboard_view_models.dart';
 
@@ -83,78 +84,29 @@ class TransactionTile extends StatelessWidget {
             ),
           ),
         ),
-        AnimatedSize(
-          duration: const Duration(milliseconds: 200),
-          alignment: Alignment.topCenter,
-          child: expanded
-              ? Padding(
-                  padding: const EdgeInsets.only(left: 47, bottom: 10),
-                  child: Wrap(
-                    spacing: 6,
-                    runSpacing: 6,
-                    children: [
-                      _ActionButton(
-                        label: 'Edit'.tr,
-                        icon: LucideIcons.pencil,
-                        background: AppColors.paper2,
-                        foreground: AppColors.ink,
-                        onTap: onEdit,
-                      ),
-                      _ActionButton(
-                        label: 'Duplikat'.tr,
-                        icon: LucideIcons.copy,
-                        background: AppColors.paper2,
-                        foreground: AppColors.ink,
-                        onTap: onDuplicate,
-                      ),
-                      _ActionButton(
-                        label: 'Hapus'.tr,
-                        icon: LucideIcons.trash2,
-                        background: AppColors.spendSoft,
-                        foreground: AppColors.spend,
-                        onTap: onDelete,
-                      ),
-                    ],
-                  ),
-                )
-              : const SizedBox(width: double.infinity),
+        CardActionBar(
+          expanded: expanded,
+          padding: const EdgeInsets.only(left: 47, bottom: 10),
+          actions: [
+            CardAction(
+              label: 'Edit'.tr,
+              icon: LucideIcons.pencil,
+              onTap: onEdit,
+            ),
+            CardAction(
+              label: 'Duplikat'.tr,
+              icon: LucideIcons.copy,
+              onTap: onDuplicate,
+            ),
+            CardAction(
+              label: 'Hapus'.tr,
+              icon: LucideIcons.trash2,
+              onTap: onDelete,
+              danger: true,
+            ),
+          ],
         ),
       ],
-    );
-  }
-}
-
-class _ActionButton extends StatelessWidget {
-  const _ActionButton({
-    required this.label,
-    required this.icon,
-    required this.background,
-    required this.foreground,
-    required this.onTap,
-  });
-
-  final String label;
-  final IconData icon;
-  final Color background;
-  final Color foreground;
-  final VoidCallback onTap;
-
-  @override
-  Widget build(BuildContext context) {
-    return TextButton.icon(
-      onPressed: onTap,
-      icon: Icon(icon, size: 13, color: foreground),
-      label: Text(label),
-      style: TextButton.styleFrom(
-        foregroundColor: foreground,
-        backgroundColor: background,
-        minimumSize: const Size(48, 32),
-        padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(AppRadius.chip),
-        ),
-        textStyle: AppText.body(size: 11, weight: FontWeight.w700),
-      ),
     );
   }
 }

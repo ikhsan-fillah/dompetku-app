@@ -3,7 +3,7 @@ import 'package:get/get.dart';
 
 import '../theme/app_colors.dart';
 
-/// Batang progres (spec §2.3): tinggi 6, radius 0, track `paper2`. Animasi 400 ms.
+/// Batang progres: tinggi 6, ujung membulat, track `paper2`. Animasi 400 ms.
 class AppProgressBar extends StatelessWidget {
   const AppProgressBar({
     super.key,
@@ -27,16 +27,23 @@ class AppProgressBar extends StatelessWidget {
       }),
       child: Container(
         height: height,
-        color: trackColor,
         alignment: Alignment.centerLeft,
+        clipBehavior: Clip.antiAlias,
+        decoration: BoxDecoration(
+          color: trackColor,
+          borderRadius: BorderRadius.circular(height / 2),
+        ),
         child: TweenAnimationBuilder<double>(
           tween: Tween<double>(begin: 0, end: target),
           duration: const Duration(milliseconds: 400),
           curve: Curves.easeOutCubic,
           builder: (context, factor, _) => FractionallySizedBox(
             widthFactor: factor,
-            child: ColoredBox(
-              color: color,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                color: color,
+                borderRadius: BorderRadius.circular(height / 2),
+              ),
               child: SizedBox(height: height),
             ),
           ),

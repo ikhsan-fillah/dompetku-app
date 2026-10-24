@@ -26,6 +26,9 @@ class BudgetController extends GetxController {
   final archived = const ResourceState<List<BudgetViewModel>>.idle().obs;
   final sort = BudgetSort.persentaseTerpakaiTertinggi.obs;
 
+  /// Anggaran yang sedang menampilkan tombol aksinya (Edit, Arsipkan, Hapus).
+  final expandedId = RxnInt();
+
   /// Nama tampil kategori menurut id, untuk judul baris anggaran.
   final categoryNames = <int, String>{}.obs;
   final _listService = const BudgetListService();
@@ -69,6 +72,9 @@ class BudgetController extends GetxController {
           : null);
 
   void setSort(BudgetSort value) => sort.value = value;
+
+  void toggleExpanded(int? id) =>
+      expandedId.value = expandedId.value == id ? null : id;
 
   Future<void> _loadCategoryNames() async {
     final repository = _categoryRepository;

@@ -21,6 +21,7 @@ import '../controllers/budget_controller.dart';
 import '../models/budget_view_model.dart';
 import '../services/budget_list_service.dart';
 import '../widgets/confirm_delete_budget.dart';
+import '../../../core/widgets/card_actions.dart';
 import '../../../core/widgets/app_dialog.dart';
 
 class BudgetPage extends GetView<BudgetController> {
@@ -105,58 +106,6 @@ class BudgetPage extends GetView<BudgetController> {
     ),
   );
 
-  Future<void> _showActions(BuildContext context, BudgetViewModel item) {
-    final title = item.labelsFor(_categoryName(item)).title;
-    return showModalBottomSheet<void>(
-      context: context,
-      backgroundColor: AppColors.card,
-      showDragHandle: true,
-      builder: (sheetContext) => SafeArea(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 8),
-              child: Text(title, style: AppText.display(size: 20)),
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.pencil, size: 18),
-              title: Text('Edit'.tr, style: AppText.body(size: 14)),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                _openForm(item);
-              },
-            ),
-            ListTile(
-              leading: const Icon(LucideIcons.archive, size: 18),
-              title: Text('Arsipkan'.tr, style: AppText.body(size: 14)),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                _confirmArchive(context, item);
-              },
-            ),
-            ListTile(
-              leading: const Icon(
-                LucideIcons.trash2,
-                size: 18,
-                color: AppColors.spend,
-              ),
-              title: Text(
-                'Hapus'.tr,
-                style: AppText.body(size: 14, color: AppColors.spend),
-              ),
-              onTap: () {
-                Navigator.of(sheetContext).pop();
-                confirmDeleteBudget(context, controller, item);
-              },
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
   String? _categoryName(BudgetViewModel item) => item.isOverall
       ? 'Total'.tr
       : controller.categoryNames[item.budget.categoryId];
@@ -187,7 +136,27 @@ class BudgetPage extends GetView<BudgetController> {
                 money: _money,
                 categoryName: _categoryName(items[i]),
                 last: i == items.length - 1,
-                onTap: () => _showActions(context, items[i]),
+                expanded: controller.expandedId.value == items[i].budget.id,
+                onTap: () => controller.toggleExpanded(items[i].budget.id),
+                actions: [
+                  CardAction(
+                    label: 'Edit'.tr,
+                    icon: LucideIcons.pencil,
+                    onTap: () => _openForm(items[i]),
+                  ),
+                  CardAction(
+                    label: 'Arsipkan'.tr,
+                    icon: LucideIcons.archive,
+                    onTap: () => _confirmArchive(context, items[i]),
+                  ),
+                  CardAction(
+                    label: 'Hapus'.tr,
+                    icon: LucideIcons.trash2,
+                    danger: true,
+                    onTap: () =>
+                        confirmDeleteBudget(context, controller, items[i]),
+                  ),
+                ],
               ),
           ],
         ),
@@ -453,14 +422,20 @@ class _BudgetRow extends StatelessWidget {
     required this.money,
     required this.categoryName,
     required this.last,
+    required this.expanded,
     required this.onTap,
+    required this.actions,
   });
 
   final BudgetViewModel item;
   final String Function(int) money;
   final String? categoryName;
   final bool last;
+
+  /// Ketuk kartu memunculkan aksi di bawahnya, seperti kartu transaksi.
+  final bool expanded;
   final VoidCallback onTap;
+  final List<CardAction> actions;
 
   @override
   Widget build(BuildContext context) {
@@ -490,72 +465,83 @@ class _BudgetRow extends StatelessWidget {
     ].join(' · ');
     final note = item.budget.note?.trim();
 
-    return InkWell(
-      onTap: onTap,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 12),
-        decoration: last
-            ? null
-            : const BoxDecoration(
-                border: Border(bottom: BorderSide(color: AppColors.line2)),
-              ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.baseline,
-              textBaseline: TextBaseline.alphabetic,
-              children: [
-                Expanded(
-                  child: Text(
-                    labels.title,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: AppText.body(size: 13.5, weight: FontWeight.w700),
+    return Container(
+      decoration: last
+          ? null
+          : const BoxDecoration(
+              border: Border(bottom: BorderSide(color: AppColors.line2)),
+            ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          InkWell(
+            onTap: onTap,
+            child: Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.baseline,
+                    textBaseline: TextBaseline.alphabetic,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          labels.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.body(
+                            size: 13.5,
+                            weight: FontWeight.w700,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '$percentText%',
+                        style: AppText.mono(size: 12, color: level.foreground),
+                      ),
+                    ],
                   ),
-                ),
-                const SizedBox(width: 8),
-                Text(
-                  '$percentText%',
-                  style: AppText.mono(size: 12, color: level.foreground),
-                ),
-              ],
-            ),
-            const SizedBox(height: 2),
-            Text(
-              subtitle,
-              style: AppText.body(size: 10.5, color: AppColors.mut),
-            ),
-            const SizedBox(height: 8),
-            AppProgressBar(
-              value: (item.percent / 100).clamp(0.0, 1.0).toDouble(),
-              color: level.solid,
-              height: 6,
-            ),
-            const SizedBox(height: 6),
-            Text(
-              '@used dari @limit'.trParams({
-                'used': _plain(item.used),
-                'limit': _plain(item.budget.amountLimit),
-              }),
-              style: AppText.mono(
-                size: 11,
-                weight: FontWeight.w400,
-                color: AppColors.mut,
+                  const SizedBox(height: 2),
+                  Text(
+                    subtitle,
+                    style: AppText.body(size: 10.5, color: AppColors.mut),
+                  ),
+                  const SizedBox(height: 8),
+                  AppProgressBar(
+                    value: (item.percent / 100).clamp(0.0, 1.0).toDouble(),
+                    color: level.solid,
+                    height: 6,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    '@used dari @limit'.trParams({
+                      'used': _plain(item.used),
+                      'limit': _plain(item.budget.amountLimit),
+                    }),
+                    style: AppText.mono(
+                      size: 11,
+                      weight: FontWeight.w400,
+                      color: AppColors.mut,
+                    ),
+                  ),
+                  if (note != null && note.isNotEmpty) ...[
+                    const SizedBox(height: 4),
+                    Text(
+                      note,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: AppText.body(size: 11, color: AppColors.mut),
+                    ),
+                  ],
+                ],
               ),
             ),
-            if (note != null && note.isNotEmpty) ...[
-              const SizedBox(height: 4),
-              Text(
-                note,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: AppText.body(size: 11, color: AppColors.mut),
-              ),
-            ],
-          ],
-        ),
+          ),
+          CardActionBar(expanded: expanded, actions: actions),
+        ],
       ),
     );
   }
