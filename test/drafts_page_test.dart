@@ -121,30 +121,33 @@ void main() {
     await tester.pumpAndSettle();
   });
 
-  testWidgets('Edit memilih kategori di dialog yang sama, tanpa lembar lain', (
-    tester,
-  ) async {
-    final tx = await _open(tester, [_draft(1)]);
+  testWidgets(
+    'Edit draf di lembar bawah, kategori dipilih di lembar yang sama',
+    (tester) async {
+      final tx = await _open(tester, [_draft(1)]);
 
-    await tester.tap(find.text('Edit'));
-    await tester.runAsync(pumpEventQueue);
-    await tester.pumpAndSettle();
+      await tester.tap(find.text('Edit'));
+      await tester.runAsync(pumpEventQueue);
+      await tester.pumpAndSettle();
 
-    expect(find.text('Ubah draf'), findsOneWidget);
-    expect(find.text('Transport'), findsOneWidget);
-    // Simpan nonaktif sebelum kategori dipilih.
-    await tester.tap(find.text('Simpan & konfirmasi'));
-    await tester.pumpAndSettle();
-    expect(find.text('Ubah draf'), findsOneWidget);
+      expect(find.text('Ubah draf'), findsOneWidget);
+      // Muncul sebagai lembar bawah seperti Catat Keuangan.
+      expect(find.byType(BottomSheet), findsOneWidget);
+      expect(find.text('Transport'), findsOneWidget);
+      // Simpan nonaktif sebelum kategori dipilih.
+      await tester.tap(find.text('Simpan & konfirmasi'));
+      await tester.pumpAndSettle();
+      expect(find.text('Ubah draf'), findsOneWidget);
 
-    await tester.tap(find.byKey(const ValueKey('category-choice-7')));
-    await tester.pumpAndSettle();
-    await tester.tap(find.text('Simpan & konfirmasi'));
-    await tester.runAsync(pumpEventQueue);
-    await tester.pumpAndSettle();
+      await tester.tap(find.byKey(const ValueKey('category-choice-7')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text('Simpan & konfirmasi'));
+      await tester.runAsync(pumpEventQueue);
+      await tester.pumpAndSettle();
 
-    expect(find.byType(BottomSheet), findsNothing);
-    expect(tx.inserted.single.categoryId, 7);
-    expect(tx.inserted.single.transactionDate, DateTime(2026, 10, 3, 14, 5));
-  });
+      expect(find.byType(BottomSheet), findsNothing);
+      expect(tx.inserted.single.categoryId, 7);
+      expect(tx.inserted.single.transactionDate, DateTime(2026, 10, 3, 14, 5));
+    },
+  );
 }

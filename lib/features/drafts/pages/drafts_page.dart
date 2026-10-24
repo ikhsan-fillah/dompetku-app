@@ -16,7 +16,6 @@ import '../../category/models/category_model.dart';
 import '../../category/widgets/category_picker.dart';
 import '../controllers/draft_controller.dart';
 import '../models/draft_model.dart';
-import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/app_compact_button.dart';
 
@@ -164,13 +163,30 @@ class _DraftCard extends StatelessWidget {
     }
   }
 
-  /// Ubah nama, nominal, dan kategori dalam satu dialog, lalu konfirmasi.
+  /// Ubah nama, nominal, dan kategori dalam satu lembar bawah (seperti
+  /// Catat Keuangan, bisa digeser turun untuk menutup), lalu konfirmasi.
   Future<void> _edit(BuildContext context, DraftController controller) async {
     final categories = await controller.expenseCategories(kind: draft.kind);
     if (!context.mounted) return;
-    final result = await showDialog<_DraftEdit>(
+    final result = await showModalBottomSheet<_DraftEdit>(
       context: context,
-      builder: (_) => _EditDraftDialog(draft: draft, categories: categories),
+      isScrollControlled: true,
+      useSafeArea: true,
+      showDragHandle: true,
+      backgroundColor: AppColors.card,
+      elevation: 0,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(
+          top: Radius.circular(AppRadius.sheet),
+        ),
+        side: BorderSide(color: AppColors.line),
+      ),
+      builder: (sheetContext) => Padding(
+        padding: EdgeInsets.only(
+          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+        ),
+        child: _EditDraftSheet(draft: draft, categories: categories),
+      ),
     );
     if (result == null || !context.mounted) return;
     final saved = await controller.editAndConfirm(
@@ -319,7 +335,7 @@ class _DraftCard extends StatelessWidget {
   }
 }
 
-/// Hasil dialog Ubah draf.
+/// Hasil lembar Ubah draf.
 class _DraftEdit {
   const _DraftEdit({
     required this.merchant,
@@ -332,19 +348,19 @@ class _DraftEdit {
   final int categoryId;
 }
 
-/// Dialog Ubah draf: nama, nominal, dan kategori langsung di satu tempat.
+/// Lembar Ubah draf: nama, nominal, dan kategori langsung di satu tempat.
 /// Tombol simpan aktif setelah nominal valid dan kategori dipilih.
-class _EditDraftDialog extends StatefulWidget {
-  const _EditDraftDialog({required this.draft, required this.categories});
+class _EditDraftSheet extends StatefulWidget {
+  const _EditDraftSheet({required this.draft, required this.categories});
 
   final DraftModel draft;
   final List<CategoryModel> categories;
 
   @override
-  State<_EditDraftDialog> createState() => _EditDraftDialogState();
+  State<_EditDraftSheet> createState() => _EditDraftSheetState();
 }
 
-class _EditDraftDialogState extends State<_EditDraftDialog> {
+class _EditDraftSheetState extends State<_EditDraftSheet> {
   late final _name = TextEditingController(text: widget.draft.merchant ?? '');
   late final _amount = TextEditingController(
     text: formatIdrPlain(widget.draft.amount),
@@ -366,12 +382,19 @@ class _EditDraftDialogState extends State<_EditDraftDialog> {
     final value = _value;
     final categoryId = _categoryId;
     final valid = value != null && value > 0 && categoryId != null;
-    return AppDialog(
-      title: 'Ubah draf'.tr,
-      content: Column(
+    return SingleChildScrollView(
+      padding: const EdgeInsets.fromLTRB(
+        AppSpacing.page,
+        0,
+        AppSpacing.page,
+        AppSpacing.page,
+      ),
+      child: Column(
         mainAxisSize: MainAxisSize.min,
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          Text('Ubah draf'.tr, style: AppText.display(size: 22)),
+          const SizedBox(height: 18),
           TextField(
             controller: _name,
             decoration: InputDecoration(labelText: 'Nama'.tr),
@@ -402,19 +425,35 @@ class _EditDraftDialogState extends State<_EditDraftDialog> {
             selected: categoryId,
             onSelect: (id) => setState(() => _categoryId = id),
           ),
+          const SizedBox(height: 18),
+          Row(
+            children: [
+              Expanded(
+                child: AppButton(
+                  kind: AppButtonKind.outline,
+                  label: 'Batal'.tr,
+                  onPressed: () => Navigator.of(context).pop(),
+                ),
+              ),
+              const SizedBox(width: 10),
+              Expanded(
+                child: AppButton(
+                  label: 'Simpan & konfirmasi'.tr,
+                  onPressed: valid
+                      ? () => Navigator.of(context).pop(
+                          _DraftEdit(
+                            merchant: _name.text,
+                            amount: value,
+                            categoryId: categoryId,
+                          ),
+                        )
+                      : null,
+                ),
+              ),
+            ],
+          ),
         ],
       ),
-      confirmLabel: 'Simpan & konfirmasi'.tr,
-      onCancel: () => Navigator.of(context).pop(),
-      onConfirm: valid
-          ? () => Navigator.of(context).pop(
-              _DraftEdit(
-                merchant: _name.text,
-                amount: value,
-                categoryId: categoryId,
-              ),
-            )
-          : null,
     );
   }
 }
