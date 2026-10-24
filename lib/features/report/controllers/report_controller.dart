@@ -138,7 +138,7 @@ class ReportController extends GetxController {
         final category = categoriesById[entry.key];
         return ReportCategoryTotal(
           categoryId: entry.key,
-          name: category?.name ?? 'Kategori diarsipkan'.tr,
+          name: category?.displayName ?? 'Kategori diarsipkan'.tr,
           colorValue: category?.colorValue ?? 0xFF64748B,
           amount: entry.value,
         );

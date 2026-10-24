@@ -99,18 +99,57 @@ class _ArrowButton extends StatelessWidget {
   );
 }
 
-/// Cincin pengeluaran per kategori dengan total di tengah.
-class SpendingRing extends StatelessWidget {
+/// Cincin pengeluaran per kategori. Ketuk potongan untuk melihat nama,
+/// nominal, dan persen kategorinya di tengah (sama seperti donat Beranda);
+/// ketuk lagi untuk kembali ke total.
+class SpendingRing extends StatefulWidget {
   const SpendingRing({
     super.key,
     required this.items,
     required this.total,
     required this.totalLabel,
+    this.money,
   });
 
   final List<ReportCategoryTotal> items;
   final int total;
   final String totalLabel;
+
+  /// Format nominal kategori terpilih; bawaan memakai [totalLabel] saja.
+  final String Function(int)? money;
+
+  @override
+  State<SpendingRing> createState() => _SpendingRingState();
+}
+
+class _SpendingRingState extends State<SpendingRing> {
+  int? _selected;
+
+  @override
+  void didUpdateWidget(SpendingRing old) {
+    super.didUpdateWidget(old);
+    if (old.items != widget.items) _selected = null;
+  }
+
+  /// Potongan pada titik [position] (relatif ke kotak berukuran [side]).
+  int? _sliceAt(Offset position, double side) {
+    if (widget.total <= 0) return null;
+    final stroke = side * _RingPainter.strokeFactor;
+    final radius = (side - stroke) / 2;
+    final delta = position - Offset(side / 2, side / 2);
+    final distance = delta.distance;
+    // Area ketuk sedikit lebih lebar dari cincinnya.
+    if (distance < radius - stroke || distance > side / 2 + 6) return null;
+    var angle = math.atan2(delta.dy, delta.dx) + math.pi / 2;
+    if (angle < 0) angle += 2 * math.pi;
+    var start = 0.0;
+    for (var i = 0; i < widget.items.length; i++) {
+      final sweep = widget.items[i].amount / widget.total * 2 * math.pi;
+      if (angle >= start && angle < start + sweep) return i;
+      start += sweep;
+    }
+    return null;
+  }
 
   @override
   Widget build(BuildContext context) => AspectRatio(
@@ -118,41 +157,78 @@ class SpendingRing extends StatelessWidget {
     child: LayoutBuilder(
       builder: (context, constraints) {
         final side = math.min(constraints.maxHeight, constraints.maxWidth);
+        final selected = _selected != null && _selected! < widget.items.length
+            ? _selected
+            : null;
+        final item = selected == null ? null : widget.items[selected];
+        final percent = item == null || widget.total <= 0
+            ? 0
+            : (item.amount * 100 / widget.total).round();
         return Center(
-          child: SizedBox.square(
-            dimension: side,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                CustomPaint(
-                  size: Size.square(side),
-                  painter: _RingPainter(items, total),
-                ),
-                Padding(
-                  padding: EdgeInsets.all(side * 0.2),
-                  child: FittedBox(
-                    fit: BoxFit.scaleDown,
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Total pengeluaran'.tr,
-                          style: AppText.body(size: 11, color: AppColors.mut),
+          child: GestureDetector(
+            behavior: HitTestBehavior.opaque,
+            onTapUp: (details) {
+              final index = _sliceAt(details.localPosition, side);
+              if (index == null) return;
+              setState(() => _selected = _selected == index ? null : index);
+            },
+            child: SizedBox.square(
+              dimension: side,
+              child: Stack(
+                alignment: Alignment.center,
+                children: [
+                  CustomPaint(
+                    size: Size.square(side),
+                    painter: _RingPainter(widget.items, widget.total, selected),
+                  ),
+                  IgnorePointer(
+                    child: Padding(
+                      padding: EdgeInsets.all(side * 0.2),
+                      child: FittedBox(
+                        fit: BoxFit.scaleDown,
+                        child: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Text(
+                              item?.name ?? 'Total pengeluaran'.tr,
+                              style: AppText.body(
+                                size: 11,
+                                color: AppColors.mut,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            Text(
+                              item == null
+                                  ? widget.totalLabel
+                                  : (widget.money?.call(item.amount) ??
+                                        '${item.amount}'),
+                              style: AppText.mono(
+                                size: 22,
+                                weight: FontWeight.w600,
+                                letterSpacing: -0.4,
+                                color: item == null
+                                    ? AppColors.ink
+                                    : Color(item.colorValue),
+                              ),
+                            ),
+                            if (item != null) ...[
+                              const SizedBox(height: 2),
+                              Text(
+                                '$percent%',
+                                style: AppText.mono(
+                                  size: 12,
+                                  color: AppColors.ink2,
+                                  letterSpacing: 0,
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
-                        const SizedBox(height: 2),
-                        Text(
-                          totalLabel,
-                          style: AppText.mono(
-                            size: 22,
-                            weight: FontWeight.w600,
-                            letterSpacing: -0.4,
-                          ),
-                        ),
-                      ],
+                      ),
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         );
@@ -162,14 +238,17 @@ class SpendingRing extends StatelessWidget {
 }
 
 class _RingPainter extends CustomPainter {
-  _RingPainter(this.items, this.total);
+  _RingPainter(this.items, this.total, this.selected);
+
+  static const strokeFactor = 0.13;
 
   final List<ReportCategoryTotal> items;
   final int total;
+  final int? selected;
 
   @override
   void paint(Canvas canvas, Size size) {
-    final stroke = size.width * 0.13;
+    final stroke = size.width * strokeFactor;
     final rect = Rect.fromLTWH(
       stroke / 2,
       stroke / 2,
@@ -185,14 +264,19 @@ class _RingPainter extends CustomPainter {
 
     const gap = 0.035;
     var start = -math.pi / 2;
-    for (final item in items) {
+    for (var i = 0; i < items.length; i++) {
+      final item = items[i];
       final sweep = item.amount / total * math.pi * 2;
       if (sweep <= 0) continue;
+      final isSelected = selected == i;
+      final color = Color(item.colorValue);
       final paint = Paint()
         ..style = PaintingStyle.stroke
-        ..strokeWidth = stroke
+        ..strokeWidth = isSelected ? stroke * 1.25 : stroke
         ..strokeCap = StrokeCap.butt
-        ..color = Color(item.colorValue);
+        ..color = selected == null || isSelected
+            ? color
+            : color.withValues(alpha: 0.3);
       final visible = items.length > 1 && sweep > gap * 2 ? sweep - gap : sweep;
       canvas.drawArc(
         rect,
@@ -207,7 +291,7 @@ class _RingPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_RingPainter old) =>
-      old.total != total || old.items != items;
+      old.total != total || old.items != items || old.selected != selected;
 }
 
 /// Pemasukan dan pengeluaran sebagai dua batang sejajar, plus selisihnya.

@@ -136,6 +136,7 @@ class _Summary extends StatelessWidget {
                   items: data.expensesByCategory,
                   total: summary.expense,
                   totalLabel: money(summary.expense),
+                  money: money,
                 ),
               const SizedBox(height: 16),
               _ChangeInsight(

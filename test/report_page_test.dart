@@ -146,6 +146,26 @@ void main() {
     expect(find.text('Ketuk batang'), findsOneWidget);
   });
 
+  testWidgets('ketuk cincin menampilkan kategori di tengah', (tester) async {
+    await open(tester);
+    final ring = find.byType(SpendingRing);
+    expect(find.text('Total pengeluaran'), findsOneWidget);
+
+    // Satu kategori mengisi seluruh cincin; ketuk sisi atasnya.
+    final rect = tester.getRect(ring);
+    final side = rect.height < rect.width ? rect.height : rect.width;
+    await tester.tapAt(Offset(rect.center.dx, rect.center.dy - side * 0.44));
+    await tester.pumpAndSettle();
+
+    expect(find.text('Makanan'), findsWidgets);
+    expect(find.text('100%'), findsOneWidget);
+    expect(find.text('Total pengeluaran'), findsNothing);
+
+    await tester.tapAt(Offset(rect.center.dx, rect.center.dy - side * 0.44));
+    await tester.pumpAndSettle();
+    expect(find.text('Total pengeluaran'), findsOneWidget);
+  });
+
   testWidgets('bulan berjalan tidak bisa maju, bulan lalu bisa dibuka', (
     tester,
   ) async {
