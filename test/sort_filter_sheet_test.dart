@@ -15,6 +15,13 @@ const _categories = [
     color: Colors.orange,
   ),
   FilterCategory(id: 2, name: 'Transport', iconKey: 'car', color: Colors.blue),
+  FilterCategory(
+    id: 3,
+    name: 'Gaji',
+    iconKey: 'wallet',
+    color: Colors.green,
+    isIncome: true,
+  ),
 ];
 
 /// Memasang app lalu membuka lembar; hasilnya selesai saat lembar ditutup.
@@ -60,7 +67,12 @@ void main() {
     );
 
     expect(find.text('Urutkan & saring'), findsOneWidget);
-    expect(find.text('Semua kategori'), findsOneWidget);
+    // Nama kategori selalu tampil di bawah ikonnya.
+    expect(find.text('Makan'), findsOneWidget);
+    expect(find.text('Semua kategori'), findsNothing);
+    // Pengeluaran dan pemasukan di baris terpisah.
+    expect(find.text('Pengeluaran'), findsOneWidget);
+    expect(find.text('Pemasukan'), findsOneWidget);
 
     await tester.tap(find.text('Terbesar'));
     await tester.tap(find.byKey(const ValueKey('filter-category-2')));
@@ -68,8 +80,9 @@ void main() {
     await tester.pump(const Duration(milliseconds: 300));
     await tester.pumpAndSettle();
 
-    expect(find.text('Transport'), findsOneWidget);
     expect(find.text('Tampilkan 3 hasil'), findsOneWidget);
+    await tester.ensureVisible(find.text('Tampilkan 3 hasil'));
+    await tester.pumpAndSettle();
     await tester.tap(find.text('Tampilkan 3 hasil'));
     await tester.pumpAndSettle();
 
@@ -90,6 +103,8 @@ void main() {
     );
 
     await tester.tap(find.text('Reset'));
+    await tester.pumpAndSettle();
+    await tester.ensureVisible(find.text('Terapkan'));
     await tester.pumpAndSettle();
     await tester.tap(find.text('Terapkan'));
     await tester.pumpAndSettle();

@@ -107,6 +107,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
             name: category.displayName,
             iconKey: category.iconKey,
             color: CategoryStyle.color(category.colorValue),
+            isIncome: category.type == TransactionType.income,
           ),
     ];
     final range = c.filterRange.value;
@@ -124,7 +125,7 @@ class _TransactionListPageState extends State<TransactionListPage> {
             : DateTimeRange(start: range.start, end: range.end),
       ),
       defaultSort: TransactionSort.terbaru,
-      sortOptions: TransactionSort.values,
+      sortOptions: _sheetSortOrder,
       sortLabel: _sortLabel,
       categories: categories,
       countFor: (value) => c.countFor(
@@ -149,6 +150,17 @@ class _TransactionListPageState extends State<TransactionListPage> {
     final full = DateLabel.day(date);
     return relative == full ? full : '$relative · $full';
   }
+
+  /// Urutan pilihan di lembar: nama sebelum nominal.
+  static const _sheetSortOrder = [
+    TransactionSort.terbaru,
+    TransactionSort.terlama,
+    TransactionSort.namaAZ,
+    TransactionSort.namaZA,
+    TransactionSort.nominalTerbesar,
+    TransactionSort.nominalTerkecil,
+    TransactionSort.kategoriAZ,
+  ];
 
   String _sortLabel(TransactionSort sort) => switch (sort) {
     TransactionSort.terbaru => 'Terbaru'.tr,

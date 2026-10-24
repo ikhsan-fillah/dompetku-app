@@ -22,12 +22,16 @@ class FilterCategory {
     required this.name,
     required this.iconKey,
     required this.color,
+    this.isIncome = false,
   });
 
   final int id;
   final String name;
   final String iconKey;
   final Color color;
+
+  /// Kategori pemasukan tampil di baris terpisah dari pengeluaran.
+  final bool isIncome;
 }
 
 /// Pilihan urutan dan saringan dari [showSortFilterSheet].
@@ -187,10 +191,15 @@ class _SortFilterBodyState<T> extends State<_SortFilterBody<T>> {
 
   @override
   Widget build(BuildContext context) {
-    final selectedNames = [
+    final expense = [
       for (final c in widget.categories)
-        if (_ids.contains(c.id)) c.name,
+        if (!c.isIncome) c,
     ];
+    final income = [
+      for (final c in widget.categories)
+        if (c.isIncome) c,
+    ];
+    final grouped = expense.isNotEmpty && income.isNotEmpty;
     return SingleChildScrollView(
       padding: const EdgeInsets.fromLTRB(20, 0, 20, 20),
       child: Column(
@@ -219,9 +228,8 @@ class _SortFilterBodyState<T> extends State<_SortFilterBody<T>> {
             ],
           ),
           _Label('URUTKAN'.tr),
-          Wrap(
+          _Slider(
             spacing: 6,
-            runSpacing: 6,
             children: [
               for (final option in widget.sortOptions)
                 _Pill(
@@ -233,27 +241,40 @@ class _SortFilterBodyState<T> extends State<_SortFilterBody<T>> {
           ),
           if (widget.categories.isNotEmpty) ...[
             _Label('KATEGORI'.tr),
-            Wrap(
-              spacing: 10,
-              runSpacing: 10,
-              children: [
-                for (final category in widget.categories)
-                  _CategoryChoice(
-                    category: category,
-                    selected: _ids.contains(category.id),
-                    onTap: () => _changed(() {
-                      if (!_ids.remove(category.id)) _ids.add(category.id);
-                    }),
+            for (final (title, group) in [
+              ('Pengeluaran'.tr, expense),
+              ('Pemasukan'.tr, income),
+            ])
+              if (group.isNotEmpty) ...[
+                if (grouped)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 6),
+                    child: Text(
+                      title,
+                      style: AppText.body(
+                        size: 11.5,
+                        weight: FontWeight.w700,
+                        color: AppColors.ink2,
+                      ),
+                    ),
                   ),
+                _Slider(
+                  spacing: 4,
+                  children: [
+                    for (final category in group)
+                      _CategoryChoice(
+                        category: category,
+                        selected: _ids.contains(category.id),
+                        onTap: () => _changed(() {
+                          if (!_ids.remove(category.id)) {
+                            _ids.add(category.id);
+                          }
+                        }),
+                      ),
+                  ],
+                ),
+                if (grouped && group == expense) const SizedBox(height: 10),
               ],
-            ),
-            const SizedBox(height: 8),
-            Text(
-              selectedNames.isEmpty
-                  ? 'Semua kategori'.tr
-                  : selectedNames.join(', '),
-              style: AppText.body(size: 11.5, color: AppColors.ink2),
-            ),
           ],
           if (widget.showAmount) ...[
             _Label('NOMINAL'.tr),
@@ -378,6 +399,29 @@ class _Label extends StatelessWidget {
   );
 }
 
+/// Satu baris yang digeser ke samping; menembus padding lembar sampai tepi.
+class _Slider extends StatelessWidget {
+  const _Slider({required this.children, required this.spacing});
+
+  final List<Widget> children;
+  final double spacing;
+
+  @override
+  Widget build(BuildContext context) => SingleChildScrollView(
+    scrollDirection: Axis.horizontal,
+    clipBehavior: Clip.none,
+    child: Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        for (var i = 0; i < children.length; i++) ...[
+          if (i > 0) SizedBox(width: spacing),
+          children[i],
+        ],
+      ],
+    ),
+  );
+}
+
 class _Pill extends StatelessWidget {
   const _Pill({
     required this.label,
@@ -444,43 +488,62 @@ class _CategoryChoice extends StatelessWidget {
           AppHaptics.select();
           onTap();
         },
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(2),
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(14),
-                border: Border.all(
-                  color: selected ? AppColors.ink : Colors.transparent,
-                  width: 2,
+        child: SizedBox(
+          width: 68,
+          child: Column(
+            children: [
+              Stack(
+                clipBehavior: Clip.none,
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: selected ? AppColors.ink : Colors.transparent,
+                        width: 2,
+                      ),
+                    ),
+                    child: CategoryIconBox.category(
+                      iconKey: category.iconKey,
+                      color: category.color,
+                      size: 42,
+                    ),
+                  ),
+                  if (selected)
+                    Positioned(
+                      right: -4,
+                      top: -4,
+                      child: Container(
+                        width: 17,
+                        height: 17,
+                        decoration: const BoxDecoration(
+                          color: AppColors.ink,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          LucideIcons.check,
+                          size: 11,
+                          color: AppColors.paper,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+              const SizedBox(height: 4),
+              Text(
+                category.name,
+                maxLines: 2,
+                textAlign: TextAlign.center,
+                style: AppText.body(
+                  size: 10.5,
+                  weight: selected ? FontWeight.w700 : FontWeight.w500,
+                  color: selected ? AppColors.ink : AppColors.ink2,
+                  height: 1.2,
                 ),
               ),
-              child: CategoryIconBox.category(
-                iconKey: category.iconKey,
-                color: category.color,
-                size: 42,
-              ),
-            ),
-            if (selected)
-              Positioned(
-                right: -4,
-                top: -4,
-                child: Container(
-                  width: 17,
-                  height: 17,
-                  decoration: const BoxDecoration(
-                    color: AppColors.ink,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    LucideIcons.check,
-                    size: 11,
-                    color: AppColors.paper,
-                  ),
-                ),
-              ),
-          ],
+            ],
+          ),
         ),
       ),
     ),
