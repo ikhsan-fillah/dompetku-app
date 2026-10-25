@@ -8,7 +8,6 @@ import '../../../core/utils/formatter.dart';
 import '../../../core/widgets/app_card.dart';
 import '../models/monthly_trend.dart';
 import 'trend_chart.dart';
-import '../../../core/services/app_haptics.dart';
 
 /// Kartu tren harian di Laporan: "Tren pengeluaran" atau "Tren pemasukan"
 /// menurut jenis [trend]. Bulannya diatur pemilih bulan Laporan, jadi kartu
@@ -38,7 +37,6 @@ class _ReportTrendCardState extends State<ReportTrendCard> {
   }
 
   void _select(int index) => setState(() {
-    AppHaptics.select();
     final trend = widget.trend;
     _selected = index == _selected || index >= trend.elapsedDays ? null : index;
   });

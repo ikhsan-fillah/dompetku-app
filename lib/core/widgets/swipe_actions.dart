@@ -3,7 +3,6 @@ import 'package:flutter_slidable/flutter_slidable.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../services/app_haptics.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text.dart';
@@ -70,7 +69,6 @@ class SwipeActions extends StatelessWidget {
                     right: Radius.circular(radius),
                   ),
                   onPressed: () {
-                    AppHaptics.warning();
                     onDelete!();
                   },
                 ),

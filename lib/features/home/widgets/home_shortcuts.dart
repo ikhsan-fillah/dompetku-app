@@ -3,7 +3,6 @@ import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../app/routes/app_routes.dart';
-import '../../../core/services/app_haptics.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
@@ -53,7 +52,6 @@ class _ShortcutCard extends StatelessWidget {
       child: InkWell(
         borderRadius: BorderRadius.circular(12),
         onTap: () {
-          AppHaptics.select();
           Get.toNamed(route);
         },
         child: Semantics(

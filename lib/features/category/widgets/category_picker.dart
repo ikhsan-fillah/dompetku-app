@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 
-import '../../../core/services/app_haptics.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
@@ -83,10 +82,7 @@ class CategoryChoice extends StatelessWidget {
       child: InkWell(
         key: ValueKey('category-choice-${category.id}'),
         borderRadius: BorderRadius.circular(AppRadius.smallButton),
-        onTap: () {
-          AppHaptics.select();
-          onTap();
-        },
+        onTap: onTap,
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
           width: 60,

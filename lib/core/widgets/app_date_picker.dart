@@ -8,7 +8,6 @@ import '../theme/app_spacing.dart';
 import '../theme/app_text.dart';
 import '../utils/date_label.dart';
 import 'app_button.dart';
-import '../services/app_haptics.dart';
 
 /// Pemilih tanggal aplikasi, pengganti `showDatePicker` bawaan:
 /// - [showAppDatePicker]: satu tanggal (transaksi, anggaran, struk, dll).
@@ -648,7 +647,6 @@ class _DayGrid extends StatelessWidget {
           key: ValueKey('date-${day.year}-${day.month}-${day.day}'),
           onTap: enabled
               ? () {
-                  AppHaptics.select();
                   onTap(day);
                 }
               : null,
@@ -732,7 +730,6 @@ class _MonthGrid extends StatelessWidget {
         key: ValueKey('month-$year-$number'),
         onTap: enabled
             ? () {
-                AppHaptics.select();
                 onTap(month);
               }
             : null,

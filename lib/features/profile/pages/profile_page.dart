@@ -320,29 +320,6 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
               Obx(
                 () => SettingsTile(
-                  icon: LucideIcons.vibrate,
-                  title: 'Getaran'.tr,
-                  subtitle: 'Getar halus saat simpan, pilih, dan hapus'.tr,
-                  iconBackground: AppColors.paper2,
-                  iconColor: AppColors.ink,
-                  trailing: Switch.adaptive(
-                    value: _controller.hapticsEnabled.value,
-                    activeTrackColor: AppColors.ink,
-                    activeThumbColor: AppColors.paper,
-                    inactiveTrackColor: AppColors.line,
-                    inactiveThumbColor: Colors.white,
-                    trackOutlineColor: WidgetStateProperty.all(
-                      Colors.transparent,
-                    ),
-                    onChanged: _controller.setHapticsEnabled,
-                  ),
-                  onTap: () => _controller.setHapticsEnabled(
-                    !_controller.hapticsEnabled.value,
-                  ),
-                ),
-              ),
-              Obx(
-                () => SettingsTile(
                   icon: LucideIcons.bellRing,
                   title: 'Pengingat harian'.tr,
                   subtitle: _controller.dailyReminder.value

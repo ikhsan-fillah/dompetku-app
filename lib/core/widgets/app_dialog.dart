@@ -5,7 +5,6 @@ import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text.dart';
 import 'app_button.dart';
-import '../services/app_haptics.dart';
 
 /// Dialog standar aplikasi: kartu bergaris, judul display, dan dua tombol
 /// [AppButton] sejajar (batal di kiri, aksi di kanan). Semua dialog konfirmasi
@@ -107,7 +106,6 @@ Future<bool> showAppConfirm(
   bool danger = false,
   String? cancelLabel,
 }) async {
-  if (danger) AppHaptics.warning();
   final result = await showDialog<bool>(
     context: context,
     builder: (dialogContext) => AppDialog(

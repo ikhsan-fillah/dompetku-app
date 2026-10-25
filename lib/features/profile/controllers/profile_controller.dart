@@ -9,7 +9,6 @@ import '../../../core/services/shared_prefs_service.dart';
 import '../../../core/utils/display_name.dart';
 import '../../auth/controllers/auth_controller.dart';
 import '../../transaction/repositories/transaction_repository.dart';
-import '../../../core/services/app_haptics.dart';
 import '../../widget/home_widget_service.dart';
 import '../../recurring/services/recurring_reminders.dart';
 
@@ -40,9 +39,6 @@ class ProfileController extends GetxController {
   final biometricEnabled = false.obs;
   final themeMode = defaultThemeMode.obs;
   final language = AppLanguage.defaultCode.obs;
-
-  /// Getaran halus; nilai awal dibaca saat app dibuka (lihat [AppHaptics]).
-  final hapticsEnabled = AppHaptics.enabled.obs;
 
   /// Widget layar utama menyamarkan nominal.
   final widgetHideAmounts = true.obs;
@@ -151,17 +147,6 @@ class ProfileController extends GetxController {
       return false;
     } finally {
       savingLanguage.value = false;
-    }
-  }
-
-  Future<void> setHapticsEnabled(bool value) async {
-    hapticsEnabled.value = value;
-    AppHaptics.enabled = value;
-    if (value) AppHaptics.select();
-    try {
-      await _preferences.setHapticsEnabled(value);
-    } catch (_) {
-      error.value = 'Gagal menyimpan pengaturan getaran.'.tr;
     }
   }
 

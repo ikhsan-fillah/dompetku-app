@@ -9,7 +9,6 @@ import '../../../core/theme/category_style.dart';
 import '../../../core/utils/formatter.dart';
 import '../../../core/utils/percent_rounding.dart';
 import '../models/expense_slice.dart';
-import '../../../core/services/app_haptics.dart';
 
 /// Donat pengeluaran per kategori, urut dari terbesar ke terkecil.
 class ExpenseDonut extends StatefulWidget {
@@ -29,7 +28,6 @@ class _ExpenseDonutState extends State<ExpenseDonut> {
   int get _total => widget.slices.fold<int>(0, (sum, s) => sum + s.amount);
 
   void _toggle(int index) {
-    AppHaptics.select();
     setState(() => _selected = _selected == index ? null : index);
   }
 

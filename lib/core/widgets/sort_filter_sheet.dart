@@ -5,7 +5,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../services/app_haptics.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_spacing.dart';
 import '../theme/app_text.dart';
@@ -439,10 +438,7 @@ class _Pill extends StatelessWidget {
     selected: selected,
     child: InkWell(
       borderRadius: BorderRadius.circular(999),
-      onTap: () {
-        AppHaptics.select();
-        onTap();
-      },
+      onTap: onTap,
       child: Container(
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
         decoration: BoxDecoration(
@@ -484,10 +480,7 @@ class _CategoryChoice extends StatelessWidget {
       child: InkWell(
         key: ValueKey('filter-category-${category.id}'),
         borderRadius: BorderRadius.circular(14),
-        onTap: () {
-          AppHaptics.select();
-          onTap();
-        },
+        onTap: onTap,
         child: SizedBox(
           width: 68,
           child: Column(

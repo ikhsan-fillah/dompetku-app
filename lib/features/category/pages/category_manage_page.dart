@@ -18,7 +18,6 @@ import '../widgets/category_form_sheet.dart';
 import '../../../app/routes/app_routes.dart';
 import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_toast.dart';
-import '../../../core/services/app_haptics.dart';
 import '../../../core/widgets/motion.dart';
 import '../../../core/theme/category_style.dart';
 import '../../../core/widgets/swipe_actions.dart';
@@ -62,7 +61,6 @@ class _CategoryManagePageState extends State<CategoryManagePage> {
   }
 
   Future<void> _toggleFavorite(CategoryModel category) async {
-    AppHaptics.select();
     final ok = await _controller.toggleFavorite(category);
     if (!mounted || ok) return;
     _showError();

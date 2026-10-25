@@ -3,7 +3,6 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../../../core/services/app_haptics.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
@@ -59,7 +58,6 @@ Future<void> showGoalDepositSheet(
 
 /// Perayaan kecil, sekali saat tujuan pertama kali mencapai 100%.
 Future<void> showGoalReachedDialog(BuildContext context, SavingsGoal goal) {
-  AppHaptics.success();
   return showDialog<void>(
     context: context,
     builder: (dialogContext) => Dialog(
@@ -267,7 +265,6 @@ class _GoalFormState extends State<_GoalForm> {
                   child: InkWell(
                     borderRadius: BorderRadius.circular(12),
                     onTap: () {
-                      AppHaptics.select();
                       setState(() => _emoji = emoji);
                     },
                     child: Container(

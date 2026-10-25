@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 
-import '../services/app_haptics.dart';
 import '../theme/app_colors.dart';
 import '../theme/app_text.dart';
 
@@ -28,7 +27,6 @@ abstract final class AppToast {
         : Get.key.currentState?.overlay;
     if (overlay == null) return;
     hide();
-    kind == ToastKind.error ? AppHaptics.warning() : AppHaptics.success();
     late final OverlayEntry entry;
     entry = OverlayEntry(
       builder: (_) => _ToastView(
