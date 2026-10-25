@@ -11,6 +11,7 @@ import '../../auth/controllers/auth_controller.dart';
 import '../../transaction/repositories/transaction_repository.dart';
 import '../../widget/home_widget_service.dart';
 import '../../recurring/services/recurring_reminders.dart';
+import '../../drafts/services/draft_notifications.dart';
 
 class ProfileController extends GetxController {
   ProfileController(
@@ -46,6 +47,9 @@ class ProfileController extends GetxController {
   /// Pengingat harian dan jamnya (menit sejak tengah malam).
   final dailyReminder = true.obs;
   final dailyReminderMinutes = (21 * 60).obs;
+
+  /// Notifikasi draf baru dan angka di ikon app.
+  final draftNotifications = true.obs;
   final displayName = ''.obs;
 
   /// Jumlah semua transaksi tercatat; null sebelum dimuat atau bila gagal.
@@ -174,6 +178,8 @@ class ProfileController extends GetxController {
     try {
       dailyReminder.value = await _preferences.getDailyReminderEnabled();
       dailyReminderMinutes.value = await _preferences.getDailyReminderMinutes();
+      draftNotifications.value = await _preferences
+          .getDraftNotificationsEnabled();
     } catch (_) {
       // Tetap memakai bawaan (aktif, 21.00).
     }
@@ -196,6 +202,21 @@ class ProfileController extends GetxController {
       await _rescheduleReminders(requestPermission: false);
     } catch (_) {
       error.value = 'Gagal menyimpan pengingat.'.tr;
+    }
+  }
+
+  Future<void> setDraftNotifications(bool value) async {
+    draftNotifications.value = value;
+    try {
+      await _preferences.setDraftNotificationsEnabled(value);
+      if (value && Get.isRegistered<RecurringReminderService>()) {
+        await Get.find<RecurringReminderService>().requestPermission();
+      }
+      if (Get.isRegistered<DraftNotificationService>()) {
+        await Get.find<DraftNotificationService>().refresh();
+      }
+    } catch (_) {
+      error.value = 'Gagal menyimpan pengaturan notifikasi.'.tr;
     }
   }
 

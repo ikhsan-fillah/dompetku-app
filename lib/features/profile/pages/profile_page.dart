@@ -382,6 +382,30 @@ class _ProfilePageState extends State<ProfilePage> {
                   ),
                 ),
               ),
+              Obx(
+                () => SettingsTile(
+                  icon: LucideIcons.inbox,
+                  title: 'Notifikasi draf'.tr,
+                  subtitle:
+                      'Kabari pembayaran terdeteksi, angka di ikon app'.tr,
+                  iconBackground: AppColors.paper2,
+                  iconColor: AppColors.ink,
+                  trailing: Switch.adaptive(
+                    value: _controller.draftNotifications.value,
+                    activeTrackColor: AppColors.ink,
+                    activeThumbColor: AppColors.paper,
+                    inactiveTrackColor: AppColors.line,
+                    inactiveThumbColor: Colors.white,
+                    trackOutlineColor: WidgetStateProperty.all(
+                      Colors.transparent,
+                    ),
+                    onChanged: _controller.setDraftNotifications,
+                  ),
+                  onTap: () => _controller.setDraftNotifications(
+                    !_controller.draftNotifications.value,
+                  ),
+                ),
+              ),
               SettingsTile(
                 icon: LucideIcons.archive,
                 title: 'Cadangan data'.tr,

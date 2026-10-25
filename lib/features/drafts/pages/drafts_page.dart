@@ -19,9 +19,92 @@ import '../models/draft_model.dart';
 import '../../../core/widgets/app_toast.dart';
 import '../../../core/widgets/app_compact_button.dart';
 
+/// Lembar Ubah draf (nama, nominal, kategori) lalu konfirmasi. Dipakai dari
+/// kartu draf dan dari tombol "Pilih kategori" di notifikasi.
+Future<void> openEditDraft(
+  BuildContext context,
+  DraftController controller,
+  DraftModel draft,
+) async {
+  final categories = await controller.expenseCategories(kind: draft.kind);
+  if (!context.mounted) return;
+  final result = await showModalBottomSheet<_DraftEdit>(
+    context: context,
+    isScrollControlled: true,
+    useSafeArea: true,
+    showDragHandle: true,
+    backgroundColor: AppColors.card,
+    elevation: 0,
+    shape: const RoundedRectangleBorder(
+      borderRadius: BorderRadius.vertical(
+        top: Radius.circular(AppRadius.sheet),
+      ),
+      side: BorderSide(color: AppColors.line),
+    ),
+    builder: (sheetContext) => Padding(
+      padding: EdgeInsets.only(
+        bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
+      ),
+      child: _EditDraftSheet(draft: draft, categories: categories),
+    ),
+  );
+  if (result == null || !context.mounted) return;
+  final saved = await controller.editAndConfirm(
+    draft,
+    amount: result.amount,
+    merchant: result.merchant,
+    categoryId: result.categoryId,
+  );
+  if (!saved && context.mounted) {
+    AppToast.show(
+      context: context,
+      title: controller.error.value ?? 'Gagal menyimpan perubahan.'.tr,
+      kind: ToastKind.error,
+    );
+  }
+}
+
 /// Daftar draft hasil deteksi. Confirm, Edit (lewat Confirm), atau Dismiss.
-class DraftsPage extends StatelessWidget {
+/// Argumen `editDraftId` (dari notifikasi) langsung membuka Ubah draf.
+class DraftsPage extends StatefulWidget {
   const DraftsPage({super.key});
+
+  @override
+  State<DraftsPage> createState() => _DraftsPageState();
+}
+
+class _DraftsPageState extends State<DraftsPage> {
+  Worker? _autoEdit;
+
+  @override
+  void initState() {
+    super.initState();
+    final args = Get.arguments;
+    final id = args is Map ? args['editDraftId'] as int? : null;
+    if (id == null) return;
+    final controller = Get.find<DraftController>();
+    void open(ResourceState<List<DraftModel>> state) {
+      final draft = state.data?.where((d) => d.id == id).firstOrNull;
+      if (draft == null || !mounted) return;
+      _autoEdit?.dispose();
+      _autoEdit = null;
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) openEditDraft(context, controller, draft);
+      });
+    }
+
+    if (controller.state.value.status == ResourceStatus.success) {
+      open(controller.state.value);
+    } else {
+      _autoEdit = ever(controller.state, open);
+    }
+  }
+
+  @override
+  void dispose() {
+    _autoEdit?.dispose();
+    super.dispose();
+  }
 
   Future<void> _confirmAll(
     BuildContext context,
@@ -165,43 +248,8 @@ class _DraftCard extends StatelessWidget {
 
   /// Ubah nama, nominal, dan kategori dalam satu lembar bawah (seperti
   /// Catat Keuangan, bisa digeser turun untuk menutup), lalu konfirmasi.
-  Future<void> _edit(BuildContext context, DraftController controller) async {
-    final categories = await controller.expenseCategories(kind: draft.kind);
-    if (!context.mounted) return;
-    final result = await showModalBottomSheet<_DraftEdit>(
-      context: context,
-      isScrollControlled: true,
-      useSafeArea: true,
-      showDragHandle: true,
-      backgroundColor: AppColors.card,
-      elevation: 0,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(
-          top: Radius.circular(AppRadius.sheet),
-        ),
-        side: BorderSide(color: AppColors.line),
-      ),
-      builder: (sheetContext) => Padding(
-        padding: EdgeInsets.only(
-          bottom: MediaQuery.viewInsetsOf(sheetContext).bottom,
-        ),
-        child: _EditDraftSheet(draft: draft, categories: categories),
-      ),
-    );
-    if (result == null || !context.mounted) return;
-    final saved = await controller.editAndConfirm(
-      draft,
-      amount: result.amount,
-      merchant: result.merchant,
-      categoryId: result.categoryId,
-    );
-    if (!saved && context.mounted) {
-      _showError(
-        context,
-        controller.error.value ?? 'Gagal menyimpan perubahan.'.tr,
-      );
-    }
-  }
+  Future<void> _edit(BuildContext context, DraftController controller) =>
+      openEditDraft(context, controller, draft);
 
   /// Lembar pilih kategori (ikon + nama), sama dengan lembar lain di app.
   Future<int?> _pickCategory(

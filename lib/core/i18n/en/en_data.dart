@@ -90,6 +90,24 @@ const Map<String, String> enData = {
   'rb': 'K',
   'jt': 'M',
   'M': 'B',
+  // Notifikasi draf
+  'Draf baru · @source @amount': 'New draft · @source @amount',
+  '@count draf menunggu konfirmasi': '@count drafts waiting for confirmation',
+  '+@count lainnya': '+@count more',
+  'kategori @name': 'category @name',
+  'Konfirmasi untuk mencatat.': 'Confirm to record it.',
+  'Pilih kategori dulu sebelum dicatat.':
+      'Choose a category before recording it.',
+  'Lihat draf': 'View drafts',
+  'Draf transaksi': 'Transaction drafts',
+  'Memberi tahu pembayaran yang terdeteksi dan menunggu konfirmasi.':
+      'Tells you about detected payments waiting for confirmation.',
+  'Draf dicatat': 'Draft recorded',
+  'Notifikasi draf': 'Draft notifications',
+  'Kabari pembayaran terdeteksi, angka di ikon app':
+      'Alert on detected payments, count on the app icon',
+  'Gagal menyimpan pengaturan notifikasi.':
+      'Failed to save notification settings.',
   // Draf
   '@count draf dikonfirmasi': '@count drafts confirmed',
   '@count draf belum berkategori, konfirmasi satu per satu.':

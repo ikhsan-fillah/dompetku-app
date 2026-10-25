@@ -13,6 +13,7 @@ class SharedPrefsService {
   static const _kDailyReminder = 'dailyReminderEnabled';
   static const _kDailyReminderMinutes = 'dailyReminderMinutes';
   static const _kLastBackupAt = 'lastBackupAt';
+  static const _kDraftNotifications = 'draftNotifications';
 
   Future<bool> getIsRegistered() async {
     final prefs = await SharedPreferences.getInstance();
@@ -146,6 +147,17 @@ class SharedPrefsService {
   Future<void> setLastBackupAt(DateTime value) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_kLastBackupAt, value.toUtc().toIso8601String());
+  }
+
+  /// Notifikasi saat pembayaran terdeteksi jadi draf (bawaan: aktif).
+  Future<bool> getDraftNotificationsEnabled() async {
+    final prefs = await SharedPreferences.getInstance();
+    return prefs.getBool(_kDraftNotifications) ?? true;
+  }
+
+  Future<void> setDraftNotificationsEnabled(bool value) async {
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_kDraftNotifications, value);
   }
 
   Future<void> clearAll() async {

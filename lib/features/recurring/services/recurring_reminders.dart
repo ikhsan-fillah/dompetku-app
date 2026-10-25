@@ -297,6 +297,10 @@ class RecurringReminderService {
   /// Dipanggil saat badan notifikasi diketuk ketika app sedang berjalan.
   VoidCallback? onOpenRequested;
 
+  /// Penangan notifikasi lain yang memakai plugin yang sama (mis. draf).
+  /// Mengembalikan true bila respons sudah ditangani.
+  final responseHandlers = <bool Function(NotificationResponse)>[];
+
   /// Menyiapkan plugin dan membaca notifikasi yang membuka app.
   Future<void> init() async {
     final notifier = _notifier;
@@ -321,6 +325,9 @@ class RecurringReminderService {
   }
 
   void handleResponse(NotificationResponse response) {
+    for (final handler in responseHandlers) {
+      if (handler(response)) return;
+    }
     final action = response.actionId;
     if (action == LocalReminderNotifier.recordAction) {
       pendingRecordRuleId = ReminderPayload.ruleId(response.payload);

@@ -41,6 +41,7 @@ import '../../core/database/app_database.dart';
 import '../../core/services/shared_prefs_service.dart';
 import '../../features/category/repositories/category_repository.dart';
 import '../../features/budget/repositories/budget_repository.dart';
+import '../../features/drafts/services/draft_notifications.dart';
 
 class AppPages {
   static final pages = <GetPage>[
@@ -57,6 +58,10 @@ class AppPages {
           debounce<int>(refresh.version, (_) {
             if (Get.isRegistered<RecurringReminderService>()) {
               Get.find<RecurringReminderService>().reschedule();
+            }
+            // Notifikasi dan angka di ikon mengikuti jumlah draf menunggu.
+            if (Get.isRegistered<DraftNotificationService>()) {
+              Get.find<DraftNotificationService>().refresh();
             }
           }, time: const Duration(seconds: 2));
         }

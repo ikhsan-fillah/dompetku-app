@@ -45,6 +45,9 @@ import 'package:dompetku_app/features/goals/controllers/goals_controller.dart';
 import 'package:dompetku_app/features/goals/data/goal_repository.dart';
 import '../../features/transaction/controllers/transaction_form_controller.dart';
 import '../../features/recurring/models/recurring_rule.dart';
+import '../../features/drafts/services/draft_notifications.dart';
+import '../../features/drafts/controllers/draft_controller.dart';
+import '../routes/app_routes.dart';
 
 class InitialBinding extends Bindings {
   @override
@@ -106,6 +109,18 @@ class InitialBinding extends Bindings {
       ),
       permanent: true,
     );
+    // Didaftarkan sebelum init supaya notifikasi draf yang membuka app ikut
+    // tertangani.
+    final draftNotices = Get.put(
+      DraftNotificationService(
+        drafts: Get.find<DraftRepository>(),
+        categories: Get.find<CategoryRepository>(),
+        enabled: () =>
+            Get.find<SharedPrefsService>().getDraftNotificationsEnabled(),
+      ),
+      permanent: true,
+    );
+    reminders.responseHandlers.add(draftNotices.handleResponse);
     unawaited(reminders.init());
     final widgets = Get.put(
       HomeWidgetService(
@@ -174,6 +189,46 @@ class InitialBinding extends Bindings {
       if (auth.isUnlocked.value) unawaited(openFromReminder());
     };
 
+    // Notifikasi draf: Konfirmasi mencatat langsung, lainnya membuka Draf.
+    Future<void> runDraftRequest() async {
+      final request = draftNotices.takePending();
+      if (request == null) return;
+      switch (request) {
+        case ConfirmDraft(:final draftId):
+          final draft = (await Get.find<DraftRepository>().getPending())
+              .where((d) => d.id == draftId)
+              .firstOrNull;
+          if (draft == null) return;
+          final controller = Get.isRegistered<DraftController>()
+              ? Get.find<DraftController>()
+              : DraftController(
+                  Get.find<DraftRepository>(),
+                  Get.find<TransactionRepository>(),
+                );
+          final ok = await controller.confirm(draft);
+          AppToast.show(
+            title: ok
+                ? 'Draf dicatat'.tr
+                : controller.error.value ??
+                      'Gagal mengonfirmasi. Coba lagi.'.tr,
+            message: ok ? draft.merchant ?? draft.source : null,
+            kind: ok ? ToastKind.success : ToastKind.error,
+          );
+        case OpenDrafts(:final editDraftId):
+          await Future<void>.delayed(const Duration(milliseconds: 500));
+          await Get.toNamed(
+            AppRoutes.drafts,
+            arguments: editDraftId == null
+                ? null
+                : {'editDraftId': editDraftId},
+          );
+      }
+    }
+
+    draftNotices.onRequest = () {
+      if (auth.isUnlocked.value) unawaited(runDraftRequest());
+    };
+
     // Ketukan widget: jalankan setelah kunci dibuka dan Beranda tampil.
     Future<void> runWidgetAction() async {
       final action = widgets.takePendingAction();
@@ -212,6 +267,8 @@ class InitialBinding extends Bindings {
         drafts: RecurringDraftSink(Get.find<DraftRepository>()),
       ).runDue(DateTime.now());
       unawaited(reminders.reschedule());
+      unawaited(runDraftRequest());
+      unawaited(draftNotices.refresh());
       unawaited(widgets.update());
       if (Get.isRegistered<DataRefreshService>()) {
         Get.find<DataRefreshService>().bump();
