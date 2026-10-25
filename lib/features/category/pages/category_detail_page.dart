@@ -20,6 +20,7 @@ import '../services/category_detail_service.dart';
 import '../../../core/widgets/app_skeleton.dart';
 import '../../../core/theme/category_style.dart';
 import '../../../core/widgets/motion.dart';
+import '../../../core/widgets/swipe_actions.dart';
 
 class CategoryDetailPage extends StatefulWidget {
   const CategoryDetailPage({super.key});
@@ -62,6 +63,10 @@ class _CategoryDetailPageState extends State<CategoryDetailPage> {
                 () => Text(
                   controller.category.value?.displayName ??
                       'Detail kategori'.tr,
+                  // Nama panjang dipotong "…" di satu baris, ukuran tetap.
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
                   style: AppText.display(size: 26),
                 ),
               ),
@@ -201,58 +206,71 @@ class _TransactionRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isIncome = transaction.type.name == 'income';
-    // Kartu rapat: tinggi sama dengan kartu di halaman Transaksi.
-    return AppCard(
-      margin: const EdgeInsets.only(bottom: 6),
-      padding: const EdgeInsets.symmetric(horizontal: 14),
-      child: InkWell(
-        borderRadius: BorderRadius.circular(AppRadius.smallButton),
-        onTap: () => showTransactionSheet(context, edit: transaction),
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 11),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      transaction.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: AppText.body(size: 13, weight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      [
-                        '${transaction.transactionDate.toLocal().hour.toString().padLeft(2, '0')}:${transaction.transactionDate.toLocal().minute.toString().padLeft(2, '0')}',
-                        if (transaction.merchantOrSource?.isNotEmpty == true)
-                          transaction.merchantOrSource!,
-                        if (transaction.paymentMethod != null)
-                          transaction.paymentMethod!.name,
-                      ].join(' · '),
-                      style: AppText.body(size: 10.5, color: AppColors.mut),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 132),
-                child: FittedBox(
-                  fit: BoxFit.scaleDown,
-                  alignment: Alignment.centerRight,
-                  child: Text(
-                    '${isIncome ? '+' : '-'}${formatIdr(transaction.amount)}',
-                    style: AppText.mono(
-                      size: 12.5,
-                      weight: FontWeight.w500,
-                      color: isIncome ? AppColors.earn : AppColors.spend,
+    // Kartu rapat: tinggi sama dengan kartu di halaman Transaksi. Geser ke
+    // kiri hanya memunculkan Edit; hapus dilakukan dari halaman Transaksi.
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 6),
+      child: SwipeActions(
+        key: ValueKey('category-tx-${transaction.id}'),
+        groupTag: 'category-transactions',
+        onEdit: () => showTransactionSheet(context, edit: transaction),
+        child: AppCard(
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.symmetric(horizontal: 14),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(AppRadius.smallButton),
+            onTap: () => showTransactionSheet(context, edit: transaction),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(vertical: 11),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          transaction.title,
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: AppText.body(
+                            size: 13,
+                            weight: FontWeight.w700,
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        Text(
+                          [
+                            '${transaction.transactionDate.toLocal().hour.toString().padLeft(2, '0')}:${transaction.transactionDate.toLocal().minute.toString().padLeft(2, '0')}',
+                            if (transaction.merchantOrSource?.isNotEmpty ==
+                                true)
+                              transaction.merchantOrSource!,
+                            if (transaction.paymentMethod != null)
+                              transaction.paymentMethod!.name,
+                          ].join(' · '),
+                          style: AppText.body(size: 10.5, color: AppColors.mut),
+                        ),
+                      ],
                     ),
                   ),
-                ),
+                  const SizedBox(width: 8),
+                  ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 132),
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: Alignment.centerRight,
+                      child: Text(
+                        '${isIncome ? '+' : '-'}${formatIdr(transaction.amount)}',
+                        style: AppText.mono(
+                          size: 12.5,
+                          weight: FontWeight.w500,
+                          color: isIncome ? AppColors.earn : AppColors.spend,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
               ),
-            ],
+            ),
           ),
         ),
       ),

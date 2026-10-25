@@ -102,5 +102,11 @@ void main() {
     expect(find.text('Kopi susu'), findsOneWidget);
     expect(find.byType(CircularProgressIndicator), findsNothing);
     expect(find.byType(SortChip<CategoryTransactionSort>), findsOneWidget);
+
+    // Geser kartu transaksi: hanya Edit, tanpa Hapus.
+    await tester.drag(find.text('Kopi susu'), const Offset(-300, 0));
+    await tester.pumpAndSettle();
+    expect(find.text('Edit'), findsOneWidget);
+    expect(find.text('Hapus'), findsNothing);
   });
 }

@@ -27,11 +27,18 @@ class AppTitleBar extends StatelessWidget {
           const AppBackButton(),
           const SizedBox(width: 12),
           Expanded(
+            // Judul panjang tetap satu baris dan dipotong "…".
             child:
                 titleWidget ??
-                Text(title ?? '', style: AppText.display(size: 26)),
+                Text(
+                  title ?? '',
+                  maxLines: 1,
+                  softWrap: false,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.display(size: 26),
+                ),
           ),
-          ?action,
+          if (action != null) ...[const SizedBox(width: 8), action!],
         ],
       ),
     );
