@@ -2,4 +2,5 @@
 <resources>
     <string name="widget_balance_label">Saldo bulan ini dan catat cepat</string>
     <string name="widget_budget_label">Anggaran bulan ini</string>
+    <string name="widget_category_label">Pengeluaran per kategori bulan ini</string>
 </resources>

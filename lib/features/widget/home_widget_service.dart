@@ -10,22 +10,39 @@ import '../../core/services/data_refresh_service.dart';
 import '../../core/services/shared_prefs_service.dart';
 import '../../core/utils/date_range.dart';
 import '../../core/utils/formatter.dart';
+import '../../core/utils/percent_rounding.dart';
 import '../budget/models/budget_model.dart';
 import '../budget/repositories/budget_repository.dart';
+import '../category/models/category_model.dart';
+import '../category/repositories/category_repository.dart';
 import '../transaction/models/transaction_model.dart';
 import '../transaction/repositories/transaction_repository.dart';
 
 /// Teks siap tampil untuk widget layar utama. Semua diformat di sini (bahasa
 /// dan penyamaran nominal), jadi kode Android hanya menampilkannya.
 class WidgetSnapshot {
-  const WidgetSnapshot(this.values, {required this.budgetProgress});
+  const WidgetSnapshot(
+    this.values, {
+    required this.budgetProgress,
+    this.categorySlices = '',
+  });
 
   final Map<String, String> values;
 
   /// 0 sampai 100, untuk batang progres widget anggaran.
   final int budgetProgress;
 
+  /// Potongan donat widget kategori: "AARRGGBB:pecahan;..." urut terbesar.
+  final String categorySlices;
+
   static const hidden = 'Rp ••••••';
+
+  /// Kategori di donat; sisanya digabung jadi satu potongan abu.
+  static const maxSlices = 5;
+  static const _otherColor = 0xFF8A8F8B;
+
+  /// Nominal ringkas untuk ruang sempit: 850 rb, 1,58 jt, 2,1 M.
+  static String compact(int value) => formatCompactIdr(value);
 
   /// Menyusun isi widget dari transaksi bulan [month] dan anggaran aktif.
   factory WidgetSnapshot.build({
@@ -33,10 +50,12 @@ class WidgetSnapshot {
     required List<BudgetModel> budgets,
     required DateTime now,
     required bool hideAmounts,
+    Map<int, CategoryModel> categories = const {},
   }) {
     final today = DateTime(now.year, now.month, now.day);
     var income = 0;
     var expense = 0;
+    final byCategory = <int, int>{};
     for (final t in transactions) {
       final date = t.transactionDate.toLocal();
       if (date.year != now.year || date.month != now.month) continue;
@@ -44,7 +63,31 @@ class WidgetSnapshot {
         income += t.amount;
       } else {
         expense += t.amount;
+        byCategory[t.categoryId] = (byCategory[t.categoryId] ?? 0) + t.amount;
       }
+    }
+    final ranked = byCategory.entries.toList()
+      ..sort((a, b) => b.value.compareTo(a.value));
+    final shown = ranked.take(maxSlices).toList();
+    final rest = ranked.skip(maxSlices).fold<int>(0, (sum, e) => sum + e.value);
+    final percents = roundPercentages([
+      for (final e in ranked) e.value.toDouble(),
+    ]);
+    String hex(int color) =>
+        (color & 0xFFFFFFFF).toRadixString(16).padLeft(8, '0').toUpperCase();
+    final slices = expense == 0
+        ? ''
+        : [
+            for (final e in shown)
+              '${hex(categories[e.key]?.colorValue ?? _otherColor)}:'
+                  '${(e.value / expense).toStringAsFixed(4)}',
+            if (rest > 0)
+              '${hex(_otherColor)}:${(rest / expense).toStringAsFixed(4)}',
+          ].join(';');
+    String topName(int index) {
+      if (index >= ranked.length) return '';
+      final name = categories[ranked[index].key]?.displayName ?? 'Lainnya'.tr;
+      return '$name ${percents[index]}%';
     }
 
     var limit = 0;
@@ -82,25 +125,41 @@ class WidgetSnapshot {
     final hh = now.hour.toString().padLeft(2, '0');
     final mm = now.minute.toString().padLeft(2, '0');
 
-    return WidgetSnapshot({
-      'label': '@month · sisa saldo'.trParams({'month': month}),
-      'updated': '$hh.$mm',
-      'balance': money(income - expense),
-      'income': '+ ${plain(income)}',
-      'expense': '− ${plain(expense)}',
-      'add_expense': '+ ${'Pengeluaran'.tr}',
-      'add_income': '+ ${'Pemasukan'.tr}',
-      'budget_label': 'Anggaran @month'.trParams({
-        'month': AppLanguage.monthShort(now.month),
-      }),
-      'budget_percent': limit == 0 ? '–' : '$percent%',
-      'budget_caption': limit == 0 ? 'belum ada anggaran'.tr : 'terpakai'.tr,
-      'budget_left': limit == 0
-          ? ''
-          : (limit - used >= 0
-                ? 'sisa @amount'.trParams({'amount': plain(limit - used)})
-                : 'lewat @amount'.trParams({'amount': plain(used - limit)})),
-    }, budgetProgress: percent.clamp(0, 100));
+    return WidgetSnapshot(
+      {
+        'label': '@month · sisa saldo'.trParams({'month': month}),
+        'updated': '$hh.$mm',
+        'balance': money(income - expense),
+        'income': '+ ${plain(income)}',
+        'expense': '− ${plain(expense)}',
+        'add_expense': '+ ${'Pengeluaran'.tr}',
+        'add_income': '+ ${'Pemasukan'.tr}',
+        'budget_label': 'Anggaran @month'.trParams({
+          'month': AppLanguage.monthShort(now.month),
+        }),
+        'budget_percent': limit == 0 ? '–' : '$percent%',
+        'budget_caption': limit == 0 ? 'belum ada anggaran'.tr : 'terpakai'.tr,
+        'budget_left': limit == 0
+            ? ''
+            : (limit - used >= 0
+                  ? 'sisa @amount'.trParams({'amount': plain(limit - used)})
+                  : 'lewat @amount'.trParams({'amount': plain(used - limit)})),
+        'cat_label': 'Pengeluaran @month'.trParams({
+          'month': AppLanguage.monthShort(now.month),
+        }),
+        'cat_total': expense == 0
+            ? ''
+            : (hideAmounts ? '••••' : compact(expense)),
+        'cat_caption': expense == 0
+            ? 'Belum ada pengeluaran'.tr
+            : 'bulan ini'.tr,
+        'cat_name1': topName(0),
+        'cat_name2': topName(1),
+        'cat_name3': topName(2),
+      },
+      budgetProgress: percent.clamp(0, 100),
+      categorySlices: slices,
+    );
   }
 }
 
@@ -112,18 +171,22 @@ class HomeWidgetService {
   HomeWidgetService({
     required TransactionRepository transactions,
     required BudgetRepository budgets,
+    CategoryRepository? categories,
     SharedPrefsService? preferences,
     DateTime Function()? clock,
   }) : _transactions = transactions,
        _budgets = budgets,
+       _categories = categories,
        _preferences = preferences ?? SharedPrefsService(),
        _clock = clock ?? DateTime.now;
 
   static const _balanceProvider = 'com.fillah.dompetku.BalanceWidgetProvider';
   static const _budgetProvider = 'com.fillah.dompetku.BudgetWidgetProvider';
+  static const _categoryProvider = 'com.fillah.dompetku.CategoryWidgetProvider';
 
   final TransactionRepository _transactions;
   final BudgetRepository _budgets;
+  final CategoryRepository? _categories;
   final SharedPrefsService _preferences;
   final DateTime Function() _clock;
 
@@ -195,11 +258,16 @@ class HomeWidgetService {
       final transactions = await _transactions.getAll(
         range: DateRange(start: start, end: end),
       );
+      final categories = await _categories?.getAll(includeArchived: true);
       final snapshot = WidgetSnapshot.build(
         transactions: transactions,
         budgets: budgets,
         now: now,
         hideAmounts: hide,
+        categories: {
+          for (final category in categories ?? const <CategoryModel>[])
+            if (category.id != null) category.id!: category,
+        },
       );
       for (final entry in snapshot.values.entries) {
         await HomeWidget.saveWidgetData<String>(entry.key, entry.value);
@@ -208,8 +276,13 @@ class HomeWidgetService {
         'budget_progress',
         snapshot.budgetProgress,
       );
+      await HomeWidget.saveWidgetData<String>(
+        'cat_slices',
+        snapshot.categorySlices,
+      );
       await HomeWidget.updateWidget(qualifiedAndroidName: _balanceProvider);
       await HomeWidget.updateWidget(qualifiedAndroidName: _budgetProvider);
+      await HomeWidget.updateWidget(qualifiedAndroidName: _categoryProvider);
     } catch (error) {
       debugPrint('Widget gagal diperbarui: $error');
     }

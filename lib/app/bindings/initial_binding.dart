@@ -111,6 +111,7 @@ class InitialBinding extends Bindings {
       HomeWidgetService(
         transactions: Get.find<TransactionRepository>(),
         budgets: Get.find<BudgetRepository>(),
+        categories: Get.find<CategoryRepository>(),
       ),
       permanent: true,
     );

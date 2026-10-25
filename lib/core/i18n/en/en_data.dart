@@ -71,6 +71,13 @@ const Map<String, String> enData = {
       'Tap to record it now. Takes 10 seconds.',
   'Mengingatkan mencatat bila hari ini belum ada transaksi.':
       'Reminds you to record when there are no transactions today.',
+  // Widget donat pengeluaran
+  'Pengeluaran @month': 'Spending @month',
+  'Belum ada pengeluaran': 'No spending yet',
+  'bulan ini': 'this month',
+  'rb': 'K',
+  'jt': 'M',
+  'M': 'B',
   // Draf
   '@count draf dikonfirmasi': '@count drafts confirmed',
   '@count draf belum berkategori, konfirmasi satu per satu.':

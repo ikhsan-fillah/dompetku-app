@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Widget 2x2: donat pengeluaran per kategori bulan ini, 3 kategori teratas.
+     Hanya view yang diizinkan RemoteViews (tanpa View polos). -->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/widget_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/widget_bg_card"
+    android:orientation="vertical"
+    android:padding="12dp">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:gravity="center_vertical"
+        android:orientation="horizontal">
+
+        <TextView
+            android:layout_width="16dp"
+            android:layout_height="16dp"
+            android:background="@drawable/widget_badge"
+            android:fontFamily="serif"
+            android:gravity="center"
+            android:text="T"
+            android:textColor="@color/tally_paper"
+            android:textSize="10sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:id="@+id/cat_label"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="6dp"
+            android:layout_weight="1"
+            android:maxLines="1"
+            android:text="Pengeluaran"
+            android:textColor="@color/tally_mut"
+            android:textSize="10sp" />
+    </LinearLayout>
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <ImageView
+            android:id="@+id/cat_donut"
+            android:layout_width="84dp"
+            android:layout_height="84dp"
+            android:layout_gravity="center"
+            android:contentDescription="@string/widget_category_label" />
+
+        <LinearLayout
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:orientation="vertical">
+
+            <TextView
+                android:id="@+id/cat_total"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:fontFamily="serif"
+                android:maxLines="1"
+                android:textColor="@color/tally_ink"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/cat_caption"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:maxLines="1"
+                android:textColor="@color/tally_mut"
+                android:textSize="8.5sp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
+
+        <LinearLayout
+            android:id="@+id/cat_item1"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/cat_dot1"
+                android:layout_width="5dp"
+                android:layout_height="5dp"
+                android:src="@drawable/widget_dot" />
+
+            <TextView
+                android:id="@+id/cat_name1"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/tally_ink2"
+                android:textSize="8.5sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cat_item2"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/cat_dot2"
+                android:layout_width="5dp"
+                android:layout_height="5dp"
+                android:src="@drawable/widget_dot" />
+
+            <TextView
+                android:id="@+id/cat_name2"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/tally_ink2"
+                android:textSize="8.5sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:id="@+id/cat_item3"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:gravity="end|center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/cat_dot3"
+                android:layout_width="5dp"
+                android:layout_height="5dp"
+                android:src="@drawable/widget_dot" />
+
+            <TextView
+                android:id="@+id/cat_name3"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="3dp"
+                android:ellipsize="end"
+                android:maxLines="1"
+                android:textColor="@color/tally_ink2"
+                android:textSize="8.5sp" />
+        </LinearLayout>
+    </LinearLayout>
+</LinearLayout>
