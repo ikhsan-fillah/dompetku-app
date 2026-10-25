@@ -9,10 +9,11 @@ import '../../../core/utils/date_range.dart';
 import '../../dashboard/controllers/dashboard_controller.dart';
 import '../../../core/widgets/app_date_picker.dart';
 
-/// Popover / Bottom sheet pilihan periode sesuai mockup:
-/// - Preset periode: Hari ini, 1 Minggu, 1 Bulan, 3 Bulan, Tahun ini
-/// - Memilih preset langsung menutup popover dan memperbarui semua kartu
-/// - Rentang kustom: Mulai, Selesai, dan tombol Terapkan rentang
+/// Lembar pilihan periode Beranda:
+/// - Preset periode: Hari ini, 1 Minggu, Bulan ini, 1 Bulan, 3 Bulan, Tahun ini
+/// - Rentang kustom: Mulai dan Selesai lewat kalender rentang
+/// - Pilihan baru diterapkan ke Beranda hanya lewat tombol Terapkan, jadi
+///   pengguna bisa mencoba beberapa pilihan dulu.
 class PeriodPickerSheet extends StatefulWidget {
   const PeriodPickerSheet({super.key, required this.controller});
 
@@ -39,6 +40,9 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
   late DateTime _customStart;
   late DateTime _customEnd;
 
+  /// Pilihan yang belum diterapkan; [DateRangePreset.custom] = rentang kustom.
+  late DateRangePreset _selected;
+
   static List<(DateRangePreset, String)> get _presets => [
     (DateRangePreset.today, 'Hari ini'.tr),
     (DateRangePreset.week, '1 Minggu'.tr),
@@ -54,6 +58,7 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
     final current = widget.controller.range.value;
     _customStart = current.start;
     _customEnd = current.end;
+    _selected = widget.controller.preset.value;
   }
 
   String _formatDate(DateTime date) => DateLabel.day(date);
@@ -66,9 +71,15 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
     return DateLabel.range(range);
   }
 
-  Future<void> _selectPreset(DateRangePreset preset) async {
-    Navigator.of(context).pop();
-    await widget.controller.setPreset(preset);
+  /// Hanya menandai pilihan; tanggal Mulai/Selesai ikut menampilkan
+  /// rentangnya. Beranda berubah setelah Terapkan.
+  void _selectPreset(DateRangePreset preset) {
+    final range = DateRange.fromPreset(preset);
+    setState(() {
+      _selected = preset;
+      _customStart = range.start;
+      _customEnd = range.end;
+    });
   }
 
   /// Membuka kalender rentang (B); [editEnd] mengaktifkan kolom "Sampai".
@@ -83,22 +94,27 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
     );
     if (picked != null) {
       setState(() {
+        _selected = DateRangePreset.custom;
         _customStart = picked.start;
         _customEnd = picked.end;
       });
     }
   }
 
-  Future<void> _applyCustomRange() async {
+  Future<void> _apply() async {
     Navigator.of(context).pop();
-    await widget.controller.setRange(
-      DateRange.history(start: _customStart, end: _customEnd),
-    );
+    if (_selected == DateRangePreset.custom) {
+      await widget.controller.setRange(
+        DateRange.history(start: _customStart, end: _customEnd),
+      );
+    } else {
+      await widget.controller.setPreset(_selected);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
-    final selectedPreset = widget.controller.preset.value;
+    final selectedPreset = _selected;
 
     return SafeArea(
       top: false,
@@ -154,7 +170,7 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
             SizedBox(
               height: 48,
               child: FilledButton(
-                onPressed: _applyCustomRange,
+                onPressed: _apply,
                 style: FilledButton.styleFrom(
                   backgroundColor: AppColors.ink,
                   foregroundColor: AppColors.paper,
@@ -164,7 +180,7 @@ class _PeriodPickerSheetState extends State<PeriodPickerSheet> {
                   ),
                 ),
                 child: Text(
-                  'Terapkan rentang'.tr,
+                  'Terapkan'.tr,
                   style: AppText.body(
                     size: 14,
                     weight: FontWeight.w700,

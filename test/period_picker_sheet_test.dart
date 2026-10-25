@@ -71,9 +71,19 @@ void main() {
       expect(find.text(label), findsOneWidget, reason: label);
     }
 
+    // Memilih belum menerapkan; bisa coba pilihan lain dulu.
     await tester.tap(find.text('1 Minggu'));
     await tester.pumpAndSettle();
+    await tester.tap(find.text('3 Bulan'));
+    await tester.pumpAndSettle();
+    expect(controller.preset.value, DateRangePreset.currentMonth);
+    expect(find.text('PILIH PERIODE'), findsOneWidget);
+
+    await tester.tap(find.text('1 Minggu'));
+    await tester.tap(find.text('Terapkan'));
+    await tester.pumpAndSettle();
     expect(controller.preset.value, DateRangePreset.week);
+    expect(find.text('PILIH PERIODE'), findsNothing);
   });
 
   testWidgets('Bulan ini bisa dipilih kembali dari pemilih', (tester) async {
@@ -106,7 +116,10 @@ void main() {
 
     await tester.tap(find.text('Bulan ini'));
     await tester.pumpAndSettle();
+    expect(controller.preset.value, DateRangePreset.today);
 
+    await tester.tap(find.text('Terapkan'));
+    await tester.pumpAndSettle();
     expect(controller.preset.value, DateRangePreset.currentMonth);
   });
 }
