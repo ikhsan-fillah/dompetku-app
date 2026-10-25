@@ -21,6 +21,7 @@ class ReportData {
     this.topMerchant,
     this.topMerchantCount = 0,
     this.previousExpense = 0,
+    this.previousIncome = 0,
     this.spendingTrend,
     this.incomeTrend,
     this.isEmpty = false,
@@ -36,6 +37,9 @@ class ReportData {
   final int topMerchantCount;
 
   final int previousExpense;
+
+  /// Pemasukan bulan pembanding, untuk perbandingan di kartu Pemasukan.
+  final int previousIncome;
 
   /// Pengeluaran per hari pada bulan laporan, untuk kartu Tren pengeluaran.
   final MonthlyTrend? spendingTrend;
@@ -153,12 +157,8 @@ class ReportController extends GetxController {
           : _calculations.expenseOnDay(transactions, highDay);
       final merchant = _calculations.topMerchant(transactions, selectedRange);
       final summary = _calculations.summary(transactions, selectedRange);
-      final previousExpense = _calculations
-          .summary(
-            transactions,
-            previousRange ?? selectedRange.previousEquivalentPeriod,
-          )
-          .expense;
+      final previous = _calculations.summary(transactions, comparison);
+      final previousExpense = previous.expense;
       final reportMonth = DateTime(
         selectedRange.start.year,
         selectedRange.start.month,
@@ -173,6 +173,7 @@ class ReportController extends GetxController {
               ? (summary.expense == 0 ? 0 : 1)
               : (summary.expense - previousExpense) / previousExpense,
           previousExpense: previousExpense,
+          previousIncome: previous.income,
           spendingTrend: trends.build(transactions, reportMonth),
           incomeTrend: trends.build(
             transactions,

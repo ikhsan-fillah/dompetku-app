@@ -49,6 +49,17 @@ class _ReportPageState extends State<ReportPage> {
     return month.year == now.year && month.month == now.month;
   }
 
+  /// Pemilih bulan di bagian atas kartu cincin.
+  Widget _switcher() => Obx(() {
+    final month = controller.month.value;
+    return MonthSwitcher(
+      month: month,
+      canGoNext: !_isCurrentMonth(month),
+      onPrevious: () => _shiftMonth(-1),
+      onNext: () => _shiftMonth(1),
+    );
+  });
+
   void _shiftMonth(int delta) => controller.loadMonth(
     DateTime(controller.month.value.year, controller.month.value.month + delta),
   );
@@ -60,40 +71,45 @@ class _ReportPageState extends State<ReportPage> {
         children: [
           AppTitleBar(title: 'Laporan'.tr),
           const SizedBox(height: AppSpacing.gap),
-          Obx(() {
-            final month = controller.month.value;
-            return MonthSwitcher(
-              month: month,
-              canGoNext: !_isCurrentMonth(month),
-              onPrevious: () => _shiftMonth(-1),
-              onNext: () => _shiftMonth(1),
-            );
-          }),
-          const SizedBox(height: AppSpacing.gap),
           Expanded(
             child: Obx(() {
               final current = controller.state.value;
               return switch (current.status) {
-                ResourceStatus.idle ||
-                ResourceStatus.loading => const ListSkeleton(),
-                ResourceStatus.empty => _Message(
-                  icon: LucideIcons.chartColumn,
-                  text: 'Belum ada transaksi pada bulan ini'.tr,
-                  action: 'Muat ulang'.tr,
-                  onTap: controller.reload,
+                ResourceStatus.idle || ResourceStatus.loading => _WithSwitcher(
+                  switcher: _switcher(),
+                  child: const ListSkeleton(),
                 ),
-                ResourceStatus.error => _Message(
-                  icon: LucideIcons.circleAlert,
-                  text: current.message ?? 'Gagal memuat laporan.'.tr,
-                  action: 'Coba lagi'.tr,
-                  onTap: controller.reload,
+                ResourceStatus.empty => _WithSwitcher(
+                  switcher: _switcher(),
+                  child: _Message(
+                    icon: LucideIcons.chartColumn,
+                    text: 'Belum ada transaksi pada bulan ini'.tr,
+                    action: 'Muat ulang'.tr,
+                    onTap: controller.reload,
+                  ),
+                ),
+                ResourceStatus.error => _WithSwitcher(
+                  switcher: _switcher(),
+                  child: _Message(
+                    icon: LucideIcons.circleAlert,
+                    text: current.message ?? 'Gagal memuat laporan.'.tr,
+                    action: 'Coba lagi'.tr,
+                    onTap: controller.reload,
+                  ),
                 ),
                 ResourceStatus.success => RefreshIndicator(
                   color: AppColors.ink,
                   onRefresh: controller.reload,
                   child: _Summary(
+                    switcher: _switcher(),
                     data: current.data!,
                     isCurrentMonth: _isCurrentMonth(controller.month.value),
+                    previousLabel: AppLanguage.monthShort(
+                      DateTime(
+                        controller.month.value.year,
+                        controller.month.value.month - 1,
+                      ).month,
+                    ),
                     money: _money,
                   ),
                 ),
@@ -106,15 +122,43 @@ class _ReportPageState extends State<ReportPage> {
   );
 }
 
+/// Saat memuat, kosong, atau galat: pemilih bulan tetap di kartu yang sama
+/// posisinya dengan kartu cincin, supaya tidak melompat saat berganti bulan.
+class _WithSwitcher extends StatelessWidget {
+  const _WithSwitcher({required this.switcher, required this.child});
+
+  final Widget switcher;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    children: [
+      Padding(
+        padding: const EdgeInsets.fromLTRB(16, 4, 16, 0),
+        child: AppCard(
+          margin: EdgeInsets.zero,
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
+          child: switcher,
+        ),
+      ),
+      Expanded(child: child),
+    ],
+  );
+}
+
 class _Summary extends StatelessWidget {
   const _Summary({
+    required this.switcher,
     required this.data,
     required this.isCurrentMonth,
+    required this.previousLabel,
     required this.money,
   });
 
+  final Widget switcher;
   final ReportData data;
   final bool isCurrentMonth;
+  final String previousLabel;
   final String Function(int) money;
 
   @override
@@ -124,9 +168,11 @@ class _Summary extends StatelessWidget {
     final cards = <Widget>[
       AppCard(
         margin: EdgeInsets.zero,
-        padding: const EdgeInsets.fromLTRB(16, 20, 16, 16),
+        padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
         child: Column(
           children: [
+            switcher,
+            const SizedBox(height: 18),
             if (data.expensesByCategory.isEmpty || summary.expense == 0)
               SpendingRing(items: const [], total: 0, totalLabel: money(0))
             else
@@ -149,9 +195,12 @@ class _Summary extends StatelessWidget {
       const SizedBox(height: 14),
       _SectionCard(
         title: 'Pemasukan vs pengeluaran'.tr,
-        child: IncomeExpenseBars(
+        child: IncomeExpenseOverview(
           income: summary.income,
           expense: summary.expense,
+          previousIncome: data.previousIncome,
+          previousExpense: data.previousExpense,
+          previousLabel: previousLabel,
           money: money,
         ),
       ),
@@ -182,13 +231,16 @@ class _Summary extends StatelessWidget {
         money: money,
       ),
     ];
+    // Kartu pertama (berisi pemilih bulan) tidak dianimasikan supaya pemilih
+    // tidak ikut bergeser setiap ganti bulan.
     var index = 0;
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 4, 16, 32),
       children: [
-        for (final card in cards)
-          card is SizedBox ? card : FadeSlideIn(index: index++, child: card),
+        cards.first,
+        for (final card in cards.skip(1))
+          card is SizedBox ? card : FadeSlideIn(index: ++index, child: card),
       ],
     );
   }

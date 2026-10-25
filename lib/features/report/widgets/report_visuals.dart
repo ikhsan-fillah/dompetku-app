@@ -6,7 +6,6 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/i18n/app_language.dart';
 import '../../../core/theme/app_colors.dart';
-import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
 import '../controllers/report_controller.dart';
 import '../../../core/widgets/motion.dart';
@@ -26,42 +25,41 @@ class MonthSwitcher extends StatelessWidget {
   final VoidCallback? onNext;
   final bool canGoNext;
 
+  /// Dipasang di bagian atas kartu cincin Laporan, jadi tanpa jarak tepi
+  /// halaman sendiri.
   @override
-  Widget build(BuildContext context) => Padding(
-    padding: const EdgeInsets.symmetric(horizontal: AppSpacing.page),
-    child: Row(
-      children: [
-        _ArrowButton(
-          icon: LucideIcons.chevronLeft,
-          onTap: onPrevious,
-          label: 'Bulan sebelumnya'.tr,
-        ),
-        Expanded(
-          child: Column(
-            children: [
-              Text(
-                AppLanguage.monthLong(month.month),
-                style: AppText.display(size: 28, weight: FontWeight.w600),
+  Widget build(BuildContext context) => Row(
+    children: [
+      _ArrowButton(
+        icon: LucideIcons.chevronLeft,
+        onTap: onPrevious,
+        label: 'Bulan sebelumnya'.tr,
+      ),
+      Expanded(
+        child: Column(
+          children: [
+            Text(
+              AppLanguage.monthLong(month.month),
+              style: AppText.display(size: 28, weight: FontWeight.w600),
+            ),
+            Text(
+              '${month.year}',
+              style: AppText.mono(
+                size: 12,
+                weight: FontWeight.w500,
+                color: AppColors.mut,
+                letterSpacing: 0,
               ),
-              Text(
-                '${month.year}',
-                style: AppText.mono(
-                  size: 12,
-                  weight: FontWeight.w500,
-                  color: AppColors.mut,
-                  letterSpacing: 0,
-                ),
-              ),
-            ],
-          ),
+            ),
+          ],
         ),
-        _ArrowButton(
-          icon: LucideIcons.chevronRight,
-          onTap: canGoNext ? onNext : null,
-          label: 'Bulan berikutnya'.tr,
-        ),
-      ],
-    ),
+      ),
+      _ArrowButton(
+        icon: LucideIcons.chevronRight,
+        onTap: canGoNext ? onNext : null,
+        label: 'Bulan berikutnya'.tr,
+      ),
+    ],
   );
 }
 
@@ -295,57 +293,149 @@ class _RingPainter extends CustomPainter {
       old.total != total || old.items != items || old.selected != selected;
 }
 
-/// Pemasukan dan pengeluaran sebagai dua batang sejajar, plus selisihnya.
-class IncomeExpenseBars extends StatelessWidget {
-  const IncomeExpenseBars({
+/// Pemasukan vs pengeluaran: persen pemasukan yang tersisa sebagai angka
+/// utama, satu batang terbagi (merah terpakai, hijau tersisa), dua kartu kecil
+/// dengan perbandingan bulan lalu, lalu selisihnya.
+class IncomeExpenseOverview extends StatelessWidget {
+  const IncomeExpenseOverview({
     super.key,
     required this.income,
     required this.expense,
+    required this.previousIncome,
+    required this.previousExpense,
+    required this.previousLabel,
     required this.money,
   });
 
   final int income;
   final int expense;
+  final int previousIncome;
+  final int previousExpense;
+
+  /// Nama singkat bulan pembanding, mis. "Sep".
+  final String previousLabel;
   final String Function(int) money;
 
   @override
   Widget build(BuildContext context) {
-    final peak = math.max(math.max(income, expense), 1);
+    final balance = income - expense;
+    final spentShare = income <= 0
+        ? (expense > 0 ? 1.0 : 0.0)
+        : (expense / income).clamp(0.0, 1.0);
+    final over = expense > income;
+    final String headline;
+    final String caption;
+    if (income == 0 && expense == 0) {
+      headline = '0%';
+      caption = 'belum ada transaksi bulan ini'.tr;
+    } else if (income == 0) {
+      headline = 'Defisit'.tr;
+      caption = 'pengeluaran tanpa pemasukan bulan ini'.tr;
+    } else if (over) {
+      headline = '${((expense - income) * 100 / income).round()}%';
+      caption = 'pengeluaran melebihi pemasukan'.tr;
+    } else {
+      headline = '${(balance * 100 / income).round()}%';
+      caption = 'pemasukan tersisa bulan ini'.tr;
+    }
+    final headColor = income == 0 && expense == 0
+        ? AppColors.mut
+        : (over ? AppColors.spend : AppColors.earn);
+    final spentPercent = (spentShare * 100).round();
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _FlowRow(
-          label: 'Pemasukan'.tr,
-          value: money(income),
-          fraction: income / peak,
-          color: AppColors.earn,
-          track: AppColors.earnSoft,
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.baseline,
+          textBaseline: TextBaseline.alphabetic,
+          children: [
+            RollingText(
+              headline,
+              style: AppText.display(size: 34, color: headColor),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                caption,
+                style: AppText.body(size: 12.5, color: AppColors.ink2),
+              ),
+            ),
+          ],
         ),
         const SizedBox(height: 12),
-        _FlowRow(
-          label: 'Pengeluaran'.tr,
-          value: money(expense),
-          fraction: expense / peak,
-          color: AppColors.spend,
-          track: AppColors.spendSoft,
+        _SplitBar(spent: spentShare),
+        const SizedBox(height: 6),
+        Row(
+          children: [
+            Expanded(
+              child: Text(
+                'terpakai @percent%'.trParams({'percent': '$spentPercent'}),
+                style: AppText.mono(
+                  size: 10,
+                  color: AppColors.mut,
+                  letterSpacing: 0,
+                ),
+              ),
+            ),
+            Text(
+              'tersisa @percent%'.trParams({
+                'percent': '${100 - spentPercent}',
+              }),
+              style: AppText.mono(
+                size: 10,
+                color: AppColors.mut,
+                letterSpacing: 0,
+              ),
+            ),
+          ],
         ),
-        const SizedBox(height: 14),
+        const SizedBox(height: 16),
+        Row(
+          children: [
+            Expanded(
+              child: _FlowTile(
+                label: 'Pemasukan'.tr,
+                icon: LucideIcons.arrowDownLeft,
+                color: AppColors.earn,
+                value: money(income),
+                current: income,
+                previous: previousIncome,
+                previousLabel: previousLabel,
+                higherIsBetter: true,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: _FlowTile(
+                label: 'Pengeluaran'.tr,
+                icon: LucideIcons.arrowUpRight,
+                color: AppColors.spend,
+                value: money(expense),
+                current: expense,
+                previous: previousExpense,
+                previousLabel: previousLabel,
+                higherIsBetter: false,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
         const Divider(height: 1, thickness: 1, color: AppColors.line2),
         const SizedBox(height: 12),
         Row(
           children: [
             Expanded(
               child: Text(
-                'Selisih bulan ini'.tr,
+                'Selisih'.tr,
                 style: AppText.body(size: 12, weight: FontWeight.w700),
               ),
             ),
-            Text(
-              money(income - expense),
+            RollingText(
+              '${balance >= 0 ? '+' : '\u2212'} ${money(balance.abs())}',
               style: AppText.mono(
-                size: 14,
+                size: 15,
                 weight: FontWeight.w600,
-                color: income >= expense ? AppColors.earn : AppColors.spend,
+                color: balance >= 0 ? AppColors.earn : AppColors.spend,
                 letterSpacing: 0,
               ),
             ),
@@ -356,61 +446,119 @@ class IncomeExpenseBars extends StatelessWidget {
   }
 }
 
-class _FlowRow extends StatelessWidget {
-  const _FlowRow({
+/// Satu batang: bagian merah = terpakai, sisanya hijau = tersisa.
+class _SplitBar extends StatelessWidget {
+  const _SplitBar({required this.spent});
+
+  final double spent;
+
+  @override
+  Widget build(BuildContext context) => ClipRRect(
+    borderRadius: BorderRadius.circular(8),
+    child: Container(
+      height: 16,
+      color: AppColors.earn,
+      alignment: Alignment.centerLeft,
+      child: TweenAnimationBuilder<double>(
+        tween: Tween(begin: 0, end: spent),
+        duration: const Duration(milliseconds: 450),
+        curve: Curves.easeOutCubic,
+        builder: (_, factor, _) => FractionallySizedBox(
+          widthFactor: factor,
+          heightFactor: 1,
+          child: const ColoredBox(color: AppColors.spend),
+        ),
+      ),
+    ),
+  );
+}
+
+/// Kartu kecil pemasukan atau pengeluaran dengan perubahan dari bulan lalu.
+/// Panah hijau berarti membaik (pemasukan naik, pengeluaran turun).
+class _FlowTile extends StatelessWidget {
+  const _FlowTile({
     required this.label,
-    required this.value,
-    required this.fraction,
+    required this.icon,
     required this.color,
-    required this.track,
+    required this.value,
+    required this.current,
+    required this.previous,
+    required this.previousLabel,
+    required this.higherIsBetter,
   });
 
   final String label;
-  final String value;
-  final double fraction;
+  final IconData icon;
   final Color color;
-  final Color track;
+  final String value;
+  final int current;
+  final int previous;
+  final String previousLabel;
+  final bool higherIsBetter;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Row(
+  Widget build(BuildContext context) {
+    final String change;
+    final Color changeColor;
+    if (previous == 0) {
+      change = 'belum ada data @month'.trParams({'month': previousLabel});
+      changeColor = AppColors.mut;
+    } else if (current == previous) {
+      change = 'sama dengan @month'.trParams({'month': previousLabel});
+      changeColor = AppColors.mut;
+    } else {
+      final up = current > previous;
+      final percent = ((current - previous).abs() * 100 / previous).round();
+      change =
+          '${up ? '\u25B2' : '\u25BC'} '
+          '${'@percent% dari @month'.trParams({'percent': '$percent', 'month': previousLabel})}';
+      changeColor = up == higherIsBetter ? AppColors.earn : AppColors.spend;
+    }
+    return Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 10),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.line2),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Expanded(
-            child: Text(
-              label,
-              style: AppText.body(size: 11.5, color: AppColors.mut),
+          Row(
+            children: [
+              Icon(icon, size: 14, color: color),
+              const SizedBox(width: 6),
+              Expanded(
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.body(size: 11, color: AppColors.mut),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: RollingText(
+              value,
+              style: AppText.mono(
+                size: 14,
+                weight: FontWeight.w600,
+                letterSpacing: 0,
+              ),
             ),
           ),
-          RollingText(
-            value,
-            style: AppText.mono(
-              size: 12.5,
-              weight: FontWeight.w600,
-              letterSpacing: 0,
-            ),
+          const SizedBox(height: 2),
+          Text(
+            change,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: AppText.body(size: 10.5, color: changeColor),
           ),
         ],
       ),
-      const SizedBox(height: 6),
-      ClipRRect(
-        borderRadius: BorderRadius.circular(6),
-        child: Container(
-          height: 10,
-          color: track,
-          alignment: Alignment.centerLeft,
-          child: TweenAnimationBuilder<double>(
-            tween: Tween(begin: 0, end: fraction.clamp(0.0, 1.0)),
-            duration: const Duration(milliseconds: 450),
-            curve: Curves.easeOutCubic,
-            builder: (_, factor, _) => FractionallySizedBox(
-              widthFactor: factor,
-              child: ColoredBox(color: color),
-            ),
-          ),
-        ),
-      ),
-    ],
-  );
+    );
+  }
 }

@@ -71,6 +71,18 @@ const Map<String, String> enData = {
       'Tap to record it now. Takes 10 seconds.',
   'Mengingatkan mencatat bila hari ini belum ada transaksi.':
       'Reminds you to record when there are no transactions today.',
+  // Laporan: pemasukan vs pengeluaran
+  'pemasukan tersisa bulan ini': 'of income left this month',
+  'pengeluaran melebihi pemasukan': 'spending is over income',
+  'pengeluaran tanpa pemasukan bulan ini': 'spending with no income this month',
+  'belum ada transaksi bulan ini': 'no transactions this month',
+  'Defisit': 'Deficit',
+  'terpakai @percent%': 'spent @percent%',
+  'tersisa @percent%': 'left @percent%',
+  '@percent% dari @month': '@percent% vs @month',
+  'belum ada data @month': 'no data for @month',
+  'sama dengan @month': 'same as @month',
+  'Selisih': 'Difference',
   // Widget donat pengeluaran
   'Pengeluaran @month': 'Spending @month',
   'Belum ada pengeluaran': 'No spending yet',

@@ -1,6 +1,7 @@
 import 'package:dompetku_app/core/constant/domain_enums.dart';
 import 'package:dompetku_app/core/i18n/app_language.dart';
 import 'package:dompetku_app/core/theme/app_theme.dart';
+import 'package:dompetku_app/core/widgets/app_card.dart';
 import 'package:dompetku_app/core/utils/date_range.dart';
 import 'package:dompetku_app/features/category/models/category_model.dart';
 import 'package:dompetku_app/features/category/repositories/category_repository.dart';
@@ -111,7 +112,16 @@ void main() {
     await open(tester);
 
     expect(find.byType(SpendingRing), findsOneWidget);
-    expect(find.byType(IncomeExpenseBars), findsOneWidget);
+    expect(find.byType(IncomeExpenseOverview), findsOneWidget);
+    // Pemilih bulan ada di kartu yang sama dengan cincin pengeluaran.
+    final ringCard = find.ancestor(
+      of: find.byType(SpendingRing),
+      matching: find.byType(AppCard),
+    );
+    expect(
+      find.descendant(of: ringCard, matching: find.byType(MonthSwitcher)),
+      findsOneWidget,
+    );
     expect(find.text('Tren pengeluaran'), findsOneWidget);
     expect(find.text('Pengeluaran harian'), findsNothing);
     expect(find.text('Statistik pengeluaran'), findsOneWidget);
@@ -186,7 +196,7 @@ void main() {
     // Bulan kosong tetap menampilkan semua kartu, bukan hanya pesan.
     expect(find.text('Belum ada transaksi pada bulan ini'), findsOneWidget);
     expect(find.byType(SpendingRing), findsOneWidget);
-    expect(find.byType(IncomeExpenseBars), findsOneWidget);
+    expect(find.byType(IncomeExpenseOverview), findsOneWidget);
     expect(find.text('Tren pengeluaran'), findsOneWidget);
     expect(find.text('Pengeluaran harian'), findsNothing);
     expect(find.text('Statistik pengeluaran'), findsOneWidget);
