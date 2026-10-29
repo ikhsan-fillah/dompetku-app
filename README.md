@@ -394,7 +394,7 @@ Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelu
 
 ## 10. Modul Saham (Supabase)
 
-Status: skema database sudah dibuat di Supabase. App sudah punya halaman Saham (Profil > Saham): login, watchlist, dan data per broker dengan total kelompok. Input harian dan hasil analisis belum ada di app.
+Status: skema database sudah dibuat di Supabase. App sudah punya halaman Saham (Profil > Saham): watchlist dengan ringkasan tiap saham, dialog masuk Supabase, detail dengan tab Broker (arah dana ritel, bandar, asing, dan 5 broker teratas di sisi net beli dan net jual) dan tab Chart (harga, volume, Stoch RSI, MACD). Tab Chart baru berisi bila tabel `daily_snapshot` terisi; saat ini tabel itu masih kosong. Input harian dan hasil analisis belum ada di app.
 
 Aturan:
 
@@ -410,5 +410,6 @@ Cara menjalankan modul di app:
 
 - Berikan URL dan publishable key lewat `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_PUBLISHABLE_KEY=...`. Tanpa keduanya, halaman Saham hanya menampilkan petunjuk dan app tidak memakai jaringan.
 - Supabase diinisialisasi saat halaman Saham dibuka, bukan saat app mulai.
-- Login memakai email dan password akun Supabase. Password tidak disimpan; yang disimpan hanya sesi (refresh token) di flutter_secure_storage. "Hapus data lokal" di Profil juga menghapus sesi ini, jadi login perlu diulang.
+- Login memakai email dan password akun Supabase lewat dialog yang muncul sendiri saat halaman Saham dibuka tanpa sesi. Password tidak disimpan; yang disimpan hanya sesi (refresh token) di flutter_secure_storage. "Hapus data lokal" di Profil juga menghapus sesi ini, jadi login perlu diulang.
 - Total ritel, bandar, dan asing dihitung di app (`BrokerGroupCalculator`) dari baris per broker di `broker_range_snapshot` dan aturan di `broker_group`. Totalnya hanya dari broker yang tampil di Broker Summary Stockbit (broker teratas di tiap sisi), bukan seluruh pasar.
+- Tab Chart membaca `daily_snapshot` (90 hari terakhir, satu baris per tanggal, baris `quality = 'tidak_akurat'` tidak ikut). Garis Stoch RSI dan MACD dinamai netral (a dan b) sampai legenda Stockbit dicek. Pembacaan di tiap panel hanya menyebut posisi angka (mis. Stoch RSI di area 80 ke atas), bukan saran beli atau jual.

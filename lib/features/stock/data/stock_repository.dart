@@ -2,6 +2,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 
 import '../models/broker_group.dart';
 import '../models/broker_range_row.dart';
+import '../models/daily_bar.dart';
 import '../models/watchlist_item.dart';
 import 'stock_auth.dart';
 
@@ -19,7 +20,22 @@ abstract interface class StockRepository {
 
   /// Snapshot terbaru per rentang (Latest, 7D, 1M, 3M) untuk satu saham.
   Future<List<BrokerRangeRow>> getLatestBrokerRanges(String ticker);
+
+  /// Baris rentang Latest untuk beberapa saham sekaligus (kartu watchlist).
+  Future<List<BrokerRangeRow>> getLatestRangeForTickers(List<String> tickers);
+
+  /// Hari perdagangan terakhir satu saham, urut dari yang terlama, satu baris
+  /// per tanggal. Baris bertanda `tidak_akurat` tidak ikut.
+  Future<List<DailyBar>> getRecentBars(String ticker, {int limit = 90});
+
+  /// Hari perdagangan terbaru untuk tiap saham yang diminta.
+  Future<List<DailyBar>> getLatestBars(List<String> tickers);
 }
+
+const _barColumns =
+    'ticker, trade_date, open_price, high_price, low_price, close_price, '
+    'prev_close, volume_lot, volume_ma20, stoch_rsi_a, stoch_rsi_b, macd_a, '
+    'macd_b, macd_hist, is_intraday';
 
 class SupabaseStockRepository implements StockRepository {
   SupabaseStockRepository(this._auth);
@@ -81,5 +97,50 @@ class SupabaseStockRepository implements StockRepository {
       for (final batch in perLabel) ...batch.map(BrokerRangeRow.fromMap),
     ];
     return latestSnapshotPerRange(rows);
+  }
+
+  @override
+  Future<List<BrokerRangeRow>> getLatestRangeForTickers(
+    List<String> tickers,
+  ) async {
+    if (tickers.isEmpty) return const [];
+    final rows = await _client
+        .from('broker_range_snapshot')
+        .select(
+          'ticker, range_label, range_start, range_end, broker_code, '
+          'side, value_idr, value_is_approx',
+        )
+        .inFilter('ticker', tickers)
+        .eq('range_label', 'Latest')
+        .order('range_end', ascending: false)
+        .limit(100 * tickers.length);
+    return rows.map(BrokerRangeRow.fromMap).toList();
+  }
+
+  @override
+  Future<List<DailyBar>> getRecentBars(String ticker, {int limit = 90}) async {
+    final rows = await _client
+        .from('daily_snapshot')
+        .select(_barColumns)
+        .eq('ticker', ticker)
+        .neq('quality', 'tidak_akurat')
+        .order('trade_date', ascending: false)
+        .order('captured_at', ascending: false)
+        .limit(limit * 2);
+    return oneBarPerDate(rows.map(DailyBar.fromMap), limit: limit);
+  }
+
+  @override
+  Future<List<DailyBar>> getLatestBars(List<String> tickers) async {
+    if (tickers.isEmpty) return const [];
+    final rows = await _client
+        .from('daily_snapshot')
+        .select(_barColumns)
+        .inFilter('ticker', tickers)
+        .neq('quality', 'tidak_akurat')
+        .order('trade_date', ascending: false)
+        .order('captured_at', ascending: false)
+        .limit(10 * tickers.length);
+    return rows.map(DailyBar.fromMap).toList();
   }
 }

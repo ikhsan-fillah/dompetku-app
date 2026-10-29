@@ -13,6 +13,7 @@ class AppTextField extends StatelessWidget {
     this.maxLines = 1,
     this.obscureText = false,
     this.autofillHints,
+    this.suffix,
   });
 
   final TextEditingController? controller;
@@ -25,6 +26,9 @@ class AppTextField extends StatelessWidget {
   final int maxLines;
   final bool obscureText;
   final Iterable<String>? autofillHints;
+
+  /// Widget di ujung kanan kolom, mis. tombol lihat password.
+  final Widget? suffix;
 
   @override
   Widget build(BuildContext context) {
@@ -40,6 +44,7 @@ class AppTextField extends StatelessWidget {
         labelText: label,
         hintText: hint,
         prefixIcon: prefixIcon == null ? null : Icon(prefixIcon),
+        suffixIcon: suffix,
       ),
     );
   }

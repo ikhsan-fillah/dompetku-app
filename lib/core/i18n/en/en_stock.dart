@@ -31,7 +31,6 @@ const Map<String, String> enStock = {
   'Data muncul setelah otomatisasi Stockbit mengisinya.':
       'Data appears after the Stockbit automation fills it in.',
   'Tidak ada data untuk rentang ini.': 'No data for this range.',
-  'Per broker': 'Per broker',
   'Ritel': 'Retail',
   'Bandar': 'Big player',
   'Asing': 'Foreign',
@@ -45,8 +44,6 @@ const Map<String, String> enStock = {
   'Total dihitung dari broker yang tampil di Broker Summary Stockbit, bukan seluruh pasar. Kelompok adalah aturan Anda, bukan fakta pasar.':
       'Totals come from the brokers shown in the Stockbit Broker Summary, not the whole market. Groups are your own rules, not market facts.',
   'T': 'T',
-  'MODUL SAHAM': 'STOCK MODULE',
-  'Masuk ke akun Supabase': 'Sign in to your Supabase account',
   'Hanya data saham yang disinkronkan. Transaksi, anggaran, dan tabungan tetap di perangkat ini.':
       'Only stock data is synced. Transactions, budgets, and savings stay on this device.',
   'Password tidak disimpan di perangkat, hanya sesi masuknya.':
@@ -56,4 +53,91 @@ const Map<String, String> enStock = {
   '@count nonaktif, riwayat datanya tetap tersimpan':
       '@count inactive, their history is kept',
   'Arah dana per kelompok': 'Money flow by group',
+  'dan': 'and',
+  'Tidak ada arus bersih pada rentang ini.': 'No net flow in this range.',
+  '@names net beli.': '@names net buying.',
+  '@names net jual.': '@names net selling.',
+  '@buy net beli, @sell net jual.': '@buy net buying, @sell net selling.',
+  '@count broker': '@count brokers',
+  'Top @count net beli': 'Top @count net buyers',
+  'Top @count net jual': 'Top @count net sellers',
+  'dari @total broker': 'of @total brokers',
+  'jumlah': 'total',
+  'Tidak ada broker net beli pada rentang ini.':
+      'No net-buying broker in this range.',
+  'Tidak ada broker net jual pada rentang ini.':
+      'No net-selling broker in this range.',
+  'Harga': 'Price',
+  'Volume': 'Volume',
+  'Rata-rata 20 hari': '20-day average',
+  'Stoch RSI': 'Stoch RSI',
+  'Garis a': 'Line a',
+  'Garis b': 'Line b',
+  'MACD': 'MACD',
+  'Histogram': 'Histogram',
+  'Nama garis a dan b (MACD dan sinyal, K dan D) belum dipastikan dari legenda Stockbit, jadi dinamai netral. Hari yang ditandai tidak akurat tidak digambar. Ini pembacaan angka, bukan saran.':
+      'Which of lines a and b is MACD or signal, K or D, is not confirmed from the Stockbit legend, so they are named neutrally. Days marked inaccurate are not drawn. This reads the numbers; it is not advice.',
+  'Harga penutupan belum terbaca.': 'The closing price has not been read.',
+  'Tutup @price': 'Close @price',
+  'Tutup @price (@change)': 'Close @price (@change)',
+  'Volume belum terbaca.': 'Volume has not been read.',
+  'jauh di atas': 'far above',
+  'di atas': 'above',
+  'di bawah': 'below',
+  'jauh di bawah': 'far below',
+  'Volume @pct% dari rata-rata 20 hari, @level':
+      'Volume is @pct% of the 20-day average, @level',
+  'Hari berjalan, volume masih bertambah.':
+      'Today is still running, so volume is still growing.',
+  'Stoch RSI belum terbaca.': 'Stoch RSI has not been read.',
+  'Di area bawah (20 ke bawah)': 'In the low zone (20 or below)',
+  'Di area tengah (20 sampai 80)': 'In the middle zone (20 to 80)',
+  'Di area atas (80 ke atas)': 'In the high zone (80 or above)',
+  'Dua garis berada di area berbeda': 'The two lines are in different zones',
+  'MACD belum terbaca.': 'MACD has not been read.',
+  'Histogram positif': 'Histogram positive',
+  'Histogram negatif': 'Histogram negative',
+  'Histogram nol': 'Histogram zero',
+  'Kedua garis di atas nol': 'Both lines above zero',
+  'Kedua garis di bawah nol': 'Both lines below zero',
+  'Garis berada di dua sisi nol': 'The lines are on both sides of zero',
+  'Sentuh atau geser di chart untuk melihat harga dan indikator tiap hari.':
+      'Touch or drag on a chart to see the price and indicators for each day.',
+  'Buka': 'Open',
+  'Tertinggi': 'High',
+  'Terendah': 'Low',
+  'Perubahan': 'Change',
+  'intraday': 'intraday',
+  'Hari terakhir': 'Latest day',
+  'Data broker @date (Latest)': 'Broker data @date (Latest)',
+  'Arah dana muncul setelah data broker saham ini terisi.':
+      'Money flow appears once this stock has broker data.',
+  'Memuat ringkasan...': 'Loading summary...',
+  '@count nonaktif · data broker terbaru @date':
+      '@count inactive · latest broker data @date',
+  'Tidak ada saham pada pilihan ini.': 'No stocks in this filter.',
+  'Tersambung ke Supabase': 'Connected to Supabase',
+  'Masuk sebagai @email': 'Signed in as @email',
+  'Watchlist terkunci': 'Watchlist is locked',
+  'Masuk ke akun Supabase untuk membuka watchlist dan data broker.':
+      'Sign in to your Supabase account to open the watchlist and broker data.',
+  'Masuk akun': 'Sign in',
+  'Tampilkan password': 'Show password',
+  'Sembunyikan password': 'Hide password',
+  'Broker': 'Broker',
+  'Chart': 'Chart',
+  'PENUTUPAN': 'CLOSE',
+  'HARGA': 'PRICE',
+  'Memuat harga': 'Loading price',
+  'Harga belum ada': 'No price yet',
+  'Mengambil data harian dari Supabase.': 'Fetching daily data from Supabase.',
+  'Chart dan indikator muncul setelah data harian saham ini terisi. Data broker sudah bisa dilihat di tab Broker.':
+      'The chart and indicators appear once daily data for this stock is filled in. Broker data is already available in the Broker tab.',
+  'Tertinggi @high · Terendah @low · Volume @volume lot':
+      'High @high · Low @low · Volume @volume lots',
+  'Broker teratas': 'Top brokers',
+  'Gagal memuat data harga.': 'Failed to load price data.',
+  'Belum ada data harga': 'No price data yet',
+  'Chart, volume, Stoch RSI, dan MACD muncul setelah otomatisasi Stockbit mengisi data harian saham ini.':
+      'The chart, volume, Stoch RSI, and MACD appear once the Stockbit automation fills in daily data for this stock.',
 };

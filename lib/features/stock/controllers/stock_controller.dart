@@ -3,26 +3,75 @@ import 'package:get/get.dart';
 import '../../../core/state/resource_state.dart';
 import '../data/stock_auth.dart';
 import '../data/stock_repository.dart';
+import '../models/broker_group.dart';
+import '../models/broker_range_row.dart';
+import '../models/daily_bar.dart';
 import '../models/watchlist_item.dart';
+import '../services/broker_group_calculator.dart';
 
 enum StockAccess { checking, notConfigured, signedOut, signedIn }
 
+/// Penyaring daftar watchlist.
+enum WatchFilter { all, active, inactive }
+
+/// Ringkasan satu saham untuk kartu watchlist: arah dana kelompok pada
+/// snapshot Latest terbaru dan harga penutupan terbaru. Keduanya boleh kosong
+/// bila datanya belum diisi.
+class TickerOverview {
+  const TickerOverview({this.flow, this.flowDate, this.bar});
+
+  final GroupSummary? flow;
+  final DateTime? flowDate;
+  final DailyBar? bar;
+}
+
 /// Login ke Supabase dan daftar watchlist untuk modul saham.
 class StockController extends GetxController {
-  StockController(this._auth, this._repository);
+  StockController(
+    this._auth,
+    this._repository, {
+    BrokerGroupCalculator calculator = const BrokerGroupCalculator(),
+  }) : _calculator = calculator;
 
   final StockAuth _auth;
   final StockRepository _repository;
+  final BrokerGroupCalculator _calculator;
 
   final access = StockAccess.checking.obs;
   final watchlist = const ResourceState<List<WatchlistItem>>.idle().obs;
   final signingIn = false.obs;
   final loginError = RxnString();
+  final filter = WatchFilter.all.obs;
+  final overviews = <String, TickerOverview>{}.obs;
 
   String? get email => _auth.email;
 
   List<WatchlistItem> get items =>
       watchlist.value.data ?? const <WatchlistItem>[];
+
+  /// Saham yang lolos penyaring terpilih.
+  List<WatchlistItem> get visibleItems => switch (filter.value) {
+    WatchFilter.all => items,
+    WatchFilter.active => [
+      for (final item in items)
+        if (item.isActive) item,
+    ],
+    WatchFilter.inactive => [
+      for (final item in items)
+        if (!item.isActive) item,
+    ],
+  };
+
+  int get activeCount => items.where((item) => item.isActive).length;
+
+  /// Tanggal data broker terbaru di antara semua saham, null bila belum ada.
+  DateTime? get latestFlowDate => overviews.values
+      .map((overview) => overview.flowDate)
+      .nonNulls
+      .fold<DateTime?>(
+        null,
+        (best, date) => best == null || date.isAfter(best) ? date : best,
+      );
 
   @override
   void onInit() {
@@ -80,6 +129,7 @@ class StockController extends GetxController {
       // Sesi lokal tetap dianggap berakhir; token di server kedaluwarsa sendiri.
     }
     watchlist.value = const ResourceState.idle();
+    overviews.clear();
     access.value = StockAccess.signedOut;
   }
 
@@ -92,10 +142,57 @@ class StockController extends GetxController {
       watchlist.value = items.isEmpty
           ? const ResourceState.empty()
           : ResourceState.success(items);
+      if (items.isNotEmpty) await _loadOverviews(items);
     } catch (_) {
       watchlist.value = ResourceState.error('Gagal memuat watchlist.'.tr);
     }
   }
+
+  /// Melengkapi kartu watchlist. Gagal di sini tidak menggagalkan daftar:
+  /// kartu tetap tampil, hanya tanpa ringkasan.
+  Future<void> _loadOverviews(List<WatchlistItem> items) async {
+    final tickers = [for (final item in items) item.ticker];
+    try {
+      final results = await Future.wait([
+        _repository.getLatestRangeForTickers(tickers),
+        _repository.getLatestBars(tickers),
+        _repository.getBrokerGroupRules(),
+      ]);
+      final rows = results[0] as List<BrokerRangeRow>;
+      final bars = latestBarPerTicker(results[1] as List<DailyBar>);
+      final rules = results[2] as BrokerGroupRules;
+      overviews.assignAll({
+        for (final ticker in tickers)
+          ticker: _overviewOf(
+            [
+              for (final row in rows)
+                if (row.ticker == ticker) row,
+            ],
+            bars[ticker],
+            rules,
+          ),
+      });
+    } catch (_) {
+      overviews.clear();
+    }
+  }
+
+  TickerOverview _overviewOf(
+    List<BrokerRangeRow> rows,
+    DailyBar? bar,
+    BrokerGroupRules rules,
+  ) {
+    final latest = latestSnapshotPerRange(rows);
+    return TickerOverview(
+      flow: latest.isEmpty ? null : _calculator.summarize(latest, rules),
+      flowDate: latest.isEmpty ? null : latest.first.rangeEnd,
+      bar: bar,
+    );
+  }
+
+  void setFilter(WatchFilter value) => filter.value = value;
+
+  void clearLoginError() => loginError.value = null;
 
   /// Menambah saham. Mengembalikan pesan kesalahan, atau null bila berhasil.
   Future<String?> addTicker(String raw) async {
