@@ -10,7 +10,7 @@ This README is the product specification and the operational notes (release, sig
 ## 1. Final Product Decisions
 
 - **Users:** One user on one device.
-- **Connectivity:** Local-only. No account system, cloud synchronization, or cloud backup is required for the first version.
+- **Connectivity:** Local-only for all financial data. No account system, cloud synchronization, or cloud backup is required for the first version. The optional stock module (section 10) is the only part that uses the network, and it never sends financial data.
 - **Default currency:** Indonesian Rupiah (IDR).
 - **Wallet model:** One wallet only. Multiple wallets are out of scope for the first version.
 - **Transaction types:** Income and expense are both included in MVP 1.
@@ -391,3 +391,19 @@ Kunci terjemahan adalah teks Indonesia (`'Laporan'.tr`); terjemahan Inggris ada 
 - Ekspor data dihapus. Application ID menjadi `com.fillah.dompetku`; release signing memakai `upload-keystore.jks`.
 
 Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelumnya (tanpa uninstall).
+
+## 10. Modul Saham (Supabase)
+
+Status: skema database sudah dibuat di Supabase. Kode app untuk modul ini belum dibuat.
+
+Aturan:
+
+- Hanya data saham yang boleh disinkronkan ke Supabase: watchlist, snapshot harian, Broker Summary harian, dan hasil analisis. Transaksi, anggaran, tujuan, kategori, struk, dan PIN tidak boleh dikirim.
+- Satu akun Supabase Auth untuk satu pengguna. Semua tabel memakai RLS dengan kondisi `user_id = auth.uid()`.
+- Hanya URL proyek dan publishable key yang boleh ada di app, dan nilainya diberikan lewat `--dart-define`. Kunci `service_role` dan password tidak boleh ada di app, repo, atau chat.
+- Skema dikelola lewat migrasi Supabase, bukan lewat `Migrations` SQLite. Aturan migrasi SQLite di bagian 8.2 hanya berlaku untuk database lokal.
+- Kelompok broker (ritel, bandar, asing) adalah aturan pengguna, bukan fakta pasar. Isinya disimpan sebagai data di tabel `broker_group` dengan `rule_version`, dan isi awalnya dibuat dengan `rpc('seed_broker_groups')` setelah login.
+
+Tabel: `watchlist`, `broker_group`, `daily_snapshot`, `broker_daily`, `broker_flow_check`, `analysis_result`, `run_log`.
+
+Langkah berikutnya untuk app: jalankan `flutter pub add supabase_flutter` agar `pubspec.lock` ikut terbarui, lalu inisialisasi Supabase dengan `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_PUBLISHABLE_KEY=...`.
