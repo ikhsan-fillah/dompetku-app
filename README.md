@@ -394,7 +394,7 @@ Wajib sebelum rilis: uji Auto-detect di HP nyata dan uji upgrade dari APK sebelu
 
 ## 10. Modul Saham (Supabase)
 
-Status: skema database sudah dibuat di Supabase. Kode app untuk modul ini belum dibuat.
+Status: skema database sudah dibuat di Supabase. App sudah punya halaman Saham (Profil > Saham): login, watchlist, dan data per broker dengan total kelompok. Input harian dan hasil analisis belum ada di app.
 
 Aturan:
 
@@ -406,4 +406,9 @@ Aturan:
 
 Tabel: `watchlist`, `broker_group`, `daily_snapshot`, `broker_daily`, `broker_flow_check`, `analysis_result`, `run_log`.
 
-Langkah berikutnya untuk app: jalankan `flutter pub add supabase_flutter` agar `pubspec.lock` ikut terbarui, lalu inisialisasi Supabase dengan `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_PUBLISHABLE_KEY=...`.
+Cara menjalankan modul di app:
+
+- Berikan URL dan publishable key lewat `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_PUBLISHABLE_KEY=...`. Tanpa keduanya, halaman Saham hanya menampilkan petunjuk dan app tidak memakai jaringan.
+- Supabase diinisialisasi saat halaman Saham dibuka, bukan saat app mulai.
+- Login memakai email dan password akun Supabase. Password tidak disimpan; yang disimpan hanya sesi (refresh token) di flutter_secure_storage. "Hapus data lokal" di Profil juga menghapus sesi ini, jadi login perlu diulang.
+- Total ritel, bandar, dan asing dihitung di app (`BrokerGroupCalculator`) dari baris per broker di `broker_range_snapshot` dan aturan di `broker_group`. Totalnya hanya dari broker yang tampil di Broker Summary Stockbit (broker teratas di tiap sisi), bukan seluruh pasar.

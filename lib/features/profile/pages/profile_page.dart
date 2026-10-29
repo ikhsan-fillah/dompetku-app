@@ -251,6 +251,15 @@ class _ProfilePageState extends State<ProfilePage> {
                 onTap: () => Get.toNamed(AppRoutes.goals),
               ),
               SettingsTile(
+                icon: LucideIcons.chartCandlestick,
+                title: 'Saham'.tr,
+                subtitle: 'Watchlist, data broker, dan analisis'.tr,
+                iconBackground: AppColors.paper2,
+                iconColor: AppColors.ink,
+                trailing: _chevron,
+                onTap: () => Get.toNamed(AppRoutes.stock),
+              ),
+              SettingsTile(
                 icon: LucideIcons.repeat,
                 title: 'Transaksi berulang'.tr,
                 subtitle: 'Tagihan dan langganan berulang'.tr,
