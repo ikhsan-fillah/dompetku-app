@@ -12,8 +12,6 @@ const Map<String, String> enStock = {
   'Supabase belum dikonfigurasi': 'Supabase is not configured',
   'Jalankan app dengan --dart-define=SUPABASE_URL dan SUPABASE_PUBLISHABLE_KEY.':
       'Run the app with --dart-define=SUPABASE_URL and SUPABASE_PUBLISHABLE_KEY.',
-  'Masuk dengan akun Supabase Anda. Password tidak disimpan di perangkat, hanya sesi masuknya.':
-      'Sign in with your Supabase account. The password is not stored on this device, only the session.',
   'Email dan password wajib diisi.': 'Email and password are required.',
   'Tidak bisa terhubung ke Supabase.': 'Cannot reach Supabase.',
   'Watchlist masih kosong': 'The watchlist is empty',
@@ -47,4 +45,15 @@ const Map<String, String> enStock = {
   'Total dihitung dari broker yang tampil di Broker Summary Stockbit, bukan seluruh pasar. Kelompok adalah aturan Anda, bukan fakta pasar.':
       'Totals come from the brokers shown in the Stockbit Broker Summary, not the whole market. Groups are your own rules, not market facts.',
   'T': 'T',
+  'MODUL SAHAM': 'STOCK MODULE',
+  'Masuk ke akun Supabase': 'Sign in to your Supabase account',
+  'Hanya data saham yang disinkronkan. Transaksi, anggaran, dan tabungan tetap di perangkat ini.':
+      'Only stock data is synced. Transactions, budgets, and savings stay on this device.',
+  'Password tidak disimpan di perangkat, hanya sesi masuknya.':
+      'The password is not stored on this device, only the session.',
+  'SAHAM DIPANTAU': 'STOCKS FOLLOWED',
+  '@count aktif': '@count active',
+  '@count nonaktif, riwayat datanya tetap tersimpan':
+      '@count inactive, their history is kept',
+  'Arah dana per kelompok': 'Money flow by group',
 };

@@ -15,8 +15,10 @@ import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/app_text_field.dart';
 import '../../../core/widgets/app_title_bar.dart';
 import '../../../core/widgets/app_toast.dart';
+import '../../../core/widgets/motion.dart';
 import '../controllers/stock_controller.dart';
 import '../models/watchlist_item.dart';
+import '../widgets/stock_hero.dart';
 
 /// Modul Saham: login ke Supabase dan watchlist. Satu-satunya bagian app yang
 /// memakai jaringan; data keuangan tidak pernah dikirim ke sini.
@@ -189,12 +191,16 @@ class _LoginFormState extends State<_LoginForm> {
         40,
       ),
       children: [
-        Text(
-          'Masuk dengan akun Supabase Anda. Password tidak disimpan di perangkat, hanya sesi masuknya.'
-              .tr,
-          style: AppText.body(size: 13, color: AppColors.ink2),
+        FadeSlideIn(
+          child: StockHero(
+            label: 'MODUL SAHAM'.tr,
+            title: 'Masuk ke akun Supabase'.tr,
+            caption:
+                'Hanya data saham yang disinkronkan. Transaksi, anggaran, dan tabungan tetap di perangkat ini.'
+                    .tr,
+          ),
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 20),
         AppTextField(
           controller: _email,
           label: 'Email'.tr,
@@ -229,6 +235,11 @@ class _LoginFormState extends State<_LoginForm> {
             loading: controller.signingIn.value,
             onPressed: _submit,
           ),
+        ),
+        const SizedBox(height: 12),
+        Text(
+          'Password tidak disimpan di perangkat, hanya sesi masuknya.'.tr,
+          style: AppText.body(size: 11, color: AppColors.mut, height: 1.4),
         ),
       ],
     );
@@ -276,6 +287,7 @@ class _Watchlist extends StatelessWidget {
           );
         case ResourceStatus.success:
           final items = controller.items;
+          final activeCount = items.where((item) => item.isActive).length;
           return ListView(
             padding: const EdgeInsets.fromLTRB(
               AppSpacing.page,
@@ -284,32 +296,37 @@ class _Watchlist extends StatelessWidget {
               40,
             ),
             children: [
-              AppCard(
-                margin: EdgeInsets.zero,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 4,
-                ),
-                child: Column(
-                  children: [
-                    for (final item in items)
-                      _WatchlistRow(
-                        item: item,
-                        onOpen: () => Get.toNamed(
-                          AppRoutes.stockDetail,
-                          arguments: item.ticker,
-                        ),
-                        onToggle: (active) => _toggle(item, active),
-                      ),
-                  ],
+              FadeSlideIn(
+                child: StockHero(
+                  label: 'SAHAM DIPANTAU'.tr,
+                  title: '@count aktif'.trParams({'count': '$activeCount'}),
+                  caption: '@count nonaktif, riwayat datanya tetap tersimpan'
+                      .trParams({'count': '${items.length - activeCount}'}),
                 ),
               ),
-              const SizedBox(height: 10),
-              Text(
-                'Saham nonaktif tidak dianalisis lagi, riwayatnya tetap tersimpan.'
-                    .tr,
-                textAlign: TextAlign.center,
-                style: AppText.body(size: 11, color: AppColors.mut),
+              const SizedBox(height: AppSpacing.gap),
+              FadeSlideIn(
+                index: 1,
+                child: AppCard(
+                  margin: EdgeInsets.zero,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 16,
+                    vertical: 4,
+                  ),
+                  child: Column(
+                    children: [
+                      for (final item in items)
+                        _WatchlistRow(
+                          item: item,
+                          onOpen: () => Get.toNamed(
+                            AppRoutes.stockDetail,
+                            arguments: item.ticker,
+                          ),
+                          onToggle: (active) => _toggle(item, active),
+                        ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 18),
               Center(

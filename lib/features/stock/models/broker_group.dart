@@ -36,16 +36,19 @@ class BrokerGroupRules {
 
   BrokerGroup? groupOf(String brokerCode) => _byCode[brokerCode.toUpperCase()];
 
-  /// Membaca baris tabel `broker_group`; baris dengan `grp` yang tidak dikenal
-  /// dilewati.
+  /// Membaca baris tabel `broker_group`. Baris dengan `grp` yang tidak
+  /// dikenal (mis. `belum_diklasifikasi`) sengaja dilewati; baris yang
+  /// kolomnya kurang dianggap data rusak.
   factory BrokerGroupRules.fromRows(Iterable<Map<String, dynamic>> rows) {
     final byCode = <String, BrokerGroup>{};
     for (final row in rows) {
-      final code = row['broker_code'];
-      final group = row['grp'];
-      if (code is! String || group is! String) continue;
-      final parsed = BrokerGroup.fromDb(group);
-      if (parsed != null) byCode[code.toUpperCase()] = parsed;
+      switch (row) {
+        case {'broker_code': final String code, 'grp': final String group}:
+          final parsed = BrokerGroup.fromDb(group);
+          if (parsed != null) byCode[code.toUpperCase()] = parsed;
+        default:
+          throw FormatException('Baris broker_group tidak valid: $row');
+      }
     }
     return BrokerGroupRules(byCode);
   }

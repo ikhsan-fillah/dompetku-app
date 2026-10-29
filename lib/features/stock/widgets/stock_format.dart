@@ -3,19 +3,21 @@ import 'package:get/get.dart';
 /// Nilai broker ringkas dengan tanda: +621,8 M, -2,2 T. "M" miliar, "T"
 /// triliun. Awalan "≈" untuk nilai yang dibulatkan di layar sumber.
 String formatBrokerValue(int idr, {bool signed = true, bool approx = false}) {
+  if (idr == 0) return '0';
   String trim(double v, int digits) =>
       v.toStringAsFixed(digits).replaceAll('.', ',');
 
   final abs = idr.abs();
-  final String body;
-  if (abs >= 1000000000000) {
-    body = '${trim(abs / 1e12, 2)} ${'T'.tr}';
-  } else if (abs >= 1000000000) {
-    body = '${trim(abs / 1e9, 1)} ${'M'.tr}';
-  } else {
-    body = '${trim(abs / 1e6, 1)} ${'jt'.tr}';
-  }
-  final sign = idr < 0 ? '-' : (signed && idr > 0 ? '+' : '');
+  final body = switch (abs) {
+    >= 1000000000000 => '${trim(abs / 1e12, 2)} ${'T'.tr}',
+    >= 1000000000 => '${trim(abs / 1e9, 1)} ${'M'.tr}',
+    _ => '${trim(abs / 1e6, 1)} ${'jt'.tr}',
+  };
+  final sign = switch (idr) {
+    < 0 => '-',
+    > 0 when signed => '+',
+    _ => '',
+  };
   return '${approx ? '≈' : ''}$sign$body';
 }
 

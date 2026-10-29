@@ -12,10 +12,11 @@ import '../../../core/widgets/app_chip.dart';
 import '../../../core/widgets/app_skeleton.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/app_title_bar.dart';
+import '../../../core/widgets/motion.dart';
 import '../controllers/stock_detail_controller.dart';
 import '../models/broker_group.dart';
 import '../models/broker_range_row.dart';
-import '../services/broker_group_calculator.dart';
+import '../widgets/group_flow_card.dart';
 import '../widgets/stock_format.dart';
 
 /// Net beli dan net jual per broker untuk satu saham, dengan total per
@@ -79,9 +80,12 @@ class _Body extends StatelessWidget {
     return Obx(() {
       final selected = controller.range.value;
       final rows = controller.rowsInRange;
-      final summary = controller.summary;
-      final period = controller.period;
       final rules = controller.data?.rules ?? const BrokerGroupRules.empty();
+      final periodText = switch (controller.period) {
+        (final start, final end) =>
+          '${formatShortDate(start)} - ${formatShortDate(end)}',
+        null => 'Tidak ada data untuk rentang ini.'.tr,
+      };
       return ListView(
         padding: const EdgeInsets.fromLTRB(
           AppSpacing.page,
@@ -103,111 +107,41 @@ class _Body extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 8),
-          Text(
-            period == null
-                ? 'Tidak ada data untuk rentang ini.'.tr
-                : '${formatShortDate(period.$1)} - ${formatShortDate(period.$2)}',
-            style: AppText.body(size: 11, color: AppColors.mut),
-          ),
+          Text(periodText, style: AppText.body(size: 11, color: AppColors.mut)),
           const SizedBox(height: AppSpacing.gap),
-          for (final group in BrokerGroup.values)
-            _GroupCard(group: group, total: summary.of(group)),
-          if (summary.unclassified.brokerCount > 0)
-            Padding(
-              padding: const EdgeInsets.only(bottom: AppSpacing.gap),
-              child: Text(
-                'Belum diklasifikasi: @count broker, net @net (tidak masuk kelompok mana pun)'
-                    .trParams({
-                      'count': '${summary.unclassified.brokerCount}',
-                      'net': formatBrokerValue(summary.unclassified.netIdr),
-                    }),
-                style: AppText.body(size: 11, color: AppColors.mut),
-              ),
-            ),
+          FadeSlideIn(child: GroupFlowCard(summary: controller.summary)),
+          const SizedBox(height: 10),
           Text(
             'Total dihitung dari broker yang tampil di Broker Summary Stockbit, bukan seluruh pasar. Kelompok adalah aturan Anda, bukan fakta pasar.'
                 .tr,
-            style: AppText.body(size: 11, color: AppColors.mut),
+            style: AppText.body(size: 11, color: AppColors.mut, height: 1.4),
           ),
           const SizedBox(height: 18),
           Text('Per broker'.tr, style: AppText.display(size: 18)),
           const SizedBox(height: 8),
           if (rows.isNotEmpty)
-            AppCard(
-              margin: EdgeInsets.zero,
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-              child: Column(
-                children: [
-                  for (final row in rows)
-                    _BrokerRow(row: row, group: rules.groupOf(row.brokerCode)),
-                ],
+            FadeSlideIn(
+              index: 1,
+              child: AppCard(
+                margin: EdgeInsets.zero,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 4,
+                ),
+                child: Column(
+                  children: [
+                    for (final row in rows)
+                      _BrokerRow(
+                        row: row,
+                        group: rules.groupOf(row.brokerCode),
+                      ),
+                  ],
+                ),
               ),
             ),
         ],
       );
     });
-  }
-}
-
-Color _netColor(int net) => net > 0
-    ? AppColors.earn
-    : net < 0
-    ? AppColors.spend
-    : AppColors.ink2;
-
-class _GroupCard extends StatelessWidget {
-  const _GroupCard({required this.group, required this.total});
-
-  final BrokerGroup group;
-  final GroupTotal total;
-
-  @override
-  Widget build(BuildContext context) {
-    final net = total.netIdr;
-    return AppCard(
-      child: Row(
-        children: [
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(group.label.tr, style: AppText.display(size: 17)),
-                const SizedBox(height: 4),
-                Text(
-                  total.brokerCount == 0
-                      ? 'Tidak ada broker kelompok ini yang tampil'.tr
-                      : 'beli @buy · jual @sell · @count broker'.trParams({
-                          'buy': formatBrokerValue(
-                            total.buyIdr,
-                            signed: false,
-                            approx: total.hasApprox,
-                          ),
-                          'sell': formatBrokerValue(
-                            total.sellIdr,
-                            signed: false,
-                            approx: total.hasApprox,
-                          ),
-                          'count': '${total.brokerCount}',
-                        }),
-                  style: AppText.body(size: 11, color: AppColors.mut),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 12),
-          Text(
-            total.brokerCount == 0
-                ? '-'
-                : formatBrokerValue(net, approx: total.hasApprox),
-            style: AppText.mono(
-              size: 15,
-              weight: FontWeight.w600,
-              color: _netColor(net),
-            ),
-          ),
-        ],
-      ),
-    );
   }
 }
 
@@ -232,14 +166,14 @@ class _BrokerRow extends StatelessWidget {
             ),
           ),
           Expanded(
-            child: Text(
-              group == null ? 'belum diklasifikasi'.tr : group!.label.tr,
-              style: AppText.body(size: 11, color: AppColors.mut),
-            ),
+            child: Text(switch (group) {
+              final BrokerGroup known => known.label.tr,
+              null => 'belum diklasifikasi'.tr,
+            }, style: AppText.body(size: 11, color: AppColors.mut)),
           ),
           Text(
             formatBrokerValue(value, approx: row.isApprox),
-            style: AppText.mono(size: 13, color: _netColor(value)),
+            style: AppText.mono(size: 13, color: netColor(value)),
           ),
         ],
       ),

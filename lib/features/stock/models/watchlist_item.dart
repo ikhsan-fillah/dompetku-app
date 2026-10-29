@@ -13,12 +13,19 @@ class WatchlistItem {
   final String? note;
   final DateTime? createdAt;
 
-  factory WatchlistItem.fromMap(Map<String, dynamic> map) => WatchlistItem(
-    ticker: map['ticker'] as String,
-    isActive: map['is_active'] as bool? ?? true,
-    note: map['note'] as String?,
-    createdAt: DateTime.tryParse(map['created_at'] as String? ?? ''),
-  );
+  /// Kolom wajib dicocokkan dengan pola map; baris yang bentuknya salah
+  /// langsung gagal supaya data rusak tidak diam-diam hilang. `note` dan
+  /// `created_at` opsional, jadi dibaca dari map langsung.
+  factory WatchlistItem.fromMap(Map<String, dynamic> map) => switch (map) {
+    {'ticker': final String ticker, 'is_active': final bool isActive} =>
+      WatchlistItem(
+        ticker: ticker,
+        isActive: isActive,
+        note: map['note'] as String?,
+        createdAt: DateTime.tryParse(map['created_at'] as String? ?? ''),
+      ),
+    _ => throw FormatException('Baris watchlist tidak valid: $map'),
+  };
 
   WatchlistItem copyWith({bool? isActive}) => WatchlistItem(
     ticker: ticker,
