@@ -400,7 +400,7 @@ Aturan:
 
 - Hanya data saham yang boleh disinkronkan ke Supabase: watchlist, snapshot harian, Broker Summary harian, dan hasil analisis. Transaksi, anggaran, tujuan, kategori, struk, dan PIN tidak boleh dikirim.
 - Satu akun Supabase Auth untuk satu pengguna. Semua tabel memakai RLS dengan kondisi `user_id = auth.uid()`.
-- Hanya URL proyek dan publishable key yang boleh ada di app, dan nilainya diberikan lewat `--dart-define`. Kunci `service_role` dan password tidak boleh ada di app, repo, atau chat.
+- Hanya URL proyek dan publishable key (`sb_publishable_...`) yang boleh ada di app. Keduanya ditanam sebagai nilai bawaan di `SupabaseStockAuth`, karena menurut docs Supabase publishable key aman diekspos di app dan source code selama semua tabel memakai RLS. Kunci secret/`service_role` dan password tidak boleh ada di app, repo, atau chat.
 - Skema dikelola lewat migrasi Supabase, bukan lewat `Migrations` SQLite. Aturan migrasi SQLite di bagian 8.2 hanya berlaku untuk database lokal.
 - Kelompok broker (ritel, bandar, asing) adalah aturan pengguna, bukan fakta pasar. Isinya disimpan sebagai data di tabel `broker_group` dengan `rule_version`, dan isi awalnya dibuat dengan `rpc('seed_broker_groups')` setelah login.
 
@@ -408,8 +408,9 @@ Tabel: `watchlist`, `broker_group`, `daily_snapshot`, `broker_daily`, `broker_fl
 
 Cara menjalankan modul di app:
 
-- Berikan URL dan publishable key lewat `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_PUBLISHABLE_KEY=...`. Tanpa keduanya, halaman Saham hanya menampilkan petunjuk dan app tidak memakai jaringan.
+- `flutter run` dan `flutter build apk --release` langsung memakai project Supabase bawaan, tanpa `--dart-define`. Untuk project lain, timpa dengan `--dart-define=SUPABASE_URL=... --dart-define=SUPABASE_PUBLISHABLE_KEY=...`.
 - Supabase diinisialisasi saat halaman Saham dibuka, bukan saat app mulai.
 - Login memakai email dan password akun Supabase lewat dialog yang muncul sendiri saat halaman Saham dibuka tanpa sesi. Password tidak disimpan; yang disimpan hanya sesi (refresh token) di flutter_secure_storage. "Hapus data lokal" di Profil juga menghapus sesi ini, jadi login perlu diulang.
+- Watchlist: maksimal 5 saham aktif (`maxActiveTickers`), hanya saham aktif yang diambil datanya otomatis, dan saham aktif selalu di urutan atas. Menghapus saham ikut menghapus barisnya di `daily_snapshot`, `broker_range_snapshot`, `broker_daily`, `broker_flow_check`, dan `analysis_result`.
 - Total ritel, bandar, dan asing dihitung di app (`BrokerGroupCalculator`) dari baris per broker di `broker_range_snapshot` dan aturan di `broker_group`. Totalnya hanya dari broker yang tampil di Broker Summary Stockbit (broker teratas di tiap sisi), bukan seluruh pasar.
-- Tab Chart membaca `daily_snapshot` (90 hari terakhir, satu baris per tanggal, baris `quality = 'tidak_akurat'` tidak ikut). Garis Stoch RSI dan MACD dinamai netral (a dan b) sampai legenda Stockbit dicek. Pembacaan di tiap panel hanya menyebut posisi angka (mis. Stoch RSI di area 80 ke atas), bukan saran beli atau jual.
+- Tab Chart membaca `daily_snapshot` dan menampilkan satu bulan terakhir (1M), satu baris per tanggal, baris `quality = 'tidak_akurat'` tidak ikut. Stoch RSI 14 14 3 3: `stoch_rsi_a` = K, `stoch_rsi_b` = D. MACD 12 26 9: `macd_a` = MACD, `macd_b` = sinyal. Pembacaan di tiap panel hanya menyebut posisi angka (mis. Stoch RSI di area 80 ke atas), bukan saran beli atau jual.

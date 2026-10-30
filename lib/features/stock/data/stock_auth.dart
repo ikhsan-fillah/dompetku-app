@@ -64,9 +64,17 @@ class SecureSessionStorage extends LocalStorage {
 class SupabaseStockAuth implements StockAuth {
   SupabaseStockAuth(this._secureStorage);
 
-  static const _url = String.fromEnvironment('SUPABASE_URL');
+  // Bawaan ke project Supabase milik app, jadi build rilis tidak butuh
+  // --dart-define. Publishable key memang aman ditanam di app (menurut docs
+  // Supabase, "Understanding API keys"); data dilindungi RLS per pengguna.
+  // Keduanya tetap bisa diganti lewat --dart-define untuk project lain.
+  static const _url = String.fromEnvironment(
+    'SUPABASE_URL',
+    defaultValue: 'https://kktdetgwahzpjwjzbeek.supabase.co',
+  );
   static const _publishableKey = String.fromEnvironment(
     'SUPABASE_PUBLISHABLE_KEY',
+    defaultValue: 'sb_publishable_SfpgTLlLb4Ogxk3eL9-aHg_MpsTfenN',
   );
 
   final SecureStorageService _secureStorage;
