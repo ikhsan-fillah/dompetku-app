@@ -92,6 +92,22 @@ void main() {
   });
 
   group('TechnicalReading', () {
+    test('lineOrder: posisi garis pertama terhadap kedua', () {
+      expect(TechnicalReading.lineOrder(56.9, 37.5), LineOrder.above);
+      expect(TechnicalReading.lineOrder(-79, -77), LineOrder.below);
+      expect(TechnicalReading.lineOrder(5, 5), LineOrder.equal);
+      expect(TechnicalReading.lineOrder(null, 5), isNull);
+    });
+
+    test('histTrend: pekat bila membesar, pudar bila mengecil', () {
+      // Negatif yang makin dalam tetap dihitung membesar.
+      expect(TechnicalReading.histTrend(-4, -2), HistTrend.growing);
+      expect(TechnicalReading.histTrend(-1.5, -2), HistTrend.shrinking);
+      expect(TechnicalReading.histTrend(3, 3), HistTrend.growing);
+      expect(TechnicalReading.histTrend(3, null), HistTrend.growing);
+      expect(TechnicalReading.histTrend(null, 3), isNull);
+    });
+
     test('Stoch RSI: batas 20 dan 80 termasuk area ujung', () {
       expect(TechnicalReading.stochZone(null), isNull);
       expect(TechnicalReading.stochZone(20), StochZone.oversold);

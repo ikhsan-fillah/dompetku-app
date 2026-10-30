@@ -8,6 +8,7 @@ import '../../../core/widgets/app_card.dart';
 import '../../../core/widgets/app_chip.dart';
 import '../controllers/stock_controller.dart';
 import '../models/broker_group.dart';
+import '../models/daily_bar.dart';
 import '../models/watchlist_item.dart';
 import '../services/broker_group_calculator.dart';
 import 'group_flow_card.dart';
@@ -16,7 +17,8 @@ import 'stock_hero.dart';
 
 /// Kartu satu saham di watchlist: kode, status, harga terakhir bila ada, arah
 /// dana tiga kelompok pada snapshot Latest terbaru, dan tanggal datanya.
-/// Menyentuh kartu membuka detail; saklar mengaktifkan atau menonaktifkan.
+/// Menyentuh kartu membuka detail; saklar mengaktifkan atau menonaktifkan,
+/// ikon tempat sampah menghapus saham beserta datanya.
 class WatchlistCard extends StatelessWidget {
   const WatchlistCard({
     super.key,
@@ -24,6 +26,8 @@ class WatchlistCard extends StatelessWidget {
     required this.overview,
     required this.onOpen,
     required this.onToggle,
+    required this.onDelete,
+    this.slotsFull = false,
   });
 
   final WatchlistItem item;
@@ -32,6 +36,11 @@ class WatchlistCard extends StatelessWidget {
   final TickerOverview? overview;
   final VoidCallback onOpen;
   final ValueChanged<bool> onToggle;
+  final VoidCallback onDelete;
+
+  /// Kelima slot aktif terisi. Saham nonaktif lalu menampilkan catatan
+  /// kenapa saklarnya belum bisa dinyalakan.
+  final bool slotsFull;
 
   @override
   Widget build(BuildContext context) {
@@ -63,13 +72,22 @@ class WatchlistCard extends StatelessWidget {
                     foreground: active ? AppColors.accent : AppColors.ink2,
                   ),
                   const Spacer(),
+                  IconButton(
+                    tooltip: 'Hapus @ticker'.trParams({'ticker': item.ticker}),
+                    onPressed: onDelete,
+                    icon: const Icon(
+                      LucideIcons.trash2,
+                      size: 18,
+                      color: AppColors.mut,
+                    ),
+                  ),
                   Semantics(
                     label: '${item.ticker} ${'aktif'.tr}',
                     child: Switch(value: active, onChanged: onToggle),
                   ),
                 ],
               ),
-              if (bar?.close case final int close)
+              if (bar case DailyBar(close: final int close, :final isIntraday))
                 Padding(
                   padding: const EdgeInsets.only(right: 10, bottom: 2),
                   child: Row(
@@ -84,14 +102,25 @@ class WatchlistCard extends StatelessWidget {
                           percent: change,
                           text: formatPercent(change),
                         ),
+                      if (isIntraday) ...[
+                        const SizedBox(width: 8),
+                        Text(
+                          'berjalan'.tr,
+                          style: AppText.body(size: 11, color: AppColors.mut),
+                        ),
+                      ],
                     ],
                   ),
                 ),
               Padding(
                 padding: const EdgeInsets.only(right: 10, top: 10),
-                child: flow == null
-                    ? _NoFlow(isLoaded: overview != null)
-                    : _MiniFlow(summary: flow),
+                child: switch ((active, slotsFull, flow)) {
+                  (false, true, _) => const _SlotsFullNote(),
+                  (_, _, final GroupSummary summary) => _MiniFlow(
+                    summary: summary,
+                  ),
+                  _ => _NoFlow(isLoaded: overview != null),
+                },
               ),
               Padding(
                 padding: const EdgeInsets.only(right: 10, top: 12),
@@ -248,6 +277,41 @@ class _NoFlow extends StatelessWidget {
   }
 }
 
+/// Catatan di kartu saham nonaktif saat kelima slot aktif sudah terisi.
+class _SlotsFullNote extends StatelessWidget {
+  const _SlotsFullNote();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+      decoration: BoxDecoration(
+        color: AppColors.warnSoft,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const Icon(LucideIcons.info, size: 16, color: AppColors.warn),
+          const SizedBox(width: 8),
+          Expanded(
+            child: Text(
+              'Slot aktif penuh (@max/@max). Nonaktifkan satu saham dulu untuk mengaktifkan ini.'
+                  .trParams({'max': '$maxActiveTickers'}),
+              style: AppText.body(
+                size: 11.5,
+                weight: FontWeight.w600,
+                color: AppColors.warn,
+                height: 1.4,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 /// Penyaring watchlist dengan jumlah di tiap pilihan.
 class WatchlistFilterBar extends StatelessWidget {
   const WatchlistFilterBar({
@@ -289,31 +353,53 @@ class WatchlistFilterBar extends StatelessWidget {
   }
 }
 
-/// Garis segmen di hero: satu segmen per saham, terang bila aktif.
-class WatchlistStrip extends StatelessWidget {
-  const WatchlistStrip({super.key, required this.items});
+/// Meteran slot aktif di blok tinta: satu segmen per slot, terisi bila
+/// dipakai saham aktif, lalu angkanya ("3/5 aktif").
+class SlotMeter extends StatelessWidget {
+  const SlotMeter({super.key, required this.active});
 
-  final List<WatchlistItem> items;
+  final int active;
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      children: [
-        for (final (index, item) in items.indexed) ...[
-          if (index > 0) const SizedBox(width: 4),
-          Expanded(
-            child: Container(
-              height: 6,
-              decoration: BoxDecoration(
-                color: AppColors.paper.withValues(
-                  alpha: item.isActive ? 0.9 : 0.22,
+    final filled = AppColors.paper.withValues(alpha: 0.92);
+    final empty = AppColors.paper.withValues(alpha: 0.35);
+    return Semantics(
+      label: '@active dari @max slot aktif terpakai'.trParams({
+        'active': '$active',
+        'max': '$maxActiveTickers',
+      }),
+      child: ExcludeSemantics(
+        child: Row(
+          children: [
+            for (var i = 0; i < maxActiveTickers; i++) ...[
+              if (i > 0) const SizedBox(width: 5),
+              Expanded(
+                child: Container(
+                  height: 8,
+                  decoration: BoxDecoration(
+                    color: i < active ? filled : null,
+                    border: Border.all(color: i < active ? filled : empty),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
                 ),
-                borderRadius: BorderRadius.circular(3),
+              ),
+            ],
+            const SizedBox(width: 10),
+            Text(
+              '@active/@max aktif'.trParams({
+                'active': '$active',
+                'max': '$maxActiveTickers',
+              }),
+              style: AppText.mono(
+                size: 12,
+                weight: FontWeight.w600,
+                color: AppColors.paper.withValues(alpha: 0.85),
               ),
             ),
-          ),
-        ],
-      ],
+          ],
+        ),
+      ),
     );
   }
 }

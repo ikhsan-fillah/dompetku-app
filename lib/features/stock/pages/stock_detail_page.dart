@@ -97,13 +97,22 @@ class _QuoteHero extends StatelessWidget {
     final status = controller.bars.value.status;
     if (bar?.close case final int close) {
       final change = bar!.changePercent;
+      final date = formatShortDate(bar.tradeDate);
       return StockHero(
-        label: '${'PENUTUPAN'.tr} · ${formatShortDate(bar.tradeDate)}',
+        label: bar.isIntraday
+            ? '${'HARGA BERJALAN'.tr} · $date'
+            : '${'PENUTUPAN'.tr} · $date',
+        live: bar.isIntraday,
         title: 'Rp ${formatPrice(close)}',
         trailing: change == null
             ? null
             : ChangePill(percent: change, text: formatPercent(change)),
-        caption: _rangeCaption(bar),
+        caption: bar.prevClose == null
+            ? 'Volume dalam lot'.tr
+            : 'Penutupan kemarin @price · volume dalam lot'.trParams({
+                'price': formatPrice(bar.prevClose!),
+              }),
+        footer: HeroStats(items: _stats(bar)),
       );
     }
     final waiting =
@@ -118,13 +127,14 @@ class _QuoteHero extends StatelessWidget {
     );
   });
 
-  String _rangeCaption(DailyBar bar) {
+  List<(String, String)> _stats(DailyBar bar) {
     String price(int? value) => value == null ? '-' : formatPrice(value);
-    return 'Tertinggi @high · Terendah @low · Volume @volume lot'.trParams({
-      'high': price(bar.high),
-      'low': price(bar.low),
-      'volume': bar.volumeLot == null ? '-' : formatLot(bar.volumeLot!),
-    });
+    return [
+      ('BUKA'.tr, price(bar.open)),
+      ('TERTINGGI'.tr, price(bar.high)),
+      ('TERENDAH'.tr, price(bar.low)),
+      ('VOLUME'.tr, bar.volumeLot == null ? '-' : formatLot(bar.volumeLot!)),
+    ];
   }
 }
 
@@ -216,28 +226,16 @@ class _BrokerContent extends StatelessWidget {
         const SizedBox(height: 18),
         Text('Broker teratas'.tr, style: AppText.display(size: 18)),
         const SizedBox(height: 8),
-        LayoutBuilder(
-          builder: (context, constraints) {
-            // Layar lebar: dua daftar bersisian; layar HP: bertumpuk.
-            if (constraints.maxWidth >= 640) {
-              return Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(child: buyers),
-                  const SizedBox(width: AppSpacing.gap),
-                  Expanded(child: sellers),
-                ],
-              );
-            }
-            return Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                FadeSlideIn(index: 1, child: buyers),
-                const SizedBox(height: AppSpacing.gap),
-                FadeSlideIn(index: 2, child: sellers),
-              ],
-            );
-          },
+        // Net beli dan net jual selalu bersampingan, juga di layar HP.
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Expanded(child: FadeSlideIn(index: 1, child: buyers)),
+              const SizedBox(width: 10),
+              Expanded(child: FadeSlideIn(index: 2, child: sellers)),
+            ],
+          ),
         ),
       ],
     );
@@ -275,28 +273,61 @@ class _ChartTab extends StatelessWidget {
                   .tr,
         );
       case ResourceStatus.success:
-        final days = controller.chartDays.value;
+        final bars = controller.visibleBars;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Wrap(
-              spacing: 8,
-              runSpacing: 8,
-              children: [
-                for (final option in chartDayOptions)
-                  AppChip(
-                    label: '${option}D',
-                    selected: option == days,
-                    onTap: () => controller.selectChartDays(option),
-                  ),
-              ],
-            ),
+            _RangeLabel(bars: bars),
             const SizedBox(height: AppSpacing.gap),
-            TechnicalSection(bars: controller.visibleBars),
+            TechnicalSection(bars: bars),
           ],
         );
     }
   });
+}
+
+/// Rentang chart yang tetap satu bulan: label 1M, jumlah hari bursa, dan
+/// tanggal awal sampai akhir.
+class _RangeLabel extends StatelessWidget {
+  const _RangeLabel({required this.bars});
+
+  final List<DailyBar> bars;
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          height: 32,
+          padding: const EdgeInsets.symmetric(horizontal: 12),
+          alignment: Alignment.center,
+          decoration: BoxDecoration(
+            color: AppColors.ink,
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Text(
+            '1M',
+            style: AppText.body(
+              size: 12,
+              weight: FontWeight.w700,
+              color: AppColors.paper,
+            ),
+          ),
+        ),
+        const SizedBox(width: 8),
+        Expanded(
+          child: Text(
+            '@count hari bursa · @start sampai @end'.trParams({
+              'count': '${bars.length}',
+              'start': formatDayMonth(bars.first.tradeDate),
+              'end': formatShortDate(bars.last.tradeDate),
+            }),
+            style: AppText.body(size: 11.5, color: AppColors.mut),
+          ),
+        ),
+      ],
+    );
+  }
 }
 
 /// Kerangka isi tab selama data dimuat. Ada di dalam ListView halaman, jadi

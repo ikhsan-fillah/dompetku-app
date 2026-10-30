@@ -118,10 +118,128 @@ void main() {
       );
       await controller.start();
 
-      final ok = await controller.setActive(controller.items.single, false);
+      final error = await controller.setActive(controller.items.single, false);
+
+      expect(error, isNull);
+      expect(controller.items.single.isActive, isFalse);
+    });
+
+    test('saham yang sudah ada tidak ditambah dua kali', () async {
+      final repository = FakeRepository()
+        ..items.add(const WatchlistItem(ticker: 'BBCA', isActive: true));
+      final controller = StockController(
+        FakeAuth(hasSession: true),
+        repository,
+      );
+      await controller.start();
+
+      expect(await controller.addTicker('bbca'), isNotNull);
+      expect(controller.items, hasLength(1));
+    });
+
+    group('batas lima saham aktif', () {
+      Future<(StockController, FakeRepository)> fullWatchlist() async {
+        final repository = FakeRepository()
+          ..items.addAll([
+            for (final ticker in ['BBCA', 'BBRI', 'TLKM', 'BMRI', 'GOTO'])
+              WatchlistItem(ticker: ticker, isActive: true),
+          ]);
+        final controller = StockController(
+          FakeAuth(hasSession: true),
+          repository,
+        );
+        await controller.start();
+        return (controller, repository);
+      }
+
+      test('saham keenam masuk sebagai nonaktif', () async {
+        final (controller, _) = await fullWatchlist();
+        expect(controller.slotsFull, isTrue);
+
+        expect(await controller.addTicker('ASII'), isNull);
+
+        final added = controller.items.last;
+        expect(added.ticker, 'ASII');
+        expect(added.isActive, isFalse);
+        expect(controller.activeCount, maxActiveTickers);
+      });
+
+      test(
+        'mengaktifkan saat slot penuh ditolak tanpa memanggil Supabase',
+        () async {
+          final (controller, repository) = await fullWatchlist();
+          await controller.addTicker('ASII');
+
+          final error = await controller.setActive(controller.items.last, true);
+
+          expect(error, isNotNull);
+          expect(repository.items.last.isActive, isFalse);
+        },
+      );
+
+      test('setelah satu dinonaktifkan, saham lain bisa diaktifkan', () async {
+        final (controller, _) = await fullWatchlist();
+        await controller.addTicker('ASII');
+
+        await controller.setActive(controller.items.first, false);
+        final asii = controller.items.firstWhere((i) => i.ticker == 'ASII');
+        expect(await controller.setActive(asii, true), isNull);
+
+        expect(controller.activeCount, maxActiveTickers);
+        expect(
+          controller.items.firstWhere((i) => i.ticker == 'ASII').isActive,
+          isTrue,
+        );
+      });
+    });
+
+    test('saham aktif selalu di atas, urutan tambah tetap', () {
+      final sorted = activeFirst(const [
+        WatchlistItem(ticker: 'AAAA', isActive: false),
+        WatchlistItem(ticker: 'BBBB', isActive: true),
+        WatchlistItem(ticker: 'CCCC', isActive: false),
+        WatchlistItem(ticker: 'DDDD', isActive: true),
+      ]);
+
+      expect(sorted.map((i) => i.ticker), ['BBBB', 'DDDD', 'AAAA', 'CCCC']);
+    });
+
+    test('menghapus saham ikut menghapus datanya', () async {
+      final repository = FakeRepository()
+        ..items.addAll(const [
+          WatchlistItem(ticker: 'BBCA', isActive: true),
+          WatchlistItem(ticker: 'TLKM', isActive: true),
+        ])
+        ..bars = [...sampleBars(3), ...sampleBars(3, ticker: 'TLKM')]
+        ..rows = [rangeRow('ZP', BrokerSide.buy, 10, 'Latest')];
+      final controller = StockController(
+        FakeAuth(hasSession: true),
+        repository,
+      );
+      await controller.start();
+
+      final ok = await controller.deleteTicker(controller.items.first);
 
       expect(ok, isTrue);
-      expect(controller.items.single.isActive, isFalse);
+      expect(repository.deleted, ['BBCA']);
+      expect(controller.items.map((i) => i.ticker), ['TLKM']);
+      expect(repository.bars.every((b) => b.ticker == 'TLKM'), isTrue);
+      expect(repository.rows, isEmpty);
+      expect(controller.overviews.containsKey('BBCA'), isFalse);
+    });
+
+    test('gagal menghapus mengembalikan false dan daftar tetap', () async {
+      final repository = FakeRepository()
+        ..items.add(const WatchlistItem(ticker: 'BBCA', isActive: true));
+      final controller = StockController(
+        FakeAuth(hasSession: true),
+        repository,
+      );
+      await controller.start();
+      repository.fail = true;
+
+      expect(await controller.deleteTicker(controller.items.single), isFalse);
+      expect(controller.items, hasLength(1));
     });
 
     test('gagal memuat watchlist menjadi status error', () async {
@@ -224,6 +342,33 @@ void main() {
     });
   });
 
+  group('lastMonth', () {
+    test('kosong tetap kosong', () => expect(lastMonth(const []), isEmpty));
+
+    test('batas mundur satu bulan kalender dan tidak ikut', () {
+      // dailyBar(n) jatuh pada 1 Okt 2026 + n hari.
+      final bars = [
+        for (final day in [-2, -1, 0, 29]) dailyBar(day),
+      ];
+
+      expect(lastMonth(bars).map((b) => b.tradeDate), [
+        DateTime(2026, 10, 1),
+        DateTime(2026, 10, 30),
+      ]);
+    });
+
+    test('31 Okt mundur ke 30 Sep, jadi 1 Okt tetap ikut', () {
+      final bars = [
+        for (final day in [-1, 0, 30]) dailyBar(day),
+      ];
+
+      expect(lastMonth(bars).map((b) => b.tradeDate), [
+        DateTime(2026, 10, 1),
+        DateTime(2026, 10, 31),
+      ]);
+    });
+  });
+
   group('StockDetailController', () {
     test('total kelompok mengikuti rentang yang dipilih', () async {
       final repository = FakeRepository()
@@ -292,22 +437,18 @@ void main() {
       },
     );
 
-    test('data harga: panjang chart mengikuti pilihan hari', () async {
-      final repository = FakeRepository()..bars = sampleBars(80);
+    test('data harga: chart hanya menampilkan satu bulan terakhir', () async {
+      // 40 hari kalender, 1 Okt sampai 9 Nov 2026.
+      final repository = FakeRepository()..bars = sampleBars(40);
       final controller = StockDetailController(repository, 'BBCA');
       await controller.load();
 
       expect(controller.bars.value.status, ResourceStatus.success);
       expect(controller.latestBar!.tradeDate, repository.bars.last.tradeDate);
-      expect(controller.chartDays.value, 60);
-      expect(controller.visibleBars, hasLength(60));
-
-      controller.selectChartDays(30);
-      expect(controller.visibleBars, hasLength(30));
+      // Batas 9 Okt tidak ikut: 10 Okt sampai 9 Nov.
+      expect(controller.visibleBars.first.tradeDate, DateTime(2026, 10, 10));
       expect(controller.visibleBars.last, repository.bars.last);
-
-      controller.selectChartDays(90);
-      expect(controller.visibleBars, hasLength(80));
+      expect(controller.visibleBars, hasLength(31));
     });
 
     test('data harga gagal tidak menggagalkan data broker', () async {

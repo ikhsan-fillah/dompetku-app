@@ -154,12 +154,11 @@ void main() {
       Get.put(StockController(FakeAuth(hasSession: true), repository));
       await pumpPage(tester, const StockPage());
 
-      await tester.scrollUntilVisible(
-        find.text('Keluar dari Supabase'),
-        200,
-        scrollable: find.byType(Scrollable).first,
-      );
-      await tester.tap(find.text('Keluar dari Supabase'));
+      // Tombol keluar ada di app bar, dengan konfirmasi.
+      await tester.tap(find.byTooltip('Keluar dari Supabase'));
+      await tester.pumpAndSettle();
+      expect(find.text('Keluar dari Supabase?'), findsOneWidget);
+      await tester.tap(find.text('Keluar'));
       await tester.pumpAndSettle();
 
       expect(find.text('Watchlist terkunci'), findsOneWidget);
@@ -270,6 +269,56 @@ void main() {
       );
     });
 
+    testWidgets('hero menghitung semua saham, nonaktif saat slot penuh', (
+      tester,
+    ) async {
+      final repository = FakeRepository()
+        ..items.addAll([
+          for (final ticker in ['BBCA', 'BBRI', 'TLKM', 'BMRI', 'GOTO'])
+            WatchlistItem(ticker: ticker, isActive: true),
+          const WatchlistItem(ticker: 'ASII', isActive: false),
+        ]);
+      Get.put(StockController(FakeAuth(hasSession: true), repository));
+      await pumpPage(tester, const StockPage(), height: 2400);
+
+      expect(find.text('6 saham'), findsOneWidget);
+      expect(
+        find.textContaining('5 aktif diambil datanya otomatis'),
+        findsOneWidget,
+      );
+      expect(find.text('5/5 aktif'), findsWidgets);
+      expect(
+        find.text(
+          'Slot aktif penuh (5/5). Nonaktifkan satu saham dulu untuk mengaktifkan ini.',
+        ),
+        findsOneWidget,
+      );
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('hapus saham minta konfirmasi lalu hilang dari daftar', (
+      tester,
+    ) async {
+      final repository = FakeRepository()
+        ..items.addAll(const [
+          WatchlistItem(ticker: 'BBCA', isActive: true),
+          WatchlistItem(ticker: 'BBRI', isActive: true),
+        ]);
+      Get.put(StockController(FakeAuth(hasSession: true), repository));
+      await pumpPage(tester, const StockPage());
+
+      await tester.tap(find.byTooltip('Hapus BBCA'));
+      await tester.pumpAndSettle();
+      expect(find.text('Hapus BBCA?'), findsOneWidget);
+
+      await tester.tap(find.text('Hapus'));
+      await tester.pumpAndSettle();
+
+      expect(repository.deleted, ['BBCA']);
+      expect(find.text('BBCA'), findsNothing);
+      expect(find.text('BBRI'), findsOneWidget);
+    });
+
     testWidgets('watchlist kosong menawarkan tombol tambah saham', (
       tester,
     ) async {
@@ -303,13 +352,18 @@ void main() {
           find.text('Bandar dan Asing net beli, Ritel net jual.'),
           findsOneWidget,
         );
-        expect(find.text('Top 2 net beli'), findsOneWidget);
-        expect(find.text('Top 2 net jual'), findsOneWidget);
-        expect(find.text('dari 2 broker'), findsNWidgets(2));
+        expect(find.text('Net beli'), findsOneWidget);
+        expect(find.text('Net jual'), findsOneWidget);
+        expect(find.text('jumlah 2 broker · top 2'), findsNWidgets(2));
+        // Net beli dan net jual bersampingan, juga di layar ponsel.
+        final buy = tester.getTopLeft(find.text('Net beli'));
+        final sell = tester.getTopLeft(find.text('Net jual'));
+        expect(sell.dy, buy.dy);
+        expect(sell.dx, greaterThan(buy.dx));
         // ZP dan XL muncul di daftar teratas dan di kartu; YP tidak punya kelompok.
         expect(find.text('ZP'), findsOneWidget);
         expect(find.text('YP'), findsOneWidget);
-        expect(find.text('belum diklasifikasi'), findsWidgets);
+        expect(find.text('lainnya'), findsOneWidget);
         expect(find.text('+536,0 M'), findsWidgets);
         expect(find.text('-301,9 M'), findsWidgets);
         expect(
@@ -321,7 +375,7 @@ void main() {
         await tester.pumpAndSettle();
 
         expect(find.text('≈-2,20 T'), findsWidgets);
-        expect(find.text('Top 1 net beli'), findsNothing);
+        expect(find.text('jumlah 1 broker · top 1'), findsOneWidget);
         expect(
           find.text('Tidak ada broker net beli pada rentang ini.'),
           findsOneWidget,
@@ -342,8 +396,7 @@ void main() {
 
       await pumpPage(tester, const StockDetailPage(), height: 2400);
 
-      expect(find.text('Top 5 net beli'), findsOneWidget);
-      expect(find.text('dari 8 broker'), findsOneWidget);
+      expect(find.text('jumlah 8 broker · top 5'), findsOneWidget);
       expect(find.text('B8'), findsOneWidget);
       expect(find.text('B4'), findsOneWidget);
       expect(find.text('B3'), findsNothing);
@@ -364,7 +417,7 @@ void main() {
       expect(find.byType(TechnicalSection), findsNothing);
     });
 
-    testWidgets('tab Chart: harga, volume, Stoch RSI, MACD, dan pilih hari', (
+    testWidgets('tab Chart: 1M, harga, volume, Stoch RSI, MACD, pilih hari', (
       tester,
     ) async {
       final repository = FakeRepository()
@@ -379,17 +432,24 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(TechnicalSection), findsOneWidget);
-      expect(find.text('HARGA'), findsOneWidget);
-      expect(find.text('VOLUME'), findsOneWidget);
-      expect(find.text('STOCH RSI'), findsOneWidget);
-      expect(find.text('MACD'), findsOneWidget);
-      expect(
-        find.text(
-          'Sentuh atau geser di chart untuk melihat harga dan indikator tiap hari.',
-        ),
-        findsOneWidget,
+      Finder inChart(Finder finder) =>
+          find.descendant(of: find.byType(TechnicalSection), matching: finder);
+      expect(inChart(find.text('HARGA')), findsOneWidget);
+      expect(inChart(find.text('VOLUME')), findsOneWidget);
+      expect(inChart(find.text('STOCH RSI 14 14 3 3')), findsOneWidget);
+      expect(inChart(find.text('MACD 12 26 9')), findsOneWidget);
+      // Hanya rentang 1M, tanpa pilihan 30D/60D/90D.
+      expect(find.text('1M'), findsOneWidget);
+      expect(find.text('30D'), findsNothing);
+      // 40 hari terakhir diambil (6 Okt sampai 14 Nov), sebulan = 15 Okt dst.
+      expect(find.textContaining('31 hari bursa'), findsOneWidget);
+
+      // Rincian hari terakhir langsung tampil; tombol kembali belum aktif.
+      TextButton backButton() => tester.widget<TextButton>(
+        find.widgetWithText(TextButton, 'Hari terakhir'),
       );
-      expect(find.text('Hari terakhir'), findsNothing);
+      expect(find.text('Buka'), findsOneWidget);
+      expect(backButton().onPressed, isNull);
 
       final touch = find
           .descendant(
@@ -404,18 +464,29 @@ void main() {
       await tester.drag(touch, const Offset(-60, 0));
       await tester.pumpAndSettle();
 
-      expect(find.text('Hari terakhir'), findsOneWidget);
-      expect(find.text('Buka'), findsOneWidget);
+      expect(backButton().onPressed, isNotNull);
 
       await tester.tap(find.text('Hari terakhir'));
       await tester.pumpAndSettle();
 
-      expect(find.text('Hari terakhir'), findsNothing);
+      expect(backButton().onPressed, isNull);
+      expect(tester.takeException(), isNull);
+    });
 
-      await tester.tap(find.text('30D'));
+    testWidgets('hari berjalan diberi tanda di hero dan rincian', (
+      tester,
+    ) async {
+      final repository = FakeRepository()
+        ..bars = [dailyBar(1), dailyBar(2, isIntraday: true)];
+      Get.put(StockDetailController(repository, 'BBCA'));
+      await pumpPage(tester, const StockDetailPage(), height: 3000);
+
+      expect(find.textContaining('HARGA BERJALAN'), findsOneWidget);
+
+      await tester.tap(find.text('Chart'));
       await tester.pumpAndSettle();
 
-      expect(find.byType(TechnicalSection), findsOneWidget);
+      expect(find.text('berjalan'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 
@@ -453,7 +524,7 @@ void main() {
       Get.put(StockDetailController(repository, 'BBCA'));
       await pumpPage(tester, const StockDetailPage(), height: 2400);
 
-      expect(find.text('Top 2 net beli'), findsOneWidget);
+      expect(find.text('jumlah 2 broker · top 2'), findsNWidgets(2));
 
       await tester.tap(find.text('Chart'));
       await tester.pumpAndSettle();

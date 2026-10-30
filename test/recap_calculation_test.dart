@@ -5,17 +5,21 @@ import 'package:dompetku_app/features/recap/services/recap_calculation_service.d
 import 'package:dompetku_app/features/transaction/models/transaction_model.dart';
 import 'package:flutter_test/flutter_test.dart';
 
-TransactionModel _tx(TransactionType type, int amount, DateTime date,
-        {String title = 'x', int categoryId = 1}) =>
-    TransactionModel(
-      type: type,
-      title: title,
-      amount: amount,
-      transactionDate: date,
-      categoryId: categoryId,
-      createdAt: date,
-      updatedAt: date,
-    );
+TransactionModel _tx(
+  TransactionType type,
+  int amount,
+  DateTime date, {
+  String title = 'x',
+  int categoryId = 1,
+}) => TransactionModel(
+  type: type,
+  title: title,
+  amount: amount,
+  transactionDate: date,
+  categoryId: categoryId,
+  createdAt: date,
+  updatedAt: date,
+);
 
 void main() {
   const service = RecapCalculationService(FinancialCalculationService());
@@ -27,7 +31,12 @@ void main() {
   ];
 
   test('total pengeluaran bulanan sama dengan kalkulasi Beranda', () {
-    final recap = service.monthly(sept, year: 2026, month: 9, now: DateTime(2026, 10, 1));
+    final recap = service.monthly(
+      sept,
+      year: 2026,
+      month: 9,
+      now: DateTime(2026, 10, 1),
+    );
 
     expect(recap.spent, 150000);
     expect(recap.income, 5000000);
@@ -43,7 +52,12 @@ void main() {
   });
 
   test('bulan tanpa transaksi punya hasil kosong dan tidak meledak', () {
-    final recap = service.monthly(sept, year: 2026, month: 8, now: DateTime(2026, 10, 1));
+    final recap = service.monthly(
+      sept,
+      year: 2026,
+      month: 8,
+      now: DateTime(2026, 10, 1),
+    );
 
     expect(recap.hasData, isFalse);
     expect(recap.spent, 0);
@@ -51,19 +65,34 @@ void main() {
   });
 
   test('bulan berjalan diberi label so far', () {
-    final recap = service.monthly(sept, year: 2026, month: 9, now: DateTime(2026, 9, 15));
+    final recap = service.monthly(
+      sept,
+      year: 2026,
+      month: 9,
+      now: DateTime(2026, 9, 15),
+    );
 
     expect(recap.isSoFar, isTrue);
   });
 
   test('rata-rata harian memakai jumlah hari di bulan itu', () {
-    final recap = service.monthly(sept, year: 2026, month: 9, now: DateTime(2026, 10, 1));
+    final recap = service.monthly(
+      sept,
+      year: 2026,
+      month: 9,
+      now: DateTime(2026, 10, 1),
+    );
 
     expect(recap.dailyAverage, 5000);
   });
 
   test('bulan 31 hari menghitung hari dengan benar', () {
-    final recap = service.monthly(sept, year: 2026, month: 10, now: DateTime(2026, 11, 1));
+    final recap = service.monthly(
+      sept,
+      year: 2026,
+      month: 10,
+      now: DateTime(2026, 11, 1),
+    );
 
     expect(recap.daysInMonth, 31);
   });
@@ -93,7 +122,12 @@ void main() {
       _tx(TransactionType.expense, 300000, DateTime(2026, 9, 4), categoryId: 2),
       _tx(TransactionType.expense, 50000, DateTime(2026, 9, 5), categoryId: 2),
     ];
-    final recap = service.monthly(list, year: 2026, month: 9, now: DateTime(2026, 10, 1));
+    final recap = service.monthly(
+      list,
+      year: 2026,
+      month: 9,
+      now: DateTime(2026, 10, 1),
+    );
 
     expect(recap.topCategories.first.categoryId, 2);
     expect(recap.topCategories.first.total, 350000);

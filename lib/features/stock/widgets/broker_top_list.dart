@@ -9,9 +9,10 @@ import '../models/broker_group.dart';
 import '../models/broker_range_row.dart';
 import 'stock_format.dart';
 
-/// Daftar broker teratas di satu sisi: net beli atau net jual. Tiap baris
-/// punya peringkat, kode broker, kelompoknya, nilai, dan batang yang
-/// dibandingkan dengan broker terbesar di daftar yang sama.
+/// Daftar broker teratas di satu sisi: net beli atau net jual. Dibuat
+/// ramping supaya dua daftar muat bersampingan di layar HP. Kepala kartu
+/// berisi jumlah dan banyaknya broker; tiap baris punya peringkat, kode,
+/// nilai, batang yang dibandingkan dengan broker terbesar, dan kelompoknya.
 class BrokerTopList extends StatelessWidget {
   const BrokerTopList({
     super.key,
@@ -37,65 +38,57 @@ class BrokerTopList extends StatelessWidget {
   Widget build(BuildContext context) {
     final color = _isBuy ? AppColors.earn : AppColors.spend;
     final soft = _isBuy ? AppColors.earnSoft : AppColors.spendSoft;
-    final title = (_isBuy ? 'Top @count net beli' : 'Top @count net jual')
-        .trParams({'count': '${rows.length}'});
     final sum = rows.fold<int>(0, (total, row) => total + row.signedValueIdr);
     final largest = rows.isEmpty ? 0 : rows.first.valueIdr;
     return AppCard(
       margin: EdgeInsets.zero,
-      padding: const EdgeInsets.fromLTRB(16, 14, 16, 8),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Row(
             children: [
               Container(
-                width: 34,
-                height: 34,
+                width: 28,
+                height: 28,
                 decoration: BoxDecoration(
                   color: soft,
-                  borderRadius: BorderRadius.circular(9),
+                  borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(
                   _isBuy
                       ? LucideIcons.arrowUpRight
                       : LucideIcons.arrowDownRight,
-                  size: 18,
+                  size: 16,
                   color: color,
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
               Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title, style: AppText.display(size: 16)),
-                    Text(
-                      'dari @total broker'.trParams({'total': '$totalCount'}),
-                      style: AppText.body(size: 11, color: AppColors.mut),
-                    ),
-                  ],
+                child: Text(
+                  (_isBuy ? 'Net beli' : 'Net jual').tr,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppText.display(size: 15),
                 ),
               ),
-              if (rows.isNotEmpty)
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: [
-                    Text(
-                      formatBrokerValue(sum),
-                      style: AppText.mono(
-                        size: 14,
-                        weight: FontWeight.w600,
-                        color: color,
-                      ),
-                    ),
-                    Text(
-                      'jumlah'.tr,
-                      style: AppText.body(size: 10.5, color: AppColors.mut),
-                    ),
-                  ],
-                ),
             ],
+          ),
+          const SizedBox(height: 8),
+          Text(
+            rows.isEmpty ? '-' : formatBrokerValue(sum),
+            style: AppText.mono(
+              size: 15,
+              weight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+          Text(
+            'jumlah @total broker · top @count'.trParams({
+              'total': '$totalCount',
+              'count': '${rows.length}',
+            }),
+            style: AppText.body(size: 10.5, color: AppColors.mut),
           ),
           const SizedBox(height: 6),
           if (rows.isEmpty)
@@ -117,8 +110,7 @@ class BrokerTopList extends StatelessWidget {
                 group: rules.groupOf(row.brokerCode),
                 fraction: largest == 0 ? 0 : row.valueIdr / largest,
                 color: color,
-                soft: soft,
-                isLast: index == rows.length - 1,
+                isFirst: index == 0,
               ),
         ],
       ),
@@ -133,8 +125,7 @@ class _TopRow extends StatelessWidget {
     required this.group,
     required this.fraction,
     required this.color,
-    required this.soft,
-    required this.isLast,
+    required this.isFirst,
   });
 
   final int rank;
@@ -142,14 +133,13 @@ class _TopRow extends StatelessWidget {
   final BrokerGroup? group;
   final double fraction;
   final Color color;
-  final Color soft;
-  final bool isLast;
+  final bool isFirst;
 
   @override
   Widget build(BuildContext context) {
     final groupText = switch (group) {
-      final BrokerGroup known => known.label.tr,
-      null => 'belum diklasifikasi'.tr,
+      final BrokerGroup known => known.label.tr.toLowerCase(),
+      null => 'lainnya'.tr,
     };
     final valueText = formatBrokerValue(
       row.signedValueIdr,
@@ -159,87 +149,85 @@ class _TopRow extends StatelessWidget {
       container: true,
       label: '$rank. ${row.brokerCode}, $groupText, $valueText',
       child: ExcludeSemantics(
-        child: Padding(
-          padding: EdgeInsets.fromLTRB(0, 9, 0, isLast ? 12 : 9),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  SizedBox(
-                    width: 22,
-                    child: Text(
+        child: DecoratedBox(
+          decoration: BoxDecoration(
+            border: isFirst
+                ? null
+                : const Border(top: BorderSide(color: AppColors.line2)),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(vertical: 8),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.baseline,
+                  textBaseline: TextBaseline.alphabetic,
+                  children: [
+                    Text(
                       '$rank',
-                      style: AppText.mono(size: 12, color: AppColors.mut),
+                      style: AppText.mono(size: 10.5, color: AppColors.mut),
                     ),
-                  ),
-                  SizedBox(
-                    width: 42,
-                    child: Text(
+                    const SizedBox(width: 6),
+                    Text(
                       row.brokerCode,
-                      style: AppText.mono(size: 15, weight: FontWeight.w700),
+                      style: AppText.mono(size: 14, weight: FontWeight.w700),
                     ),
-                  ),
-                  Expanded(
-                    child: Align(
-                      alignment: Alignment.centerLeft,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 7,
-                          vertical: 2,
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Text(
+                        valueText,
+                        textAlign: TextAlign.end,
+                        maxLines: 1,
+                        softWrap: false,
+                        overflow: TextOverflow.fade,
+                        style: AppText.mono(
+                          size: 12,
+                          weight: FontWeight.w600,
+                          color: color,
+                          letterSpacing: -0.3,
                         ),
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(4),
-                          border: Border.all(color: AppColors.line),
-                        ),
-                        child: Text(
-                          groupText,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: AppText.body(
-                            size: 10,
-                            weight: FontWeight.w600,
-                            color: AppColors.ink2,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 5),
+                Row(
+                  children: [
+                    Expanded(
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(2),
+                        child: SizedBox(
+                          height: 4,
+                          child: Stack(
+                            children: [
+                              const Positioned.fill(
+                                child: ColoredBox(color: AppColors.line2),
+                              ),
+                              FractionallySizedBox(
+                                widthFactor: fraction.clamp(0.0, 1.0),
+                                child: ColoredBox(
+                                  color: color.withValues(alpha: 0.8),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ),
-                  ),
-                  const SizedBox(width: 8),
-                  Text(
-                    valueText,
-                    style: AppText.mono(
-                      size: 13.5,
-                      weight: FontWeight.w600,
-                      color: color,
+                    const SizedBox(width: 6),
+                    Text(
+                      groupText,
+                      style: AppText.body(
+                        size: 9.5,
+                        weight: FontWeight.w600,
+                        color: AppColors.mut,
+                      ),
                     ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 7),
-              Padding(
-                padding: const EdgeInsets.only(left: 22),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(2),
-                  child: SizedBox(
-                    height: 4,
-                    child: Stack(
-                      children: [
-                        const Positioned.fill(
-                          child: ColoredBox(color: AppColors.line2),
-                        ),
-                        FractionallySizedBox(
-                          widthFactor: fraction.clamp(0.0, 1.0),
-                          child: ColoredBox(
-                            color: color.withValues(alpha: 0.8),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),

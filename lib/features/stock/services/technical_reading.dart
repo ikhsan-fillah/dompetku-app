@@ -9,6 +9,14 @@ enum MacdSide { bothAbove, bothBelow, mixed }
 /// Volume hari itu dibanding rata-rata 20 hari.
 enum VolumeLevel { farAbove, above, below, farBelow }
 
+/// Posisi garis pertama terhadap garis kedua (K terhadap D, MACD terhadap
+/// sinyal).
+enum LineOrder { above, below, equal }
+
+/// Besar histogram MACD dibanding hari sebelumnya. Di Stockbit batang yang
+/// membesar digambar pekat dan yang mengecil pudar.
+enum HistTrend { growing, shrinking }
+
 /// Pembacaan teknikal yang hanya menyebut posisi angka, tanpa menyimpulkan
 /// arah harga. Aturan batasnya sengaja sederhana supaya bisa dicek ulang.
 abstract final class TechnicalReading {
@@ -26,6 +34,26 @@ abstract final class TechnicalReading {
     (double _, double _) => MacdSide.mixed,
     _ => null,
   };
+
+  /// Posisi [first] terhadap [second]; null bila salah satunya kosong.
+  static LineOrder? lineOrder(double? first, double? second) =>
+      switch ((first, second)) {
+        (final double a, final double b) when a > b => LineOrder.above,
+        (final double a, final double b) when a < b => LineOrder.below,
+        (double _, double _) => LineOrder.equal,
+        _ => null,
+      };
+
+  /// Membesar bila nilai mutlak histogram hari ini tidak lebih kecil dari
+  /// kemarin. Tanpa kemarin dianggap membesar, sama seperti batang pertama
+  /// di chart.
+  static HistTrend? histTrend(double? today, double? yesterday) =>
+      switch ((today, yesterday)) {
+        (null, _) => null,
+        (final double t, final double y) when t.abs() < y.abs() =>
+          HistTrend.shrinking,
+        _ => HistTrend.growing,
+      };
 
   static VolumeLevel? volumeLevel(double? ratio) => switch (ratio) {
     null => null,

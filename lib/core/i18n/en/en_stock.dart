@@ -140,4 +140,58 @@ const Map<String, String> enStock = {
   'Belum ada data harga': 'No price data yet',
   'Chart, volume, Stoch RSI, dan MACD muncul setelah otomatisasi Stockbit mengisi data harian saham ini.':
       'The chart, volume, Stoch RSI, and MACD appear once the Stockbit automation fills in daily data for this stock.',
+  '@ticker sudah ada di watchlist.': '@ticker is already in the watchlist.',
+  'Slot aktif penuh (@max/@max). Nonaktifkan satu saham dulu.':
+      'All active slots are used (@max/@max). Deactivate a stock first.',
+  'Slot aktif penuh (@max/@max). Nonaktifkan satu saham dulu untuk mengaktifkan ini.':
+      'All active slots are used (@max/@max). Deactivate a stock first to activate this one.',
+  '@active/@max aktif': '@active/@max active',
+  '@active dari @max slot aktif terpakai': '@active of @max active slots used',
+  'Hapus @ticker': 'Delete @ticker',
+  'Hapus @ticker?': 'Delete @ticker?',
+  '@ticker dan seluruh datanya di Supabase (harga harian, broker summary, cek broker, hasil analisis) ikut dihapus dan tidak bisa dikembalikan. Kalau hanya ingin berhenti mengambil data, nonaktifkan saja.':
+      '@ticker and all of its data in Supabase (daily prices, broker summary, broker checks, analysis results) will be deleted and cannot be restored. To only stop collecting data, deactivate it instead.',
+  '@ticker dihapus.': '@ticker deleted.',
+  'Gagal menghapus saham.': 'Failed to delete the stock.',
+  'Keluar dari Supabase?': 'Sign out of Supabase?',
+  'Watchlist terkunci sampai Anda masuk lagi. Data di Supabase tidak terhapus.':
+      'The watchlist stays locked until you sign in again. Your data in Supabase is not deleted.',
+  '@count saham': '@count stocks',
+  '@count aktif diambil datanya otomatis':
+      '@count active, data collected automatically',
+  '@count nonaktif': '@count inactive',
+  'data broker terbaru @date': 'latest broker data @date',
+  'masuk sebagai @email': 'signed in as @email',
+  'HARGA BERJALAN': 'LIVE PRICE',
+  'Volume dalam lot': 'Volume in lots',
+  'Penutupan kemarin @price · volume dalam lot':
+      'Previous close @price · volume in lots',
+  'BUKA': 'OPEN',
+  'TERTINGGI': 'HIGH',
+  'TERENDAH': 'LOW',
+  'VOLUME': 'VOLUME',
+  '@count hari bursa · @start sampai @end':
+      '@count trading days · @start to @end',
+  'jumlah @total broker · top @count': '@total brokers in total · top @count',
+  'lainnya': 'other',
+  'Sinyal': 'Signal',
+  'K di atas D': 'K above D',
+  'K di bawah D': 'K below D',
+  'K sama dengan D': 'K equals D',
+  'Histogram positif dan membesar (batang pekat)':
+      'Histogram positive and growing (solid bar)',
+  'Histogram positif dan menyusut (batang pudar)':
+      'Histogram positive and shrinking (faded bar)',
+  'Histogram negatif dan membesar (batang pekat)':
+      'Histogram negative and growing (solid bar)',
+  'Histogram negatif dan menyusut (batang pudar)':
+      'Histogram negative and shrinking (faded bar)',
+  'MACD di atas sinyal': 'MACD above signal',
+  'MACD di bawah sinyal': 'MACD below signal',
+  'MACD sama dengan sinyal': 'MACD equals signal',
+  'kedua garis di atas nol': 'both lines above zero',
+  'kedua garis di bawah nol': 'both lines below zero',
+  'garis berada di dua sisi nol': 'lines on both sides of zero',
+  'Indikator dihitung dari harga penutupan dengan parameter Stockbit. Batang histogram pekat berarti membesar, pudar berarti mengecil. Hari yang ditandai tidak akurat tidak digambar. Ini pembacaan angka, bukan saran.':
+      'Indicators are computed from closing prices with Stockbit\'s parameters. A solid histogram bar means it is growing, a faded one means it is shrinking. Days marked inaccurate are not drawn. This is a reading of numbers, not advice.',
 };

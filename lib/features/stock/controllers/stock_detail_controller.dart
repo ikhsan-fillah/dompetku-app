@@ -1,3 +1,5 @@
+import 'dart:math' as math;
+
 import 'package:get/get.dart';
 
 import '../../../core/state/resource_state.dart';
@@ -18,8 +20,10 @@ class StockDetailData {
 /// Dua tab halaman detail: arus dana broker, dan chart dengan indikator.
 enum DetailTab { broker, chart }
 
-/// Panjang chart yang bisa dipilih, dalam hari perdagangan.
-const chartDayOptions = [30, 60, 90];
+/// Berapa hari perdagangan yang diambil dari Supabase untuk tab Chart. Tab
+/// hanya menggambar satu bulan terakhir; sisanya cadangan bila ada hari
+/// yang ditandai tidak akurat.
+const chartFetchLimit = 40;
 
 /// Berapa broker yang ditampilkan di tiap daftar teratas.
 const topBrokerCount = 5;
@@ -41,16 +45,12 @@ class StockDetailController extends GetxController {
   final bars = const ResourceState<List<DailyBar>>.idle().obs;
   final range = brokerRangeLabels.first.obs;
   final tab = DetailTab.broker.obs;
-  final chartDays = chartDayOptions[1].obs;
 
   StockDetailData? get data => state.value.data;
 
-  /// Hari perdagangan yang digambar: [chartDays] terakhir, terlama dulu.
-  List<DailyBar> get visibleBars {
-    final all = bars.value.data ?? const <DailyBar>[];
-    final count = chartDays.value;
-    return all.length <= count ? all : all.sublist(all.length - count);
-  }
+  /// Hari perdagangan yang digambar: satu bulan kalender terakhir sampai
+  /// hari terakhir yang ada, terlama dulu.
+  List<DailyBar> get visibleBars => lastMonth(bars.value.data ?? const []);
 
   /// Hari terakhir yang punya data, null bila tabel harga masih kosong.
   DailyBar? get latestBar => bars.value.data?.lastOrNull;
@@ -127,7 +127,7 @@ class StockDetailController extends GetxController {
     try {
       final rows = await _repository.getRecentBars(
         ticker,
-        limit: chartDayOptions.last,
+        limit: chartFetchLimit,
       );
       bars.value = rows.isEmpty
           ? const ResourceState.empty()
@@ -140,6 +140,24 @@ class StockDetailController extends GetxController {
   void selectRange(String label) => range.value = label;
 
   void selectTab(DetailTab value) => tab.value = value;
+}
 
-  void selectChartDays(int days) => chartDays.value = days;
+/// Hari setelah tanggal yang sama sebulan sebelum hari terakhir. Untuk hari
+/// terakhir 30/10 hasilnya 01/10 sampai 30/10. [oldestFirst] urut terlama dulu.
+List<DailyBar> lastMonth(List<DailyBar> oldestFirst) {
+  final last = oldestFirst.lastOrNull?.tradeDate;
+  if (last == null) return const [];
+  // Mundur satu bulan kalender. Tanggal dijepit ke akhir bulan sebelumnya
+  // (31 Okt menjadi 30 Sep), karena DateTime(2026, 9, 31) bergeser ke 1 Okt.
+  final month = DateTime(last.year, last.month - 1);
+  final monthEnd = DateTime(month.year, month.month + 1, 0).day;
+  final cutoff = DateTime(
+    month.year,
+    month.month,
+    math.min(last.day, monthEnd),
+  );
+  return [
+    for (final bar in oldestFirst)
+      if (bar.tradeDate.isAfter(cutoff)) bar,
+  ];
 }

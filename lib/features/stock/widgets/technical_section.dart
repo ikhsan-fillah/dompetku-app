@@ -2,7 +2,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:lucide_icons_flutter/lucide_icons.dart';
 
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
@@ -49,13 +48,15 @@ class _TechnicalSectionState extends State<TechnicalSection> {
     return ValueListenableBuilder<int?>(
       valueListenable: _selected,
       builder: (context, selected, _) {
-        final bar = bars[selected ?? bars.length - 1];
+        final index = selected ?? bars.length - 1;
+        final bar = bars[index];
+        final previous = index > 0 ? bars[index - 1] : null;
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _DayReadout(
-              bar: selected == null ? null : bars[selected],
-              onClear: () => _selected.value = null,
+              bar: bar,
+              onClear: selected == null ? null : () => _selected.value = null,
             ),
             const SizedBox(height: 12),
             _ChartCard(
@@ -94,19 +95,19 @@ class _TechnicalSectionState extends State<TechnicalSection> {
             ),
             const SizedBox(height: 12),
             _ChartCard(
-              title: 'Stoch RSI'.tr,
+              title: 'Stoch RSI 14 14 3 3',
               reading: _stochReading(bar),
               legend: [
                 _LegendKey(
                   color: AppColors.ink,
-                  label: 'Garis a'.tr,
+                  label: 'K',
                   value: bar.stochA == null
                       ? '-'
                       : formatIndicator(bar.stochA!, digits: 1),
                 ),
                 _LegendKey(
                   color: AppColors.accent,
-                  label: 'Garis b'.tr,
+                  label: 'D',
                   value: bar.stochB == null
                       ? '-'
                       : formatIndicator(bar.stochB!, digits: 1),
@@ -120,22 +121,24 @@ class _TechnicalSectionState extends State<TechnicalSection> {
             ),
             const SizedBox(height: 12),
             _ChartCard(
-              title: 'MACD'.tr,
-              reading: _macdReading(bar),
+              title: 'MACD 12 26 9',
+              reading: _macdReading(bar, previous),
               legend: [
                 _LegendKey(
                   color: AppColors.ink,
-                  label: 'Garis a'.tr,
+                  label: 'MACD',
                   value: bar.macdA == null ? '-' : formatIndicator(bar.macdA!),
                 ),
                 _LegendKey(
                   color: AppColors.accent,
-                  label: 'Garis b'.tr,
+                  label: 'Sinyal'.tr,
                   value: bar.macdB == null ? '-' : formatIndicator(bar.macdB!),
                   dashed: true,
                 ),
                 _LegendKey(
-                  color: AppColors.earn,
+                  color: (bar.macdHist ?? 0) < 0
+                      ? AppColors.spend
+                      : AppColors.earn,
                   label: 'Histogram'.tr,
                   value: bar.macdHist == null
                       ? '-'
@@ -150,7 +153,7 @@ class _TechnicalSectionState extends State<TechnicalSection> {
             ),
             const SizedBox(height: 10),
             Text(
-              'Nama garis a dan b (MACD dan sinyal, K dan D) belum dipastikan dari legenda Stockbit, jadi dinamai netral. Hari yang ditandai tidak akurat tidak digambar. Ini pembacaan angka, bukan saran.'
+              'Indikator dihitung dari harga penutupan dengan parameter Stockbit. Batang histogram pekat berarti membesar, pudar berarti mengecil. Hari yang ditandai tidak akurat tidak digambar. Ini pembacaan angka, bukan saran.'
                   .tr,
               style: AppText.body(size: 11, color: AppColors.mut, height: 1.4),
             ),
@@ -193,6 +196,9 @@ String _volumeReading(DailyBar bar) {
 }
 
 String _stochReading(DailyBar bar) {
+  if (bar.stochA == null && bar.stochB == null) {
+    return 'Stoch RSI belum terbaca.'.tr;
+  }
   final zone = switch ((
     TechnicalReading.stochZone(bar.stochA),
     TechnicalReading.stochZone(bar.stochB),
@@ -201,70 +207,71 @@ String _stochReading(DailyBar bar) {
     (StochZone _, StochZone _) => null,
     _ => TechnicalReading.stochZone(bar.stochA ?? bar.stochB),
   };
-  if (bar.stochA == null && bar.stochB == null) {
-    return 'Stoch RSI belum terbaca.'.tr;
-  }
-  return switch (zone) {
+  final zoneText = switch (zone) {
     StochZone.oversold => 'Di area bawah (20 ke bawah)'.tr,
     StochZone.neutral => 'Di area tengah (20 sampai 80)'.tr,
     StochZone.overbought => 'Di area atas (80 ke atas)'.tr,
     null => 'Dua garis berada di area berbeda'.tr,
   };
+  final orderText = switch (TechnicalReading.lineOrder(
+    bar.stochA,
+    bar.stochB,
+  )) {
+    LineOrder.above => 'K di atas D'.tr,
+    LineOrder.below => 'K di bawah D'.tr,
+    LineOrder.equal => 'K sama dengan D'.tr,
+    null => null,
+  };
+  return orderText == null ? '$zoneText.' : '$zoneText. $orderText.';
 }
 
-String _macdReading(DailyBar bar) {
+String _macdReading(DailyBar bar, DailyBar? previous) {
   final side = TechnicalReading.macdSide(bar);
   final hist = bar.macdHist;
   if (side == null && hist == null) return 'MACD belum terbaca.'.tr;
-  final histText = switch (hist) {
-    null => '',
-    > 0 => '${'Histogram positif'.tr}. ',
-    < 0 => '${'Histogram negatif'.tr}. ',
-    _ => '${'Histogram nol'.tr}. ',
+  final trend = TechnicalReading.histTrend(hist, previous?.macdHist);
+  final histText = switch ((hist, trend)) {
+    (null, _) => null,
+    (0.0, _) => 'Histogram nol'.tr,
+    (final double h, HistTrend.growing) when h > 0 =>
+      'Histogram positif dan membesar (batang pekat)'.tr,
+    (final double h, _) when h > 0 =>
+      'Histogram positif dan menyusut (batang pudar)'.tr,
+    (_, HistTrend.growing) =>
+      'Histogram negatif dan membesar (batang pekat)'.tr,
+    _ => 'Histogram negatif dan menyusut (batang pudar)'.tr,
+  };
+  final orderText = switch (TechnicalReading.lineOrder(bar.macdA, bar.macdB)) {
+    LineOrder.above => 'MACD di atas sinyal'.tr,
+    LineOrder.below => 'MACD di bawah sinyal'.tr,
+    LineOrder.equal => 'MACD sama dengan sinyal'.tr,
+    null => null,
   };
   final sideText = switch (side) {
-    MacdSide.bothAbove => 'Kedua garis di atas nol'.tr,
-    MacdSide.bothBelow => 'Kedua garis di bawah nol'.tr,
-    MacdSide.mixed => 'Garis berada di dua sisi nol'.tr,
-    null => '',
+    MacdSide.bothAbove => 'kedua garis di atas nol'.tr,
+    MacdSide.bothBelow => 'kedua garis di bawah nol'.tr,
+    MacdSide.mixed => 'garis berada di dua sisi nol'.tr,
+    null => null,
   };
-  return '$histText$sideText'.trim();
+  final lines = [?orderText, ?sideText].join(', ');
+  return [
+    ?histText,
+    if (lines.isNotEmpty) lines[0].toUpperCase() + lines.substring(1),
+  ].map((part) => '$part.').join(' ');
 }
 
-/// Rincian satu hari yang dipilih, atau petunjuk bila belum ada yang dipilih.
+/// Rincian satu hari: hari yang disentuh di chart, atau hari terakhir.
 class _DayReadout extends StatelessWidget {
-  const _DayReadout({required this.bar, required this.onClear});
+  const _DayReadout({required this.bar, this.onClear});
 
-  final DailyBar? bar;
-  final VoidCallback onClear;
+  final DailyBar bar;
+
+  /// Kembali ke hari terakhir; null bila hari terakhir sudah tampil.
+  final VoidCallback? onClear;
 
   @override
   Widget build(BuildContext context) {
     final day = bar;
-    if (day == null) {
-      return AppCard(
-        margin: EdgeInsets.zero,
-        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-        color: AppColors.paper2,
-        child: Row(
-          children: [
-            const Icon(LucideIcons.pointer, size: 18, color: AppColors.ink2),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                'Sentuh atau geser di chart untuk melihat harga dan indikator tiap hari.'
-                    .tr,
-                style: AppText.body(
-                  size: 12,
-                  color: AppColors.ink2,
-                  height: 1.4,
-                ),
-              ),
-            ),
-          ],
-        ),
-      );
-    }
     String price(int? value) => value == null ? '-' : formatPrice(value);
     final change = day.changePercent;
     final items = [
@@ -318,7 +325,7 @@ class _DayReadout extends StatelessWidget {
                         borderRadius: BorderRadius.circular(4),
                       ),
                       child: Text(
-                        'intraday'.tr,
+                        'berjalan'.tr,
                         style: AppText.body(
                           size: 10,
                           weight: FontWeight.w700,
@@ -742,13 +749,18 @@ class _MacdPainter extends CustomPainter {
   @override
   void paint(Canvas canvas, Size size) {
     final frame = ChartFrame(size, bars.length, bottomPad: 20);
-    var limit = 0.0;
+    // Skala tidak simetris tapi selalu memuat nol, agar garis nol dan
+    // batang histogram tetap terbaca walau kedua garis jauh di satu sisi.
+    var lo = 0.0;
+    var hi = 0.0;
     for (final bar in bars) {
       for (final value in [bar.macdA, bar.macdB, bar.macdHist]) {
-        if (value != null) limit = math.max(limit, value.abs());
+        if (value == null) continue;
+        lo = math.min(lo, value);
+        hi = math.max(hi, value);
       }
     }
-    if (limit == 0) {
+    if (lo == hi) {
       paintDateAxis(
         canvas,
         frame,
@@ -757,21 +769,17 @@ class _MacdPainter extends CustomPainter {
       );
       return;
     }
-    limit *= 1.12;
-    final digits = limit < 10 ? 1 : 0;
-    paintGridLine(
-      canvas,
-      frame,
-      frame.yOf(limit, -limit, limit),
-      formatIndicator(limit, digits: digits),
-    );
-    paintGridLine(
-      canvas,
-      frame,
-      frame.yOf(-limit, -limit, limit),
-      formatIndicator(-limit, digits: digits),
-    );
-    final zeroY = frame.yOf(0, -limit, limit);
+    final pad = (hi - lo) * 0.12;
+    if (hi > 0) hi += pad;
+    if (lo < 0) lo -= pad;
+    final digits = math.max(hi.abs(), lo.abs()) < 10 ? 1 : 0;
+    final zeroY = frame.yOf(0, lo, hi);
+    // Label batas dilewati bila terlalu dekat dengan label nol.
+    for (final edge in [hi, lo]) {
+      final y = frame.yOf(edge, lo, hi);
+      if ((y - zeroY).abs() < 14) continue;
+      paintGridLine(canvas, frame, y, formatIndicator(edge, digits: digits));
+    }
     canvas.drawLine(
       Offset(frame.plot.left, zeroY),
       Offset(frame.plot.right, zeroY),
@@ -786,7 +794,12 @@ class _MacdPainter extends CustomPainter {
       final hist = bars[i].macdHist;
       if (hist == null) continue;
       final x = frame.xOf(i);
-      final y = frame.yOf(hist, -limit, limit);
+      final y = frame.yOf(hist, lo, hi);
+      // Pekat saat batang membesar dari hari sebelumnya, pudar saat mengecil.
+      final trend = TechnicalReading.histTrend(
+        hist,
+        i > 0 ? bars[i - 1].macdHist : null,
+      );
       canvas.drawRect(
         Rect.fromLTRB(
           x - barWidth / 2,
@@ -795,23 +808,26 @@ class _MacdPainter extends CustomPainter {
           math.max(y, zeroY),
         ),
         Paint()
-          ..color = fade(hist >= 0 ? AppColors.earn : AppColors.spend, 0.6),
+          ..color = fade(
+            hist >= 0 ? AppColors.earn : AppColors.spend,
+            trend == HistTrend.shrinking ? 0.32 : 0.85,
+          ),
       );
     }
     paintSeries(
       canvas,
       frame,
       [for (final b in bars) b.macdA],
-      -limit,
-      limit,
+      lo,
+      hi,
       linePaint(AppColors.ink),
     );
     paintSeries(
       canvas,
       frame,
       [for (final b in bars) b.macdB],
-      -limit,
-      limit,
+      lo,
+      hi,
       linePaint(AppColors.accent),
       dashed: true,
     );

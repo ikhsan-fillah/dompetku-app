@@ -11,10 +11,14 @@ import 'stock_auth.dart';
 abstract interface class StockRepository {
   Future<List<WatchlistItem>> getWatchlist();
 
-  /// Menambah saham, atau mengaktifkan kembali bila sudah ada.
-  Future<void> addTicker(String ticker);
+  /// Menambah saham baru ke watchlist.
+  Future<void> addTicker(String ticker, {bool active = true});
 
   Future<void> setActive(String ticker, {required bool active});
+
+  /// Menghapus saham dari watchlist beserta seluruh datanya (harga harian,
+  /// broker, cek broker, hasil analisis) supaya database tetap ringan.
+  Future<void> deleteTicker(String ticker);
 
   Future<BrokerGroupRules> getBrokerGroupRules();
 
@@ -31,6 +35,15 @@ abstract interface class StockRepository {
   /// Hari perdagangan terbaru untuk tiap saham yang diminta.
   Future<List<DailyBar>> getLatestBars(List<String> tickers);
 }
+
+/// Tabel yang menyimpan data per kode saham, ikut dihapus bersama sahamnya.
+const tickerDataTables = [
+  'daily_snapshot',
+  'broker_range_snapshot',
+  'broker_daily',
+  'broker_flow_check',
+  'analysis_result',
+];
 
 const _barColumns =
     'ticker, trade_date, open_price, high_price, low_price, close_price, '
@@ -54,10 +67,10 @@ class SupabaseStockRepository implements StockRepository {
   }
 
   @override
-  Future<void> addTicker(String ticker) async {
+  Future<void> addTicker(String ticker, {bool active = true}) async {
     await _client.from('watchlist').upsert({
       'ticker': ticker,
-      'is_active': true,
+      'is_active': active,
     }, onConflict: 'user_id,ticker');
   }
 
@@ -67,6 +80,17 @@ class SupabaseStockRepository implements StockRepository {
         .from('watchlist')
         .update({'is_active': active})
         .eq('ticker', ticker);
+  }
+
+  @override
+  Future<void> deleteTicker(String ticker) async {
+    // Data dulu, watchlist terakhir: bila salah satu gagal, saham masih
+    // tampil di daftar dan penghapusan bisa diulang.
+    await Future.wait([
+      for (final table in tickerDataTables)
+        _client.from(table).delete().eq('ticker', ticker),
+    ]);
+    await _client.from('watchlist').delete().eq('ticker', ticker);
   }
 
   @override

@@ -74,6 +74,5 @@ class RecurringGenerator {
     return DateTime(year, month, day > lastDay ? lastDay : day);
   }
 
-  DateTime _day(DateTime value) =>
-      DateTime(value.year, value.month, value.day);
+  DateTime _day(DateTime value) => DateTime(value.year, value.month, value.day);
 }

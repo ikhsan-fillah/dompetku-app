@@ -16,6 +16,7 @@ class StockHero extends StatelessWidget {
     required this.caption,
     this.trailing,
     this.footer,
+    this.live = false,
   });
 
   final String label;
@@ -23,6 +24,10 @@ class StockHero extends StatelessWidget {
   final String caption;
   final Widget? trailing;
   final Widget? footer;
+
+  /// Titik hijau di sebelah label: angka di blok ini masih bisa berubah
+  /// (hari bursa berjalan). Labelnya sendiri juga menyebut "berjalan".
+  final bool live;
 
   @override
   Widget build(BuildContext context) {
@@ -36,7 +41,27 @@ class StockHero extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Text(label, style: AppText.label(color: muted, size: 11.5)),
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  label,
+                  style: AppText.label(color: muted, size: 11.5),
+                ),
+              ),
+              if (live) ...[
+                const SizedBox(width: 8),
+                Container(
+                  width: 6,
+                  height: 6,
+                  decoration: const BoxDecoration(
+                    color: AppColors.liveDot,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ],
+            ],
+          ),
           const SizedBox(height: 6),
           Row(
             crossAxisAlignment: CrossAxisAlignment.center,
@@ -99,6 +124,63 @@ class ChangePill extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Angka harga satu hari di blok tinta, dibagi ke kolom yang dipisah garis
+/// tipis (mis. buka, tertinggi, terendah, volume).
+class HeroStats extends StatelessWidget {
+  const HeroStats({super.key, required this.items});
+
+  final List<(String label, String value)> items;
+
+  @override
+  Widget build(BuildContext context) {
+    final divider = AppColors.paper.withValues(alpha: 0.16);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(height: 1, color: divider),
+        const SizedBox(height: 14),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (index, (label, value)) in items.indexed) ...[
+                if (index > 0) VerticalDivider(width: 17, color: divider),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        label,
+                        maxLines: 1,
+                        style: AppText.label(
+                          size: 10,
+                          color: AppColors.paper.withValues(alpha: 0.6),
+                        ),
+                      ),
+                      const SizedBox(height: 3),
+                      Text(
+                        value,
+                        maxLines: 1,
+                        softWrap: false,
+                        style: AppText.mono(
+                          size: 14,
+                          weight: FontWeight.w600,
+                          color: AppColors.paper,
+                          letterSpacing: -0.2,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ],
+          ),
+        ),
+      ],
     );
   }
 }

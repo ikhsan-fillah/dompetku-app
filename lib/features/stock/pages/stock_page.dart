@@ -11,6 +11,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/app_bar_icon_button.dart';
 import '../../../core/widgets/app_button.dart';
+import '../../../core/widgets/app_dialog.dart';
 import '../../../core/widgets/app_skeleton.dart';
 import '../../../core/widgets/app_state_view.dart';
 import '../../../core/widgets/app_title_bar.dart';
@@ -75,9 +76,18 @@ class _StockPageState extends State<StockPage> {
     }
   }
 
-  Future<void> _signOut() {
+  Future<void> _signOut() async {
+    final confirmed = await showAppConfirm(
+      context,
+      title: 'Keluar dari Supabase?'.tr,
+      message:
+          'Watchlist terkunci sampai Anda masuk lagi. Data di Supabase tidak terhapus.'
+              .tr,
+      confirmLabel: 'Keluar'.tr,
+    );
+    if (!confirmed) return;
     _skipNextPrompt = true;
-    return _controller.signOut();
+    await _controller.signOut();
   }
 
   @override
@@ -91,10 +101,20 @@ class _StockPageState extends State<StockPage> {
               () => AppTitleBar(
                 title: 'Saham'.tr,
                 action: controller.access.value == StockAccess.signedIn
-                    ? AppBarIconButton(
-                        tooltip: 'Tambah saham'.tr,
-                        icon: LucideIcons.plus,
-                        onPressed: () => _showAddSheet(context, controller),
+                    ? Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          AppBarIconButton(
+                            tooltip: 'Tambah saham'.tr,
+                            icon: LucideIcons.plus,
+                            onPressed: () => _showAddSheet(context, controller),
+                          ),
+                          AppBarIconButton(
+                            tooltip: 'Keluar dari Supabase'.tr,
+                            icon: LucideIcons.logOut,
+                            onPressed: () => unawaited(_signOut()),
+                          ),
+                        ],
                       )
                     : null,
               ),
@@ -127,10 +147,7 @@ class _StockPageState extends State<StockPage> {
                       ),
                     );
                   case StockAccess.signedIn:
-                    return _Watchlist(
-                      controller: controller,
-                      onSignOut: _signOut,
-                    );
+                    return _Watchlist(controller: controller);
                 }
               }),
             ),
@@ -230,19 +247,35 @@ class _AddTickerSheetState extends State<_AddTickerSheet> {
 }
 
 class _Watchlist extends StatelessWidget {
-  const _Watchlist({required this.controller, required this.onSignOut});
+  const _Watchlist({required this.controller});
 
   final StockController controller;
-  final Future<void> Function() onSignOut;
 
   Future<void> _toggle(WatchlistItem item, bool active) async {
-    final ok = await controller.setActive(item, active);
-    if (!ok) {
-      AppToast.show(
-        title: 'Gagal mengubah status saham.'.tr,
-        kind: ToastKind.error,
-      );
+    final message = await controller.setActive(item, active);
+    if (message != null) {
+      AppToast.show(title: message, kind: ToastKind.error);
     }
+  }
+
+  Future<void> _delete(BuildContext context, WatchlistItem item) async {
+    final confirmed = await showAppConfirm(
+      context,
+      title: 'Hapus @ticker?'.trParams({'ticker': item.ticker}),
+      message:
+          '@ticker dan seluruh datanya di Supabase (harga harian, broker summary, cek broker, hasil analisis) ikut dihapus dan tidak bisa dikembalikan. Kalau hanya ingin berhenti mengambil data, nonaktifkan saja.'
+              .trParams({'ticker': item.ticker}),
+      confirmLabel: 'Hapus'.tr,
+      danger: true,
+    );
+    if (!confirmed) return;
+    final ok = await controller.deleteTicker(item);
+    AppToast.show(
+      title: ok
+          ? '@ticker dihapus.'.trParams({'ticker': item.ticker})
+          : 'Gagal menghapus saham.'.tr,
+      kind: ok ? ToastKind.success : ToastKind.error,
+    );
   }
 
   @override
@@ -279,7 +312,7 @@ class _Watchlist extends StatelessWidget {
           return _WatchlistBody(
             controller: controller,
             onToggle: _toggle,
-            onSignOut: onSignOut,
+            onDelete: (item) => _delete(context, item),
           );
       }
     });
@@ -290,12 +323,12 @@ class _WatchlistBody extends StatelessWidget {
   const _WatchlistBody({
     required this.controller,
     required this.onToggle,
-    required this.onSignOut,
+    required this.onDelete,
   });
 
   final StockController controller;
   final Future<void> Function(WatchlistItem item, bool active) onToggle;
-  final Future<void> Function() onSignOut;
+  final Future<void> Function(WatchlistItem item) onDelete;
 
   @override
   Widget build(BuildContext context) => Obx(() {
@@ -314,16 +347,14 @@ class _WatchlistBody extends StatelessWidget {
         FadeSlideIn(
           child: StockHero(
             label: 'SAHAM DIPANTAU'.tr,
-            title: '@count aktif'.trParams({'count': '$activeCount'}),
-            caption: flowDate == null
-                ? '@count nonaktif, riwayat datanya tetap tersimpan'.trParams({
-                    'count': '${items.length - activeCount}',
-                  })
-                : '@count nonaktif · data broker terbaru @date'.trParams({
-                    'count': '${items.length - activeCount}',
-                    'date': formatShortDate(flowDate),
-                  }),
-            footer: WatchlistStrip(items: items),
+            title: '@count saham'.trParams({'count': '${items.length}'}),
+            caption: _heroCaption(
+              active: activeCount,
+              inactive: items.length - activeCount,
+              flowDate: flowDate,
+              email: controller.email,
+            ),
+            footer: SlotMeter(active: activeCount),
           ),
         ),
         const SizedBox(height: AppSpacing.gap),
@@ -356,17 +387,34 @@ class _WatchlistBody extends StatelessWidget {
               onOpen: () =>
                   Get.toNamed(AppRoutes.stockDetail, arguments: item.ticker),
               onToggle: (active) => onToggle(item, active),
+              onDelete: () => onDelete(item),
+              slotsFull: controller.slotsFull,
             ),
           ),
           const SizedBox(height: AppSpacing.gap),
         ],
         const SizedBox(height: 4),
         _AddTile(onTap: () => _showAddSheet(context, controller)),
-        const SizedBox(height: 22),
-        _AccountRow(email: controller.email, onSignOut: onSignOut),
       ],
     );
   });
+}
+
+/// Keterangan blok tinta: pembagian aktif dan nonaktif, tanggal data broker
+/// terbaru, dan akun yang sedang masuk.
+String _heroCaption({
+  required int active,
+  required int inactive,
+  required DateTime? flowDate,
+  required String? email,
+}) {
+  return [
+    '@count aktif diambil datanya otomatis'.trParams({'count': '$active'}),
+    '@count nonaktif'.trParams({'count': '$inactive'}),
+    if (flowDate != null)
+      'data broker terbaru @date'.trParams({'date': formatShortDate(flowDate)}),
+    if (email != null) 'masuk sebagai @email'.trParams({'email': email}),
+  ].join(' · ');
 }
 
 /// Petak putus-putus di ujung daftar untuk menambah saham.
@@ -410,41 +458,6 @@ class _AddTile extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
-}
-
-/// Akun Supabase yang sedang masuk, dengan tombol keluar.
-class _AccountRow extends StatelessWidget {
-  const _AccountRow({required this.email, required this.onSignOut});
-
-  final String? email;
-  final Future<void> Function() onSignOut;
-
-  @override
-  Widget build(BuildContext context) {
-    return Row(
-      children: [
-        const Icon(LucideIcons.cloud, size: 16, color: AppColors.mut),
-        const SizedBox(width: 8),
-        Expanded(
-          child: Text(
-            email == null
-                ? 'Tersambung ke Supabase'.tr
-                : 'Masuk sebagai @email'.trParams({'email': email!}),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-            style: AppText.body(size: 12, color: AppColors.mut),
-          ),
-        ),
-        const SizedBox(width: 8),
-        AppButton(
-          label: 'Keluar dari Supabase'.tr,
-          kind: AppButtonKind.outline,
-          expand: false,
-          onPressed: onSignOut,
-        ),
-      ],
     );
   }
 }

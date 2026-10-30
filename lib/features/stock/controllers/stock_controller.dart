@@ -14,6 +14,18 @@ enum StockAccess { checking, notConfigured, signedOut, signedIn }
 /// Penyaring daftar watchlist.
 enum WatchFilter { all, active, inactive }
 
+/// Batas saham aktif. Hanya saham aktif yang diambil datanya otomatis, jadi
+/// batas ini menjaga pengambilan harian tetap kecil.
+const maxActiveTickers = 5;
+
+/// Saham aktif di atas (urutan tambah tetap), nonaktif di bawahnya.
+List<WatchlistItem> activeFirst(Iterable<WatchlistItem> items) => [
+  for (final item in items)
+    if (item.isActive) item,
+  for (final item in items)
+    if (!item.isActive) item,
+];
+
 /// Ringkasan satu saham untuk kartu watchlist: arah dana kelompok pada
 /// snapshot Latest terbaru dan harga penutupan terbaru. Keduanya boleh kosong
 /// bila datanya belum diisi.
@@ -63,6 +75,9 @@ class StockController extends GetxController {
   };
 
   int get activeCount => items.where((item) => item.isActive).length;
+
+  /// True bila kelima slot aktif sudah terisi.
+  bool get slotsFull => activeCount >= maxActiveTickers;
 
   /// Tanggal data broker terbaru di antara semua saham, null bila belum ada.
   DateTime? get latestFlowDate => overviews.values
@@ -138,7 +153,7 @@ class StockController extends GetxController {
       watchlist.value = const ResourceState.loading();
     }
     try {
-      final items = await _repository.getWatchlist();
+      final items = activeFirst(await _repository.getWatchlist());
       watchlist.value = items.isEmpty
           ? const ResourceState.empty()
           : ResourceState.success(items);
@@ -194,12 +209,17 @@ class StockController extends GetxController {
 
   void clearLoginError() => loginError.value = null;
 
-  /// Menambah saham. Mengembalikan pesan kesalahan, atau null bila berhasil.
+  /// Menambah saham. Saham baru langsung aktif bila masih ada slot, dan
+  /// masuk sebagai nonaktif bila kelima slot terisi. Mengembalikan pesan
+  /// kesalahan, atau null bila berhasil.
   Future<String?> addTicker(String raw) async {
     final ticker = normalizeTicker(raw);
     if (ticker == null) return 'Kode saham harus 4 huruf, contoh BBCA.'.tr;
+    if (items.any((item) => item.ticker == ticker)) {
+      return '@ticker sudah ada di watchlist.'.trParams({'ticker': ticker});
+    }
     try {
-      await _repository.addTicker(ticker);
+      await _repository.addTicker(ticker, active: !slotsFull);
       await load();
       return null;
     } catch (_) {
@@ -207,10 +227,28 @@ class StockController extends GetxController {
     }
   }
 
-  /// Mengaktifkan atau menonaktifkan saham. Mengembalikan false bila gagal.
-  Future<bool> setActive(WatchlistItem item, bool active) async {
+  /// Mengaktifkan atau menonaktifkan saham. Mengembalikan pesan kesalahan,
+  /// atau null bila berhasil. Mengaktifkan ditolak bila slot sudah penuh.
+  Future<String?> setActive(WatchlistItem item, bool active) async {
+    if (active && !item.isActive && slotsFull) {
+      return 'Slot aktif penuh (@max/@max). Nonaktifkan satu saham dulu.'
+          .trParams({'max': '$maxActiveTickers'});
+    }
     try {
       await _repository.setActive(item.ticker, active: active);
+      await load();
+      return null;
+    } catch (_) {
+      return 'Gagal mengubah status saham.'.tr;
+    }
+  }
+
+  /// Menghapus saham beserta seluruh datanya di Supabase. Mengembalikan
+  /// false bila gagal.
+  Future<bool> deleteTicker(WatchlistItem item) async {
+    try {
+      await _repository.deleteTicker(item.ticker);
+      overviews.remove(item.ticker);
       await load();
       return true;
     } catch (_) {

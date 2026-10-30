@@ -54,10 +54,28 @@ class FakeRepository implements StockRepository {
   }
 
   @override
-  Future<void> addTicker(String ticker) async {
+  Future<void> addTicker(String ticker, {bool active = true}) async {
     if (fail) throw Exception('boom');
     items.removeWhere((i) => i.ticker == ticker);
-    items.add(WatchlistItem(ticker: ticker, isActive: true));
+    items.add(WatchlistItem(ticker: ticker, isActive: active));
+  }
+
+  /// Saham yang dihapus beserta datanya, urut sesuai panggilan.
+  final deleted = <String>[];
+
+  @override
+  Future<void> deleteTicker(String ticker) async {
+    if (fail) throw Exception('boom');
+    deleted.add(ticker);
+    items.removeWhere((i) => i.ticker == ticker);
+    rows = [
+      for (final row in rows)
+        if (row.ticker != ticker) row,
+    ];
+    bars = [
+      for (final bar in bars)
+        if (bar.ticker != ticker) bar,
+    ];
   }
 
   @override

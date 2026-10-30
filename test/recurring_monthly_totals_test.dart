@@ -23,20 +23,26 @@ RecurringRule _rule(
 
 void main() {
   test('bulanan dihitung apa adanya', () {
-    final totals = RecurringTotals.monthly([_rule(RecurringFrequency.monthly, 1200000)]);
+    final totals = RecurringTotals.monthly([
+      _rule(RecurringFrequency.monthly, 1200000),
+    ]);
 
     expect(totals.out, 1200000);
     expect(totals.income, 0);
   });
 
   test('mingguan dikali 52 dibagi 12', () {
-    final totals = RecurringTotals.monthly([_rule(RecurringFrequency.weekly, 12000)]);
+    final totals = RecurringTotals.monthly([
+      _rule(RecurringFrequency.weekly, 12000),
+    ]);
 
     expect(totals.out, 52000);
   });
 
   test('tahunan dibagi 12', () {
-    final totals = RecurringTotals.monthly([_rule(RecurringFrequency.yearly, 1200000)]);
+    final totals = RecurringTotals.monthly([
+      _rule(RecurringFrequency.yearly, 1200000),
+    ]);
 
     expect(totals.out, 100000);
   });

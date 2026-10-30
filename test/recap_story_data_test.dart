@@ -11,29 +11,32 @@ TransactionModel _tx(
   DateTime date, {
   int categoryId = 1,
   String? merchant,
-}) =>
-    TransactionModel(
-      type: type,
-      title: merchant ?? 'x',
-      amount: amount,
-      transactionDate: date,
-      categoryId: categoryId,
-      merchantOrSource: merchant,
-      createdAt: date,
-      updatedAt: date,
-    );
+}) => TransactionModel(
+  type: type,
+  title: merchant ?? 'x',
+  amount: amount,
+  transactionDate: date,
+  categoryId: categoryId,
+  merchantOrSource: merchant,
+  createdAt: date,
+  updatedAt: date,
+);
 
-BudgetModel _budget({int? categoryId, required int limit, required DateTime start, required DateTime end}) =>
-    BudgetModel(
-      name: 'b',
-      amountLimit: limit,
-      categoryId: categoryId,
-      startDate: start,
-      endDate: end,
-      isArchived: false,
-      createdAt: start,
-      updatedAt: start,
-    );
+BudgetModel _budget({
+  int? categoryId,
+  required int limit,
+  required DateTime start,
+  required DateTime end,
+}) => BudgetModel(
+  name: 'b',
+  amountLimit: limit,
+  categoryId: categoryId,
+  startDate: start,
+  endDate: end,
+  isArchived: false,
+  createdAt: start,
+  updatedAt: start,
+);
 
 void main() {
   _decisionTests();
@@ -72,9 +75,24 @@ void main() {
 
   test('merchants ranked by visits then total', () {
     final list = [
-      _tx(TransactionType.expense, 5000, DateTime(2026, 9, 1), merchant: 'Gojek'),
-      _tx(TransactionType.expense, 5000, DateTime(2026, 9, 2), merchant: 'Gojek'),
-      _tx(TransactionType.expense, 90000, DateTime(2026, 9, 3), merchant: 'Indomaret'),
+      _tx(
+        TransactionType.expense,
+        5000,
+        DateTime(2026, 9, 1),
+        merchant: 'Gojek',
+      ),
+      _tx(
+        TransactionType.expense,
+        5000,
+        DateTime(2026, 9, 2),
+        merchant: 'Gojek',
+      ),
+      _tx(
+        TransactionType.expense,
+        90000,
+        DateTime(2026, 9, 3),
+        merchant: 'Indomaret',
+      ),
     ];
     final recap = service.monthly(list, year: 2026, month: 9, now: now);
 
@@ -85,9 +103,19 @@ void main() {
   test('budget status uses overall budget against month spend', () {
     final list = [_tx(TransactionType.expense, 300000, DateTime(2026, 9, 5))];
     final budgets = [
-      _budget(limit: 500000, start: DateTime(2026, 9, 1), end: DateTime(2026, 9, 30)),
+      _budget(
+        limit: 500000,
+        start: DateTime(2026, 9, 1),
+        end: DateTime(2026, 9, 30),
+      ),
     ];
-    final recap = service.monthly(list, year: 2026, month: 9, now: now, budgets: budgets);
+    final recap = service.monthly(
+      list,
+      year: 2026,
+      month: 9,
+      now: now,
+      budgets: budgets,
+    );
 
     expect(recap.overallBudget, 500000);
     expect(recap.budgetStatus, BudgetMonthStatus.inside);
@@ -96,33 +124,65 @@ void main() {
   test('budget month over limit is flagged over', () {
     final list = [_tx(TransactionType.expense, 600000, DateTime(2026, 9, 5))];
     final budgets = [
-      _budget(limit: 500000, start: DateTime(2026, 9, 1), end: DateTime(2026, 9, 30)),
+      _budget(
+        limit: 500000,
+        start: DateTime(2026, 9, 1),
+        end: DateTime(2026, 9, 30),
+      ),
     ];
-    final recap = service.monthly(list, year: 2026, month: 9, now: now, budgets: budgets);
+    final recap = service.monthly(
+      list,
+      year: 2026,
+      month: 9,
+      now: now,
+      budgets: budgets,
+    );
 
     expect(recap.budgetStatus, BudgetMonthStatus.over);
   });
 
-  test('yearly recap picks heaviest, lightest, top merchant and budget months', () {
-    final list = [
-      _tx(TransactionType.expense, 100000, DateTime(2026, 2, 1), merchant: 'Warung'),
-      _tx(TransactionType.expense, 600000, DateTime(2026, 5, 1), merchant: 'Warung'),
-      _tx(TransactionType.income, 1000000, DateTime(2026, 5, 2)),
-    ];
-    final budgets = [
-      _budget(limit: 500000, start: DateTime(2026, 1, 1), end: DateTime(2026, 12, 31)),
-    ];
-    final yearly = service.yearly(list, year: 2026, now: now, budgets: budgets);
+  test(
+    'yearly recap picks heaviest, lightest, top merchant and budget months',
+    () {
+      final list = [
+        _tx(
+          TransactionType.expense,
+          100000,
+          DateTime(2026, 2, 1),
+          merchant: 'Warung',
+        ),
+        _tx(
+          TransactionType.expense,
+          600000,
+          DateTime(2026, 5, 1),
+          merchant: 'Warung',
+        ),
+        _tx(TransactionType.income, 1000000, DateTime(2026, 5, 2)),
+      ];
+      final budgets = [
+        _budget(
+          limit: 500000,
+          start: DateTime(2026, 1, 1),
+          end: DateTime(2026, 12, 31),
+        ),
+      ];
+      final yearly = service.yearly(
+        list,
+        year: 2026,
+        now: now,
+        budgets: budgets,
+      );
 
-    expect(yearly.heaviestMonth, 5);
-    expect(yearly.lightestMonth, 2);
-    expect(yearly.topMerchant!.name, 'Warung');
-    expect(yearly.topMerchant!.visits, 2);
-    expect(yearly.budgetMonthsWithData, 2);
-    expect(yearly.budgetMonthsInside, 1);
-    expect(yearly.net, 300000);
-    expect(yearly.isSoFar, isTrue);
-  });
+      expect(yearly.heaviestMonth, 5);
+      expect(yearly.lightestMonth, 2);
+      expect(yearly.topMerchant!.name, 'Warung');
+      expect(yearly.topMerchant!.visits, 2);
+      expect(yearly.budgetMonthsWithData, 2);
+      expect(yearly.budgetMonthsInside, 1);
+      expect(yearly.net, 300000);
+      expect(yearly.isSoFar, isTrue);
+    },
+  );
 }
 
 void _decisionTests() {
@@ -182,19 +242,22 @@ void _decisionTests() {
   });
 
   group('quiet streak', () {
-    test('hari tanpa catatan dihitung tanpa pengeluaran sejak transaksi pertama', () {
-      final yearly = service.yearly(
-        [
-          _tx(TransactionType.expense, 1000, DateTime(2026, 9, 1)),
-          _tx(TransactionType.expense, 1000, DateTime(2026, 9, 10)),
-        ],
-        year: 2026,
-        now: DateTime(2026, 9, 15),
-      );
+    test(
+      'hari tanpa catatan dihitung tanpa pengeluaran sejak transaksi pertama',
+      () {
+        final yearly = service.yearly(
+          [
+            _tx(TransactionType.expense, 1000, DateTime(2026, 9, 1)),
+            _tx(TransactionType.expense, 1000, DateTime(2026, 9, 10)),
+          ],
+          year: 2026,
+          now: DateTime(2026, 9, 15),
+        );
 
-      expect(yearly.quietStreak, 8);
-      expect(yearly.quietDays, 13);
-    });
+        expect(yearly.quietStreak, 8);
+        expect(yearly.quietDays, 13);
+      },
+    );
 
     test('hari sebelum transaksi pertama tidak dihitung', () {
       final yearly = service.yearly(
@@ -207,7 +270,11 @@ void _decisionTests() {
     });
 
     test('tahun tanpa transaksi punya streak nol', () {
-      final yearly = service.yearly(const [], year: 2026, now: DateTime(2026, 6, 4));
+      final yearly = service.yearly(
+        const [],
+        year: 2026,
+        now: DateTime(2026, 6, 4),
+      );
 
       expect(yearly.quietStreak, 0);
       expect(yearly.quietDays, 0);
@@ -218,8 +285,18 @@ void _decisionTests() {
     test('mengambil transaksi expense terbesar di tahun itu', () {
       final yearly = service.yearly(
         [
-          _tx(TransactionType.expense, 1000, DateTime(2026, 2, 1), merchant: 'A'),
-          _tx(TransactionType.expense, 9000, DateTime(2026, 5, 1), merchant: 'B'),
+          _tx(
+            TransactionType.expense,
+            1000,
+            DateTime(2026, 2, 1),
+            merchant: 'A',
+          ),
+          _tx(
+            TransactionType.expense,
+            9000,
+            DateTime(2026, 5, 1),
+            merchant: 'B',
+          ),
           _tx(TransactionType.income, 99999, DateTime(2026, 5, 2)),
         ],
         year: 2026,

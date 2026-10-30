@@ -4,16 +4,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 
 StoryFrame _frame() => StoryFrame(
-      footer: 'Tally · test',
-      cards: [
-        for (var i = 0; i < 3; i++)
-          StoryCard(
-            background: AppColors.ink,
-            foreground: AppColors.paper,
-            child: Text('card ${i + 1}'),
-          ),
-      ],
-    );
+  footer: 'Tally · test',
+  cards: [
+    for (var i = 0; i < 3; i++)
+      StoryCard(
+        background: AppColors.ink,
+        foreground: AppColors.paper,
+        child: Text('card ${i + 1}'),
+      ),
+  ],
+);
 
 Future<void> _pump(WidgetTester tester) async {
   tester.view.physicalSize = const Size(800, 1600);

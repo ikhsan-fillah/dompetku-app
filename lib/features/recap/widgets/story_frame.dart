@@ -39,9 +39,10 @@ class _StoryFrameState extends State<StoryFrame>
   @override
   void initState() {
     super.initState();
-    _progress = AnimationController(vsync: this, duration: StoryFrame.cardDuration)
-      ..addStatusListener(_onStatus)
-      ..forward();
+    _progress =
+        AnimationController(vsync: this, duration: StoryFrame.cardDuration)
+          ..addStatusListener(_onStatus)
+          ..forward();
   }
 
   @override
@@ -88,7 +89,9 @@ class _StoryFrameState extends State<StoryFrame>
                         for (var i = 0; i <= _last; i++)
                           Expanded(
                             child: Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 2),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 2,
+                              ),
                               child: _Segment(
                                 progress: _progress,
                                 index: i,
