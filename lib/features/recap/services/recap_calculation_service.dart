@@ -5,7 +5,11 @@ import '../../dashboard/services/financial_calculation_service.dart';
 import '../../transaction/models/transaction_model.dart';
 
 class CategorySpend {
-  const CategorySpend({required this.categoryId, required this.total, required this.count});
+  const CategorySpend({
+    required this.categoryId,
+    required this.total,
+    required this.count,
+  });
 
   final int categoryId;
   final int total;
@@ -13,7 +17,11 @@ class CategorySpend {
 }
 
 class MerchantSpend {
-  const MerchantSpend({required this.name, required this.visits, required this.total});
+  const MerchantSpend({
+    required this.name,
+    required this.visits,
+    required this.total,
+  });
 
   final String name;
   final int visits;
@@ -21,7 +29,11 @@ class MerchantSpend {
 }
 
 class BiggestExpense {
-  const BiggestExpense({required this.name, required this.amount, required this.date});
+  const BiggestExpense({
+    required this.name,
+    required this.amount,
+    required this.date,
+  });
 
   final String name;
   final int amount;
@@ -82,7 +94,8 @@ class MonthlyRecap {
   int? get heaviestDay {
     var index = -1;
     for (var i = 0; i < elapsedDays; i++) {
-      if (dailySpend[i] > 0 && (index < 0 || dailySpend[i] > dailySpend[index])) {
+      if (dailySpend[i] > 0 &&
+          (index < 0 || dailySpend[i] > dailySpend[index])) {
         index = i;
       }
     }
@@ -90,7 +103,8 @@ class MonthlyRecap {
   }
 
   /// Batas harian = total budget keseluruhan dibagi jumlah hari. Null bila tidak ada.
-  int? get dailyLimit => overallBudget <= 0 ? null : overallBudget ~/ daysInMonth;
+  int? get dailyLimit =>
+      overallBudget <= 0 ? null : overallBudget ~/ daysInMonth;
 
   int get daysUnderLimit {
     final limit = dailyLimit;
@@ -100,7 +114,9 @@ class MonthlyRecap {
 
   BudgetMonthStatus get budgetStatus {
     if (!hasData || overallBudget == 0) return BudgetMonthStatus.noData;
-    return spent <= overallBudget ? BudgetMonthStatus.inside : BudgetMonthStatus.over;
+    return spent <= overallBudget
+        ? BudgetMonthStatus.inside
+        : BudgetMonthStatus.over;
   }
 }
 
@@ -161,8 +177,12 @@ class RecapCalculationService {
     final range = _monthRange(year, month);
     final spent = _finance.totalForType(list, TransactionType.expense, range);
     final income = _finance.totalForType(list, TransactionType.income, range);
-    final inMonth = list.where((t) => range.contains(t.transactionDate)).toList();
-    final expenses = inMonth.where((t) => t.type == TransactionType.expense).toList();
+    final inMonth = list
+        .where((t) => range.contains(t.transactionDate))
+        .toList();
+    final expenses = inMonth
+        .where((t) => t.type == TransactionType.expense)
+        .toList();
     final daysInMonth = range.end.day;
 
     final daily = List<int>.filled(daysInMonth, 0);
@@ -173,12 +193,16 @@ class RecapCalculationService {
     final previousRange = month == 1
         ? _monthRange(year - 1, 12)
         : _monthRange(year, month - 1);
-    final previousHasData = list.any((t) => previousRange.contains(t.transactionDate));
+    final previousHasData = list.any(
+      (t) => previousRange.contains(t.transactionDate),
+    );
     final previousSpent = previousHasData
         ? _finance.totalForType(list, TransactionType.expense, previousRange)
         : null;
 
-    final activeBudgets = budgets.where((budget) => _overlaps(budget, range)).toList();
+    final activeBudgets = budgets
+        .where((budget) => _overlaps(budget, range))
+        .toList();
 
     return MonthlyRecap(
       year: year,
@@ -195,7 +219,10 @@ class RecapCalculationService {
       merchants: _merchants(expenses),
       budgets: [
         for (final budget in activeBudgets)
-          BudgetSpend(budget: budget, used: _budgetUsed(budget, expenses, range)),
+          BudgetSpend(
+            budget: budget,
+            used: _budgetUsed(budget, expenses, range),
+          ),
       ],
       overallBudget: activeBudgets
           .where((budget) => budget.categoryId == null)
@@ -215,10 +242,16 @@ class RecapCalculationService {
       for (var m = 1; m <= 12; m++)
         monthly(list, year: year, month: m, now: now, budgets: budgetList),
     ];
-    final yearRange = DateRange(start: DateTime(year), end: DateTime(year, 12, 31));
+    final yearRange = DateRange(
+      start: DateTime(year),
+      end: DateTime(year, 12, 31),
+    );
     final yearExpenses = list
-        .where((t) =>
-            t.type == TransactionType.expense && yearRange.contains(t.transactionDate))
+        .where(
+          (t) =>
+              t.type == TransactionType.expense &&
+              yearRange.contains(t.transactionDate),
+        )
         .toList();
     final merchants = _merchants(yearExpenses);
     final quiet = _quietDays(
@@ -315,13 +348,22 @@ class RecapCalculationService {
 
   bool _overlaps(BudgetModel budget, DateRange range) {
     final budgetRange = DateRange(start: budget.startDate, end: budget.endDate);
-    return !budgetRange.start.isAfter(range.end) && !budgetRange.end.isBefore(range.start);
+    return !budgetRange.start.isAfter(range.end) &&
+        !budgetRange.end.isBefore(range.start);
   }
 
-  int _budgetUsed(BudgetModel budget, List<TransactionModel> expenses, DateRange month) {
+  int _budgetUsed(
+    BudgetModel budget,
+    List<TransactionModel> expenses,
+    DateRange month,
+  ) {
     final budgetRange = DateRange(start: budget.startDate, end: budget.endDate);
-    final start = budgetRange.start.isAfter(month.start) ? budgetRange.start : month.start;
-    final end = budgetRange.end.isBefore(month.end) ? budgetRange.end : month.end;
+    final start = budgetRange.start.isAfter(month.start)
+        ? budgetRange.start
+        : month.start;
+    final end = budgetRange.end.isBefore(month.end)
+        ? budgetRange.end
+        : month.end;
     if (start.isAfter(end)) return 0;
     final scoped = budget.categoryId == null
         ? expenses
@@ -341,7 +383,13 @@ class RecapCalculationService {
       bucket[1] += 1;
     }
     return byCategory.entries
-        .map((e) => CategorySpend(categoryId: e.key, total: e.value[0], count: e.value[1]))
+        .map(
+          (e) => CategorySpend(
+            categoryId: e.key,
+            total: e.value[0],
+            count: e.value[1],
+          ),
+        )
         .toList()
       ..sort((a, b) => b.total.compareTo(a.total));
   }
@@ -350,14 +398,19 @@ class RecapCalculationService {
     final byName = <String, List<int>>{};
     for (final tx in expenses) {
       final merchant = tx.merchantOrSource?.trim();
-      final name = (merchant == null || merchant.isEmpty) ? tx.title.trim() : merchant;
+      final name = (merchant == null || merchant.isEmpty)
+          ? tx.title.trim()
+          : merchant;
       if (name.isEmpty) continue;
       final bucket = byName.putIfAbsent(name, () => [0, 0]);
       bucket[0] += 1;
       bucket[1] += tx.amount;
     }
     return byName.entries
-        .map((e) => MerchantSpend(name: e.key, visits: e.value[0], total: e.value[1]))
+        .map(
+          (e) =>
+              MerchantSpend(name: e.key, visits: e.value[0], total: e.value[1]),
+        )
         .toList()
       ..sort((a, b) {
         final visits = b.visits.compareTo(a.visits);

@@ -7,7 +7,8 @@ import 'secure_storage_service.dart';
 
 /// PIN cadangan (opsional). Hanya hash dan salt yang disimpan di secure storage.
 class PinService {
-  PinService(this._storage, {Random? random}) : _random = random ?? Random.secure();
+  PinService(this._storage, {Random? random})
+    : _random = random ?? Random.secure();
 
   static const _kHash = 'pinHash';
   static const _kSalt = 'pinSalt';

@@ -42,6 +42,10 @@ import '../../core/services/shared_prefs_service.dart';
 import '../../features/category/repositories/category_repository.dart';
 import '../../features/budget/repositories/budget_repository.dart';
 import '../../features/drafts/services/draft_notifications.dart';
+import '../../features/stock/controllers/stock_detail_controller.dart';
+import '../../features/stock/data/stock_repository.dart';
+import '../../features/stock/pages/stock_detail_page.dart';
+import '../../features/stock/pages/stock_page.dart';
 
 class AppPages {
   static final pages = <GetPage>[
@@ -142,6 +146,25 @@ class AppPages {
       name: AppRoutes.goals,
       page: () => const GoalsPage(),
       middlewares: [FinancialRouteGuard()],
+    ),
+    GetPage(
+      name: AppRoutes.stock,
+      page: () => const StockPage(),
+      middlewares: [FinancialRouteGuard()],
+    ),
+    GetPage(
+      name: AppRoutes.stockDetail,
+      page: () => const StockDetailPage(),
+      middlewares: [FinancialRouteGuard()],
+      binding: BindingsBuilder(() {
+        final arguments = Get.arguments;
+        Get.put(
+          StockDetailController(
+            Get.find<StockRepository>(),
+            arguments is String ? arguments : '',
+          ),
+        );
+      }),
     ),
     GetPage(
       name: AppRoutes.recaps,

@@ -103,9 +103,7 @@ void main() {
 
   test('tagihan bulan 31 hari tidak menghasilkan duplikat', () async {
     final rules = _Rules()
-      ..items.add(
-        _auto().copyWithStart(DateTime(2026, 1, 31), day: 31),
-      );
+      ..items.add(_auto().copyWithStart(DateTime(2026, 1, 31), day: 31));
     final transactions = _Transactions();
     final runner = RecurringRunner(
       rules: rules,

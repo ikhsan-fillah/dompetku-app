@@ -51,11 +51,12 @@ void main() {
   test('unlock dengan sesi tanpa biometrik juga menjalankan hook', () async {
     var runs = 0;
     final controller = AuthController(
-      _Session()..value = const AppSessionModel(
-        isRegistered: true,
-        biometricEnabled: false,
-        biometricFailureCount: 0,
-      ),
+      _Session()
+        ..value = const AppSessionModel(
+          isRegistered: true,
+          biometricEnabled: false,
+          biometricFailureCount: 0,
+        ),
       _Bio(),
     )..onUnlocked = () async => runs++;
     controller.onInit();

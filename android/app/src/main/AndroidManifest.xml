@@ -5,6 +5,8 @@
     <!-- Pengingat transaksi berulang: notifikasi lokal terjadwal. -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS"/>
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED"/>
+    <!-- Modul saham: hanya data saham yang disinkronkan ke Supabase. Data keuangan tetap lokal. -->
+    <uses-permission android:name="android.permission.INTERNET"/>
     <application
         android:label="Tally"
         android:name="${applicationName}"

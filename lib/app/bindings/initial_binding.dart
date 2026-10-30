@@ -43,6 +43,9 @@ import 'package:dompetku_app/features/shell/controllers/main_shell_controller.da
 import 'package:dompetku_app/features/transaction/widgets/transaction_form_sheet.dart';
 import 'package:dompetku_app/features/goals/controllers/goals_controller.dart';
 import 'package:dompetku_app/features/goals/data/goal_repository.dart';
+import 'package:dompetku_app/features/stock/controllers/stock_controller.dart';
+import 'package:dompetku_app/features/stock/data/stock_auth.dart';
+import 'package:dompetku_app/features/stock/data/stock_repository.dart';
 import '../../features/transaction/controllers/transaction_form_controller.dart';
 import '../../features/recurring/models/recurring_rule.dart';
 import '../../features/drafts/services/draft_notifications.dart';
@@ -283,6 +286,23 @@ class InitialBinding extends Bindings {
       fenix: true,
     );
     Get.lazyPut(() => GoalsController(Get.find<GoalRepository>()), fenix: true);
+    // Modul saham: satu-satunya bagian yang memakai jaringan (Supabase).
+    // Supabase baru diinisialisasi saat halaman Saham dibuka.
+    Get.lazyPut(
+      () => SupabaseStockAuth(Get.find<SecureStorageService>()),
+      fenix: true,
+    );
+    Get.lazyPut<StockRepository>(
+      () => SupabaseStockRepository(Get.find<SupabaseStockAuth>()),
+      fenix: true,
+    );
+    Get.lazyPut(
+      () => StockController(
+        Get.find<SupabaseStockAuth>(),
+        Get.find<StockRepository>(),
+      ),
+      fenix: true,
+    );
     Get.lazyPut(
       () => DashboardController(Get.find(), Get.find(), Get.find()),
       fenix: true,

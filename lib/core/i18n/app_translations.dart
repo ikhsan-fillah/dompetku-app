@@ -12,6 +12,7 @@ import 'en/en_home.dart';
 import 'en/en_profile.dart';
 import 'en/en_recap.dart';
 import 'en/en_report.dart';
+import 'en/en_stock.dart';
 import 'en/en_transaction.dart';
 
 /// Terjemahan Inggris. Kunci memakai teks Indonesia; Indonesia adalah bawaan.
@@ -27,6 +28,7 @@ final Map<String, String> englishStrings = {
   ...enAutomation,
   ...enProfile,
   ...enGoals,
+  ...enStock,
   ...enData,
 };
 

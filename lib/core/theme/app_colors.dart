@@ -24,6 +24,9 @@ abstract final class AppColors {
   static const favorite = Color(0xFFB8801A);
   static const critSoft = Color(0xFFF3DDD0);
 
+  /// Titik "berjalan" di atas blok tinta (hijau terang, kontras di atas ink).
+  static const liveDot = Color(0xFF8FD3A3);
+
   static const receiptPaper = Color(0xFFFFFEFA);
   static const receiptText = Color(0xFF3A3A3A);
   static const receiptDash = Color(0xFFB9B2A3);

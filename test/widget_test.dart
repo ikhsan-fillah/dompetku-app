@@ -44,9 +44,7 @@ void main() {
     await tester.pumpWidget(
       GetMaterialApp(
         home: const SplashPage(),
-        getPages: [
-          GetPage(name: '/login', page: () => const SizedBox()),
-        ],
+        getPages: [GetPage(name: '/login', page: () => const SizedBox())],
       ),
     );
 

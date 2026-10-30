@@ -101,15 +101,18 @@ void main() {
     expect(controller.biometricFailureCount.value, 1);
   });
 
-  test('lima kegagalan PIN memicu lockout yang sama dengan biometrik', () async {
-    for (var i = 0; i < 5; i++) {
-      await controller.unlockWithPin('000000');
-    }
+  test(
+    'lima kegagalan PIN memicu lockout yang sama dengan biometrik',
+    () async {
+      for (var i = 0; i < 5; i++) {
+        await controller.unlockWithPin('000000');
+      }
 
-    expect(controller.isLockedOut, isTrue);
-    expect(controller.biometricStatus.value, BiometricStatus.lockedOut);
-    expect(await controller.unlockWithPin('123456'), isFalse);
-  });
+      expect(controller.isLockedOut, isTrue);
+      expect(controller.biometricStatus.value, BiometricStatus.lockedOut);
+      expect(await controller.unlockWithPin('123456'), isFalse);
+    },
+  );
 
   test('kegagalan campuran biometrik dan PIN dihitung bersama', () async {
     controller.biometricFailureCount.value = 4;

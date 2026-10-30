@@ -18,4 +18,6 @@ abstract class AppRoutes {
   static const recaps = '/recaps';
   static const goals = '/goals';
   static const backup = '/backup';
+  static const stock = '/stock';
+  static const stockDetail = '/stock-detail';
 }

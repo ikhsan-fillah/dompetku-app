@@ -45,15 +45,16 @@ class SectionHeader extends StatelessWidget {
               ),
               child: Text(
                 actionLabel!,
-                style: AppText.body(
-                  size: 11.5,
-                  weight: FontWeight.w600,
-                  color: AppColors.ink2,
-                ).copyWith(
-                  decoration: TextDecoration.underline,
-                  decorationColor: AppColors.line,
-                  decorationThickness: 1,
-                ),
+                style:
+                    AppText.body(
+                      size: 11.5,
+                      weight: FontWeight.w600,
+                      color: AppColors.ink2,
+                    ).copyWith(
+                      decoration: TextDecoration.underline,
+                      decorationColor: AppColors.line,
+                      decorationThickness: 1,
+                    ),
               ),
             ),
         ],
