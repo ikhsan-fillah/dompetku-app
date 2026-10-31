@@ -388,7 +388,14 @@ function solve(A: number[][], b: number[]): number[] {
 }
 
 /** Regresi logistik L2 dengan IRLS (Newton). Intercept tidak dipenalti. */
-export function fitLogistic(X: number[][], y: number[], lambda = 1, clip = 4, iters = 25): Model {
+export function fitLogistic(
+  X: number[][],
+  y: number[],
+  lambda = 1,
+  clip = 4,
+  iters = 25,
+  names: readonly string[] = FEATURES,
+): Model {
   const st = standardize(X, clip);
   const Z = X.map((x) => [1, ...z(x, st)]);
   const d = Z[0].length;
@@ -420,7 +427,7 @@ export function fitLogistic(X: number[][], y: number[], lambda = 1, clip = 4, it
     w = w.map((v, j) => v + step[j]);
     if (Math.max(...step.map(Math.abs)) < 1e-6) break;
   }
-  return { features: [...FEATURES], mean: st.mean, std: st.std, coef: w.slice(1), intercept: w[0], lambda, clip };
+  return { features: [...names], mean: st.mean, std: st.std, coef: w.slice(1), intercept: w[0], lambda, clip };
 }
 
 export function predict(m: Model, x: number[]): number {
@@ -492,7 +499,15 @@ export type FoldResult = {
  * Walk-forward: latih pada data sebelum `testStart` dikurangi purge
  * (H hari bursa), uji pada blok berikutnya. Tidak ada data masa depan bocor.
  */
-export function walkForward(rows: Row[], horizon: number, folds = 5, lambda = 1, only?: number): FoldResult[] {
+export function walkForward(
+  rows: Row[],
+  horizon: number,
+  folds = 5,
+  lambda = 1,
+  only?: number,
+  names: readonly string[] = FEATURES,
+  momName = 'ret20',
+): FoldResult[] {
   const labeled = rows.filter((r) => r.y !== null);
   const dates = [...new Set(labeled.map((r) => r.date))].sort();
   const minTrain = Math.floor(dates.length * 0.4);
@@ -508,11 +523,11 @@ export function walkForward(rows: Row[], horizon: number, folds = 5, lambda = 1,
     const testEnd = dates[testEndIdx];
     const tr = labeled.filter((r) => r.date <= trainEnd);
     const te = labeled.filter((r) => r.date >= testStart && r.date <= testEnd);
-    const m = fitLogistic(tr.map((r) => r.x), tr.map((r) => r.y as number), lambda);
+    const m = fitLogistic(tr.map((r) => r.x), tr.map((r) => r.y as number), lambda, 4, 25, names);
     const p = te.map((r) => predict(m, r.x));
     const y = te.map((r) => r.y as number);
     const base = tr.reduce((a, r) => a + (r.y as number), 0) / tr.length;
-    const mom = te.map((r) => r.x[FEATURES.indexOf('ret20')]);
+    const mom = te.map((r) => r.x[names.indexOf(momName)]);
     const order = p.map((v, i) => [v, i] as const).sort((a, b) => b[0] - a[0]);
     const top = order.slice(0, Math.max(1, Math.floor(order.length * 0.2))).map(([, i]) => i);
     const mean = (a: number[]) => a.reduce((s, v) => s + v, 0) / a.length;

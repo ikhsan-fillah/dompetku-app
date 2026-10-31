@@ -23,6 +23,18 @@ import {
   type Row,
   type Series,
 } from './lib.ts';
+import {
+  buildMarketRows,
+  CNBC_MARKET_RSS,
+  googleNewsUrl,
+  MACRO,
+  MARKET_FEATURES,
+  NEWS_QUERIES,
+  parseRss,
+  scoreTitle,
+  summarize,
+  type NewsItem,
+} from './market.ts';
 
 const UNIVERSE = [
   'BBCA', 'BBRI', 'BMRI', 'BBNI', 'BRIS', 'TLKM', 'ISAT', 'EXCL', 'TOWR', 'ASII',
@@ -35,6 +47,9 @@ const HORIZON = 10;
 const BARRIER_K = 1;
 const LAMBDA = 5;
 const FOLDS = 5;
+// Model IHSG: horizon 5 hari bursa, batas 1 sigma.
+const MP = { horizon: 5, k: 1 };
+const SELF_URL = `${Deno.env.get('SUPABASE_URL')}/functions/v1/market-ml`;
 
 const db = createClient(Deno.env.get('SUPABASE_URL')!, Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!, {
   auth: { persistSession: false },
@@ -45,8 +60,10 @@ const json = (body: unknown, status = 200) =>
 
 // ---------------------------------------------------------------- Yahoo
 
-async function fetchYahoo(ticker: string, range: string): Promise<Bar[]> {
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${ticker}.JK?range=${range}&interval=1d`;
+/** raw = simbol Yahoo apa adanya (indeks, ETF, kurs, komoditas); selain itu saham IDX (.JK). */
+async function fetchYahoo(ticker: string, range: string, raw = false): Promise<Bar[]> {
+  const sym = raw ? encodeURIComponent(ticker) : `${ticker}.JK`;
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${sym}?range=${range}&interval=1d`;
   const res = await fetch(url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
   if (!res.ok) throw new Error(`${ticker}: HTTP ${res.status}`);
   const body = await res.json();
@@ -56,8 +73,10 @@ async function fetchYahoo(ticker: string, range: string): Promise<Bar[]> {
   const offset = (r.meta?.gmtoffset ?? 25200) * 1000;
   const bars: Bar[] = [];
   r.timestamp.forEach((t: number, i: number) => {
-    const o = q.open[i], h = q.high[i], l = q.low[i], c = q.close[i], v = q.volume[i];
-    if ([o, h, l, c, v].some((x) => x === null || x === undefined) || v === 0) return;
+    const o = q.open[i], h = q.high[i], l = q.low[i], c = q.close[i];
+    const v = raw ? (q.volume?.[i] ?? 0) : q.volume[i];
+    if ([o, h, l, c, v].some((x) => x === null || x === undefined)) return;
+    if (!raw && v === 0) return; // kurs dan indeks boleh tanpa volume
     const date = new Date(t * 1000 + offset).toISOString().slice(0, 10);
     bars.push({ date, open: o, high: h, low: l, close: c, volume: v });
   });
@@ -66,13 +85,13 @@ async function fetchYahoo(ticker: string, range: string): Promise<Bar[]> {
   return [...byDate.values()].sort((a, b) => (a.date < b.date ? -1 : 1));
 }
 
-async function ingest(tickers: string[], range: string) {
+async function ingest(tickers: string[], range: string, raw = false) {
   const ok: string[] = [];
   const failed: string[] = [];
   let rows = 0;
   for (let i = 0; i < tickers.length; i += 6) {
     const batch = tickers.slice(i, i + 6);
-    const results = await Promise.allSettled(batch.map((t) => fetchYahoo(t, range)));
+    const results = await Promise.allSettled(batch.map((t) => fetchYahoo(t, range, raw)));
     for (let j = 0; j < batch.length; j++) {
       const r = results[j];
       if (r.status === 'rejected') {
@@ -102,11 +121,15 @@ async function ingest(tickers: string[], range: string) {
 }
 
 /** Harga dari price_history: universe model, ditambah `extra` bila diminta. */
-async function loadSeries(sinceDays: number, extra: string[] = []): Promise<Series[]> {
+function loadSeries(sinceDays: number, extra: string[] = []): Promise<Series[]> {
+  return loadRaw(sinceDays, [...UNIVERSE, ...extra]);
+}
+
+async function loadRaw(sinceDays: number, symbols: string[]): Promise<Series[]> {
   const since = new Date(Date.now() - sinceDays * 86400000).toISOString().slice(0, 10);
   const { data, error } = await db.rpc('ml_price_json', { since });
   if (error) throw new Error(`ml_price_json: ${error.message}`);
-  const allowed = new Set([...UNIVERSE, ...extra]);
+  const allowed = new Set(symbols);
   type Raw = { ticker: string; bars: [string, number, number, number, number, number][] };
   return (data as Raw[]).filter((s) => allowed.has(s.ticker)).map((s) => ({
     ticker: s.ticker,
@@ -119,10 +142,36 @@ const PARAMS = { horizon: HORIZON, k: BARRIER_K };
 // ---------------------------------------------------------------- model
 
 async function activeModel(): Promise<{ version: string; model: Model; baseRate: number } | null> {
-  const { data } = await db.from('ml_model').select('*').eq('is_active', true).order('trained_at', { ascending: false }).limit(1);
+  const { data } = await db
+    .from('ml_model')
+    .select('*')
+    .eq('is_active', true)
+    .like('version', 'ml-logit-%')
+    .order('trained_at', { ascending: false })
+    .limit(1);
   const m = data?.[0];
   if (!m) return null;
   return { version: m.version, model: m.params.model as Model, baseRate: m.params.baseRate as number };
+}
+
+type Side = { model: Model; baseRate: number };
+async function activeMarket(): Promise<{ version: string; up: Side; down: Side } | null> {
+  const { data } = await db
+    .from('ml_model')
+    .select('version,params')
+    .eq('is_active', true)
+    .like('version', 'ml-ihsg-%')
+    .order('trained_at', { ascending: false })
+    .limit(1);
+  const m = data?.[0];
+  return m ? { version: m.version, up: m.params.up as Side, down: m.params.down as Side } : null;
+}
+
+/** Syarat model baru boleh dipakai: AUC rata-rata >= 0,53 dan logloss lebih baik dari base rate di >= 80% fold. */
+function gate(folds: FoldResult[]) {
+  const meanAuc = folds.reduce((a, f) => a + f.auc, 0) / folds.length;
+  const beat = folds.filter((f) => f.logloss < f.logloss_base).length;
+  return { ok: meanAuc >= 0.53 && beat >= Math.ceil(folds.length * 0.8), meanAuc: round(meanAuc), foldsBeatBase: beat, folds: folds.length };
 }
 
 function latestRows(rows: Row[]): Row[] {
@@ -207,6 +256,12 @@ async function daily() {
     }));
     out.push({ ticker: w.ticker, date: r.date, prob: round(prob, 3), signal });
   }
+  let market: unknown = null;
+  try {
+    market = await marketDaily(errors);
+  } catch (e) {
+    errors.push(`market: ${String(e).slice(0, 200)}`);
+  }
   const users = [...new Set((wl ?? []).map((w) => w.user_id))];
   for (const u of users) {
     check('run_log', await db.from('run_log').insert({
@@ -219,7 +274,7 @@ async function daily() {
       note: `market-ml daily ${am.version}; gagal: ${ing.failed.join(', ') || '-'}; error tulis: ${errors.length}`,
     }));
   }
-  return { ingest: ing, predictions: out, errors };
+  return { ingest: ing, predictions: out, market, errors };
 }
 
 /** Isi daily_snapshot 70 hari terakhir: tanggal baru, atau ganti baris berjalan. */
@@ -268,6 +323,145 @@ async function writeSnapshots(userId: string, s: Series) {
   }
 }
 
+// ---------------------------------------------------------------- pasar (IHSG) dan berita
+
+async function fetchNews(): Promise<NewsItem[]> {
+  const feeds = [
+    ...NEWS_QUERIES.map((q) => ({ url: googleNewsUrl(q), q, google: true })),
+    { url: CNBC_MARKET_RSS, q: 'CNBC market', google: false },
+  ];
+  const res = await Promise.allSettled(
+    feeds.map(async (f) => {
+      const r = await fetch(f.url, { headers: { 'User-Agent': 'Mozilla/5.0' } });
+      if (!r.ok) throw new Error(`${f.q}: HTTP ${r.status}`);
+      return parseRss(await r.text(), f.q, f.google);
+    }),
+  );
+  const cutoff = Date.now() - 48 * 3600 * 1000;
+  const seen = new Set<string>();
+  const items: NewsItem[] = [];
+  for (const r of res) {
+    if (r.status !== 'fulfilled') continue;
+    for (const it of r.value) {
+      const key = it.title.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+      if (seen.has(key) || Date.parse(it.published_at) < cutoff) continue;
+      seen.add(key);
+      items.push(it);
+    }
+  }
+  return items;
+}
+
+async function storeNews(items: NewsItem[], errors: string[]) {
+  const rows = items.map((it) => {
+    const s = scoreTitle(it.title);
+    return {
+      url: it.url,
+      title: it.title,
+      source: it.source,
+      published_at: it.published_at,
+      query: it.query,
+      sentiment: s.score === null ? null : round(s.score, 3),
+      pos_hits: s.pos,
+      neg_hits: s.neg,
+      topics: s.topics,
+    };
+  });
+  for (let k = 0; k < rows.length; k += 500) {
+    const { error } = await db.from('market_news').upsert(rows.slice(k, k + 500), { onConflict: 'url', ignoreDuplicates: true });
+    if (error) errors.push(`market_news: ${error.message}`);
+  }
+}
+
+function topHeadlines(items: NewsItem[], n = 8) {
+  return items
+    .map((it) => ({ it, s: scoreTitle(it.title) }))
+    .filter((x) => x.s.topics.length > 0)
+    .sort((a, b) => b.s.topics.length - a.s.topics.length || Math.abs(b.s.score ?? 0) - Math.abs(a.s.score ?? 0) || (a.it.published_at < b.it.published_at ? 1 : -1))
+    .slice(0, n)
+    .map(({ it, s }) => ({ title: it.title, source: it.source, url: it.url, published_at: it.published_at, sentiment: s.score, topics: s.topics }));
+}
+
+async function marketDaily(errors: string[]) {
+  const ing = await ingest(MACRO, '1mo', true);
+  if (ing.failed.length) errors.push(`makro gagal: ${ing.failed.join(', ')}`);
+  const news = await fetchNews();
+  await storeNews(news, errors);
+  const sum = summarize(news);
+  const mm = await activeMarket();
+  if (!mm) return { note: 'belum ada model IHSG aktif', news: sum };
+  const { up, down } = buildMarketRows(await loadRaw(500, MACRO), MP);
+  const lu = up[up.length - 1];
+  const ld = down[down.length - 1];
+  if (!lu || !ld) return { note: 'data IHSG atau data global belum lengkap', news: sum };
+  const pUp = predict(mm.up.model, lu.x);
+  const pDown = predict(mm.down.model, ld.x);
+  const dUp = pUp - mm.up.baseRate;
+  const dDown = pDown - mm.down.baseRate;
+  const kondisi = dUp >= 0.05 && dDown < 0.05 ? 'peluang' : dDown >= 0.05 && dUp < 0.05 ? 'risiko' : 'netral';
+  const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
+  const topics = sum.topics.slice(0, 4).map((t) => `${t.topic} (${t.n})`).join(', ') || '-';
+  const note =
+    `IHSG ${lu.date}: peluang menyentuh +${pct(lu.upperPct)} lebih dulu dalam ${MP.horizon} hari bursa = ${pct(pUp)} (rata-rata ${pct(mm.up.baseRate)}); ` +
+    `risiko menyentuh ${pct(lu.lowerPct)} lebih dulu = ${pct(pDown)} (rata-rata ${pct(mm.down.baseRate)}). ` +
+    `Berita 48 jam: ${sum.count} judul, skor ${sum.score === null ? '-' : sum.score.toFixed(2)} (${sum.positive} positif, ${sum.negative} negatif); topik: ${topics}. ` +
+    'Skor berita belum dipakai model. Model statistik, bukan saran.';
+  const { error } = await db.from('market_signal').upsert(
+    {
+      trade_date: lu.date,
+      model_version: mm.version,
+      horizon_days: MP.horizon,
+      prob_up: round(pUp),
+      base_up: round(mm.up.baseRate),
+      prob_down: round(pDown),
+      base_down: round(mm.down.baseRate),
+      kondisi,
+      upper_pct: round(lu.upperPct),
+      lower_pct: round(lu.lowerPct),
+      close_price: lu.close,
+      drivers: { up: drivers(mm.up.model, lu.x, 5), down: drivers(mm.down.model, ld.x, 5) },
+      news_score: sum.score === null ? null : round(sum.score, 3),
+      news_count: sum.count,
+      news_topics: sum.topics,
+      news_top: topHeadlines(news),
+      note,
+    },
+    { onConflict: 'trade_date' },
+  );
+  if (error) errors.push(`market_signal: ${error.message}`);
+  return { date: lu.date, pUp: round(pUp, 3), pDown: round(pDown, 3), kondisi, news: sum, note };
+}
+
+async function callSelf(secret: string, body: Record<string, unknown>) {
+  const res = await fetch(SELF_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'x-cron-secret': secret },
+    body: JSON.stringify(body),
+  });
+  const j = await res.json();
+  if (!res.ok) throw new Error(`${body.mode}: ${JSON.stringify(j).slice(0, 200)}`);
+  return j;
+}
+
+/** Latih ulang mingguan: uji walk-forward dulu, model baru hanya dipakai bila lulus gate. */
+async function retrain(secret: string) {
+  const sFolds = (await Promise.all([0, 1, 2, 3, 4].map((f) => callSelf(secret, { mode: 'evaluate', fold: f })))).flat() as FoldResult[];
+  const sg = gate(sFolds);
+  const stock = { gate: sg, fit: await callSelf(secret, { mode: 'fit', folds: sFolds, activate: sg.ok }) };
+  const [mu, md] = await Promise.all([
+    callSelf(secret, { mode: 'market_evaluate', label: 'up' }),
+    callSelf(secret, { mode: 'market_evaluate', label: 'down' }),
+  ]);
+  const gu = gate(mu.folds);
+  const gd = gate(md.folds);
+  const market = {
+    gateUp: gu,
+    gateDown: gd,
+    fit: await callSelf(secret, { mode: 'market_fit', folds: { up: mu.folds, down: md.folds }, activate: gu.ok && gd.ok }),
+  };
+  return { stock, market };
+}
+
 // ---------------------------------------------------------------- handler
 
 Deno.serve(async (req) => {
@@ -288,9 +482,10 @@ Deno.serve(async (req) => {
         const lab = rows.filter((r) => r.y !== null);
         const model = fitLogistic(lab.map((r) => r.x), lab.map((r) => r.y as number), LAMBDA);
         const baseRate = lab.reduce((a, r) => a + (r.y as number), 0) / lab.length;
-        const version = `ml-logit-tb${HORIZON}-${new Date().toISOString().slice(0, 10)}`;
+        const activate = body.activate !== false;
+        const version = `ml-logit-tb${HORIZON}-${new Date().toISOString().slice(0, 10)}${activate ? '' : '-cand'}`;
         const tickers = [...new Set(rows.map((r) => r.ticker))].sort();
-        await db.from('ml_model').update({ is_active: false }).eq('is_active', true);
+        if (activate) await db.from('ml_model').update({ is_active: false }).eq('is_active', true).like('version', 'ml-logit-%');
         const { error } = await db.from('ml_model').upsert({
           version,
           horizon_days: HORIZON,
@@ -299,10 +494,10 @@ Deno.serve(async (req) => {
           params: { model, baseRate, lambda: LAMBDA, nTrain: lab.length, firstDate: lab[0].date, lastLabeledDate: lab[lab.length - 1].date },
           metrics: { folds: body.folds ?? [] },
           universe: tickers,
-          is_active: true,
+          is_active: activate,
         });
         if (error) throw new Error(error.message);
-        return json({ version, nTrain: lab.length, baseRate: round(baseRate), coef: Object.fromEntries(FEATURES.map((f, j) => [f, round(model.coef[j], 3)])) });
+        return json({ version, activate, nTrain: lab.length, baseRate: round(baseRate), coef: Object.fromEntries(FEATURES.map((f, j) => [f, round(model.coef[j], 3)])) });
       }
       case 'screen': {
         const am = await activeModel();
@@ -326,6 +521,58 @@ Deno.serve(async (req) => {
       }
       case 'daily':
         return json(await daily());
+      case 'ingest_macro':
+        return json(await ingest(MACRO, body.range ?? '10y', true));
+      case 'market_evaluate': {
+        const rows = buildMarketRows(await loadRaw(365 * 11, MACRO), MP);
+        const r = body.label === 'down' ? rows.down : rows.up;
+        const lab = r.filter((x) => x.y !== null);
+        return json({
+          label: body.label ?? 'up',
+          n: lab.length,
+          first: lab[0]?.date,
+          last: lab[lab.length - 1]?.date,
+          folds: walkForward(r, MP.horizon, FOLDS, LAMBDA, undefined, MARKET_FEATURES, 'ihsg_ret20'),
+        });
+      }
+      case 'market_fit': {
+        const { up, down } = buildMarketRows(await loadRaw(365 * 11, MACRO), MP);
+        const fitOne = (rows: Row[]) => {
+          const lab = rows.filter((r) => r.y !== null);
+          const model = fitLogistic(lab.map((r) => r.x), lab.map((r) => r.y as number), LAMBDA, 4, 25, MARKET_FEATURES);
+          return { model, baseRate: lab.reduce((a, r) => a + (r.y as number), 0) / lab.length, n: lab.length, first: lab[0].date, last: lab[lab.length - 1].date };
+        };
+        const u = fitOne(up);
+        const d = fitOne(down);
+        const activate = body.activate !== false;
+        const version = `ml-ihsg-tb${MP.horizon}-${new Date().toISOString().slice(0, 10)}${activate ? '' : '-cand'}`;
+        if (activate) await db.from('ml_model').update({ is_active: false }).eq('is_active', true).like('version', 'ml-ihsg-%');
+        const { error } = await db.from('ml_model').upsert({
+          version,
+          horizon_days: MP.horizon,
+          barrier_k: MP.k,
+          features: [...MARKET_FEATURES],
+          params: { up: { model: u.model, baseRate: u.baseRate }, down: { model: d.model, baseRate: d.baseRate }, lambda: LAMBDA, nTrain: u.n, firstDate: u.first, lastLabeledDate: u.last },
+          metrics: { folds: body.folds ?? null },
+          universe: [...MACRO],
+          is_active: activate,
+        });
+        if (error) throw new Error(error.message);
+        const coef = (m: Model) => Object.fromEntries(MARKET_FEATURES.map((f, j) => [f, round(m.coef[j], 3)]));
+        return json({ version, activate, nTrain: u.n, baseUp: round(u.baseRate), baseDown: round(d.baseRate), coefUp: coef(u.model), coefDown: coef(d.model) });
+      }
+      case 'news': {
+        const errors: string[] = [];
+        const items = await fetchNews();
+        await storeNews(items, errors);
+        return json({ summary: summarize(items), top: topHeadlines(items), errors });
+      }
+      case 'market_daily': {
+        const errors: string[] = [];
+        return json({ market: await marketDaily(errors), errors });
+      }
+      case 'retrain':
+        return json(await retrain(secret as string));
       default:
         return json({ error: 'mode tidak dikenal' }, 400);
     }
