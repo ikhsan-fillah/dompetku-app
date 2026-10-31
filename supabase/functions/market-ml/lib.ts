@@ -212,6 +212,8 @@ export type Row = {
   x: number[]; // urutan sesuai FEATURES
   y: number | null; // 1 = target naik tersentuh lebih dulu, 0 = tidak
   fwdRet: number | null; // return close ke close H hari ke depan
+  tradeRet?: number | null; // return sederhana: beli buka besok, jual di batas atas/bawah atau penutupan hari ke-H
+  holdRet?: number | null; // return sederhana: beli buka besok, jual penutupan hari ke-H
   upperPct: number;
   lowerPct: number;
   close: number;
@@ -269,18 +271,31 @@ function rowsForSeries(s: Series, p: LabelParams): (Row & { raw: Record<string, 
     const lower = c[i] * Math.exp(-width);
     let y: number | null = null;
     let fwd: number | null = null;
+    let tradeRet: number | null = null;
+    let holdRet: number | null = null;
     if (i + H < b.length) {
       y = 0;
+      const entry = b[i + 1].open; // sinyal dihitung malam hari, beli di harga buka besok
+      let exit = c[i + H];
       for (let j = i + 1; j <= i + H; j++) {
         const hitUp = b[j].high >= upper;
         const hitDown = b[j].low <= lower;
-        if (hitDown) break; // turun dulu, atau keduanya di hari yang sama: konservatif
+        if (hitDown) {
+          // turun dulu, atau keduanya di hari yang sama: konservatif; gap turun terisi di harga buka
+          exit = b[j].open < lower ? b[j].open : lower;
+          break;
+        }
         if (hitUp) {
           y = 1;
+          exit = b[j].open > upper ? b[j].open : upper;
           break;
         }
       }
       fwd = Math.log(c[i + H] / c[i]);
+      if (entry > 0) {
+        tradeRet = exit / entry - 1;
+        holdRet = c[i + H] / entry - 1;
+      }
     }
     out.push({
       ticker: s.ticker,
@@ -288,6 +303,8 @@ function rowsForSeries(s: Series, p: LabelParams): (Row & { raw: Record<string, 
       x: [],
       y,
       fwdRet: fwd,
+      tradeRet,
+      holdRet,
       upperPct: Math.exp(width) - 1,
       lowerPct: Math.exp(-width) - 1,
       close: c[i],
@@ -493,6 +510,7 @@ export type FoldResult = {
   hitAll: number;
   fwdRetTop20: number;
   fwdRetAll: number;
+  extra?: unknown;
 };
 
 /**
@@ -507,6 +525,9 @@ export function walkForward(
   only?: number,
   names: readonly string[] = FEATURES,
   momName = 'ret20',
+  fitter?: (X: number[][], y: number[]) => (x: number[]) => number,
+  onFold?: (c: { tr: Row[]; te: Row[]; p: number[]; pf: (x: number[]) => number }) => unknown,
+  testFilter?: (r: Row) => boolean,
 ): FoldResult[] {
   const labeled = rows.filter((r) => r.y !== null);
   const dates = [...new Set(labeled.map((r) => r.date))].sort();
@@ -522,9 +543,16 @@ export function walkForward(
     const testStart = dates[testStartIdx];
     const testEnd = dates[testEndIdx];
     const tr = labeled.filter((r) => r.date <= trainEnd);
-    const te = labeled.filter((r) => r.date >= testStart && r.date <= testEnd);
-    const m = fitLogistic(tr.map((r) => r.x), tr.map((r) => r.y as number), lambda, 4, 25, names);
-    const p = te.map((r) => predict(m, r.x));
+    const te = labeled.filter((r) => r.date >= testStart && r.date <= testEnd && (!testFilter || testFilter(r)));
+    const Xtr = tr.map((r) => r.x);
+    const ytr = tr.map((r) => r.y as number);
+    let pf: (x: number[]) => number;
+    if (fitter) pf = fitter(Xtr, ytr);
+    else {
+      const m = fitLogistic(Xtr, ytr, lambda, 4, 25, names);
+      pf = (x) => predict(m, x);
+    }
+    const p = te.map((r) => pf(r.x));
     const y = te.map((r) => r.y as number);
     const base = tr.reduce((a, r) => a + (r.y as number), 0) / tr.length;
     const mom = te.map((r) => r.x[names.indexOf(momName)]);
@@ -548,6 +576,7 @@ export function walkForward(
       hitAll: round(mean(y)),
       fwdRetTop20: round(mean(top.map((i) => te[i].fwdRet as number))),
       fwdRetAll: round(mean(te.map((r) => r.fwdRet as number))),
+      ...(onFold ? { extra: onFold({ tr, te, p, pf }) } : {}),
     });
   }
   return res;
