@@ -1,7 +1,7 @@
 // Edge Function market-ml-lab: eksperimen perbaikan model (GBM, fitur pasar,
 // universe lebih luas) tanpa menyentuh fungsi produksi market-ml.
 // Hanya membaca price_history; tidak menulis apa pun. Auth sama: header x-cron-secret.
-//   {mode:'eval', fold:0..4, model:'logit'|'gbm', market?:bool, universe?:'base'|'all', gbm?:Partial<GbmParams>, detail?:bool, testBase?:bool, stride?:number}
+//   {mode:'eval', fold:0..4, model:'logit'|'gbm', market?:bool, universe?:'base'|'all', gbm?:Partial<GbmParams>, detail?:bool, testBase?:bool, stride?:number, target?:'tb'|'rel'}
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { buildRows, FEATURES, fitLogistic, predict, walkForward, type Row, type Series } from './lib.ts';
 import { buildMarketRows, MACRO, MARKET_FEATURES } from './market.ts';
@@ -75,6 +75,19 @@ function selective({ tr, te, p, pf }: { tr: Row[]; te: Row[]; p: number[]; pf: (
   });
   const all = te.map((_, i) => i).filter((i) => ok[i]);
   const thresholds: Record<string, unknown> = { all: stat(all) };
+  // penyaring: baris dengan prediksi di bawah kuantil data latih (sinyal "hindari")
+  const avoid: Record<string, unknown> = {};
+  for (const lv of [0.1, 0.2, 0.3]) {
+    const t = q(lv);
+    const lo = all.filter((i) => p[i] < t);
+    const hi = all.filter((i) => p[i] >= t);
+    const big = (idx: number[]) => r4(avg(idx.map((i) => (H(i) < -0.1 ? 1 : 0))));
+    avoid[`q${lv * 100}`] = {
+      thr: r4(t),
+      low: { ...stat(lo), bigLoss: big(lo) },
+      rest: { ...stat(hi), bigLoss: big(hi) },
+    };
+  }
   for (const lv of [0.9, 0.95, 0.99]) {
     const t = q(lv);
     thresholds[`p${lv * 100}`] = { thr: r4(t), ...stat(all.filter((i) => p[i] >= t)) };
@@ -115,7 +128,43 @@ function selective({ tr, te, p, pf }: { tr: Row[]; te: Row[]; p: number[]; pf: (
       ewEq: r4(eqAll),
     };
   }
-  return { cost: COST, thresholds, calib, backtest: bt };
+  // per periode: beli rata semua vs beli rata tanpa 20%/30% terbawah (peringkat pada hari itu)
+  const filt: Record<string, unknown> = {};
+  for (const cut of [0.2, 0.3]) {
+    let eqAll = 1, eqKeep = 1, eqDrop = 1, beat = 0, periods = 0;
+    for (let j = 0; j < dates.length; j += PARAMS.horizon) {
+      const ids = byDate.get(dates[j])!;
+      if (ids.length < 10) continue;
+      const srt = [...ids].sort((a, b) => p[a] - p[b]);
+      const nd = Math.floor(srt.length * cut);
+      const rAll = avg(ids.map(H)) - COST;
+      const rKeep = avg(srt.slice(nd).map(H)) - COST;
+      const rDrop = avg(srt.slice(0, nd).map(H)) - COST;
+      eqAll *= 1 + rAll;
+      eqKeep *= 1 + rKeep;
+      eqDrop *= 1 + rDrop;
+      if (rKeep > rAll) beat++;
+      periods++;
+    }
+    filt[`drop${cut * 100}`] = { periods, beat, eqAll: r4(eqAll), eqKeep: r4(eqKeep), eqDropped: r4(eqDrop) };
+  }
+  return { cost: COST, thresholds, avoid, filter: filt, calib, backtest: bt };
+}
+
+/** Target relatif: 1 jika return H hari mengalahkan median semua saham pada tanggal yang sama. */
+function relabelRelative(rows: Row[]): Row[] {
+  const byDate = new Map<string, number[]>();
+  rows.forEach((r, i) => {
+    if (r.fwdRet == null) return;
+    (byDate.get(r.date) ?? byDate.set(r.date, []).get(r.date)!).push(i);
+  });
+  const y: (number | null)[] = rows.map(() => null);
+  for (const ids of byDate.values()) {
+    const v = ids.map((i) => rows[i].fwdRet as number).sort((a, b) => a - b);
+    const med = v.length % 2 ? v[(v.length - 1) / 2] : (v[v.length / 2 - 1] + v[v.length / 2]) / 2;
+    for (const i of ids) y[i] = (rows[i].fwdRet as number) > med ? 1 : 0;
+  }
+  return rows.map((r, i) => ({ ...r, y: y[i] }));
 }
 
 // deno-lint-ignore no-explicit-any
@@ -126,6 +175,7 @@ async function evaluate(body: Record<string, any>) {
   const base = new Set(BASE_UNIVERSE);
   const stocks = all.filter((s) => !macro.has(s.ticker) && (body.universe === 'all' || base.has(s.ticker)));
   let rows = buildRows(stocks, PARAMS);
+  if (body.target === 'rel') rows = relabelRelative(rows);
   let names: string[] = [...FEATURES];
   if (body.market) ({ rows, names } = withMarket(rows, all));
   const gp = { ...GBM_DEFAULT, ...(body.gbm ?? {}) };
@@ -151,6 +201,7 @@ async function evaluate(body: Record<string, any>) {
     market: !!body.market,
     universe: body.universe ?? 'base',
     testBase: !!body.testBase,
+    target: body.target ?? 'tb',
     tickers: stocks.length,
     nFeatures: names.length,
     ms: Date.now() - t0,
