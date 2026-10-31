@@ -154,6 +154,10 @@ async function daily() {
   const { data: wl, error } = await db.from('watchlist').select('user_id,ticker').eq('is_active', true);
   if (error) throw new Error(error.message);
   const out: unknown[] = [];
+  const errors: string[] = [];
+  const check = (label: string, res: { error: { message: string } | null }) => {
+    if (res.error) errors.push(`${label}: ${res.error.message}`);
+  };
   for (const w of wl ?? []) {
     const s = series.find((x) => x.ticker === w.ticker);
     if (s) await writeSnapshots(w.user_id, s);
@@ -165,7 +169,7 @@ async function daily() {
     const prob = predict(am.model, r.x);
     const signal = signalOf(prob, am.baseRate);
     const drv = drivers(am.model, r.x);
-    await db.from('ml_prediction').upsert(
+    check(`ml_prediction ${w.ticker}`, await db.from('ml_prediction').upsert(
       {
         user_id: w.user_id,
         ticker: w.ticker,
@@ -181,33 +185,34 @@ async function daily() {
         drivers: drv,
       },
       { onConflict: 'user_id,ticker,trade_date,model_version' },
-    );
-    await db.from('analysis_result').delete().match({ user_id: w.user_id, ticker: w.ticker, trade_date: r.date, rule_version: am.version });
-    await db.from('analysis_result').insert({
+    ));
+    check(`analysis_result del ${w.ticker}`, await db.from('analysis_result').delete().match({ user_id: w.user_id, ticker: w.ticker, trade_date: r.date, rule_version: am.version }));
+    // range_label dibatasi CHECK (Latest/7D/1M/3M); hasil ML dibedakan lewat rule_version.
+    check(`analysis_result ${w.ticker}`, await db.from('analysis_result').insert({
       user_id: w.user_id,
       ticker: w.ticker,
       trade_date: r.date,
-      range_label: `ML ${HORIZON}D`,
+      range_label: 'Latest',
       kondisi: signal,
       technical_note: describe({ prob, base: am.baseRate, signal, upper: r.upperPct, lower: r.lowerPct }),
       broker_note: null,
       rule_version: am.version,
-    });
+    }));
     out.push({ ticker: w.ticker, date: r.date, prob: round(prob, 3), signal });
   }
   const users = [...new Set((wl ?? []).map((w) => w.user_id))];
   for (const u of users) {
-    await db.from('run_log').insert({
+    check('run_log', await db.from('run_log').insert({
       user_id: u,
       started_at: started,
       finished_at: new Date().toISOString(),
       tickers: (wl ?? []).filter((w) => w.user_id === u).map((w) => w.ticker),
-      status: ing.failed.length ? 'sebagian' : 'ok',
+      status: ing.failed.length || errors.length ? 'sebagian' : 'selesai',
       rereads: 0,
-      note: `market-ml daily ${am.version}; gagal: ${ing.failed.join(', ') || '-'}`,
-    });
+      note: `market-ml daily ${am.version}; gagal: ${ing.failed.join(', ') || '-'}; error tulis: ${errors.length}`,
+    }));
   }
-  return { ingest: ing, predictions: out };
+  return { ingest: ing, predictions: out, errors };
 }
 
 /** Isi daily_snapshot 70 hari terakhir: tanggal baru, atau ganti baris berjalan. */
