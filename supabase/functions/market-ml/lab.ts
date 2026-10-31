@@ -178,6 +178,16 @@ async function evaluate(body: Record<string, any>) {
   if (body.target === 'rel') rows = relabelRelative(rows);
   let names: string[] = [...FEATURES];
   if (body.market) ({ rows, names } = withMarket(rows, all));
+  if (Array.isArray(body.features)) {
+    // subset fitur; 'bbZ' = jarak ke SMA20 dalam satuan volatilitas harian (pendekatan Bollinger %B)
+    const iD = names.indexOf('distSma20');
+    const iV = names.indexOf('vol20');
+    const want = body.features as string[];
+    const keep = want.map((n) => (n === 'bbZ' ? -1 : names.indexOf(n)));
+    keep.forEach((j, k) => { if (j < 0 && want[k] !== 'bbZ') throw new Error(`fitur tidak dikenal: ${want[k]}`); });
+    rows = rows.map((r) => ({ ...r, x: keep.map((j) => (j < 0 ? r.x[iD] / Math.max(r.x[iV], 1e-4) : r.x[j])) }));
+    names = [...want];
+  }
   const gp = { ...GBM_DEFAULT, ...(body.gbm ?? {}) };
   let importance: unknown = null;
   const fitter = body.model === 'gbm'
