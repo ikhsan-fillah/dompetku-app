@@ -72,6 +72,11 @@ function selective({ tr, te, p, pf }: { tr: Row[]; te: Row[]; p: number[]; pf: (
     holdNet: r4(avg(idx.map(H)) - COST),
     barWin: r4(avg(idx.map((i) => (T(i) > COST ? 1 : 0)))),
     barNet: r4(avg(idx.map(T)) - COST),
+    // besar untung/rugi bersih per transaksi (setelah biaya)
+    holdAvgWin: r4(avg(idx.map((i) => H(i) - COST).filter((v) => v > 0))),
+    holdAvgLoss: r4(avg(idx.map((i) => H(i) - COST).filter((v) => v <= 0))),
+    barAvgWin: r4(avg(idx.map((i) => T(i) - COST).filter((v) => v > 0))),
+    barAvgLoss: r4(avg(idx.map((i) => T(i) - COST).filter((v) => v <= 0))),
   });
   const all = te.map((_, i) => i).filter((i) => ok[i]);
   const thresholds: Record<string, unknown> = { all: stat(all) };
@@ -176,6 +181,8 @@ async function evaluate(body: Record<string, any>) {
   const stocks = all.filter((s) => !macro.has(s.ticker) && (body.universe === 'all' || base.has(s.ticker)));
   let rows = buildRows(stocks, PARAMS);
   if (body.target === 'rel') rows = relabelRelative(rows);
+  // target 'net': 1 jika beli buka besok, tahan H hari, untung setelah biaya
+  if (body.target === 'net') rows = rows.map((r) => ({ ...r, y: r.holdRet == null ? null : r.holdRet > COST ? 1 : 0 }));
   let names: string[] = [...FEATURES];
   if (body.market) ({ rows, names } = withMarket(rows, all));
   if (Array.isArray(body.features)) {
