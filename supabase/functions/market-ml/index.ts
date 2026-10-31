@@ -101,11 +101,14 @@ async function ingest(tickers: string[], range: string) {
   return { ok, failed, rows };
 }
 
-async function loadSeries(sinceDays: number): Promise<Series[]> {
+/** Harga dari price_history: universe model, ditambah `extra` bila diminta. */
+async function loadSeries(sinceDays: number, extra: string[] = []): Promise<Series[]> {
   const since = new Date(Date.now() - sinceDays * 86400000).toISOString().slice(0, 10);
   const { data, error } = await db.rpc('ml_price_json', { since });
   if (error) throw new Error(`ml_price_json: ${error.message}`);
-  return (data as { ticker: string; bars: [string, number, number, number, number, number][] }[]).map((s) => ({
+  const allowed = new Set([...UNIVERSE, ...extra]);
+  type Raw = { ticker: string; bars: [string, number, number, number, number, number][] };
+  return (data as Raw[]).filter((s) => allowed.has(s.ticker)).map((s) => ({
     ticker: s.ticker,
     bars: s.bars.map(([date, open, high, low, close, volume]) => ({ date, open, high, low, close, volume })),
   }));
@@ -144,15 +147,16 @@ function describe(p: { prob: number; base: number; signal: string; upper: number
 
 async function daily() {
   const started = new Date().toISOString();
-  const ing = await ingest(UNIVERSE, '1mo');
-  const am = await activeModel();
-  if (!am) throw new Error('belum ada model aktif');
-  const series = await loadSeries(420);
-  const rows = buildRows(series, PARAMS);
-  const latest = new Map(latestRows(rows).map((r) => [r.ticker, r]));
-
   const { data: wl, error } = await db.from('watchlist').select('user_id,ticker').eq('is_active', true);
   if (error) throw new Error(error.message);
+  // Saham aktif di luar universe tetap diambil harganya supaya grafik di app terisi.
+  const extra = [...new Set((wl ?? []).map((w) => w.ticker))].filter((t) => !UNIVERSE.includes(t));
+  const ing = await ingest([...UNIVERSE, ...extra], '1mo');
+  const am = await activeModel();
+  if (!am) throw new Error('belum ada model aktif');
+  const series = await loadSeries(420, extra);
+  const rows = buildRows(series, PARAMS);
+  const latest = new Map(latestRows(rows).map((r) => [r.ticker, r]));
   const out: unknown[] = [];
   const errors: string[] = [];
   const check = (label: string, res: { error: { message: string } | null }) => {
@@ -169,6 +173,7 @@ async function daily() {
     const prob = predict(am.model, r.x);
     const signal = signalOf(prob, am.baseRate);
     const drv = drivers(am.model, r.x);
+    const outside = !UNIVERSE.includes(w.ticker);
     check(`ml_prediction ${w.ticker}`, await db.from('ml_prediction').upsert(
       {
         user_id: w.user_id,
@@ -194,7 +199,9 @@ async function daily() {
       trade_date: r.date,
       range_label: 'Latest',
       kondisi: signal,
-      technical_note: describe({ prob, base: am.baseRate, signal, upper: r.upperPct, lower: r.lowerPct }),
+      technical_note:
+        describe({ prob, base: am.baseRate, signal, upper: r.upperPct, lower: r.lowerPct }) +
+        (outside ? ' Catatan: saham ini di luar data latih model, jadi hasilnya kurang bisa dipercaya.' : ''),
       broker_note: null,
       rule_version: am.version,
     }));
