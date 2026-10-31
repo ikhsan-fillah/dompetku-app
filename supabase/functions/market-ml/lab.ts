@@ -1,7 +1,7 @@
 // Edge Function market-ml-lab: eksperimen perbaikan model (GBM, fitur pasar,
 // universe lebih luas) tanpa menyentuh fungsi produksi market-ml.
 // Hanya membaca price_history; tidak menulis apa pun. Auth sama: header x-cron-secret.
-//   {mode:'eval', fold:0..4, model:'logit'|'gbm', market?:bool, universe?:'base'|'all', gbm?:Partial<GbmParams>, detail?:bool, testBase?:bool, stride?:number, target?:'tb'|'rel'}
+//   {mode:'eval', fold:0..4, model:'logit'|'gbm', market?:bool, universe?:'base'|'all', gbm?:Partial<GbmParams>, detail?:bool, testBase?:bool, stride?:number, target?:'tb'|'rel', rule?:{feature:string, sign:1|-1}}
 import { createClient } from 'npm:@supabase/supabase-js@2';
 import { buildRows, FEATURES, fitLogistic, predict, walkForward, type Row, type Series } from './lib.ts';
 import { buildMarketRows, MACRO, MARKET_FEATURES } from './market.ts';
@@ -186,6 +186,14 @@ async function evaluate(body: Record<string, any>) {
       importance = gbmImportance(m);
       return (x: number[]) => predictGbm(m, x);
     }
+    : body.rule
+    ? () => {
+      // aturan sederhana satu fitur (pembanding tanpa ML): skor = tanda * nilai fitur
+      const j = names.indexOf(body.rule.feature);
+      if (j < 0) throw new Error(`fitur tidak dikenal: ${body.rule.feature}`);
+      const sg = body.rule.sign === -1 ? -1 : 1;
+      return (x: number[]) => sg * x[j];
+    }
     : body.stride
     ? (X: number[][], y: number[]) => {
       // latih pada sebagian baris (label 10 hari saling tumpang tindih, jadi informasinya sebagian besar tetap)
@@ -197,7 +205,7 @@ async function evaluate(body: Record<string, any>) {
   const res = walkForward(rows, PARAMS.horizon, FOLDS, LAMBDA, body.fold ?? 0, names, 'ret20', fitter, body.detail ? selective : undefined,
     body.testBase ? (r: Row) => base.has(r.ticker) : undefined);
   return {
-    model: body.model ?? 'logit',
+    model: body.rule ? `rule:${body.rule.sign === -1 ? '-' : '+'}${body.rule.feature}` : body.model ?? 'logit',
     market: !!body.market,
     universe: body.universe ?? 'base',
     testBase: !!body.testBase,
