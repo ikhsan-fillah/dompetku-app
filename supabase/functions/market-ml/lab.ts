@@ -93,7 +93,7 @@ function selective({ tr, te, p, pf }: { tr: Row[]; te: Row[]; p: number[]; pf: (
       rest: { ...stat(hi), bigLoss: big(hi) },
     };
   }
-  for (const lv of [0.9, 0.95, 0.99]) {
+  for (const lv of [0.5, 0.7, 0.9, 0.95, 0.99]) {
     const t = q(lv);
     thresholds[`p${lv * 100}`] = { thr: r4(t), ...stat(all.filter((i) => p[i] >= t)) };
   }
@@ -172,6 +172,31 @@ function relabelRelative(rows: Row[]): Row[] {
   return rows.map((r, i) => ({ ...r, y: y[i] }));
 }
 
+/**
+ * Meta-labeling: aturan teknikal (primer) memilih hari masuk; model hanya menilai ambil/lewati.
+ * Butuh nilai hari sebelumnya, diambil dari baris sebelumnya pada saham yang sama.
+ */
+function primaryFilter(rows: Row[], rule: string): Row[] {
+  const F = (n: string) => (FEATURES as readonly string[]).indexOf(n);
+  const [iH, iS50, iR, iK, iKD, iRP, iV] = ['macdHistPct', 'distSma50', 'rsi', 'stochK', 'stochKminusD', 'rangePos20', 'volumeRatio'].map(F);
+  const prev = new Map<string, Row>();
+  const out: Row[] = [];
+  for (const r of rows) {
+    const p = prev.get(r.ticker);
+    prev.set(r.ticker, r);
+    if (!p) continue;
+    const x = r.x, q = p.x;
+    const fire = rule === 'macdCross' ? x[iH] > 0 && q[iH] <= 0 && x[iS50] > 0
+      : rule === 'rsiRebound' ? x[iR] >= 0.3 && q[iR] < 0.3
+      : rule === 'stochCross' ? x[iKD] > 0 && q[iKD] <= 0 && q[iK] < 0.3
+      : rule === 'breakout' ? x[iRP] >= 0.999 && q[iRP] < 0.999 && x[iV] > Math.log(1.5)
+      : rule === 'trend' ? x[iS50] > 0 && x[iH] > 0
+      : (() => { throw new Error(`aturan tidak dikenal: ${rule}`); })();
+    if (fire) out.push(r);
+  }
+  return out;
+}
+
 // deno-lint-ignore no-explicit-any
 async function evaluate(body: Record<string, any>) {
   const t0 = Date.now();
@@ -183,6 +208,7 @@ async function evaluate(body: Record<string, any>) {
   if (body.target === 'rel') rows = relabelRelative(rows);
   // target 'net': 1 jika beli buka besok, tahan H hari, untung setelah biaya
   if (body.target === 'net') rows = rows.map((r) => ({ ...r, y: r.holdRet == null ? null : r.holdRet > COST ? 1 : 0 }));
+  if (body.primary) rows = primaryFilter(rows, body.primary as string);
   let names: string[] = [...FEATURES];
   if (body.market) ({ rows, names } = withMarket(rows, all));
   if (Array.isArray(body.features)) {
@@ -227,6 +253,8 @@ async function evaluate(body: Record<string, any>) {
     universe: body.universe ?? 'base',
     testBase: !!body.testBase,
     target: body.target ?? 'tb',
+    primary: body.primary ?? null,
+    nRows: rows.length,
     tickers: stocks.length,
     nFeatures: names.length,
     ms: Date.now() - t0,
