@@ -17,10 +17,10 @@ function sma(v: Num[], L: number): Num[] {
 }
 
 type Num = number | null;
-const H = 10;
-const COST = 0.004;
-const MIN_VALUE_IDR = 1e9; // G3: buang hari dengan rata-rata nilai transaksi 20 hari < Rp1 miliar [H]
-const MAX_DAY_MOVE = Math.log(1.5); // data/aksi korporasi: buang jendela yang memuat gerak harian > 50%
+export const H = 10;
+export const COST = 0.004;
+export const MIN_VALUE_IDR = 1e9; // G3: buang hari dengan rata-rata nilai transaksi 20 hari < Rp1 miliar [H]
+export const MAX_DAY_MOVE = Math.log(1.5); // data/aksi korporasi: buang jendela yang memuat gerak harian > 50%
 
 /** Fraksi harga IDX (asumsi aturan yang berlaku; belum diverifikasi ulang). */
 function tick(p: number): number {
@@ -455,7 +455,7 @@ function flags(F: FT, t: number, ihsg: string | null, state: { lastA1: number; a
 
 type Ev = { t: number; fold: number; month: string; net: number; ex: number; y: number; yEx: number; absRet: number; ihsg: string | null };
 
-function clusterT(xs: { v: number; g: string }[]) {
+export function clusterT(xs: { v: number; g: string }[]) {
   const n = xs.length;
   if (n < 2) return { mean: n ? xs[0].v : null, se: null, t: null, p: null, clusters: n };
   const mean = xs.reduce((a, x) => a + x.v, 0) / n;
@@ -473,8 +473,8 @@ function phi(x: number) { // CDF normal standar (Abramowitz-Stegun 26.2.17)
   const p = 0.3989423 * Math.exp(-x * x / 2) * k * (0.3193815 + k * (-0.3565638 + k * (1.781478 + k * (-1.821256 + k * 1.330274))));
   return 1 - p;
 }
-const r4 = (v: number | null | undefined) => (v === null || v === undefined || !Number.isFinite(v) ? null : Math.round(v * 1e4) / 1e4);
-const mean = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
+export const r4 = (v: number | null | undefined) => (v === null || v === undefined || !Number.isFinite(v) ? null : Math.round(v * 1e4) / 1e4);
+export const mean = (a: number[]) => (a.length ? a.reduce((x, y) => x + y, 0) / a.length : null);
 
 function summarize(evs: Ev[]) {
   const ex = clusterT(evs.map((e) => ({ v: e.ex, g: e.month })));
