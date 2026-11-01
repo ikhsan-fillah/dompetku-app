@@ -46,14 +46,35 @@ String flowHeadline(GroupSummary summary) {
   };
 }
 
-/// Arah dana tiga kelompok. Bagian atas: kalimat ringkas dan tiga kolom dari
-/// garis nol (naik = net beli, turun = net jual, tingginya dibandingkan
-/// dengan kelompok terbesar). Bagian bawah: komposisi beli dan jual tiap
-/// kelompok, supaya terlihat dana yang berputar, bukan hanya selisihnya.
+/// Arah dana tiga kelompok: kalimat ringkas dan tiga kolom dari garis nol
+/// (naik = net beli, turun = net jual, tingginya dibandingkan dengan kelompok
+/// terbesar). Rincian beli dan jual per kelompok sengaja tidak ditampilkan
+/// supaya kartu tetap ringkas.
 class GroupFlowCard extends StatelessWidget {
-  const GroupFlowCard({super.key, required this.summary});
+  const GroupFlowCard({
+    super.key,
+    required this.summary,
+    this.headline,
+    this.contextLine,
+    this.rangeLabel,
+    this.others = const {},
+  });
 
   final GroupSummary summary;
+
+  /// Kalimat pembuka dari analisis lintas rentang. Null memakai kalimat
+  /// sederhana dari tanda net tiap kelompok.
+  final String? headline;
+
+  /// Kalimat konteks harga dan rentang pembanding, null bila tidak ada.
+  final String? contextLine;
+
+  /// Rentang yang digambar sebagai batang, untuk catatan di bawah grafik.
+  final String? rangeLabel;
+
+  /// Net kelompok di rentang lain, ditampilkan sebagai angka kecil di bawah
+  /// tiap kolom. Kunci = label rentang, urut tampil.
+  final Map<String, GroupSummary> others;
 
   @override
   Widget build(BuildContext context) {
@@ -73,17 +94,32 @@ class GroupFlowCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            flowHeadline(summary),
+            headline ?? flowHeadline(summary),
             style: AppText.display(size: 19, height: 1.25),
           ),
-          const SizedBox(height: 18),
+          if (contextLine case final String text) ...[
+            const SizedBox(height: 6),
+            Text(
+              text,
+              style: AppText.body(size: 12, color: AppColors.ink2, height: 1.5),
+            ),
+          ],
+          const SizedBox(height: 16),
           ExcludeSemantics(
-            child: _FlowChart(summary: summary, maxAbs: maxAbs),
+            child: _FlowChart(summary: summary, maxAbs: maxAbs, others: others),
           ),
-          const SizedBox(height: 14),
-          const Divider(height: 1, color: AppColors.line2),
-          for (final group in BrokerGroup.values)
-            _CompositionRow(group: group, total: summary.of(group)),
+          if (others.isNotEmpty && rangeLabel != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Batang = @label. Angka kecil = rentang lain. ≈ berarti Stockbit hanya menampilkan angka bulat.'
+                  .trParams({'label': rangeLabel!}),
+              style: AppText.body(
+                size: 10.5,
+                color: AppColors.mut,
+                height: 1.4,
+              ),
+            ),
+          ],
           if (unclassified.brokerCount > 0) ...[
             const Divider(height: 24, color: AppColors.line2),
             Text(
@@ -103,10 +139,15 @@ class GroupFlowCard extends StatelessWidget {
 
 /// Tiga kolom dari garis nol bersama.
 class _FlowChart extends StatelessWidget {
-  const _FlowChart({required this.summary, required this.maxAbs});
+  const _FlowChart({
+    required this.summary,
+    required this.maxAbs,
+    this.others = const {},
+  });
 
   final GroupSummary summary;
   final int maxAbs;
+  final Map<String, GroupSummary> others;
 
   static const _half = 88.0;
 
@@ -155,6 +196,8 @@ class _FlowChart extends StatelessWidget {
                       }),
                       style: AppText.body(size: 10.5, color: AppColors.mut),
                     ),
+                    if (others.isNotEmpty)
+                      _OtherRanges(group: group, others: others),
                   ],
                 ),
               ),
@@ -241,132 +284,6 @@ class _Half extends StatelessWidget {
 }
 
 /// Satu kelompok: net, lalu batang komposisi beli (hijau) dan jual (merah).
-class _CompositionRow extends StatelessWidget {
-  const _CompositionRow({required this.group, required this.total});
-
-  final BrokerGroup group;
-  final GroupTotal total;
-
-  @override
-  Widget build(BuildContext context) {
-    final empty = total.brokerCount == 0;
-    final net = total.netIdr;
-    final netText = empty
-        ? '-'
-        : formatBrokerValue(net, approx: total.hasApprox);
-    final caption = empty
-        ? 'Tidak ada broker kelompok ini yang tampil'.tr
-        : 'beli @buy · jual @sell · @count broker'.trParams({
-            'buy': formatBrokerValue(
-              total.buyIdr,
-              signed: false,
-              approx: total.hasApprox,
-            ),
-            'sell': formatBrokerValue(
-              total.sellIdr,
-              signed: false,
-              approx: total.hasApprox,
-            ),
-            'count': '${total.brokerCount}',
-          });
-    return Semantics(
-      container: true,
-      label: '${group.label.tr}, net $netText. $caption',
-      child: ExcludeSemantics(
-        child: Padding(
-          padding: const EdgeInsets.only(top: 14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      group.label.tr,
-                      style: AppText.display(size: 15),
-                    ),
-                  ),
-                  Text(
-                    netText,
-                    style: AppText.mono(
-                      size: 14,
-                      weight: FontWeight.w600,
-                      color: empty ? AppColors.mut : netColor(net),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 8),
-              SplitBar(
-                buy: empty ? 0 : total.buyIdr,
-                sell: empty ? 0 : total.sellIdr,
-              ),
-              const SizedBox(height: 6),
-              Text(
-                caption,
-                style: AppText.body(size: 11, color: AppColors.mut),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-}
-
-/// Batang komposisi: porsi beli (hijau) dan jual (merah) dari seluruh dana
-/// yang berputar. Kosong (abu-abu) bila tidak ada transaksi.
-class SplitBar extends StatelessWidget {
-  const SplitBar({
-    super.key,
-    required this.buy,
-    required this.sell,
-    this.height = 8,
-  });
-
-  final int buy;
-  final int sell;
-  final double height;
-
-  @override
-  Widget build(BuildContext context) {
-    final total = buy + sell;
-    final radius = BorderRadius.circular(height / 2);
-    if (total <= 0) {
-      return Container(
-        height: height,
-        decoration: BoxDecoration(color: AppColors.line2, borderRadius: radius),
-      );
-    }
-    // Flex bulat; sisi yang ada tidak boleh hilang walau porsinya kecil.
-    final buyFlex = buy == 0 ? 0 : math.max(1, (buy / total * 1000).round());
-    final sellFlex = sell == 0 ? 0 : math.max(1, (sell / total * 1000).round());
-    return ClipRRect(
-      borderRadius: radius,
-      child: SizedBox(
-        height: height,
-        child: Row(
-          children: [
-            if (buyFlex > 0)
-              Expanded(
-                flex: buyFlex,
-                child: const ColoredBox(color: AppColors.earn),
-              ),
-            if (buyFlex > 0 && sellFlex > 0) const SizedBox(width: 2),
-            if (sellFlex > 0)
-              Expanded(
-                flex: sellFlex,
-                child: const ColoredBox(color: AppColors.spend),
-              ),
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// Batang dua arah dari garis tengah: net beli ke kanan, net jual ke kiri,
-/// panjangnya dibandingkan dengan [maxAbs]. Dipakai di kartu watchlist.
 class FlowBar extends StatelessWidget {
   const FlowBar({
     super.key,
@@ -418,6 +335,65 @@ class FlowBar extends StatelessWidget {
               ),
             ),
           ),
+        ],
+      ),
+    );
+  }
+}
+
+/// Angka kecil per rentang lain di bawah satu kolom kelompok.
+class _OtherRanges extends StatelessWidget {
+  const _OtherRanges({required this.group, required this.others});
+
+  final BrokerGroup group;
+  final Map<String, GroupSummary> others;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      margin: const EdgeInsets.fromLTRB(6, 8, 6, 0),
+      padding: const EdgeInsets.only(top: 6),
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.line)),
+      ),
+      child: Column(
+        children: [
+          for (final MapEntry(key: label, value: summary) in others.entries)
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 2),
+              child: Row(
+                children: [
+                  Text(
+                    label,
+                    style: AppText.body(
+                      size: 10,
+                      weight: FontWeight.w700,
+                      color: AppColors.mut,
+                    ),
+                  ),
+                  const SizedBox(width: 4),
+                  // Kolom kelompok sempit; angka panjang boleh turun baris
+                  // daripada terpotong atau meluap.
+                  Expanded(
+                    child: Text(
+                      summary.of(group).brokerCount == 0
+                          ? '-'
+                          : formatBrokerValue(
+                              summary.of(group).netIdr,
+                              approx: summary.of(group).hasApprox,
+                            ),
+                      textAlign: TextAlign.end,
+                      style: AppText.mono(
+                        size: 10.5,
+                        weight: FontWeight.w600,
+                        color: netColor(summary.of(group).netIdr),
+                        letterSpacing: -0.3,
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
         ],
       ),
     );

@@ -7,6 +7,10 @@ import '../data/stock_repository.dart';
 import '../models/broker_group.dart';
 import '../models/broker_range_row.dart';
 import '../models/daily_bar.dart';
+import '../models/ml_prediction.dart';
+import '../models/news_score.dart';
+import '../models/price_point.dart';
+import '../services/broker_flow_analysis.dart';
 import '../services/broker_group_calculator.dart';
 
 /// Data satu saham: baris per broker dan aturan kelompok.
@@ -17,13 +21,21 @@ class StockDetailData {
   final BrokerGroupRules rules;
 }
 
-/// Dua tab halaman detail: arus dana broker, dan chart dengan indikator.
-enum DetailTab { broker, chart }
+/// Tiga tab halaman detail: arus dana broker, chart dengan indikator, dan
+/// prediksi model ML.
+enum DetailTab { broker, chart, ml }
 
 /// Berapa hari perdagangan yang diambil dari Supabase untuk tab Chart. Tab
 /// hanya menggambar satu bulan terakhir; sisanya cadangan bila ada hari
 /// yang ditandai tidak akurat.
 const chartFetchLimit = 40;
+
+/// Hari bursa yang diambil dari `price_history`: cukup untuk MA200 dan
+/// volatilitas setahun.
+const historyFetchLimit = 260;
+
+/// Kode IHSG di `price_history`, dipakai untuk sentimen pasar.
+const marketIndexTicker = '^JKSE';
 
 /// Berapa broker yang ditampilkan di tiap daftar teratas.
 const topBrokerCount = 5;
@@ -46,6 +58,39 @@ class StockDetailController extends GetxController {
   final range = brokerRangeLabels.first.obs;
   final tab = DetailTab.broker.obs;
 
+  /// Hari yang disentuh di chart (indeks di [visibleBars]), null berarti
+  /// hari terakhir. Blok tinta menampilkan hari ini selama tab Chart aktif.
+  final chartIndex = RxnInt();
+
+  /// Prediksi ML terbaru saham ini. Kosong bila model belum menilainya.
+  final ml = const ResourceState<MlPrediction>.idle().obs;
+
+  /// Prediksi lama yang hasil nyatanya sudah dihitung, null bila belum ada.
+  final mlMatured = Rxn<MlPrediction>();
+
+  /// Riwayat harga saham ini dan IHSG dari `price_history`, terlama dulu.
+  /// Kosong bila gagal dimuat; bagian yang memakainya lalu disembunyikan.
+  final history = <PricePoint>[].obs;
+  final marketHistory = <PricePoint>[].obs;
+
+  /// Skor kata berita pasar pada hari bursa terakhir IHSG, null bila belum
+  /// ada atau gagal dimuat.
+  final newsScore = Rxn<NewsScore>();
+
+  BrokerFlowAnalysis? _analysis;
+  StockDetailData? _analysisSource;
+
+  /// Analisis aliran dana lintas rentang, dihitung sekali per data broker.
+  BrokerFlowAnalysis? get analysis {
+    final source = data;
+    if (source == null) return null;
+    if (!identical(source, _analysisSource)) {
+      _analysis = BrokerFlowAnalysis(source.rows, source.rules);
+      _analysisSource = source;
+    }
+    return _analysis;
+  }
+
   StockDetailData? get data => state.value.data;
 
   /// Hari perdagangan yang digambar: satu bulan kalender terakhir sampai
@@ -54,6 +99,20 @@ class StockDetailController extends GetxController {
 
   /// Hari terakhir yang punya data, null bila tabel harga masih kosong.
   DailyBar? get latestBar => bars.value.data?.lastOrNull;
+
+  /// Hari yang tampil di blok tinta: hari yang disentuh di chart bila tab
+  /// Chart aktif, selain itu hari terakhir.
+  DailyBar? get heroBar {
+    final index = chartIndex.value;
+    if (tab.value == DetailTab.chart && index != null) {
+      final visible = visibleBars;
+      if (index >= 0 && index < visible.length) return visible[index];
+    }
+    return latestBar;
+  }
+
+  /// True bila blok tinta sedang menampilkan hari lain dari hari terakhir.
+  bool get showingPastDay => heroBar != latestBar;
 
   /// Baris rentang terpilih: net beli dulu, tiap sisi dari nilai terbesar.
   List<BrokerRangeRow> get rowsInRange {
@@ -103,7 +162,8 @@ class StockDetailController extends GetxController {
 
   /// Memuat data broker dan data harga bersamaan. Keduanya gagal sendiri-
   /// sendiri, jadi chart tetap tampil bila data broker bermasalah.
-  Future<void> load() => Future.wait([loadBrokers(), loadBars()]);
+  Future<void> load() =>
+      Future.wait([loadBrokers(), loadBars(), loadMl(), loadHistory()]);
 
   Future<void> loadBrokers() async {
     state.value = const ResourceState.loading();
@@ -124,6 +184,7 @@ class StockDetailController extends GetxController {
 
   Future<void> loadBars() async {
     bars.value = const ResourceState.loading();
+    chartIndex.value = null;
     try {
       final rows = await _repository.getRecentBars(
         ticker,
@@ -137,9 +198,60 @@ class StockDetailController extends GetxController {
     }
   }
 
+  Future<void> loadMl() async {
+    ml.value = const ResourceState.loading();
+    try {
+      final matured = _latestMatured();
+      final prediction = await _repository.getLatestPrediction(ticker);
+      mlMatured.value = await matured;
+      ml.value = prediction == null
+          ? const ResourceState.empty()
+          : ResourceState.success(prediction);
+    } catch (_) {
+      ml.value = ResourceState.error('Gagal memuat prediksi ML.'.tr);
+    }
+  }
+
+  /// Riwayat harga bersifat tambahan: bila gagal, tab tetap tampil tanpa
+  /// tren, support, resistance, dan sentimen.
+  Future<void> loadHistory() async {
+    Future<List<PricePoint>> safe(String code) async {
+      try {
+        return await _repository.getPriceHistory(
+          code,
+          limit: historyFetchLimit,
+        );
+      } catch (_) {
+        return const [];
+      }
+    }
+
+    final results = await Future.wait([safe(ticker), safe(marketIndexTicker)]);
+    history.assignAll(results[0]);
+    marketHistory.assignAll(results[1]);
+    final day = results[1].lastOrNull?.date;
+    if (day == null) return;
+    try {
+      newsScore.value = await _repository.getNewsScore(day);
+    } catch (_) {
+      newsScore.value = null;
+    }
+  }
+
+  /// Hasil nyata bersifat tambahan: bila gagal dimuat, tab tetap tampil.
+  Future<MlPrediction?> _latestMatured() async {
+    try {
+      return await _repository.getLatestMaturedPrediction(ticker);
+    } catch (_) {
+      return null;
+    }
+  }
+
   void selectRange(String label) => range.value = label;
 
   void selectTab(DetailTab value) => tab.value = value;
+
+  void selectChartDay(int? index) => chartIndex.value = index;
 }
 
 /// Hari setelah tanggal yang sama sebulan sebelum hari terakhir. Untuk hari

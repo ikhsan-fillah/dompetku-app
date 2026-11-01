@@ -1,0 +1,1031 @@
+import 'dart:math' as math;
+
+import 'package:flutter/material.dart';
+import 'package:get/get.dart';
+import 'package:lucide_icons_flutter/lucide_icons.dart';
+
+import '../../../core/theme/app_colors.dart';
+import '../../../core/theme/app_spacing.dart';
+import '../../../core/theme/app_text.dart';
+import '../models/ml_prediction.dart';
+import '../models/price_point.dart';
+import '../services/price_analysis.dart';
+import 'chart_painting.dart';
+import 'stock_format.dart';
+
+/// Nama fitur model teknikal dalam bahasa yang mudah dibaca. Fitur yang tidak
+/// ada di daftar ini ditampilkan apa adanya.
+const _featureLabels = <String, String>{
+  'rsi': 'RSI',
+  'stochK': 'Stoch RSI %K',
+  'stochKminusD': 'Stoch %K-%D',
+  'macdHistPct': 'Histogram MACD',
+  'macdPct': 'MACD',
+  'distSma20': 'Jarak ke MA20',
+  'distSma50': 'Jarak ke MA50',
+  'sma20vs50': 'MA20 vs MA50',
+  'volumeRatio': 'Volume vs rata-rata 20 hari',
+  'bbZ': 'Posisi Bollinger',
+};
+
+/// Volatilitas 20 hari dianggap jauh di atas biasanya bila lebih dari
+/// sekian kali volatilitas setahun.
+const _wideBarrierRatio = 1.5;
+
+/// Hasil model ML satu saham dalam urutan yang dibaca dari atas: satu angka
+/// besar (skor dibanding rata-rata), satu chart dua batas, faktor yang
+/// memengaruhi skor, lalu seberapa bisa dipercaya. Kondisi harga dan
+/// indikator ada di tab Chart supaya tidak dobel. Isinya penyaring, bukan
+/// rekomendasi beli atau jual.
+class MlPredictionCard extends StatelessWidget {
+  const MlPredictionCard({
+    super.key,
+    required this.prediction,
+    this.matured,
+    this.history = const [],
+  });
+
+  final MlPrediction prediction;
+
+  /// Prediksi lama yang hasil nyatanya sudah dihitung, null bila belum ada.
+  final MlPrediction? matured;
+
+  /// Riwayat harga saham ini dari `price_history`, terlama dulu. Dipakai
+  /// untuk chart dua batas dan perbandingan volatilitas; boleh kosong.
+  final List<PricePoint> history;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = prediction;
+    final trained = p.modelTrainedAt;
+    final old = matured;
+    final oldOutcome = old?.outcome;
+    final drivers = p.topDrivers(4);
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(
+          '${'Data harga'.tr} ${formatShortDate(p.tradeDate)}'.toUpperCase(),
+          style: AppText.mono(
+            size: 11.5,
+            color: AppColors.ink2,
+            letterSpacing: 0.9,
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(text: '${'Sinyal model'.tr} '),
+              TextSpan(
+                text: 'penyaring.'.tr,
+                style: const TextStyle(
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.w300,
+                ),
+              ),
+            ],
+          ),
+          style: AppText.display(size: 30, height: 1.05, letterSpacing: -0.8),
+        ),
+        const SizedBox(height: 14),
+        _ScoreCard(prediction: p),
+        const SizedBox(height: AppSpacing.gap),
+        _BarrierCard(prediction: p, history: history),
+        if (drivers.isNotEmpty) ...[
+          const SizedBox(height: AppSpacing.gap),
+          _FactorsCard(drivers: drivers),
+        ],
+        const SizedBox(height: AppSpacing.gap),
+        if (old != null && oldOutcome != null) ...[
+          _OutcomePanel(prediction: old, outcome: oldOutcome),
+          const SizedBox(height: AppSpacing.gap),
+        ],
+        if (p.backtest != null || p.aucMean != null) ...[
+          _TrustCard(prediction: p),
+          const SizedBox(height: AppSpacing.gap),
+        ],
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.paper2,
+            borderRadius: BorderRadius.circular(AppRadius.card),
+          ),
+          child: Text(
+            'Tren, support, resistance, sentimen pasar, dan indikator ada di tab Chart.'
+                .tr,
+            style: AppText.body(
+              size: 12.5,
+              color: AppColors.ink2,
+              height: 1.45,
+            ),
+          ),
+        ),
+        if (old == null || oldOutcome == null) ...[
+          const SizedBox(height: 14),
+          Text(
+            '${'Hasil nyata muncul setelah prediksi genap'.tr} '
+            '${p.horizonDays} ${'hari bursa'.tr}.',
+            style: AppText.body(size: 12, height: 1.4, color: AppColors.ink2),
+          ),
+        ],
+        const SizedBox(height: 8),
+        Text(
+          '${'Model dilatih'.tr} '
+          '${trained == null ? '-' : formatShortDate(trained)} · '
+          '${p.modelVersion}',
+          style: AppText.mono(size: 10.5, color: AppColors.mut),
+        ),
+        const SizedBox(height: 10),
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.only(top: 2),
+              child: Icon(LucideIcons.info, size: 14, color: AppColors.ink2),
+            ),
+            const SizedBox(width: 6),
+            Expanded(
+              child: Text(
+                'Penyaring informasi, bukan rekomendasi beli atau jual. Bukan nasihat keuangan.'
+                    .tr,
+                style: AppText.body(size: 12, color: AppColors.ink2),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+}
+
+/// Persen bertanda untuk hasil, mis. -0,0021 menjadi -0,2%.
+String _signed(double fraction) => formatPercent(fraction * 100);
+
+/// Pecahan 0 sampai 1 menjadi hitungan bulat dari 100.
+int _outOf100(double fraction) =>
+    (fraction * 100).round().clamp(0, 100).toInt();
+
+Color _signColor(double v) => v > 0
+    ? AppColors.earn
+    : v < 0
+    ? AppColors.spend
+    : AppColors.ink;
+
+/// Arti angka fitur dalam kalimat pendek, null bila tidak ada terjemahan
+/// yang jelas. Jarak ke MA adalah harga dibagi MA dikurangi 1. RSI disimpan
+/// sebagai pecahan 0 sampai 1, jadi dikali 100 bila nilainya kecil.
+String? _driverMeaning(MlDriver d) {
+  final v = d.value;
+  if (v == null) return null;
+  String pct(double x) => '${formatIndicator(x.abs() * 100, digits: 1)}%';
+  switch (d.feature) {
+    case 'distSma20':
+    case 'distSma50':
+      final ma = d.feature == 'distSma20' ? 'MA20' : 'MA50';
+      return (v < 0 ? 'harga @pct di bawah @ma' : 'harga @pct di atas @ma')
+          .trParams({'pct': pct(v), 'ma': ma});
+    case 'rsi':
+      final rsi = v <= 1.5 ? v * 100 : v;
+      return 'RSI ${formatIndicator(rsi, digits: 0)}';
+    case 'bbZ':
+      if (v <= -1) return 'dekat pita bawah'.tr;
+      if (v >= 1) return 'dekat pita atas'.tr;
+      return 'di tengah pita'.tr;
+  }
+  return null;
+}
+
+/// Kartu putih bergaris tipis, sama dengan kartu lain di modul Saham.
+class _Panel extends StatelessWidget {
+  const _Panel({required this.children});
+
+  final List<Widget> children;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(AppSpacing.card),
+    decoration: BoxDecoration(
+      color: AppColors.card,
+      borderRadius: BorderRadius.circular(AppRadius.card),
+      border: Border.all(color: AppColors.line),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: children,
+    ),
+  );
+}
+
+class _PanelTitle extends StatelessWidget {
+  const _PanelTitle(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    text.toUpperCase(),
+    style: AppText.mono(size: 11.5, color: AppColors.ink2, letterSpacing: 0.9),
+  );
+}
+
+/// Judul kecil kapital di dalam kartu.
+class _Eyebrow extends StatelessWidget {
+  const _Eyebrow(this.text);
+
+  final String text;
+
+  @override
+  Widget build(BuildContext context) => Text(
+    text.toUpperCase(),
+    style: AppText.label(color: AppColors.mut, size: 11),
+  );
+}
+
+class _SignalChip extends StatelessWidget {
+  const _SignalChip({required this.style});
+
+  final _SignalStyle style;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+    decoration: BoxDecoration(
+      color: style.soft,
+      borderRadius: BorderRadius.circular(AppRadius.pill),
+    ),
+    child: Text(
+      style.label,
+      style: AppText.body(
+        size: 11.5,
+        weight: FontWeight.w700,
+        color: style.color,
+      ),
+    ),
+  );
+}
+
+/// Kartu 1: skor saham ini dibanding rata-rata, dengan pertanyaan yang
+/// dijawab model dalam harga rupiah.
+class _ScoreCard extends StatelessWidget {
+  const _ScoreCard({required this.prediction});
+
+  final MlPrediction prediction;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = prediction;
+    final signal = _SignalStyle.of(p.signal);
+    final close = p.closePrice;
+    final score = _outOf100(p.probUp);
+    final base = _outOf100(p.baseRate);
+    String barrier(double pct) => close == null
+        ? _signed(pct)
+        : 'Rp ${formatPrice((close * (1 + pct)).round())} (${_signed(pct)})';
+    return _Panel(
+      children: [
+        Row(
+          children: [
+            Expanded(child: _Eyebrow('Kemungkinan batas atas dulu'.tr)),
+            _SignalChip(style: signal),
+          ],
+        ),
+        const SizedBox(height: 12),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.end,
+            children: [
+              Flexible(
+                child: _BigNumber(
+                  value: score,
+                  caption: '@ticker hari ini'.trParams({'ticker': p.ticker}),
+                  size: 56,
+                  color: AppColors.ink,
+                ),
+              ),
+              const SizedBox(width: 18),
+              const VerticalDivider(width: 1, color: AppColors.line2),
+              const SizedBox(width: 18),
+              Flexible(
+                child: _BigNumber(
+                  value: base,
+                  caption: 'rata-rata semua saham'.tr,
+                  size: 30,
+                  color: AppColors.mut,
+                ),
+              ),
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(12),
+          decoration: BoxDecoration(
+            color: AppColors.paper2,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            'Dalam @days hari bursa, mana yang tersentuh lebih dulu: @up atau @down? Model memperkirakan batas atas lebih dulu sekitar @score dari 100 kali.'
+                .trParams({
+                  'days': '${p.horizonDays}',
+                  'up': barrier(p.upperPct),
+                  'down': barrier(p.lowerPct),
+                  'score': '$score',
+                }),
+            style: AppText.body(size: 13, color: AppColors.ink2, height: 1.5),
+          ),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          signal.headline.trParams({'ticker': p.ticker}),
+          style: AppText.body(size: 12.5, color: AppColors.ink2, height: 1.45),
+        ),
+        if (p.inUniverse == false) ...[
+          const SizedBox(height: 10),
+          Text(
+            'Saham ini di luar data latih model, jadi skornya kurang bisa dipercaya.'
+                .tr,
+            style: AppText.body(
+              size: 12,
+              height: 1.4,
+              weight: FontWeight.w700,
+              color: AppColors.warn,
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _BigNumber extends StatelessWidget {
+  const _BigNumber({
+    required this.value,
+    required this.caption,
+    required this.size,
+    required this.color,
+  });
+
+  final int value;
+  final String caption;
+  final double size;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      mainAxisAlignment: MainAxisAlignment.end,
+      children: [
+        Text.rich(
+          TextSpan(
+            children: [
+              TextSpan(text: '$value'),
+              TextSpan(
+                text: '%',
+                style: TextStyle(fontSize: size * 0.43, letterSpacing: 0),
+              ),
+            ],
+          ),
+          style: AppText.display(
+            size: size,
+            color: color,
+            height: 0.95,
+            letterSpacing: -1.5,
+          ),
+        ),
+        const SizedBox(height: 6),
+        Text(caption, style: AppText.body(size: 12, color: AppColors.ink2)),
+      ],
+    );
+  }
+}
+
+/// Kartu 2: harga sebulan terakhir dan dua batas 10 hari, ubin persen, dan
+/// catatan bila batas jauh lebih lebar dari biasanya.
+class _BarrierCard extends StatelessWidget {
+  const _BarrierCard({required this.prediction, required this.history});
+
+  final MlPrediction prediction;
+  final List<PricePoint> history;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = prediction;
+    final recent = history.length > 22
+        ? history.sublist(history.length - 22)
+        : history;
+    final close = p.closePrice ?? recent.lastOrNull?.close;
+    final sd20 = dailyVolatility(history, 20);
+    final sdYear = dailyVolatility(history, 250);
+    final wide =
+        sd20 != null && sdYear != null && sd20 > sdYear * _wideBarrierRatio;
+    final yearBarrier = sdYear == null
+        ? null
+        : barrierFromVolatility(sdYear, p.horizonDays);
+    return _Panel(
+      children: [
+        _Eyebrow('Dua batas yang diuji'.tr),
+        if (close != null && recent.length >= 5) ...[
+          const SizedBox(height: 10),
+          Semantics(
+            label: 'Harga sebulan terakhir dan dua batas @days hari'.trParams({
+              'days': '${p.horizonDays}',
+            }),
+            child: ExcludeSemantics(
+              child: SizedBox(
+                height: 170,
+                width: double.infinity,
+                child: CustomPaint(
+                  painter: _BarrierChartPainter(
+                    closes: [for (final x in recent) x.close],
+                    first: recent.first.date,
+                    last: recent.last.date,
+                    close: close,
+                    upper: close * (1 + p.upperPct),
+                    lower: close * (1 + p.lowerPct),
+                    horizonLabel: '@days hari'.trParams({
+                      'days': '${p.horizonDays}',
+                    }),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+        const SizedBox(height: 10),
+        Row(
+          children: [
+            Expanded(
+              child: _PctTile(
+                label: 'Batas atas'.tr,
+                value: _signed(p.upperPct),
+                color: AppColors.earn,
+                soft: AppColors.earnSoft,
+              ),
+            ),
+            const SizedBox(width: 8),
+            Expanded(
+              child: _PctTile(
+                label: 'Batas bawah'.tr,
+                value: _signed(p.lowerPct),
+                color: AppColors.spend,
+                soft: AppColors.spendSoft,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          'Lebar batas mengikuti volatilitas @ticker 20 hari terakhir. Tidak ada jalur harga ke depan.'
+              .trParams({'ticker': p.ticker}),
+          style: AppText.body(size: 12, color: AppColors.mut, height: 1.45),
+        ),
+        if (wide && yearBarrier != null) ...[
+          const SizedBox(height: 8),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+            decoration: BoxDecoration(
+              border: Border.all(color: AppColors.warn),
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: Text.rich(
+              TextSpan(
+                children: [
+                  TextSpan(
+                    text: '${'Batas lebih lebar dari biasanya.'.tr} ',
+                    style: const TextStyle(
+                      fontWeight: FontWeight.w700,
+                      color: AppColors.warn,
+                    ),
+                  ),
+                  TextSpan(
+                    text:
+                        'Volatilitas 20 hari sedang @now% per hari. Dengan volatilitas setahun (@year%), batasnya sekitar @up dan @down.'
+                            .trParams({
+                              'now': formatIndicator(sd20 * 100, digits: 1),
+                              'year': formatIndicator(sdYear * 100, digits: 1),
+                              'up': _signed(yearBarrier.$1),
+                              'down': _signed(yearBarrier.$2),
+                            }),
+                  ),
+                ],
+              ),
+              style: AppText.body(
+                size: 11.5,
+                color: AppColors.ink2,
+                height: 1.45,
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _PctTile extends StatelessWidget {
+  const _PctTile({
+    required this.label,
+    required this.value,
+    required this.color,
+    required this.soft,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+  final Color soft;
+
+  @override
+  Widget build(BuildContext context) => Container(
+    padding: const EdgeInsets.all(10),
+    decoration: BoxDecoration(
+      color: soft,
+      borderRadius: BorderRadius.circular(8),
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(label, style: AppText.body(size: 11, color: color)),
+        Text(
+          value,
+          style: AppText.mono(size: 15, weight: FontWeight.w700, color: color),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Garis harga sebulan, area 10 hari ke depan, dua garis batas putus-putus,
+/// dan label harga di kanan.
+class _BarrierChartPainter extends CustomPainter {
+  const _BarrierChartPainter({
+    required this.closes,
+    required this.first,
+    required this.last,
+    required this.close,
+    required this.upper,
+    required this.lower,
+    required this.horizonLabel,
+  });
+
+  final List<double> closes;
+  final DateTime first;
+  final DateTime last;
+  final double close;
+  final double upper;
+  final double lower;
+  final String horizonLabel;
+
+  static const _tagWidth = 56.0;
+  static const _bottom = 18.0;
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final plotRight = size.width - _tagWidth - 4;
+    final lineRight = plotRight * 0.78;
+    var lo = math.min(lower, closes.reduce(math.min));
+    var hi = math.max(upper, closes.reduce(math.max));
+    final pad = (hi - lo) * 0.06;
+    lo -= pad;
+    hi += pad;
+    final h = size.height - _bottom;
+    double y(double v) => (hi - v) / (hi - lo) * h;
+    double x(int i) =>
+        closes.length == 1 ? 0 : i / (closes.length - 1) * lineRight;
+
+    final lastX = x(closes.length - 1);
+    canvas.drawRRect(
+      RRect.fromRectAndRadius(
+        Rect.fromLTRB(lastX, y(upper), plotRight, y(lower)),
+        const Radius.circular(3),
+      ),
+      Paint()..color = AppColors.paper2.withValues(alpha: 0.7),
+    );
+    final path = Path();
+    for (var i = 0; i < closes.length; i++) {
+      final point = Offset(x(i), y(closes[i]));
+      if (i == 0) {
+        path.moveTo(point.dx, point.dy);
+      } else {
+        path.lineTo(point.dx, point.dy);
+      }
+    }
+    canvas.drawPath(
+      path,
+      Paint()
+        ..color = AppColors.ink
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.8
+        ..strokeJoin = StrokeJoin.round,
+    );
+    for (final (value, color) in [
+      (upper, AppColors.earn),
+      (lower, AppColors.spend),
+    ]) {
+      paintDashedLine(
+        canvas,
+        Offset(lastX, y(value)),
+        Offset(plotRight, y(value)),
+        Paint()
+          ..color = color
+          ..strokeWidth = 2,
+      );
+    }
+    canvas.drawCircle(
+      Offset(lastX, y(close)),
+      4.5,
+      Paint()..color = AppColors.ink,
+    );
+    canvas.drawCircle(
+      Offset(lastX, y(close)),
+      4.5,
+      Paint()
+        ..color = AppColors.card
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 2,
+    );
+    for (final (value, color) in [
+      (upper, AppColors.earn),
+      (lower, AppColors.spend),
+      (close, AppColors.ink),
+    ]) {
+      final rect = RRect.fromRectAndRadius(
+        Rect.fromLTWH(plotRight + 4, y(value) - 9, _tagWidth, 18),
+        const Radius.circular(4),
+      );
+      canvas.drawRRect(rect, Paint()..color = color);
+      final text = TextPainter(
+        text: TextSpan(
+          text: formatPrice(value.round()),
+          style: AppText.mono(
+            size: 10.5,
+            weight: FontWeight.w600,
+            color: AppColors.paper,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      text.paint(
+        canvas,
+        Offset(
+          rect.left + (_tagWidth - text.width) / 2,
+          y(value) - text.height / 2,
+        ),
+      );
+    }
+    paintText(canvas, formatDayMonth(first), Offset(0, h + 9));
+    final lastText = TextPainter(
+      text: TextSpan(
+        text: formatDayMonth(last),
+        style: AppText.mono(size: 9.5, color: AppColors.mut),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    lastText.paint(canvas, Offset(lastX - lastText.width / 2, h + 3));
+    final zone = TextPainter(
+      text: TextSpan(
+        text: horizonLabel,
+        style: AppText.body(size: 9, color: AppColors.mut),
+      ),
+      textDirection: TextDirection.ltr,
+    )..layout();
+    zone.paint(
+      canvas,
+      Offset(
+        (lastX + plotRight) / 2 - zone.width / 2,
+        (y(upper) + y(lower)) / 2 - zone.height / 2,
+      ),
+    );
+  }
+
+  @override
+  bool shouldRepaint(_BarrierChartPainter old) =>
+      !identical(old.closes, closes) ||
+      old.upper != upper ||
+      old.lower != lower ||
+      old.close != close;
+}
+
+/// Kartu 3: empat fitur dengan sumbangan terbesar dan arahnya ke skor.
+class _FactorsCard extends StatelessWidget {
+  const _FactorsCard({required this.drivers});
+
+  final List<MlDriver> drivers;
+
+  @override
+  Widget build(BuildContext context) {
+    return _Panel(
+      children: [
+        _Eyebrow('Yang memengaruhi skor'.tr),
+        const SizedBox(height: 8),
+        for (final d in drivers)
+          Container(
+            padding: const EdgeInsets.symmetric(vertical: 9),
+            decoration: const BoxDecoration(
+              border: Border(top: BorderSide(color: AppColors.line2)),
+            ),
+            child: Row(
+              children: [
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        (_featureLabels[d.feature] ?? d.feature).tr,
+                        style: AppText.body(size: 13, weight: FontWeight.w700),
+                      ),
+                      if (_driverMeaning(d) case final String meaning)
+                        Text(
+                          meaning,
+                          style: AppText.body(size: 11.5, color: AppColors.mut),
+                        ),
+                    ],
+                  ),
+                ),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 9,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: d.pushesUp
+                        ? AppColors.earnSoft
+                        : AppColors.spendSoft,
+                    borderRadius: BorderRadius.circular(AppRadius.pill),
+                  ),
+                  child: Text(
+                    (d.pushesUp ? '+ skor' : '− skor').tr,
+                    style: AppText.body(
+                      size: 11,
+                      weight: FontWeight.w700,
+                      color: d.pushesUp ? AppColors.earn : AppColors.spend,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        const SizedBox(height: 4),
+        Text(
+          'Menjelaskan skor model, bukan alasan harga bergerak.'.tr,
+          style: AppText.body(size: 11.5, color: AppColors.mut),
+        ),
+      ],
+    );
+  }
+}
+
+/// Kartu 4: tiga angka uji balik dan AUC, lalu peringatan bahwa
+/// keunggulannya tipis.
+class _TrustCard extends StatelessWidget {
+  const _TrustCard({required this.prediction});
+
+  final MlPrediction prediction;
+
+  @override
+  Widget build(BuildContext context) {
+    final b = prediction.backtest;
+    final auc = prediction.aucMean;
+    final stats = <Widget>[
+      if (b != null) ...[
+        _Stat(
+          big: '${(b.top10.winRate * 100).round()}%',
+          small: 'transaksi untung saat skor 10% tertinggi (semua @all%)'
+              .trParams({'all': '${(b.all.winRate * 100).round()}'}),
+        ),
+        _Stat(
+          big: _signed(b.top10.netPerTrade),
+          small: 'hasil bersih per transaksi setelah biaya'.tr,
+          color: _signColor(b.top10.netPerTrade),
+        ),
+      ],
+      if (auc != null)
+        _Stat(
+          big: formatIndicator(auc),
+          small: 'AUC, di mana 0,5 berarti tebakan acak'.tr,
+        ),
+    ];
+    final start = b?.testStart;
+    final end = b?.testEnd;
+    return _Panel(
+      children: [
+        _Eyebrow('Seberapa bisa dipercaya'.tr),
+        const SizedBox(height: 12),
+        IntrinsicHeight(
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              for (final (index, stat) in stats.indexed) ...[
+                if (index > 0) ...[
+                  const SizedBox(width: 10),
+                  const VerticalDivider(width: 1, color: AppColors.line2),
+                  const SizedBox(width: 10),
+                ],
+                Expanded(child: stat),
+              ],
+            ],
+          ),
+        ),
+        const SizedBox(height: 14),
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+          decoration: BoxDecoration(
+            color: AppColors.warnSoft,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            'Keunggulannya tipis. Pakai sebagai penyaring, bukan janji untung.'
+                .tr,
+            style: AppText.body(
+              size: 12.5,
+              weight: FontWeight.w700,
+              color: AppColors.warn,
+              height: 1.45,
+            ),
+          ),
+        ),
+        if (b != null) ...[
+          const SizedBox(height: 8),
+          Text(
+            [
+              if (start != null && end != null)
+                '${'Uji balik'.tr} ${start.year} ${'sampai'.tr} ${end.year}',
+              '${b.nStocks} ${'saham'.tr}',
+              '${'biaya'.tr} ${formatIndicator(b.costRoundTrip * 100, digits: 1)}%',
+              if (b.rule != null) b.rule!,
+            ].join(' · '),
+            style: AppText.body(size: 11, color: AppColors.mut, height: 1.4),
+          ),
+        ],
+      ],
+    );
+  }
+}
+
+class _Stat extends StatelessWidget {
+  const _Stat({
+    required this.big,
+    required this.small,
+    this.color = AppColors.ink,
+  });
+
+  final String big;
+  final String small;
+  final Color color;
+
+  @override
+  Widget build(BuildContext context) => Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      Text(big, style: AppText.display(size: 24, color: color, height: 1)),
+      const SizedBox(height: 6),
+      Text(
+        small,
+        style: AppText.body(size: 11, color: AppColors.ink2, height: 1.35),
+      ),
+    ],
+  );
+}
+
+/// Hasil nyata prediksi lama: label waktu itu, harga awal dan akhir uji, dan
+/// hasil bersih setelah biaya.
+class _OutcomePanel extends StatelessWidget {
+  const _OutcomePanel({required this.prediction, required this.outcome});
+
+  final MlPrediction prediction;
+  final MlOutcome outcome;
+
+  @override
+  Widget build(BuildContext context) {
+    final o = outcome;
+    final entry = o.entry;
+    final exit = o.exit;
+    final hit = o.hitUpper;
+    return _Panel(
+      children: [
+        _PanelTitle(
+          '${'Hasil nyata prediksi'.tr} ${formatShortDate(prediction.tradeDate)}',
+        ),
+        const SizedBox(height: 10),
+        _SignalChip(style: _SignalStyle.of(prediction.signal)),
+        const SizedBox(height: 8),
+        if (entry != null && exit != null)
+          _StatRow(
+            label: 'Harga awal dan akhir'.tr,
+            value:
+                '${formatPrice(entry.round())} → ${formatPrice(exit.round())}',
+          ),
+        _StatRow(
+          label: 'Hasil bersih'.tr,
+          value: _signed(o.retNet),
+          color: _signColor(o.retNet),
+          bold: true,
+        ),
+        if (hit != null)
+          _StatRow(
+            label: 'Menyentuh batas atas'.tr,
+            value: hit ? 'ya'.tr : 'tidak'.tr,
+          ),
+        const SizedBox(height: 6),
+        Text(
+          '${'Dihitung pada'.tr} ${formatShortDate(o.date)}.',
+          style: AppText.body(size: 12, color: AppColors.ink2),
+        ),
+      ],
+    );
+  }
+}
+
+/// Satu baris label dengan satu nilai rata kanan.
+class _StatRow extends StatelessWidget {
+  const _StatRow({
+    required this.label,
+    required this.value,
+    this.color = AppColors.ink,
+    this.bold = false,
+  });
+
+  final String label;
+  final String value;
+  final Color color;
+  final bool bold;
+
+  @override
+  Widget build(BuildContext context) => Padding(
+    padding: const EdgeInsets.symmetric(vertical: 4),
+    child: Row(
+      children: [
+        Expanded(
+          child: Text(
+            label,
+            style: AppText.body(
+              size: 12.5,
+              weight: bold ? FontWeight.w700 : FontWeight.w400,
+            ),
+          ),
+        ),
+        Text(
+          value,
+          style: AppText.mono(
+            size: 12.5,
+            weight: FontWeight.w700,
+            color: color,
+          ),
+        ),
+      ],
+    ),
+  );
+}
+
+/// Label, kalimat, dan warna tiap sinyal. Kalimatnya membandingkan skor
+/// dengan rata-rata, tanpa kata naik, beli, atau jual.
+class _SignalStyle {
+  const _SignalStyle(
+    this.label,
+    this.headline,
+    this.detail,
+    this.color,
+    this.soft,
+  );
+
+  final String label;
+
+  /// Kunci terjemahan dengan @ticker.
+  final String headline;
+
+  /// Kunci terjemahan kalimat kedua.
+  final String detail;
+  final Color color;
+  final Color soft;
+
+  static _SignalStyle of(MlSignal signal) => switch (signal) {
+    MlSignal.peluang => _SignalStyle(
+      'Skor di atas rata-rata'.tr,
+      'Skor @ticker di atas rata-rata saham lain.',
+      'Model memberi skor lebih tinggi dari biasanya untuk data hari ini.',
+      AppColors.earn,
+      AppColors.earnSoft,
+    ),
+    MlSignal.netral => _SignalStyle(
+      'Skor sekitar rata-rata'.tr,
+      'Skor @ticker hampir sama dengan rata-rata saham lain.',
+      'Model tidak melihat keunggulan teknikal khusus pada data hari ini.',
+      AppColors.ink2,
+      AppColors.paper2,
+    ),
+    MlSignal.risiko => _SignalStyle(
+      'Skor di bawah rata-rata'.tr,
+      'Skor @ticker di bawah rata-rata saham lain.',
+      'Model memberi skor lebih rendah dari biasanya untuk data hari ini.',
+      AppColors.spend,
+      AppColors.spendSoft,
+    ),
+  };
+}

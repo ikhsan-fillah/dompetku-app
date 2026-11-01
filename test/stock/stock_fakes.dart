@@ -3,6 +3,9 @@ import 'package:dompetku_app/features/stock/data/stock_repository.dart';
 import 'package:dompetku_app/features/stock/models/broker_group.dart';
 import 'package:dompetku_app/features/stock/models/broker_range_row.dart';
 import 'package:dompetku_app/features/stock/models/daily_bar.dart';
+import 'package:dompetku_app/features/stock/models/ml_prediction.dart';
+import 'package:dompetku_app/features/stock/models/news_score.dart';
+import 'package:dompetku_app/features/stock/models/price_point.dart';
 import 'package:dompetku_app/features/stock/models/watchlist_item.dart';
 
 class FakeAuth implements StockAuth {
@@ -119,6 +122,27 @@ class FakeRepository implements StockRepository {
     ];
     return own.length <= limit ? own : own.sublist(own.length - limit);
   }
+
+  /// Riwayat harga per kode, terlama dulu.
+  Map<String, List<PricePoint>> history = {};
+
+  @override
+  Future<List<PricePoint>> getPriceHistory(
+    String ticker, {
+    int limit = 260,
+  }) async {
+    final own = history[ticker] ?? const <PricePoint>[];
+    return own.length <= limit ? own : own.sublist(own.length - limit);
+  }
+
+  @override
+  Future<NewsScore?> getNewsScore(DateTime day) async => null;
+
+  @override
+  Future<MlPrediction?> getLatestPrediction(String ticker) async => null;
+
+  @override
+  Future<MlPrediction?> getLatestMaturedPrediction(String ticker) async => null;
 
   @override
   Future<List<DailyBar>> getLatestBars(List<String> tickers) async => [

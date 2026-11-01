@@ -11,9 +11,11 @@ import '../models/broker_group.dart';
 import '../models/daily_bar.dart';
 import '../models/watchlist_item.dart';
 import '../services/broker_group_calculator.dart';
+import '../services/price_analysis.dart';
 import 'group_flow_card.dart';
 import 'stock_format.dart';
 import 'stock_hero.dart';
+import 'trend_pill.dart';
 
 /// Kartu satu saham di watchlist: kode, status, harga terakhir bila ada, arah
 /// dana tiga kelompok pada snapshot Latest terbaru, dan tanggal datanya.
@@ -71,7 +73,18 @@ class WatchlistCard extends StatelessWidget {
                         : AppColors.paper2,
                     foreground: active ? AppColors.accent : AppColors.ink2,
                   ),
-                  const Spacer(),
+                  // Label tren mengisi sisa ruang (bukan dibagi dengan
+                  // Spacer), supaya tidak terjepit di kartu sempit.
+                  if (active && overview?.trend != null) ...[
+                    const SizedBox(width: 6),
+                    Expanded(
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TrendPill(kind: overview!.trend!),
+                      ),
+                    ),
+                  ] else
+                    const Spacer(),
                   IconButton(
                     tooltip: 'Hapus @ticker'.trParams({'ticker': item.ticker}),
                     onPressed: onDelete,
@@ -87,7 +100,11 @@ class WatchlistCard extends StatelessWidget {
                   ),
                 ],
               ),
-              if (bar case DailyBar(close: final int close, :final isIntraday))
+              if (bar case DailyBar(
+                close: final int close,
+                :final isIntraday,
+                :final tradeDate,
+              ))
                 Padding(
                   padding: const EdgeInsets.only(right: 10, bottom: 2),
                   child: Row(
@@ -102,13 +119,14 @@ class WatchlistCard extends StatelessWidget {
                           percent: change,
                           text: formatPercent(change),
                         ),
-                      if (isIntraday) ...[
-                        const SizedBox(width: 8),
-                        Text(
-                          'berjalan'.tr,
-                          style: AppText.body(size: 11, color: AppColors.mut),
-                        ),
-                      ],
+                      const Spacer(),
+                      // Tanggal harga di pojok kanan, di bawah saklar.
+                      Text(
+                        isIntraday
+                            ? '${'berjalan'.tr} · ${formatDayMonth(tradeDate)}'
+                            : formatDayMonth(tradeDate),
+                        style: AppText.body(size: 11, color: AppColors.mut),
+                      ),
                     ],
                   ),
                 ),
@@ -400,6 +418,48 @@ class SlotMeter extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+}
+
+/// Ringkasan tren saham aktif di blok tinta: garis tipis, lalu "TREN" dan
+/// jumlah per tren. Hanya kondisi hari ini, bukan prediksi.
+class TrendSummaryRow extends StatelessWidget {
+  const TrendSummaryRow({super.key, required this.counts});
+
+  final Map<TrendKind, int> counts;
+
+  @override
+  Widget build(BuildContext context) {
+    final soft = AppColors.paper.withValues(alpha: 0.6);
+    final text = '@down turun · @mixed campuran · @up naik'.trParams({
+      'down': '${counts[TrendKind.turun] ?? 0}',
+      'mixed': '${counts[TrendKind.campuran] ?? 0}',
+      'up': '${counts[TrendKind.naik] ?? 0}',
+    });
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        Container(height: 1, color: AppColors.paper.withValues(alpha: 0.16)),
+        const SizedBox(height: 12),
+        Row(
+          children: [
+            SizedBox(
+              width: 96,
+              child: Text(
+                'TREN'.tr,
+                style: AppText.label(color: soft, size: 10),
+              ),
+            ),
+            Expanded(
+              child: Text(
+                text,
+                style: AppText.body(size: 12.5, color: AppColors.paper),
+              ),
+            ),
+          ],
+        ),
+      ],
     );
   }
 }

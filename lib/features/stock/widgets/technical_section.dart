@@ -7,6 +7,7 @@ import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/app_card.dart';
 import '../models/daily_bar.dart';
+import '../services/price_analysis.dart';
 import '../services/technical_reading.dart';
 import 'chart_painting.dart';
 import 'stock_format.dart';
@@ -14,152 +15,403 @@ import 'stock_format.dart';
 /// Chart harga dan tiga indikator (volume, Stoch RSI, MACD) dengan satu garis
 /// penunjuk hari yang dipakai bersama: sentuh atau geser di chart mana pun,
 /// dan pembacaan di semua panel ikut pindah ke hari itu.
-class TechnicalSection extends StatefulWidget {
-  const TechnicalSection({super.key, required this.bars});
+class TechnicalSection extends StatelessWidget {
+  const TechnicalSection({
+    super.key,
+    required this.bars,
+    required this.onSelect,
+    this.selected,
+    this.overlay,
+    this.facts = const [],
+  });
+
+  /// Garis rata-rata, pita Bollinger, dan zona support/resistance dari
+  /// `price_history`, null bila riwayat belum termuat.
+  final PriceOverlay? overlay;
+
+  /// Fakta singkat di bawah chart harga: (judul, isi).
+  final List<ChartFact> facts;
 
   /// Hari perdagangan yang digambar, terlama dulu.
   final List<DailyBar> bars;
 
-  @override
-  State<TechnicalSection> createState() => _TechnicalSectionState();
-}
+  /// Indeks hari yang disentuh, null berarti hari terakhir. Rincian harga
+  /// hari itu tampil di blok tinta di atas halaman, bukan di kartu terpisah.
+  final int? selected;
 
-class _TechnicalSectionState extends State<TechnicalSection> {
-  final _selected = ValueNotifier<int?>(null);
-
-  @override
-  void didUpdateWidget(TechnicalSection old) {
-    super.didUpdateWidget(old);
-    // Panjang chart berubah: indeks lama tidak berarti lagi.
-    if (old.bars.length != widget.bars.length) _selected.value = null;
-  }
-
-  @override
-  void dispose() {
-    _selected.dispose();
-    super.dispose();
-  }
-
-  void _select(int index) => _selected.value = index;
+  /// Dipanggil saat chart disentuh atau digeser.
+  final ValueChanged<int> onSelect;
 
   @override
   Widget build(BuildContext context) {
-    final bars = widget.bars;
-    return ValueListenableBuilder<int?>(
-      valueListenable: _selected,
-      builder: (context, selected, _) {
-        final index = selected ?? bars.length - 1;
-        final bar = bars[index];
-        final previous = index > 0 ? bars[index - 1] : null;
-        return Column(
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            _DayReadout(
-              bar: bar,
-              onClear: selected == null ? null : () => _selected.value = null,
-            ),
-            const SizedBox(height: 12),
-            _ChartCard(
-              title: 'Harga'.tr,
-              reading: _priceReading(bar),
-              height: 200,
-              count: bars.length,
-              onSelect: _select,
-              painter: _PricePainter(bars, selected),
-            ),
-            const SizedBox(height: 12),
-            _ChartCard(
-              title: 'Volume'.tr,
-              reading: _volumeReading(bar),
-              legend: [
-                _LegendKey(
-                  color: AppColors.ink2,
-                  label: 'Rata-rata 20 hari'.tr,
-                  value: bar.volumeMa20 == null
-                      ? '-'
-                      : formatLot(bar.volumeMa20!),
-                ),
+    final picked = this.selected;
+    final selected = picked != null && picked >= 0 && picked < bars.length
+        ? picked
+        : null;
+    final index = selected ?? bars.length - 1;
+    final bar = bars[index];
+    final previous = index > 0 ? bars[index - 1] : null;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        _ChartCard(
+          title: 'Harga'.tr,
+          reading: selected == null && overlay != null
+              ? priceSituation(bar, overlay!, index) ?? _priceReading(bar)
+              : _priceReading(bar),
+          legend: [
+            if (overlay != null) ...[
+              _LegendKey(
+                color: AppColors.accent,
+                label: 'MA20',
+                value: _price(overlay!.ma20[index]),
+              ),
+              _LegendKey(
+                color: AppColors.ink2,
+                label: 'MA50',
+                value: _price(overlay!.ma50[index]),
+                dashed: true,
+              ),
+              _LegendKey(
+                color: AppColors.mut,
+                label: 'Pita bawah Bollinger'.tr,
+                value: _price(overlay!.bbLower[index]),
+                dashed: true,
+              ),
+              if (overlay!.zones.support != null)
                 _LegendKey(
                   color: AppColors.earn,
-                  label: 'Volume'.tr,
-                  value: bar.volumeLot == null
-                      ? '-'
-                      : formatLot(bar.volumeLot!),
+                  label: 'Support'.tr,
+                  value: '',
                   swatch: true,
                 ),
-              ],
-              height: 96,
-              count: bars.length,
-              onSelect: _select,
-              painter: _VolumePainter(bars, selected),
-            ),
-            const SizedBox(height: 12),
-            _ChartCard(
-              title: 'Stoch RSI 14 14 3 3',
-              reading: _stochReading(bar),
-              legend: [
+              if (overlay!.zones.resistance != null)
                 _LegendKey(
-                  color: AppColors.ink,
-                  label: 'K',
-                  value: bar.stochA == null
-                      ? '-'
-                      : formatIndicator(bar.stochA!, digits: 1),
-                ),
-                _LegendKey(
-                  color: AppColors.accent,
-                  label: 'D',
-                  value: bar.stochB == null
-                      ? '-'
-                      : formatIndicator(bar.stochB!, digits: 1),
-                  dashed: true,
-                ),
-              ],
-              height: 110,
-              count: bars.length,
-              onSelect: _select,
-              painter: _StochPainter(bars, selected),
-            ),
-            const SizedBox(height: 12),
-            _ChartCard(
-              title: 'MACD 12 26 9',
-              reading: _macdReading(bar, previous),
-              legend: [
-                _LegendKey(
-                  color: AppColors.ink,
-                  label: 'MACD',
-                  value: bar.macdA == null ? '-' : formatIndicator(bar.macdA!),
-                ),
-                _LegendKey(
-                  color: AppColors.accent,
-                  label: 'Sinyal'.tr,
-                  value: bar.macdB == null ? '-' : formatIndicator(bar.macdB!),
-                  dashed: true,
-                ),
-                _LegendKey(
-                  color: (bar.macdHist ?? 0) < 0
-                      ? AppColors.spend
-                      : AppColors.earn,
-                  label: 'Histogram'.tr,
-                  value: bar.macdHist == null
-                      ? '-'
-                      : formatIndicator(bar.macdHist!),
+                  color: AppColors.spend,
+                  label: 'Resistance'.tr,
+                  value: '',
                   swatch: true,
                 ),
-              ],
-              height: 130,
-              count: bars.length,
-              onSelect: _select,
-              painter: _MacdPainter(bars, selected),
+              if (overlay!.hasLowRsi)
+                _LegendKey(
+                  color: AppColors.warn,
+                  label: 'RSI di bawah 30'.tr,
+                  value: '',
+                  dot: true,
+                ),
+              if (overlay!.divergence != null)
+                _LegendKey(
+                  color: AppColors.warn,
+                  label: 'Divergence (kasar)'.tr,
+                  value: '',
+                  dashed: true,
+                ),
+            ],
+          ],
+          height: 220,
+          count: bars.length,
+          onSelect: onSelect,
+          painter: _PricePainter(bars, selected, overlay),
+          facts: facts,
+        ),
+        const SizedBox(height: 12),
+        _ChartCard(
+          title: 'Volume'.tr,
+          reading: _volumeReading(bar),
+          legend: [
+            _LegendKey(
+              color: AppColors.ink2,
+              label: 'Rata-rata 20 hari'.tr,
+              value: bar.volumeMa20 == null ? '-' : formatLot(bar.volumeMa20!),
             ),
-            const SizedBox(height: 10),
-            Text(
-              'Indikator dihitung dari harga penutupan dengan parameter Stockbit. Batang histogram pekat berarti membesar, pudar berarti mengecil. Hari yang ditandai tidak akurat tidak digambar. Ini pembacaan angka, bukan saran.'
-                  .tr,
-              style: AppText.body(size: 11, color: AppColors.mut, height: 1.4),
+            _LegendKey(
+              color: AppColors.earn,
+              label: 'Volume'.tr,
+              value: bar.volumeLot == null ? '-' : formatLot(bar.volumeLot!),
+              swatch: true,
             ),
           ],
-        );
-      },
+          height: 96,
+          count: bars.length,
+          onSelect: onSelect,
+          painter: _VolumePainter(bars, selected),
+          note: volumeNote(bars),
+        ),
+        const SizedBox(height: 12),
+        _ChartCard(
+          title: 'Stoch RSI 14 14 3 3',
+          reading: _stochReading(bar),
+          legend: [
+            _LegendKey(
+              color: AppColors.ink,
+              label: 'K',
+              value: bar.stochA == null
+                  ? '-'
+                  : formatIndicator(bar.stochA!, digits: 1),
+            ),
+            _LegendKey(
+              color: AppColors.accent,
+              label: 'D',
+              value: bar.stochB == null
+                  ? '-'
+                  : formatIndicator(bar.stochB!, digits: 1),
+              dashed: true,
+            ),
+          ],
+          height: 110,
+          count: bars.length,
+          onSelect: onSelect,
+          painter: _StochPainter(bars, selected),
+          note: stochNote(bars),
+        ),
+        const SizedBox(height: 12),
+        _ChartCard(
+          title: 'MACD 12 26 9',
+          reading: _macdReading(bar, previous),
+          legend: [
+            _LegendKey(
+              color: AppColors.ink,
+              label: 'MACD',
+              value: bar.macdA == null ? '-' : formatIndicator(bar.macdA!),
+            ),
+            _LegendKey(
+              color: AppColors.accent,
+              label: 'Sinyal'.tr,
+              value: bar.macdB == null ? '-' : formatIndicator(bar.macdB!),
+              dashed: true,
+            ),
+            _LegendKey(
+              color: (bar.macdHist ?? 0) < 0 ? AppColors.spend : AppColors.earn,
+              label: 'Histogram'.tr,
+              value: bar.macdHist == null
+                  ? '-'
+                  : formatIndicator(bar.macdHist!),
+              swatch: true,
+            ),
+          ],
+          height: 130,
+          count: bars.length,
+          onSelect: onSelect,
+          painter: _MacdPainter(bars, selected),
+          note: macdNote(bars),
+        ),
+        const SizedBox(height: 10),
+        Text(
+          '${'Indikator dihitung dari harga penutupan dengan parameter Stockbit. Batang histogram pekat berarti membesar, pudar berarti mengecil. Hari yang ditandai tidak akurat tidak digambar. Ini pembacaan angka, bukan saran.'.tr} ${'Kondisi saat ini, bukan sinyal beli atau jual. Skor model dan batas 10 hari ada di tab Prediksi.'.tr}',
+          style: AppText.body(size: 11, color: AppColors.mut, height: 1.4),
+        ),
+      ],
+    );
+  }
+}
+
+String _price(double? v) => v == null ? '-' : formatPrice(v.round());
+
+/// Data tambahan untuk chart harga, sejajar dengan hari yang digambar.
+class PriceOverlay {
+  const PriceOverlay({
+    required this.ma20,
+    required this.ma50,
+    required this.bbLower,
+    required this.zones,
+    this.ma200 = const [],
+    this.rsi = const [],
+    this.divergence,
+  });
+
+  final List<double?> ma20;
+  final List<double?> ma50;
+  final List<double?> bbLower;
+  final SupportResistance zones;
+
+  /// MA200 per hari, hanya untuk kalimat di atas chart (tidak digambar).
+  final List<double?> ma200;
+
+  /// RSI 14 per hari; hari dengan RSI di bawah 30 diberi titik.
+  final List<double?> rsi;
+
+  /// Divergence kasar yang digambar sebagai garis putus-putus di bawah dua
+  /// titik terendah, null bila tidak ada.
+  final Divergence? divergence;
+
+  bool get hasLowRsi => rsi.any((v) => v != null && v < 30);
+}
+
+/// Kalimat di atas chart harga untuk hari terakhir: jarak ke support dan
+/// posisi terhadap MA20, MA50, MA200. Null bila datanya kurang.
+String? priceSituation(DailyBar bar, PriceOverlay overlay, int index) {
+  final close = bar.close?.toDouble();
+  if (close == null) return null;
+  final support = overlay.zones.support;
+  final first = support != null && close >= support.low
+      ? 'Tutup @price, @pct% di atas support.'.trParams({
+          'price': formatPrice(close.round()),
+          'pct': '${((close / support.high - 1) * 100).round()}',
+        })
+      : '${'Tutup @price'.trParams({'price': formatPrice(close.round())})}.';
+  double? at(List<double?> series) =>
+      index < series.length ? series[index] : null;
+  final mas = [
+    ('MA20', at(overlay.ma20)),
+    ('MA50', at(overlay.ma50)),
+    ('MA200', at(overlay.ma200)),
+  ];
+  final known = [
+    for (final (name, v) in mas)
+      if (v != null) (name, v),
+  ];
+  String join(List<String> xs) => switch (xs) {
+    [] => '',
+    [final a] => a,
+    [final a, final b] => '$a ${'dan'.tr} $b',
+    [...final init, final last] => '${init.join(', ')}, ${'dan'.tr} $last',
+  };
+  final below = [
+    for (final (n, v) in known)
+      if (close < v) n,
+  ];
+  final above = [
+    for (final (n, v) in known)
+      if (close >= v) n,
+  ];
+  final String? second = known.isEmpty
+      ? null
+      : above.isEmpty
+      ? 'Masih di bawah @list.'.trParams({'list': join(below)})
+      : below.isEmpty
+      ? 'Di atas @list.'.trParams({'list': join(above)})
+      : 'Di atas @above, di bawah @below.'.trParams({
+          'above': join(above),
+          'below': join(below),
+        });
+  return [first, ?second].join(' ');
+}
+
+/// Satu kalimat di bawah chart volume: hari terbesar bulan ini.
+String? volumeNote(List<DailyBar> bars) {
+  final day = biggestVolumeDay(bars);
+  final volume = day?.volumeLot;
+  if (day == null || volume == null) return null;
+  final change = day.changePercent;
+  final args = {
+    'date': formatDayMonth(day.tradeDate),
+    'volume': formatLot(volume),
+  };
+  if (change == null) {
+    return 'Terbesar bulan ini @date (@volume).'.trParams(args);
+  }
+  return (change >= 0
+          ? 'Terbesar bulan ini @date (@volume), hari harga naik @pct%.'
+          : 'Terbesar bulan ini @date (@volume), hari harga turun @pct%.')
+      .trParams({...args, 'pct': formatIndicator(change.abs(), digits: 1)});
+}
+
+/// Satu kalimat di bawah Stoch RSI: berapa hari K menguat atau melemah.
+String? stochNote(List<DailyBar> bars) {
+  final streak = stochKStreak(bars);
+  if (streak == null || streak.days == 0) return null;
+  return (streak.rising
+          ? 'K menguat @days hari berturut-turut, dari @from (@date).'
+          : 'K melemah @days hari berturut-turut, dari @from (@date).')
+      .trParams({
+        'days': '${streak.days}',
+        'from': formatIndicator(streak.fromValue, digits: 1),
+        'date': formatDayMonth(streak.fromDate),
+      });
+}
+
+/// Satu kalimat di bawah MACD: berapa hari histogram memudar atau memekat.
+String? macdNote(List<DailyBar> bars) {
+  final streak = macdHistStreak(bars);
+  if (streak == null) return null;
+  return (streak.fading
+          ? 'Histogram memudar @days hari berturut-turut sejak @date.'
+          : 'Histogram memekat @days hari berturut-turut sejak @date.')
+      .trParams({
+        'days': '${streak.days}',
+        'date': formatDayMonth(streak.since),
+      });
+}
+
+/// Fakta singkat di bawah chart harga.
+/// Satu baris fakta di bawah chart harga. [warn] menambah label "otomatis,
+/// bisa keliru" untuk hasil deteksi otomatis yang longgar.
+class ChartFact {
+  const ChartFact(this.title, this.body, {this.warn = false});
+
+  final String title;
+  final String body;
+  final bool warn;
+}
+
+/// Baris fakta ringkas di bawah chart harga: "Judul · isi", dipisah garis
+/// tipis dari chart.
+class _FactRows extends StatelessWidget {
+  const _FactRows({required this.facts});
+
+  final List<ChartFact> facts;
+
+  @override
+  Widget build(BuildContext context) {
+    return DecoratedBox(
+      decoration: const BoxDecoration(
+        border: Border(top: BorderSide(color: AppColors.line2)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(top: 10),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            for (final fact in facts)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 2.5),
+                child: Text.rich(
+                  TextSpan(
+                    style: AppText.body(
+                      size: 12,
+                      color: AppColors.ink2,
+                      height: 1.4,
+                    ),
+                    children: [
+                      TextSpan(
+                        text: '${fact.title} · ',
+                        style: AppText.body(
+                          size: 12,
+                          color: AppColors.mut,
+                          height: 1.4,
+                        ),
+                      ),
+                      if (fact.warn)
+                        WidgetSpan(
+                          alignment: PlaceholderAlignment.middle,
+                          child: Container(
+                            margin: const EdgeInsets.only(right: 5),
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 1,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.warnSoft,
+                              borderRadius: BorderRadius.circular(99),
+                            ),
+                            child: Text(
+                              'otomatis, bisa keliru'.tr,
+                              style: AppText.body(
+                                size: 10.5,
+                                weight: FontWeight.w700,
+                                color: AppColors.warn,
+                              ),
+                            ),
+                          ),
+                        ),
+                      TextSpan(text: fact.body),
+                    ],
+                  ),
+                ),
+              ),
+          ],
+        ),
+      ),
     );
   }
 }
@@ -260,125 +512,6 @@ String _macdReading(DailyBar bar, DailyBar? previous) {
   ].map((part) => '$part.').join(' ');
 }
 
-/// Rincian satu hari: hari yang disentuh di chart, atau hari terakhir.
-class _DayReadout extends StatelessWidget {
-  const _DayReadout({required this.bar, this.onClear});
-
-  final DailyBar bar;
-
-  /// Kembali ke hari terakhir; null bila hari terakhir sudah tampil.
-  final VoidCallback? onClear;
-
-  @override
-  Widget build(BuildContext context) {
-    final day = bar;
-    String price(int? value) => value == null ? '-' : formatPrice(value);
-    final change = day.changePercent;
-    final items = [
-      ('Buka'.tr, price(day.open), AppColors.ink),
-      ('Tertinggi'.tr, price(day.high), AppColors.ink),
-      ('Terendah'.tr, price(day.low), AppColors.ink),
-      ('Tutup'.tr, price(day.close), AppColors.ink),
-      (
-        'Perubahan'.tr,
-        change == null ? '-' : formatPercent(change),
-        switch (change) {
-          null => AppColors.ink,
-          > 0 => AppColors.earn,
-          < 0 => AppColors.spend,
-          _ => AppColors.ink,
-        },
-      ),
-      (
-        'Volume'.tr,
-        day.volumeLot == null ? '-' : formatLot(day.volumeLot!),
-        AppColors.ink,
-      ),
-    ];
-    return AppCard(
-      margin: EdgeInsets.zero,
-      padding: const EdgeInsets.fromLTRB(16, 12, 8, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
-        children: [
-          Wrap(
-            alignment: WrapAlignment.spaceBetween,
-            crossAxisAlignment: WrapCrossAlignment.center,
-            spacing: 8,
-            children: [
-              Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Text(
-                    formatShortDate(day.tradeDate),
-                    style: AppText.display(size: 16),
-                  ),
-                  if (day.isIntraday) ...[
-                    const SizedBox(width: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 6,
-                        vertical: 2,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.warnSoft,
-                        borderRadius: BorderRadius.circular(4),
-                      ),
-                      child: Text(
-                        'berjalan'.tr,
-                        style: AppText.body(
-                          size: 10,
-                          weight: FontWeight.w700,
-                          color: AppColors.warn,
-                        ),
-                      ),
-                    ),
-                  ],
-                ],
-              ),
-              TextButton(onPressed: onClear, child: Text('Hari terakhir'.tr)),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.only(right: 8),
-            child: Column(
-              children: [
-                for (var start = 0; start < items.length; start += 3)
-                  Padding(
-                    padding: EdgeInsets.only(top: start == 0 ? 0 : 10),
-                    child: Row(
-                      children: [
-                        for (final (label, value, color)
-                            in items.skip(start).take(3))
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(label, style: AppText.label(size: 10)),
-                                const SizedBox(height: 2),
-                                Text(
-                                  value,
-                                  style: AppText.mono(
-                                    size: 13.5,
-                                    weight: FontWeight.w600,
-                                    color: color,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
-                      ],
-                    ),
-                  ),
-              ],
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-}
-
 /// Kartu satu panel: judul, pembacaan satu kalimat, legenda, lalu gambar.
 class _ChartCard extends StatelessWidget {
   const _ChartCard({
@@ -389,7 +522,15 @@ class _ChartCard extends StatelessWidget {
     required this.onSelect,
     required this.painter,
     this.legend = const [],
+    this.note,
+    this.facts = const [],
   });
+
+  /// Satu kalimat biasa di bawah gambar, null bila tidak ada.
+  final String? note;
+
+  /// Baris fakta ringkas di bagian bawah kartu.
+  final List<ChartFact> facts;
 
   final String title;
   final String reading;
@@ -446,6 +587,17 @@ class _ChartCard extends StatelessWidget {
               ),
             ),
           ),
+          if (note case final String text) ...[
+            const SizedBox(height: 8),
+            Text(
+              text,
+              style: AppText.body(size: 12, color: AppColors.ink2, height: 1.4),
+            ),
+          ],
+          if (facts.isNotEmpty) ...[
+            const SizedBox(height: 12),
+            _FactRows(facts: facts),
+          ],
         ],
       ),
     );
@@ -460,6 +612,7 @@ class _LegendKey extends StatelessWidget {
     required this.value,
     this.dashed = false,
     this.swatch = false,
+    this.dot = false,
   });
 
   final Color color;
@@ -467,6 +620,7 @@ class _LegendKey extends StatelessWidget {
   final String value;
   final bool dashed;
   final bool swatch;
+  final bool dot;
 
   @override
   Widget build(BuildContext context) {
@@ -477,20 +631,27 @@ class _LegendKey extends StatelessWidget {
           width: 16,
           height: 10,
           child: CustomPaint(
-            painter: _KeyPainter(color: color, dashed: dashed, swatch: swatch),
+            painter: _KeyPainter(
+              color: color,
+              dashed: dashed,
+              swatch: swatch,
+              dot: dot,
+            ),
           ),
         ),
         const SizedBox(width: 6),
         Text(label, style: AppText.body(size: 11, color: AppColors.mut)),
-        const SizedBox(width: 5),
-        Text(
-          value,
-          style: AppText.mono(
-            size: 11.5,
-            weight: FontWeight.w600,
-            letterSpacing: -0.2,
+        if (value.isNotEmpty) ...[
+          const SizedBox(width: 5),
+          Text(
+            value,
+            style: AppText.mono(
+              size: 11.5,
+              weight: FontWeight.w600,
+              letterSpacing: -0.2,
+            ),
           ),
-        ),
+        ],
       ],
     );
   }
@@ -501,14 +662,24 @@ class _KeyPainter extends CustomPainter {
     required this.color,
     required this.dashed,
     required this.swatch,
+    this.dot = false,
   });
 
   final Color color;
   final bool dashed;
   final bool swatch;
+  final bool dot;
 
   @override
   void paint(Canvas canvas, Size size) {
+    if (dot) {
+      canvas.drawCircle(
+        Offset(size.width / 2, size.height / 2),
+        3,
+        Paint()..color = color,
+      );
+      return;
+    }
     if (swatch) {
       canvas.drawRRect(
         RRect.fromRectAndRadius(
@@ -537,7 +708,10 @@ class _KeyPainter extends CustomPainter {
 
   @override
   bool shouldRepaint(_KeyPainter old) =>
-      old.color != color || old.dashed != dashed || old.swatch != swatch;
+      old.color != color ||
+      old.dashed != dashed ||
+      old.swatch != swatch ||
+      old.dot != dot;
 }
 
 bool _sameInputs(List<DailyBar> a, List<DailyBar> b) =>
@@ -557,10 +731,11 @@ Color _directionColor(DailyBar bar) {
 }
 
 class _PricePainter extends CustomPainter {
-  const _PricePainter(this.bars, this.selected);
+  const _PricePainter(this.bars, this.selected, this.overlay);
 
   final List<DailyBar> bars;
   final int? selected;
+  final PriceOverlay? overlay;
 
   @override
   void paint(Canvas canvas, Size size) {
@@ -575,6 +750,21 @@ class _PricePainter extends CustomPainter {
       }
     }
     if (lo > hi) return;
+    final extra = overlay;
+    if (extra != null) {
+      for (final series in [extra.ma20, extra.ma50, extra.bbLower]) {
+        for (final value in series) {
+          if (value == null) continue;
+          lo = math.min(lo, value);
+          hi = math.max(hi, value);
+        }
+      }
+      for (final zone in [extra.zones.support, extra.zones.resistance]) {
+        if (zone == null) continue;
+        lo = math.min(lo, zone.low);
+        hi = math.max(hi, zone.high);
+      }
+    }
     final pad = hi == lo ? lo * 0.01 + 1 : (hi - lo) * 0.08;
     lo -= pad;
     hi += pad;
@@ -586,6 +776,52 @@ class _PricePainter extends CustomPainter {
         frame,
         frame.yOf(value, lo, hi),
         formatPrice(value.round()),
+      );
+    }
+
+    if (extra != null) {
+      for (final (zone, color) in [
+        (extra.zones.support, AppColors.earn),
+        (extra.zones.resistance, AppColors.spend),
+      ]) {
+        if (zone == null) continue;
+        final top = frame.yOf(zone.high, lo, hi);
+        final bottom = frame.yOf(zone.low, lo, hi);
+        canvas.drawRect(
+          Rect.fromLTRB(
+            frame.plot.left,
+            top - 1.5,
+            frame.plot.right,
+            math.max(bottom, top + 3) + 1.5,
+          ),
+          Paint()..color = color.withValues(alpha: 0.13),
+        );
+      }
+      paintSeries(
+        canvas,
+        frame,
+        extra.bbLower,
+        lo,
+        hi,
+        linePaint(AppColors.mut, width: 1.1),
+        dashed: true,
+      );
+      paintSeries(
+        canvas,
+        frame,
+        extra.ma50,
+        lo,
+        hi,
+        linePaint(AppColors.ink2, width: 1.4),
+        dashed: true,
+      );
+      paintSeries(
+        canvas,
+        frame,
+        extra.ma20,
+        lo,
+        hi,
+        linePaint(AppColors.accent, width: 1.4),
       );
     }
 
@@ -622,6 +858,8 @@ class _PricePainter extends CustomPainter {
       );
     }
 
+    if (extra != null) _paintRsiMarks(canvas, frame, extra, lo, hi);
+
     final last = bars.last.close;
     if (last != null) {
       final y = frame.yOf(last.toDouble(), lo, hi);
@@ -638,9 +876,56 @@ class _PricePainter extends CustomPainter {
     paintCrosshair(canvas, frame, selected);
   }
 
+  /// Titik di bawah hari dengan RSI di bawah 30, dan garis divergence di
+  /// bawah dua titik terendahnya bila keduanya ada di rentang chart.
+  void _paintRsiMarks(
+    Canvas canvas,
+    ChartFrame frame,
+    PriceOverlay extra,
+    double lo,
+    double hi,
+  ) {
+    double lowOf(int i) {
+      final bar = bars[i];
+      return (bar.low ?? bar.close ?? 0).toDouble();
+    }
+
+    final dot = Paint()..color = AppColors.warn;
+    for (var i = 0; i < bars.length && i < extra.rsi.length; i++) {
+      final r = extra.rsi[i];
+      if (r == null || r >= 30 || bars[i].close == null) continue;
+      canvas.drawCircle(
+        Offset(frame.xOf(i), frame.yOf(lowOf(i), lo, hi) + 6),
+        2.6,
+        dot,
+      );
+    }
+    final div = extra.divergence;
+    if (div == null) return;
+    int find(DateTime d) => bars.indexWhere(
+      (b) =>
+          b.tradeDate.year == d.year &&
+          b.tradeDate.month == d.month &&
+          b.tradeDate.day == d.day,
+    );
+    final a = find(div.firstDate);
+    final b = find(div.secondDate);
+    if (a < 0 || b < 0) return;
+    paintDashedLine(
+      canvas,
+      Offset(frame.xOf(a), frame.yOf(div.firstPrice, lo, hi) + 11),
+      Offset(frame.xOf(b), frame.yOf(div.secondPrice, lo, hi) + 11),
+      linePaint(AppColors.warn, width: 1.2),
+      dash: 3,
+      gap: 2,
+    );
+  }
+
   @override
   bool shouldRepaint(_PricePainter old) =>
-      old.selected != selected || !_sameInputs(old.bars, bars);
+      old.selected != selected ||
+      !identical(old.overlay, overlay) ||
+      !_sameInputs(old.bars, bars);
 }
 
 class _VolumePainter extends CustomPainter {

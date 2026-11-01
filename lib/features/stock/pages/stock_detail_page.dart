@@ -16,16 +16,21 @@ import '../controllers/stock_detail_controller.dart';
 import '../models/broker_group.dart';
 import '../models/broker_range_row.dart';
 import '../models/daily_bar.dart';
+import '../services/broker_flow_analysis.dart';
+import '../widgets/broker_insights.dart';
 import '../widgets/broker_top_list.dart';
+import '../widgets/chart_conditions.dart';
 import '../widgets/group_flow_card.dart';
+import '../widgets/ml_prediction_section.dart';
 import '../widgets/stock_format.dart';
 import '../widgets/stock_hero.dart';
 import '../widgets/stock_segmented.dart';
 import '../widgets/technical_section.dart';
 
-/// Satu saham: harga terakhir, lalu dua tab. Tab Broker berisi arah dana tiga
+/// Satu saham: harga terakhir, lalu tiga tab. Tab Broker berisi arah dana tiga
 /// kelompok (dihitung di app) dan lima broker teratas di sisi net beli dan net
 /// jual. Tab Chart berisi harga, volume, Stoch RSI, dan MACD.
+/// Tab Prediksi berisi hasil model ML sebagai penyaring.
 class StockDetailPage extends StatelessWidget {
   const StockDetailPage({super.key});
 
@@ -70,6 +75,7 @@ class _Body extends StatelessWidget {
             options: [
               (DetailTab.broker, 'Broker'.tr),
               (DetailTab.chart, 'Chart'.tr),
+              (DetailTab.ml, 'Prediksi'.tr),
             ],
             onChanged: controller.selectTab,
           ),
@@ -77,6 +83,7 @@ class _Body extends StatelessWidget {
           switch (tab) {
             DetailTab.broker => _BrokerTab(controller: controller),
             DetailTab.chart => _ChartTab(controller: controller),
+            DetailTab.ml => _MlTab(controller: controller),
           },
         ],
       );
@@ -93,15 +100,29 @@ class _QuoteHero extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) => Obx(() {
-    final bar = controller.latestBar;
+    final bar = controller.heroBar;
+    final past = controller.showingPastDay;
     final status = controller.bars.value.status;
     if (bar?.close case final int close) {
       final change = bar!.changePercent;
       final date = formatShortDate(bar.tradeDate);
       return StockHero(
-        label: bar.isIntraday
+        label: past
+            ? '${'HARI TERPILIH'.tr} · $date'
+            : bar.isIntraday
             ? '${'HARGA BERJALAN'.tr} · $date'
             : '${'PENUTUPAN'.tr} · $date',
+        action: past
+            ? TextButton(
+                onPressed: () => controller.selectChartDay(null),
+                style: TextButton.styleFrom(
+                  foregroundColor: AppColors.paper,
+                  minimumSize: const Size(48, 32),
+                  padding: const EdgeInsets.symmetric(horizontal: 8),
+                ),
+                child: Text('Hari terakhir'.tr),
+              )
+            : null,
         live: bar.isIntraday,
         title: 'Rp ${formatPrice(close)}',
         trailing: change == null
@@ -186,17 +207,29 @@ class _BrokerContent extends StatelessWidget {
         '${formatShortDate(start)} - ${formatShortDate(end)}',
       null => 'Tidak ada data untuk rentang ini.'.tr,
     };
+    final analysis = controller.analysis;
+    final history = controller.history.toList();
+    final headline = analysis?.headline(selected);
+    final period = controller.period;
+    final trails = {
+      for (final row in [...controller.topBuyers, ...controller.topSellers])
+        row.brokerCode: ?analysis?.trailOf(row.brokerCode),
+    };
     final buyers = BrokerTopList(
       side: BrokerSide.buy,
       rows: controller.topBuyers,
       totalCount: controller.buyers.length,
       rules: rules,
+      trails: trails,
+      topShare: analysis?.topShare(selected, BrokerSide.buy),
     );
     final sellers = BrokerTopList(
       side: BrokerSide.sell,
       rows: controller.topSellers,
       totalCount: controller.sellers.length,
       rules: rules,
+      trails: trails,
+      topShare: analysis?.topShare(selected, BrokerSide.sell),
     );
     return Column(
       crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -216,16 +249,33 @@ class _BrokerContent extends StatelessWidget {
         const SizedBox(height: 8),
         Text(periodText, style: AppText.body(size: 11, color: AppColors.mut)),
         const SizedBox(height: AppSpacing.gap),
-        FadeSlideIn(child: GroupFlowCard(summary: controller.summary)),
-        const SizedBox(height: 10),
-        Text(
-          'Total dihitung dari broker yang tampil di Broker Summary Stockbit, bukan seluruh pasar. Kelompok adalah aturan Anda, bukan fakta pasar.'
-              .tr,
-          style: AppText.body(size: 11, color: AppColors.mut, height: 1.4),
+        FadeSlideIn(
+          child: GroupFlowCard(
+            summary: controller.summary,
+            headline: headline == null ? null : headlineText(headline),
+            contextLine: switch ((headline, period)) {
+              (final FlowHeadline h, (final start, final end)) => contextText(
+                headline: h,
+                rangeStart: start,
+                rangeEnd: end,
+                history: history,
+              ),
+              _ => null,
+            },
+            rangeLabel: selected,
+            others: {
+              for (final label in analysis?.otherLabels(selected) ?? const [])
+                label: analysis!.summaries[label]!,
+            },
+          ),
         ),
         const SizedBox(height: 18),
         Text('Broker teratas'.tr, style: AppText.display(size: 18)),
-        const SizedBox(height: 8),
+        if (trails.isNotEmpty) ...[
+          const SizedBox(height: 8),
+          const TrailLegend(),
+        ],
+        const SizedBox(height: 10),
         // Net beli dan net jual selalu bersampingan, juga di layar HP.
         IntrinsicHeight(
           child: Row(
@@ -235,6 +285,25 @@ class _BrokerContent extends StatelessWidget {
               const SizedBox(width: 10),
               Expanded(child: FadeSlideIn(index: 2, child: sellers)),
             ],
+          ),
+        ),
+        if (analysis != null) ...[
+          const SizedBox(height: AppSpacing.gap),
+          FadeSlideIn(
+            index: 3,
+            child: BrokerHighlightsCard(analysis: analysis, selected: selected),
+          ),
+        ],
+        const SizedBox(height: AppSpacing.gap),
+        Container(
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+          decoration: BoxDecoration(
+            color: AppColors.paper2,
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Text(
+            '${'Total dihitung dari broker yang tampil di Broker Summary Stockbit, bukan seluruh pasar. Kelompok adalah aturan Anda, bukan fakta pasar.'.tr} ${'Bukan sinyal beli atau jual.'.tr}',
+            style: AppText.body(size: 11.5, color: AppColors.ink2, height: 1.5),
           ),
         ),
       ],
@@ -274,13 +343,75 @@ class _ChartTab extends StatelessWidget {
         );
       case ResourceStatus.success:
         final bars = controller.visibleBars;
+        final history = controller.history.toList();
+        final market = controller.marketHistory.toList();
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
             _RangeLabel(bars: bars),
+            if (history.isNotEmpty) ...[
+              const SizedBox(height: AppSpacing.gap),
+              ChartConditionStrip(
+                history: history,
+                market: market,
+                news: controller.newsScore.value,
+              ),
+            ],
             const SizedBox(height: AppSpacing.gap),
-            TechnicalSection(bars: bars),
+            TechnicalSection(
+              bars: bars,
+              selected: controller.chartIndex.value,
+              onSelect: controller.selectChartDay,
+              overlay: buildOverlay(history, bars),
+              facts: chartFacts(history),
+            ),
           ],
+        );
+    }
+  });
+}
+
+/// Tab Prediksi: hasil model ML terbaru dari tabel `ml_prediction`. Selalu
+/// tampil bersama tanggal model, akurasi, dan disclaimer.
+class _MlTab extends StatelessWidget {
+  const _MlTab({required this.controller});
+
+  final StockDetailController controller;
+
+  @override
+  Widget build(BuildContext context) => Obx(() {
+    final state = controller.ml.value;
+    switch (state.status) {
+      case ResourceStatus.idle:
+      case ResourceStatus.loading:
+        return const _TabSkeleton();
+      case ResourceStatus.error:
+        return AppEmptyView(
+          icon: LucideIcons.wifiOff,
+          message: state.message ?? 'Gagal memuat prediksi ML.'.tr,
+          action: AppButton(
+            label: 'Coba lagi'.tr,
+            expand: false,
+            onPressed: controller.loadMl,
+          ),
+        );
+      case ResourceStatus.empty:
+        return AppEmptyView(
+          icon: LucideIcons.chartCandlestick,
+          title: 'Belum ada prediksi ML'.tr,
+          message:
+              'Prediksi muncul setelah pipeline ML menilai saham ini dan model aktif tersedia.'
+                  .tr,
+        );
+      case ResourceStatus.success:
+        final prediction = state.data;
+        if (prediction == null) return const _TabSkeleton();
+        return FadeSlideIn(
+          child: MlPredictionCard(
+            prediction: prediction,
+            matured: controller.mlMatured.value,
+            history: controller.history.toList(),
+          ),
         );
     }
   });

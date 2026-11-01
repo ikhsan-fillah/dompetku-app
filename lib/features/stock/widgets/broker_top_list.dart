@@ -7,6 +7,8 @@ import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/app_card.dart';
 import '../models/broker_group.dart';
 import '../models/broker_range_row.dart';
+import '../services/broker_flow_analysis.dart';
+import 'broker_insights.dart';
 import 'stock_format.dart';
 
 /// Daftar broker teratas di satu sisi: net beli atau net jual. Dibuat
@@ -20,6 +22,8 @@ class BrokerTopList extends StatelessWidget {
     required this.rows,
     required this.totalCount,
     required this.rules,
+    this.trails = const {},
+    this.topShare,
   });
 
   final BrokerSide side;
@@ -32,6 +36,12 @@ class BrokerTopList extends StatelessWidget {
 
   final BrokerGroupRules rules;
 
+  /// Jejak tiap broker di keempat rentang, kunci kode broker.
+  final Map<String, BrokerTrail> trails;
+
+  /// Porsi tiga broker teratas terhadap total sisi ini, 0 sampai 1.
+  final double? topShare;
+
   bool get _isBuy => side == BrokerSide.buy;
 
   @override
@@ -39,7 +49,6 @@ class BrokerTopList extends StatelessWidget {
     final color = _isBuy ? AppColors.earn : AppColors.spend;
     final soft = _isBuy ? AppColors.earnSoft : AppColors.spendSoft;
     final sum = rows.fold<int>(0, (total, row) => total + row.signedValueIdr);
-    final largest = rows.isEmpty ? 0 : rows.first.valueIdr;
     return AppCard(
       margin: EdgeInsets.zero,
       padding: const EdgeInsets.fromLTRB(12, 12, 12, 4),
@@ -84,10 +93,15 @@ class BrokerTopList extends StatelessWidget {
             ),
           ),
           Text(
-            'jumlah @total broker · top @count'.trParams({
-              'total': '$totalCount',
-              'count': '${rows.length}',
-            }),
+            topShare == null
+                ? 'jumlah @total broker · top @count'.trParams({
+                    'total': '$totalCount',
+                    'count': '${rows.length}',
+                  })
+                : '@total broker · 3 teratas = @share%'.trParams({
+                    'total': '$totalCount',
+                    'share': '${(topShare! * 100).round()}',
+                  }),
             style: AppText.body(size: 10.5, color: AppColors.mut),
           ),
           const SizedBox(height: 6),
@@ -108,7 +122,7 @@ class BrokerTopList extends StatelessWidget {
                 rank: index + 1,
                 row: row,
                 group: rules.groupOf(row.brokerCode),
-                fraction: largest == 0 ? 0 : row.valueIdr / largest,
+                trail: trails[row.brokerCode],
                 color: color,
                 isFirst: index == 0,
               ),
@@ -123,7 +137,7 @@ class _TopRow extends StatelessWidget {
     required this.rank,
     required this.row,
     required this.group,
-    required this.fraction,
+    required this.trail,
     required this.color,
     required this.isFirst,
   });
@@ -131,9 +145,17 @@ class _TopRow extends StatelessWidget {
   final int rank;
   final BrokerRangeRow row;
   final BrokerGroup? group;
-  final double fraction;
+  final BrokerTrail? trail;
   final Color color;
   final bool isFirst;
+
+  /// Warna label kelompok: biru asing, kuning bandar, ungu ritel.
+  static (Color, Color) _groupColors(BrokerGroup? group) => switch (group) {
+    BrokerGroup.asing => (const Color(0xFFE4ECF4), const Color(0xFF2F5D8A)),
+    BrokerGroup.bandar => (AppColors.warnSoft, AppColors.warn),
+    BrokerGroup.ritel => (const Color(0xFFEDE3F1), const Color(0xFF6E4C82)),
+    null => (AppColors.paper2, AppColors.ink2),
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -145,9 +167,15 @@ class _TopRow extends StatelessWidget {
       row.signedValueIdr,
       approx: row.isApprox,
     );
+    final (groupBg, groupFg) = _groupColors(group);
+    final same = trail?.sameAs(row.side == BrokerSide.buy ? 1 : -1);
     return Semantics(
       container: true,
-      label: '$rank. ${row.brokerCode}, $groupText, $valueText',
+      label: [
+        '$rank. ${row.brokerCode}, $groupText, $valueText',
+        if (same != null)
+          '@count dari 4 rentang searah'.trParams({'count': '$same'}),
+      ].join(', '),
       child: ExcludeSemantics(
         child: DecoratedBox(
           decoration: BoxDecoration(
@@ -161,17 +189,29 @@ class _TopRow extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.stretch,
               children: [
                 Row(
-                  crossAxisAlignment: CrossAxisAlignment.baseline,
-                  textBaseline: TextBaseline.alphabetic,
                   children: [
-                    Text(
-                      '$rank',
-                      style: AppText.mono(size: 10.5, color: AppColors.mut),
-                    ),
-                    const SizedBox(width: 6),
                     Text(
                       row.brokerCode,
                       style: AppText.mono(size: 14, weight: FontWeight.w700),
+                    ),
+                    const SizedBox(width: 5),
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 5,
+                        vertical: 1,
+                      ),
+                      decoration: BoxDecoration(
+                        color: groupBg,
+                        borderRadius: BorderRadius.circular(4),
+                      ),
+                      child: Text(
+                        groupText,
+                        style: AppText.body(
+                          size: 9.5,
+                          weight: FontWeight.w700,
+                          color: groupFg,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 6),
                     Expanded(
@@ -191,41 +231,23 @@ class _TopRow extends StatelessWidget {
                     ),
                   ],
                 ),
-                const SizedBox(height: 5),
-                Row(
-                  children: [
-                    Expanded(
-                      child: ClipRRect(
-                        borderRadius: BorderRadius.circular(2),
-                        child: SizedBox(
-                          height: 4,
-                          child: Stack(
-                            children: [
-                              const Positioned.fill(
-                                child: ColoredBox(color: AppColors.line2),
-                              ),
-                              FractionallySizedBox(
-                                widthFactor: fraction.clamp(0.0, 1.0),
-                                child: ColoredBox(
-                                  color: color.withValues(alpha: 0.8),
-                                ),
-                              ),
-                            ],
-                          ),
+                if (trail case final BrokerTrail t) ...[
+                  const SizedBox(height: 6),
+                  Row(
+                    children: [
+                      TrailDots(values: t.values),
+                      const Spacer(),
+                      Text(
+                        '$same/4',
+                        style: AppText.body(
+                          size: 9.5,
+                          weight: FontWeight.w700,
+                          color: color,
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 6),
-                    Text(
-                      groupText,
-                      style: AppText.body(
-                        size: 9.5,
-                        weight: FontWeight.w600,
-                        color: AppColors.mut,
-                      ),
-                    ),
-                  ],
-                ),
+                    ],
+                  ),
+                ],
               ],
             ),
           ),

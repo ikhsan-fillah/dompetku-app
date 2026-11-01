@@ -354,7 +354,16 @@ class _WatchlistBody extends StatelessWidget {
               flowDate: flowDate,
               email: controller.email,
             ),
-            footer: SlotMeter(active: activeCount),
+            footer: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                SlotMeter(active: activeCount),
+                if (controller.trendCounts.values.any((n) => n > 0)) ...[
+                  const SizedBox(height: 14),
+                  TrendSummaryRow(counts: controller.trendCounts),
+                ],
+              ],
+            ),
           ),
         ),
         const SizedBox(height: AppSpacing.gap),

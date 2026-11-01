@@ -16,6 +16,7 @@ class StockHero extends StatelessWidget {
     required this.caption,
     this.trailing,
     this.footer,
+    this.action,
     this.live = false,
   });
 
@@ -24,6 +25,9 @@ class StockHero extends StatelessWidget {
   final String caption;
   final Widget? trailing;
   final Widget? footer;
+
+  /// Tombol kecil di ujung kanan baris label, mis. kembali ke hari terakhir.
+  final Widget? action;
 
   /// Titik hijau di sebelah label: angka di blok ini masih bisa berubah
   /// (hari bursa berjalan). Labelnya sendiri juga menyebut "berjalan".
@@ -60,6 +64,7 @@ class StockHero extends StatelessWidget {
                   ),
                 ),
               ],
+              if (action != null) ...[const Spacer(), action!],
             ],
           ),
           const SizedBox(height: 6),

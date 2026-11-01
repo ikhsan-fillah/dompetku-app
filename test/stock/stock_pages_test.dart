@@ -1,7 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:dompetku_app/core/theme/app_theme.dart';
 import 'package:dompetku_app/features/stock/controllers/stock_controller.dart';
 import 'package:dompetku_app/features/stock/controllers/stock_detail_controller.dart';
 import 'package:dompetku_app/features/stock/models/broker_range_row.dart';
+import 'package:dompetku_app/features/stock/models/price_point.dart';
 import 'package:dompetku_app/features/stock/models/watchlist_item.dart';
 import 'package:dompetku_app/features/stock/pages/stock_detail_page.dart';
 import 'package:dompetku_app/features/stock/pages/stock_page.dart';
@@ -210,12 +213,25 @@ void main() {
         ..bars = [
           dailyBar(1, close: 9000),
           dailyBar(2, close: 9100, prevClose: 9000),
-        ];
+        ]
+        // Harga terus turun 260 hari: di bawah MA50, MA50 di bawah MA200.
+        ..history = {
+          'BBCA': [
+            for (var i = 0; i < 260; i++)
+              PricePoint(
+                ticker: 'BBCA',
+                date: DateTime(2025, 10, 1).add(Duration(days: i)),
+                close: 12000 - 10.0 * i,
+              ),
+          ],
+        };
       Get.put(StockController(FakeAuth(hasSession: true), repository));
 
       await pumpPage(tester, const StockPage());
 
       expect(find.text('BBCA'), findsOneWidget);
+      // Label tren di sebelah status aktif; saham nonaktif tidak diberi tren.
+      expect(find.text('Tren turun'), findsOneWidget);
       expect(find.text('BBRI'), findsOneWidget);
       expect(find.text('aktif'), findsOneWidget);
       expect(find.text('nonaktif'), findsOneWidget);
@@ -347,11 +363,10 @@ void main() {
         Get.put(StockDetailController(repository, 'BBCA'));
 
         await pumpPage(tester, const StockDetailPage(), height: 2400);
-
-        expect(
-          find.text('Bandar dan Asing net beli, Ritel net jual.'),
-          findsOneWidget,
-        );
+        // Kalimat pembuka dari kelompok dengan net terbesar; 1M tidak punya
+        // net asing, jadi tidak ada perbandingan "searah" atau "setelah".
+        expect(find.text('Asing masuk hari itu.'), findsOneWidget);
+        expect(find.text('Broker teratas'), findsOneWidget);
         expect(find.text('Net beli'), findsOneWidget);
         expect(find.text('Net jual'), findsOneWidget);
         expect(find.text('jumlah 2 broker · top 2'), findsNWidgets(2));
@@ -371,7 +386,7 @@ void main() {
           findsOneWidget,
         );
 
-        await tester.tap(find.text('1M'));
+        await tester.tap(find.text('1M').first);
         await tester.pumpAndSettle();
 
         expect(find.text('≈-2,20 T'), findsWidgets);
@@ -396,7 +411,8 @@ void main() {
 
       await pumpPage(tester, const StockDetailPage(), height: 2400);
 
-      expect(find.text('jumlah 8 broker · top 5'), findsOneWidget);
+      // 3 teratas (B8, B7, B6) = 21 dari total 36 = 58%.
+      expect(find.text('8 broker · 3 teratas = 58%'), findsOneWidget);
       expect(find.text('B8'), findsOneWidget);
       expect(find.text('B4'), findsOneWidget);
       expect(find.text('B3'), findsNothing);
@@ -444,12 +460,9 @@ void main() {
       // 40 hari terakhir diambil (6 Okt sampai 14 Nov), sebulan = 15 Okt dst.
       expect(find.textContaining('31 hari bursa'), findsOneWidget);
 
-      // Rincian hari terakhir langsung tampil; tombol kembali belum aktif.
-      TextButton backButton() => tester.widget<TextButton>(
-        find.widgetWithText(TextButton, 'Hari terakhir'),
-      );
-      expect(find.text('Buka'), findsOneWidget);
-      expect(backButton().onPressed, isNull);
+      // Blok tinta menampilkan hari terakhir; tombol kembali belum ada.
+      expect(find.text('Hari terakhir'), findsNothing);
+      expect(find.textContaining('HARI TERPILIH'), findsNothing);
 
       final touch = find
           .descendant(
@@ -464,14 +477,68 @@ void main() {
       await tester.drag(touch, const Offset(-60, 0));
       await tester.pumpAndSettle();
 
-      expect(backButton().onPressed, isNotNull);
+      // Menyentuh chart memindahkan blok tinta ke hari yang dipilih.
+      expect(find.textContaining('HARI TERPILIH'), findsOneWidget);
+      expect(find.text('Hari terakhir'), findsOneWidget);
 
       await tester.tap(find.text('Hari terakhir'));
       await tester.pumpAndSettle();
 
-      expect(backButton().onPressed, isNull);
+      expect(find.textContaining('HARI TERPILIH'), findsNothing);
+      expect(find.textContaining('PENUTUPAN'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
+
+    testWidgets(
+      'tab Chart dengan riwayat harga: strip kondisi dan baris fakta',
+      (tester) async {
+        // 260 hari riwayat yang berakhir di hari terakhir sampleBars(45),
+        // supaya MA200, support/resistance, dan pemindaian bisa dihitung.
+        final bars = sampleBars(45);
+        final end = bars.last.tradeDate;
+        List<PricePoint> series(String ticker, double base) => [
+          for (var i = 259; i >= 0; i--)
+            PricePoint(
+              ticker: ticker,
+              date: end.subtract(Duration(days: i)),
+              close: base + 300 * math.sin(i / 9) - i,
+              open: base + 300 * math.sin((i + 1) / 9) - i,
+              high: base + 300 * math.sin(i / 9) - i + 60,
+              low: base + 300 * math.sin(i / 9) - i - 60,
+              volume: 1000000 + (i % 5) * 200000,
+            ),
+        ];
+        final repository = FakeRepository()
+          ..rows = rows
+          ..bars = bars
+          ..history = {
+            'BBCA': series('BBCA', 9000),
+            '^JKSE': series('^JKSE', 7000),
+          };
+        Get.put(StockDetailController(repository, 'BBCA'));
+        await pumpPage(tester, const StockDetailPage(), height: 3400);
+
+        await tester.tap(find.text('Chart'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('TREN'), findsOneWidget);
+        expect(find.text('SENTIMEN'), findsOneWidget);
+        expect(find.text('SUPPORT'), findsOneWidget);
+        expect(find.text('RESISTANCE'), findsOneWidget);
+        expect(find.textContaining('IHSG'), findsWidgets);
+        for (final title in [
+          'Posisi',
+          'Candlestick',
+          'Divergence RSI?',
+          'Pola chart',
+          'Skenario katalog',
+        ]) {
+          expect(find.textContaining('$title · '), findsOneWidget);
+        }
+        expect(find.textContaining('otomatis, bisa keliru'), findsOneWidget);
+        expect(tester.takeException(), isNull);
+      },
+    );
 
     testWidgets('hari berjalan diberi tanda di hero dan rincian', (
       tester,
@@ -486,7 +553,8 @@ void main() {
       await tester.tap(find.text('Chart'));
       await tester.pumpAndSettle();
 
-      expect(find.text('berjalan'), findsOneWidget);
+      // Tanda hari berjalan tetap di blok tinta saat tab Chart dibuka.
+      expect(find.textContaining('HARGA BERJALAN'), findsOneWidget);
       expect(tester.takeException(), isNull);
     });
 

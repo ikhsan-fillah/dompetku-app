@@ -194,4 +194,250 @@ const Map<String, String> enStock = {
   'garis berada di dua sisi nol': 'lines on both sides of zero',
   'Indikator dihitung dari harga penutupan dengan parameter Stockbit. Batang histogram pekat berarti membesar, pudar berarti mengecil. Hari yang ditandai tidak akurat tidak digambar. Ini pembacaan angka, bukan saran.':
       'Indicators are computed from closing prices with Stockbit\'s parameters. A solid histogram bar means it is growing, a faded one means it is shrinking. Days marked inaccurate are not drawn. This is a reading of numbers, not advice.',
+  'Prediksi': 'Prediction',
+  'Gagal memuat prediksi ML.': 'Failed to load ML predictions.',
+  'Belum ada prediksi ML': 'No ML prediction yet',
+  'Prediksi muncul setelah pipeline ML menilai saham ini dan model aktif tersedia.':
+      'A prediction appears after the ML pipeline scores this stock and an active model is available.',
+  'Data harga': 'Price data',
+  'Sinyal model': 'Model signal',
+  'penyaring.': 'as a filter.',
+  'Skor di atas rata-rata': 'Score above average',
+  'Skor sekitar rata-rata': 'Score around average',
+  'Skor di bawah rata-rata': 'Score below average',
+  'Skor @ticker di atas rata-rata saham lain.':
+      '@ticker scores above the average stock.',
+  'Skor @ticker hampir sama dengan rata-rata saham lain.':
+      '@ticker scores about the same as the average stock.',
+  'Skor @ticker di bawah rata-rata saham lain.':
+      '@ticker scores below the average stock.',
+  'Model memberi skor lebih tinggi dari biasanya untuk data hari ini.':
+      'The model gives a higher score than usual for today\'s data.',
+  'Model tidak melihat keunggulan teknikal khusus pada data hari ini.':
+      'The model sees no particular technical edge in today\'s data.',
+  'Model memberi skor lebih rendah dari biasanya untuk data hari ini.':
+      'The model gives a lower score than usual for today\'s data.',
+  'Yang dihitung model': 'What the model measures',
+  'Dalam @days hari bursa, apakah harga menyentuh batas atas sebelum batas bawah?':
+      'Within @days trading days, does the price touch the upper barrier before the lower one?',
+  'Sekarang': 'Now',
+  'Batas bawah': 'Lower barrier',
+  'Batas atas': 'Upper barrier',
+  'Jawabannya, dari 100 kali': 'The answer, out of 100 times',
+  '@ticker hari ini': '@ticker today',
+  'perkiraan model': 'model estimate',
+  'Rata-rata': 'Average',
+  'semua saham, data latih': 'all stocks, training data',
+  'dari 100': 'of 100',
+  'Kotak terisi = berapa kali harga menyentuh batas atas lebih dulu. Sisanya turun ke batas bawah dulu atau tidak menyentuh keduanya.':
+      'Filled squares = how many times the price touched the upper barrier first. The rest hit the lower barrier first or touched neither.',
+  'Saham ini di luar data latih model, jadi skornya kurang bisa dipercaya.':
+      'This stock is outside the model training data, so its score is less reliable.',
+  'Kenapa skornya begitu': 'Why the score looks like this',
+  'menaikkan skor': 'raises the score',
+  'menurunkan skor': 'lowers the score',
+  'Makin panjang batang, makin kuat faktor itu menggeser skor.':
+      'The longer the bar, the more that factor moves the score.',
+  'harga @pct di bawah @ma': 'price @pct below @ma',
+  'harga @pct di atas @ma': 'price @pct above @ma',
+  'dekat pita bawah': 'near the lower band',
+  'dekat pita atas': 'near the upper band',
+  'di tengah pita': 'inside the band',
+  'Hasil nyata muncul setelah prediksi genap':
+      'The actual result appears once a prediction reaches',
+  'hari bursa': 'trading days',
+  'Hasil nyata prediksi': 'Actual result of prediction',
+  'Harga awal dan akhir': 'Start and end price',
+  'Hasil bersih': 'Net result',
+  'Menyentuh batas atas': 'Touched upper barrier',
+  'ya': 'yes',
+  'tidak': 'no',
+  'Dihitung pada': 'Checked on',
+  'Seberapa bisa dipercaya': 'How far to trust it',
+  'Uji pada data lama@period: seolah membeli tiap sinyal, lalu menjual setelah @days hari bursa.':
+      'Tested on past data@period: as if buying every signal, then selling after @days trading days.',
+  'Transaksi yang untung': 'Winning trades',
+  'Skor 10% tertinggi': 'Top 10% scores',
+  'Semua saham': 'All stocks',
+  'transaksi': 'trades',
+  'Rata-rata per transaksi, skor 10% tertinggi':
+      'Average per trade, top 10% scores',
+  'Untung': 'Gain',
+  'Rugi': 'Loss',
+  'Bersih': 'Net',
+  'Skor tinggi lebih sering untung, tetapi besar untung dan rugi ikut menentukan hasil.':
+      'High scores win more often, but the size of gains and losses also decides the result.',
+  'Setelah biaya @cost, rata-rata per transaksi @net untuk skor 10% tertinggi dan @all untuk semua saham.':
+      'After @cost in costs, the average per trade is @net for the top 10% scores and @all for all stocks.',
+  'Daya beda model (AUC)': 'Model discrimination (AUC)',
+  'Hanya sedikit di atas tebakan acak.':
+      'Only slightly better than a random guess.',
+  'Di atas tebakan acak, tetapi jauh dari sempurna.':
+      'Better than a random guess, but far from perfect.',
+  'Antar periode @min sampai @max.': 'Across periods @min to @max.',
+  'Garis tipis = batas lolos @gate.': 'Thin line = pass mark @gate.',
+  'tebakan acak': 'random guess',
+  'sempurna': 'perfect',
+  'Bahan pertimbangan, bukan janji untung: hasil bersih rata-rata masih negatif.':
+      'Something to weigh, not a promise of profit: the average net result is still negative.',
+  'Bahan pertimbangan, bukan janji untung: hasil masa lalu tidak menjamin hasil berikutnya.':
+      'Something to weigh, not a promise of profit: past results do not guarantee future ones.',
+  'saham': 'stocks',
+  'periode uji': 'test periods',
+  'Aturan': 'Rule',
+  'Model dilatih': 'Model trained',
+  'Penyaring informasi, bukan rekomendasi beli atau jual. Bukan nasihat keuangan.':
+      'An information filter, not a buy or sell recommendation. Not financial advice.',
+  '3 broker teratas = @buy% dari total net beli @label, dan @sell% dari total net jual.':
+      'The top 3 brokers = @buy% of total net buying in @label, and @sell% of total net selling.',
+  '@code justru net beli @value pada @label.':
+      '@code was a net buyer of @value in @label instead.',
+  '@count dari 4 rentang searah': '@count of 4 ranges in the same direction',
+  '@days hari': '@days days',
+  '@down turun · @mixed campuran · @up naik':
+      '@down down · @mixed mixed · @up up',
+  '@list selalu di sisi net beli: Latest, 7D, 1M, dan 3M.':
+      '@list were always net buyers: Latest, 7D, 1M, and 3M.',
+  '@list selalu di sisi net jual: Latest, 7D, 1M, dan 3M.':
+      '@list were always net sellers: Latest, 7D, 1M, and 3M.',
+  '@list. Semuanya @group.': '@list. All of them are @group.',
+  '@total broker · 3 teratas = @share%': '@total brokers · top 3 = @share%',
+  'AUC, di mana 0,5 berarti tebakan acak':
+      'AUC, where 0.5 means a random guess',
+  'Batang = @label. Angka kecil = rentang lain. ≈ berarti Stockbit hanya menampilkan angka bulat.':
+      'Bars = @label. Small numbers = other ranges. ≈ means Stockbit only shows a rounded value.',
+  'Batas lebih lebar dari biasanya.': 'The barriers are wider than usual.',
+  'Beli di keempat rentang': 'Buying in all four ranges',
+  'Bukan sinyal beli atau jual.': 'Not a buy or sell signal.',
+  'Campuran': 'Mixed',
+  'Dalam @compare, @group net @value.': 'Over @compare, @group net @value.',
+  'Dalam @days hari bursa, mana yang tersentuh lebih dulu: @up atau @down? Model memperkirakan batas atas lebih dulu sekitar @score dari 100 kali.':
+      'Within @days trading days, which is touched first: @up or @down? The model expects the upper barrier first about @score times out of 100.',
+  'Dua batas yang diuji': 'The two barriers tested',
+  'Harga sebulan terakhir dan dua batas @days hari':
+      'Last month of prices and the two @days-day barriers',
+  'Jejak: Latest · 7D · 1M · 3M. Kosong = tidak tampil di daftar. 4/4 = searah di semua rentang.':
+      'Trail: Latest · 7D · 1M · 3M. Empty = not on the list. 4/4 = same direction in every range.',
+  'Jual di keempat rentang': 'Selling in all four ranges',
+  'Kemungkinan batas atas dulu': 'Chance of upper barrier first',
+  'Keunggulannya tipis. Pakai sebagai penyaring, bukan janji untung.':
+      'The edge is thin. Use it as a filter, not a promise of profit.',
+  'Kondisi saat ini, bukan sinyal beli atau jual. Skor model dan batas 10 hari ada di tab Prediksi.':
+      'Current conditions, not a buy or sell signal. The model score and 10-day barriers are in the Prediction tab.',
+  'Kuat': 'Strong',
+  'Lebar batas mengikuti volatilitas @ticker 20 hari terakhir. Tidak ada jalur harga ke depan.':
+      'The barrier width follows the 20-day volatility of @ticker. No future price path is drawn.',
+  'Lemah': 'Weak',
+  'Menjelaskan skor model, bukan alasan harga bergerak.':
+      'Explains the model score, not why the price moves.',
+  'Naik': 'Up',
+  'Netral': 'Neutral',
+  'Pada @date harga @change (@from ke @to).':
+      'On @date the price moved @change (@from to @to).',
+  'Penjual terbesar 3M': 'Largest sellers over 3M',
+  'Pita bawah Bollinger': 'Lower Bollinger band',
+  'Porsi 3 broker teratas': 'Share of the top 3 brokers',
+  'RESISTANCE': 'RESISTANCE',
+  'Resistance': 'Resistance',
+  'SENTIMEN': 'SENTIMENT',
+  'SUPPORT': 'SUPPORT',
+  'Selama rentang ini harga @change (@from ke @to).':
+      'Over this range the price moved @change (@from to @to).',
+  'Support': 'Support',
+  'Support dan resistance dicari otomatis dari titik balik 60 hari, bisa keliru. Sentimen dari posisi IHSG terhadap MA50 dan MA200.':
+      'Support and resistance are found automatically from 60-day turning points and can be wrong. Sentiment comes from the IDX Composite versus its MA50 and MA200.',
+  'TREN': 'TREND',
+  'Terbesar bulan ini @date (@volume).': 'Largest this month: @date (@volume).',
+  'Terbesar bulan ini @date (@volume), hari harga naik @pct%.':
+      'Largest this month: @date (@volume), a day the price rose @pct%.',
+  'Terbesar bulan ini @date (@volume), hari harga turun @pct%.':
+      'Largest this month: @date (@volume), a day the price fell @pct%.',
+  'K menguat @days hari berturut-turut, dari @from (@date).':
+      'K has risen @days days in a row, from @from (@date).',
+  'K melemah @days hari berturut-turut, dari @from (@date).':
+      'K has fallen @days days in a row, from @from (@date).',
+  'Histogram memudar @days hari berturut-turut sejak @date.':
+      'The histogram has faded @days days in a row since @date.',
+  'Histogram memekat @days hari berturut-turut sejak @date.':
+      'The histogram has deepened @days days in a row since @date.',
+  'Tren campuran': 'Mixed trend',
+  'Tren naik': 'Uptrend',
+  'Tren turun': 'Downtrend',
+  'Tren, support, resistance, sentimen pasar, dan indikator ada di tab Chart.':
+      'Trend, support, resistance, market sentiment, and indicators are in the Chart tab.',
+  'Turun': 'Down',
+  'Uji balik': 'Backtest',
+  'Volatilitas 20 hari sedang @now% per hari. Dengan volatilitas setahun (@year%), batasnya sekitar @up dan @down.':
+      '20-day volatility is currently @now% per day. With one-year volatility (@year%), the barriers would be about @up and @down.',
+  'Yang memengaruhi skor': 'What moves the score',
+  'Yang menonjol': 'What stands out',
+  'biaya': 'cost',
+  'hari itu': 'that day',
+  'hasil bersih per transaksi setelah biaya':
+      'net result per trade after costs',
+  'rata-rata semua saham': 'average of all stocks',
+  'sampai @price': 'to @price',
+  'sebulan': 'one month',
+  'seminggu': 'one week',
+  'tiga bulan': 'three months',
+  'transaksi untung saat skor 10% tertinggi (semua @all%)':
+      'of trades profitable at the top 10% score (all @all%)',
+  '+ skor': '+ score',
+  '− skor': '− score',
+  '@group masuk @period, setelah @compare keluar.':
+      '@group moved in @period, after moving out over @compare.',
+  '@group keluar @period, setelah @compare masuk.':
+      '@group moved out @period, after moving in over @compare.',
+  '@group masuk @period, searah dengan @compare terakhir.':
+      '@group moved in @period, in line with the last @compare.',
+  '@group keluar @period, searah dengan @compare terakhir.':
+      '@group moved out @period, in line with the last @compare.',
+  'otomatis, bisa keliru': 'automatic, may be wrong',
+  'Candlestick': 'Candlestick',
+  'Pola chart': 'Chart pattern',
+  'Skenario katalog': 'Catalog scenarios',
+  'Double bottom': 'Double bottom',
+  'Double top': 'Double top',
+  'Head and shoulders': 'Head and shoulders',
+  'Inverse head and shoulders': 'Inverse head and shoulders',
+  'Segitiga naik, tembus atas': 'Ascending triangle, upside break',
+  'Segitiga naik, tembus bawah': 'Ascending triangle, downside break',
+  'Segitiga turun, tembus atas': 'Descending triangle, upside break',
+  'Segitiga turun, tembus bawah': 'Descending triangle, downside break',
+  'Segitiga simetris, tembus atas': 'Symmetric triangle, upside break',
+  'Segitiga simetris, tembus bawah': 'Symmetric triangle, downside break',
+  'Flag bullish': 'Bullish flag',
+  'Flag bearish': 'Bearish flag',
+  'Skor kata berita @date: @score, rata-rata dari @scored judul yang memuat kata bermuatan (total @count judul).':
+      'News word score @date: @score, averaged over @scored headlines with loaded words (@count headlines in total).',
+  'Posisi': 'Position',
+  '@pct% dari bawah rentang 60 hari (@low sampai @high)':
+      '@pct% from the bottom of the 60-day range (@low to @high)',
+  'tidak ada pola pada @date': 'no pattern on @date',
+  '@list pada @date': '@list on @date',
+  'Divergence RSI?': 'RSI divergence?',
+  'tidak terdeteksi dalam 20 hari': 'none detected in 20 days',
+  'harga buat titik terendah baru (@p2, @d2), RSI tidak (@r2 vs @r1 pada @d1). Kasar, sering palsu.':
+      'price made a new low (@p2, @d2), RSI did not (@r2 vs @r1 on @d1). Rough, often false.',
+  'tidak ada dalam @n hari bursa terakhir': 'none in the last @n trading days',
+  'menyerupai @name, tembus @date (titik kunci @keys)':
+      'resembles @name, broke out @date (key points @keys)',
+  'tidak ada yang aktif (@list syarat)': 'none active (@list conditions)',
+  '@codes aktif (hasil uji lemah, bukan sinyal)':
+      '@codes active (weak test results, not a signal)',
+  'IHSG @pct bln ini': 'IHSG @pct this month',
+  'di bawah MA50, MA200': 'below MA50, MA200',
+  'di atas MA50, MA200': 'above MA50, MA200',
+  'di bawah MA50, di atas MA200': 'below MA50, above MA200',
+  'di atas MA50, di bawah MA200': 'above MA50, below MA200',
+  'Tutup @price, @pct% di atas support.': 'Close @price, @pct% above support.',
+  'Masih di bawah @list.': 'Still below @list.',
+  'Di atas @list.': 'Above @list.',
+  'Di atas @above, di bawah @below.': 'Above @above, below @below.',
+  'RSI di bawah 30': 'RSI below 30',
+  'Divergence (kasar)': 'Divergence (rough)',
+  'HARI TERPILIH': 'SELECTED DAY',
+  'sampai': 'to',
+  '@group masuk @period.': '@group moved in @period.',
+  '@group keluar @period.': '@group moved out @period.',
 };

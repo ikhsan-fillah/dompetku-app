@@ -3,6 +3,9 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/broker_group.dart';
 import '../models/broker_range_row.dart';
 import '../models/daily_bar.dart';
+import '../models/ml_prediction.dart';
+import '../models/news_score.dart';
+import '../models/price_point.dart';
 import '../models/watchlist_item.dart';
 import 'stock_auth.dart';
 
@@ -34,6 +37,23 @@ abstract interface class StockRepository {
 
   /// Hari perdagangan terbaru untuk tiap saham yang diminta.
   Future<List<DailyBar>> getLatestBars(List<String> tickers);
+
+  /// Riwayat harga harian dari `price_history` (sumber pipeline ML), urut
+  /// dari yang terlama, paling banyak [limit] hari bursa terakhir. Dipakai
+  /// untuk MA50, MA200, volatilitas, dan IHSG (kode `^JKSE`).
+  Future<List<PricePoint>> getPriceHistory(String ticker, {int limit = 260});
+
+  /// Skor kata berita pasar untuk hari terbit [day] (WIB), null bila belum
+  /// ada judul yang punya skor.
+  Future<NewsScore?> getNewsScore(DateTime day);
+
+  /// Prediksi ML terbaru satu saham dari model yang aktif, null bila belum
+  /// ada. Hasilnya penyaring, bukan rekomendasi beli atau jual.
+  Future<MlPrediction?> getLatestPrediction(String ticker);
+
+  /// Prediksi terbaru dari model aktif yang hasil nyatanya sudah dihitung,
+  /// null bila belum ada yang genap horizon hari bursa.
+  Future<MlPrediction?> getLatestMaturedPrediction(String ticker);
 }
 
 /// Tabel yang menyimpan data per kode saham, ikut dihapus bersama sahamnya.
@@ -49,6 +69,14 @@ const _barColumns =
     'ticker, trade_date, open_price, high_price, low_price, close_price, '
     'prev_close, volume_lot, volume_ma20, stoch_rsi_a, stoch_rsi_b, macd_a, '
     'macd_b, macd_hist, is_intraday';
+
+/// Kolom prediksi ML beserta model tersemat. `!inner` dipakai supaya filter
+/// `ml_model.is_active` ikut menyaring baris prediksi model lama.
+const _mlColumns =
+    'ticker, trade_date, model_version, horizon_days, prob_up, base_rate, '
+    'signal, upper_pct, lower_pct, close_price, drivers, outcome_date, '
+    'outcome_entry, outcome_exit, outcome_ret_net, outcome_win, '
+    'outcome_hit_upper, ml_model!inner(trained_at, metrics, is_active, universe)';
 
 class SupabaseStockRepository implements StockRepository {
   SupabaseStockRepository(this._auth);
@@ -166,5 +194,74 @@ class SupabaseStockRepository implements StockRepository {
         .order('captured_at', ascending: false)
         .limit(10 * tickers.length);
     return rows.map(DailyBar.fromMap).toList();
+  }
+
+  @override
+  Future<List<PricePoint>> getPriceHistory(
+    String ticker, {
+    int limit = 260,
+  }) async {
+    final rows = await _client
+        .from('price_history')
+        .select(
+          'ticker, trade_date, open_price, high_price, low_price, '
+          'close_price, volume',
+        )
+        .eq('ticker', ticker)
+        .order('trade_date', ascending: false)
+        .limit(limit);
+    final points = [for (final row in rows) ?PricePoint.tryFromMap(row)];
+    return points.reversed.toList();
+  }
+
+  @override
+  Future<NewsScore?> getNewsScore(DateTime day) async {
+    // Batas hari WIB (UTC+7) dalam UTC.
+    final start = DateTime.utc(
+      day.year,
+      day.month,
+      day.day,
+    ).subtract(const Duration(hours: 7));
+    final rows = await _client
+        .from('market_news')
+        .select('sentiment')
+        .gte('published_at', start.toIso8601String())
+        .lt(
+          'published_at',
+          start.add(const Duration(days: 1)).toIso8601String(),
+        )
+        .limit(2000);
+    return NewsScore.fromSentiments(day, [
+      for (final row in rows) row['sentiment'],
+    ]);
+  }
+
+  @override
+  Future<MlPrediction?> getLatestPrediction(String ticker) async {
+    // Hanya prediksi dari model aktif. Kolom model ikut dibaca untuk tanggal
+    // latih dan AUC per lipatan uji.
+    final rows = await _client
+        .from('ml_prediction')
+        .select(_mlColumns)
+        .eq('ticker', ticker)
+        .eq('ml_model.is_active', true)
+        .order('trade_date', ascending: false)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return MlPrediction.tryFromMap(rows.first);
+  }
+
+  @override
+  Future<MlPrediction?> getLatestMaturedPrediction(String ticker) async {
+    final rows = await _client
+        .from('ml_prediction')
+        .select(_mlColumns)
+        .eq('ticker', ticker)
+        .eq('ml_model.is_active', true)
+        .not('outcome_ret_net', 'is', null)
+        .order('trade_date', ascending: false)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return MlPrediction.tryFromMap(rows.first);
   }
 }

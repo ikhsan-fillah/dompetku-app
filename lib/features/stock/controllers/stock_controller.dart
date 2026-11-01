@@ -8,6 +8,7 @@ import '../models/broker_range_row.dart';
 import '../models/daily_bar.dart';
 import '../models/watchlist_item.dart';
 import '../services/broker_group_calculator.dart';
+import '../services/price_analysis.dart';
 
 enum StockAccess { checking, notConfigured, signedOut, signedIn }
 
@@ -27,15 +28,19 @@ List<WatchlistItem> activeFirst(Iterable<WatchlistItem> items) => [
 ];
 
 /// Ringkasan satu saham untuk kartu watchlist: arah dana kelompok pada
-/// snapshot Latest terbaru dan harga penutupan terbaru. Keduanya boleh kosong
-/// bila datanya belum diisi.
+/// snapshot Latest terbaru, harga penutupan terbaru, dan tren (posisi harga
+/// terhadap MA50 dan MA200). Semuanya boleh kosong bila datanya belum diisi.
 class TickerOverview {
-  const TickerOverview({this.flow, this.flowDate, this.bar});
+  const TickerOverview({this.flow, this.flowDate, this.bar, this.trend});
 
   final GroupSummary? flow;
   final DateTime? flowDate;
   final DailyBar? bar;
+  final TrendKind? trend;
 }
+
+/// Hari bursa yang diambil untuk menghitung tren (MA200 butuh 200).
+const trendHistoryDays = 210;
 
 /// Login ke Supabase dan daftar watchlist untuk modul saham.
 class StockController extends GetxController {
@@ -78,6 +83,17 @@ class StockController extends GetxController {
 
   /// True bila kelima slot aktif sudah terisi.
   bool get slotsFull => activeCount >= maxActiveTickers;
+
+  /// Jumlah saham aktif per tren, hanya yang trennya sudah terhitung.
+  Map<TrendKind, int> get trendCounts {
+    final counts = {for (final kind in TrendKind.values) kind: 0};
+    for (final item in items) {
+      if (!item.isActive) continue;
+      final trend = overviews[item.ticker]?.trend;
+      if (trend != null) counts[trend] = counts[trend]! + 1;
+    }
+    return counts;
+  }
 
   /// Tanggal data broker terbaru di antara semua saham, null bila belum ada.
   DateTime? get latestFlowDate => overviews.values
@@ -176,6 +192,10 @@ class StockController extends GetxController {
       final rows = results[0] as List<BrokerRangeRow>;
       final bars = latestBarPerTicker(results[1] as List<DailyBar>);
       final rules = results[2] as BrokerGroupRules;
+      final trends = await _loadTrends([
+        for (final item in items)
+          if (item.isActive) item.ticker,
+      ]);
       overviews.assignAll({
         for (final ticker in tickers)
           ticker: _overviewOf(
@@ -185,6 +205,7 @@ class StockController extends GetxController {
             ],
             bars[ticker],
             rules,
+            trends[ticker],
           ),
       });
     } catch (_) {
@@ -192,16 +213,34 @@ class StockController extends GetxController {
     }
   }
 
+  /// Tren tiap saham aktif dari `price_history`. Satu kueri per saham supaya
+  /// tidak terpotong batas baris Supabase; saham yang gagal dilewati saja.
+  Future<Map<String, TrendKind>> _loadTrends(List<String> tickers) async {
+    final results = await Future.wait([
+      for (final ticker in tickers)
+        _repository
+            .getPriceHistory(ticker, limit: trendHistoryDays)
+            .then((history) => trendFacts(history)?.kind)
+            .catchError((Object _) => null),
+    ]);
+    return {
+      for (final (index, ticker) in tickers.indexed)
+        if (results[index] case final TrendKind kind) ticker: kind,
+    };
+  }
+
   TickerOverview _overviewOf(
     List<BrokerRangeRow> rows,
     DailyBar? bar,
     BrokerGroupRules rules,
+    TrendKind? trend,
   ) {
     final latest = latestSnapshotPerRange(rows);
     return TickerOverview(
       flow: latest.isEmpty ? null : _calculator.summarize(latest, rules),
       flowDate: latest.isEmpty ? null : latest.first.rangeEnd,
       bar: bar,
+      trend: trend,
     );
   }
 
