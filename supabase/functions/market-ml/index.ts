@@ -139,6 +139,69 @@ async function loadRaw(sinceDays: number, symbols: string[]): Promise<Series[]> 
 }
 
 const PARAMS = { horizon: HORIZON, k: BARRIER_K };
+const COST = 0.004; // biaya pulang-pergi (beli ~0,15% + jual ~0,25%), sama dengan lab
+
+// ---------------------------------------------------------------- uji balik (disimpan ke ml_model.metrics)
+
+const mean = (a: number[]) => (a.length ? a.reduce((x, v) => x + v, 0) / a.length : null);
+const r4 = (v: number | null) => (v === null || !Number.isFinite(v) ? null : round(v, 4));
+
+/** Ringkasan untung/rugi satu kelompok: beli harga buka besok, jual penutupan hari ke-HORIZON, setelah biaya. */
+function tradeStats(rets: number[]) {
+  const net = rets.map((v) => v - COST);
+  return {
+    n: net.length,
+    winRate: r4(mean(net.map((v) => (v > 0 ? 1 : 0)))),
+    avgWin: r4(mean(net.filter((v) => v > 0))),
+    avgLoss: r4(mean(net.filter((v) => v <= 0))),
+    netPerTrade: r4(mean(net)),
+  };
+}
+
+/** Per periode uji: semua saham vs 10% skor teratas (ambang = persentil 90 skor di data latih). */
+function foldBacktest({ tr, te, p, pf }: { tr: Row[]; te: Row[]; p: number[]; pf: (x: number[]) => number }) {
+  const step = Math.max(1, Math.floor(tr.length / 20000));
+  const s: number[] = [];
+  for (let i = 0; i < tr.length; i += step) s.push(pf(tr[i].x));
+  s.sort((a, b) => a - b);
+  const thr = s[Math.min(s.length - 1, Math.floor(0.9 * s.length))];
+  const idx = te.map((_, i) => i).filter((i) => te[i].holdRet != null);
+  const ret = (i: number) => te[i].holdRet as number;
+  return {
+    top10Threshold: r4(thr),
+    all: tradeStats(idx.map(ret)),
+    top10: tradeStats(idx.filter((i) => p[i] >= thr).map(ret)),
+  };
+}
+
+type FoldBt = FoldResult & { extra?: { all: ReturnType<typeof tradeStats>; top10: ReturnType<typeof tradeStats> } };
+
+/** Rata-rata antarperiode (setiap periode berbobot sama) untuk ditampilkan app. */
+function backtestSummary(folds: FoldBt[], nStocks: number) {
+  const avgOf = (pick: (f: FoldBt) => number | null | undefined) =>
+    r4(mean(folds.map(pick).filter((v): v is number => typeof v === 'number')));
+  const group = (k: 'all' | 'top10') => ({
+    winRate: avgOf((f) => f.extra?.[k].winRate),
+    avgWin: avgOf((f) => f.extra?.[k].avgWin),
+    avgLoss: avgOf((f) => f.extra?.[k].avgLoss),
+    netPerTrade: avgOf((f) => f.extra?.[k].netPerTrade),
+    trades: folds.reduce((a, f) => a + (f.extra?.[k].n ?? 0), 0),
+  });
+  const g = folds.length ? gate(folds) : null;
+  return {
+    horizonDays: HORIZON,
+    costRoundTrip: COST,
+    rule: `beli harga buka besok, jual penutupan hari bursa ke-${HORIZON}`,
+    nStocks,
+    periods: folds.length,
+    testStart: folds[0]?.testStart ?? null,
+    testEnd: folds[folds.length - 1]?.testEnd ?? null,
+    meanAuc: g?.meanAuc ?? null,
+    foldsBeatBase: g?.foldsBeatBase ?? null,
+    top10: group('top10'),
+    all: group('all'),
+  };
+}
 
 // ---------------------------------------------------------------- model
 
@@ -265,6 +328,12 @@ async function daily() {
     }));
     out.push({ ticker: w.ticker, date: r.date, prob: round(prob, 3), signal });
   }
+  let outcomes: unknown = null;
+  try {
+    outcomes = await fillOutcomes(series, errors);
+  } catch (e) {
+    errors.push(`outcome: ${String(e).slice(0, 200)}`);
+  }
   let market: unknown = null;
   try {
     market = await marketDaily(errors);
@@ -283,10 +352,61 @@ async function daily() {
       note: `market-ml daily ${am.version}; gagal: ${ing.failed.join(', ') || '-'}; error tulis: ${errors.length}`,
     }));
   }
-  return { ingest: ing, predictions: out, market, errors };
+  return { ingest: ing, predictions: out, outcomes, market, errors };
 }
 
 /** Isi daily_snapshot 70 hari terakhir: tanggal baru, atau ganti baris berjalan. */
+/**
+ * Uji maju: isi hasil nyata prediksi yang sudah lewat HORIZON hari bursa.
+ * Sama dengan aturan uji balik: beli harga buka hari setelah trade_date, jual penutupan hari ke-HORIZON, minus biaya.
+ * outcome_hit_upper mengikuti label model (batas atas tersentuh lebih dulu daripada batas bawah).
+ */
+async function fillOutcomes(series: Series[], errors: string[]) {
+  const { data, error } = await db
+    .from('ml_prediction')
+    .select('user_id,ticker,trade_date,model_version,upper_pct,lower_pct')
+    .is('outcome_date', null)
+    .order('trade_date')
+    .limit(1000);
+  if (error) throw new Error(error.message);
+  const byTicker = new Map(series.map((s) => [s.ticker, s.bars]));
+  let filled = 0;
+  for (const p of data ?? []) {
+    const bars = byTicker.get(p.ticker);
+    const i = bars?.findIndex((b) => b.date === p.trade_date) ?? -1;
+    if (!bars || i < 0 || i + HORIZON >= bars.length) continue;
+    const entry = bars[i + 1].open;
+    const exit = bars[i + HORIZON].close;
+    const base = bars[i].close;
+    const up = base * (1 + Number(p.upper_pct));
+    const down = base * (1 + Number(p.lower_pct));
+    let hit = false;
+    for (let k = i + 1; k <= i + HORIZON; k++) {
+      if (bars[k].low <= down) break;
+      if (bars[k].high >= up) {
+        hit = true;
+        break;
+      }
+    }
+    const net = exit / entry - 1 - COST;
+    const { error: e } = await db
+      .from('ml_prediction')
+      .update({
+        outcome_date: bars[i + HORIZON].date,
+        outcome_entry: entry,
+        outcome_exit: exit,
+        outcome_ret_net: round(net),
+        outcome_win: net > 0,
+        outcome_hit_upper: hit,
+        outcome_checked_at: new Date().toISOString(),
+      })
+      .match({ user_id: p.user_id, ticker: p.ticker, trade_date: p.trade_date, model_version: p.model_version });
+    if (e) errors.push(`outcome ${p.ticker} ${p.trade_date}: ${e.message}`);
+    else filled++;
+  }
+  return { pending: (data ?? []).length, filled };
+}
+
 async function writeSnapshots(userId: string, s: Series) {
   const bars = s.bars;
   const ind = indicators(bars);
@@ -484,7 +604,7 @@ Deno.serve(async (req) => {
         return json(await ingest(body.tickers ?? UNIVERSE, body.range ?? '5y'));
       case 'evaluate': {
         const rows = taRows(buildRows(await loadSeries(365 * 6), PARAMS));
-        return json(walkForward(rows, HORIZON, FOLDS, LAMBDA, body.fold ?? 0, TA_FEATURES, 'distSma50'));
+        return json(walkForward(rows, HORIZON, FOLDS, LAMBDA, body.fold ?? 0, TA_FEATURES, 'distSma50', undefined, foldBacktest));
       }
       case 'fit': {
         const rows = taRows(buildRows(await loadSeries(365 * 6), PARAMS));
@@ -501,7 +621,7 @@ Deno.serve(async (req) => {
           barrier_k: BARRIER_K,
           features: [...TA_FEATURES],
           params: { model, baseRate, lambda: LAMBDA, nTrain: lab.length, firstDate: lab[0].date, lastLabeledDate: lab[lab.length - 1].date },
-          metrics: { folds: body.folds ?? [] },
+          metrics: { folds: body.folds ?? [], backtest: backtestSummary((body.folds ?? []) as FoldBt[], tickers.length) },
           universe: tickers,
           is_active: activate,
         });
