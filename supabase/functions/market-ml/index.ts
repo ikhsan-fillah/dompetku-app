@@ -10,8 +10,9 @@ import { createClient } from 'npm:@supabase/supabase-js@2';
 import {
   buildRows,
   drivers,
-  FEATURES,
   fitLogistic,
+  projectX,
+  TA_FEATURES,
   indicators,
   predict,
   round,
@@ -174,6 +175,11 @@ function gate(folds: FoldResult[]) {
   return { ok: meanAuc >= 0.53 && beat >= Math.ceil(folds.length * 0.8), meanAuc: round(meanAuc), foldsBeatBase: beat, folds: folds.length };
 }
 
+/** Baris dengan vektor fitur teknikal saja (model saham sejak 2026-11-01). */
+function taRows(rows: Row[]): Row[] {
+  return rows.map((r) => ({ ...r, x: projectX(r.x, TA_FEATURES) }));
+}
+
 function latestRows(rows: Row[]): Row[] {
   const last = new Map<string, Row>();
   for (const r of rows) last.set(r.ticker, r); // rows urut tanggal
@@ -185,11 +191,13 @@ function latestRows(rows: Row[]): Row[] {
 function describe(p: { prob: number; base: number; signal: string; upper: number; lower: number }) {
   const pct = (v: number) => `${(v * 100).toFixed(1)}%`;
   const head = {
-    peluang: 'Peluang naik di atas rata-rata',
-    netral: 'Tidak ada keunggulan yang jelas',
-    risiko: 'Peluang naik di bawah rata-rata',
+    peluang: 'Skor di atas rata-rata',
+    netral: 'Skor sekitar rata-rata',
+    risiko: 'Skor di bawah rata-rata',
   }[p.signal];
-  return `${head}: peluang menyentuh +${pct(p.upper)} sebelum ${pct(p.lower)} dalam ${HORIZON} hari bursa = ${pct(p.prob)} (rata-rata ${pct(p.base)}). Model statistik, bukan saran.`;
+  // Uji balik 2023-2026 (lab, 44 saham, model teknikal): 10% skor teratas untung setelah biaya 48%
+  // vs rata-rata 42%, rata-rata hasil bersih sekitar -0,2% per transaksi (tahan 10 hari, biaya 0,4%).
+  return `${head} (${pct(p.prob)} vs ${pct(p.base)}): kemungkinan menyentuh +${pct(p.upper)} lebih dulu daripada ${pct(p.lower)} dalam ${HORIZON} hari bursa. Uji balik 3 tahun: skor tertinggi sedikit lebih sering untung (48% vs 42%), tapi rata-rata hasil bersihnya masih sekitar -0,2%, jadi pakai sebagai bahan pertimbangan, bukan alasan beli atau jual.`;
 }
 
 // ---------------------------------------------------------------- daily
@@ -219,9 +227,10 @@ async function daily() {
       out.push({ ticker: w.ticker, note: 'tidak ada data terbaru (di luar universe atau tidak diperdagangkan)' });
       continue;
     }
-    const prob = predict(am.model, r.x);
+    const x = projectX(r.x, am.model.features);
+    const prob = predict(am.model, x);
     const signal = signalOf(prob, am.baseRate);
-    const drv = drivers(am.model, r.x);
+    const drv = drivers(am.model, x);
     const outside = !UNIVERSE.includes(w.ticker);
     check(`ml_prediction ${w.ticker}`, await db.from('ml_prediction').upsert(
       {
@@ -474,37 +483,38 @@ Deno.serve(async (req) => {
       case 'ingest':
         return json(await ingest(body.tickers ?? UNIVERSE, body.range ?? '5y'));
       case 'evaluate': {
-        const rows = buildRows(await loadSeries(365 * 6), PARAMS);
-        return json(walkForward(rows, HORIZON, FOLDS, LAMBDA, body.fold ?? 0));
+        const rows = taRows(buildRows(await loadSeries(365 * 6), PARAMS));
+        return json(walkForward(rows, HORIZON, FOLDS, LAMBDA, body.fold ?? 0, TA_FEATURES, 'distSma50'));
       }
       case 'fit': {
-        const rows = buildRows(await loadSeries(365 * 6), PARAMS);
+        const rows = taRows(buildRows(await loadSeries(365 * 6), PARAMS));
         const lab = rows.filter((r) => r.y !== null);
-        const model = fitLogistic(lab.map((r) => r.x), lab.map((r) => r.y as number), LAMBDA);
+        const model = fitLogistic(lab.map((r) => r.x), lab.map((r) => r.y as number), LAMBDA, 4, 25, TA_FEATURES);
         const baseRate = lab.reduce((a, r) => a + (r.y as number), 0) / lab.length;
         const activate = body.activate !== false;
-        const version = `ml-logit-tb${HORIZON}-${new Date().toISOString().slice(0, 10)}${activate ? '' : '-cand'}`;
+        const version = `ml-logit-ta-tb${HORIZON}-${new Date().toISOString().slice(0, 10)}${activate ? '' : '-cand'}`;
         const tickers = [...new Set(rows.map((r) => r.ticker))].sort();
         if (activate) await db.from('ml_model').update({ is_active: false }).eq('is_active', true).like('version', 'ml-logit-%');
         const { error } = await db.from('ml_model').upsert({
           version,
           horizon_days: HORIZON,
           barrier_k: BARRIER_K,
-          features: [...FEATURES],
+          features: [...TA_FEATURES],
           params: { model, baseRate, lambda: LAMBDA, nTrain: lab.length, firstDate: lab[0].date, lastLabeledDate: lab[lab.length - 1].date },
           metrics: { folds: body.folds ?? [] },
           universe: tickers,
           is_active: activate,
         });
         if (error) throw new Error(error.message);
-        return json({ version, activate, nTrain: lab.length, baseRate: round(baseRate), coef: Object.fromEntries(FEATURES.map((f, j) => [f, round(model.coef[j], 3)])) });
+        return json({ version, activate, nTrain: lab.length, baseRate: round(baseRate), coef: Object.fromEntries(TA_FEATURES.map((f, j) => [f, round(model.coef[j], 3)])) });
       }
       case 'screen': {
         const am = await activeModel();
         if (!am) throw new Error('belum ada model aktif');
         const rows = buildRows(await loadSeries(420), PARAMS);
         const list = latestRows(rows).map((r) => {
-          const prob = predict(am.model, r.x);
+          const x = projectX(r.x, am.model.features);
+          const prob = predict(am.model, x);
           return {
             ticker: r.ticker,
             date: r.date,
@@ -513,7 +523,7 @@ Deno.serve(async (req) => {
             valueIdr20B: round(r.valueIdr20 / 1e9, 1),
             upperPct: round(r.upperPct, 3),
             lowerPct: round(r.lowerPct, 3),
-            drivers: drivers(am.model, r.x, 3),
+            drivers: drivers(am.model, x, 3),
           };
         });
         list.sort((a, b) => b.prob - a.prob);

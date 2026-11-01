@@ -206,6 +206,34 @@ export const FEATURES = [
   'excessRet5',
 ] as const;
 
+/** Fitur model teknikal (dipilih Ikhsan 2026-11-01): RSI, Stoch RSI, MACD, MA20/50, volume, Bollinger. */
+export const TA_FEATURES = [
+  'rsi',
+  'stochK',
+  'stochKminusD',
+  'macdHistPct',
+  'macdPct',
+  'distSma20',
+  'distSma50',
+  'sma20vs50',
+  'volumeRatio',
+  'bbZ', // jarak harga ke SMA20 dalam satuan volatilitas harian (pendekatan Bollinger %B)
+] as const;
+
+/** Ambil fitur sesuai urutan `names` dari vektor FEATURES; 'bbZ' dihitung dari distSma20 / vol20. */
+export function projectX(x: number[], names: readonly string[]): number[] {
+  if (names.length === FEATURES.length && names.every((n, j) => n === FEATURES[j])) return x;
+  const all = FEATURES as readonly string[];
+  const iD = all.indexOf('distSma20');
+  const iV = all.indexOf('vol20');
+  return names.map((n) => {
+    if (n === 'bbZ') return x[iD] / Math.max(x[iV], 1e-4);
+    const j = all.indexOf(n);
+    if (j < 0) throw new Error(`fitur tidak dikenal: ${n}`);
+    return x[j];
+  });
+}
+
 export type Row = {
   ticker: string;
   date: string;
