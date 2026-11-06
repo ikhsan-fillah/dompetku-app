@@ -72,15 +72,21 @@ async function activeModel(prefix: string): Promise<ActiveModel | null> {
 
 // ---------------------------------------------------------------- latih
 
+/** Panggilan pertama ke isolate dingin kadang gagal WORKER_RESOURCE_LIMIT (546); ulangi, percobaan berikutnya jalan. */
 async function callSelf(secret: string, body: Record<string, unknown>) {
-  const res = await fetch(SELF_URL, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'x-cron-secret': secret },
-    body: JSON.stringify(body),
-  });
-  const j = await res.json();
-  if (!res.ok) throw new Error(`${body.mode}: ${JSON.stringify(j).slice(0, 200)}`);
-  return j;
+  let last = '';
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const res = await fetch(SELF_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-cron-secret': secret },
+      body: JSON.stringify(body),
+    });
+    const j = await res.json().catch(() => ({}));
+    if (res.ok) return j;
+    last = JSON.stringify(j).slice(0, 200);
+    if (res.status !== 546 && res.status !== 503) break;
+  }
+  throw new Error(`${body.mode}: ${last}`);
 }
 
 async function retrain(secret: string) {
