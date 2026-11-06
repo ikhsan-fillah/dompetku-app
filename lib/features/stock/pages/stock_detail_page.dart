@@ -410,6 +410,7 @@ class _MlTab extends StatelessWidget {
           child: MlPredictionCard(
             prediction: prediction,
             matured: controller.mlMatured.value,
+            pastPredictions: controller.mlHistory.toList(),
             history: controller.history.toList(),
           ),
         );

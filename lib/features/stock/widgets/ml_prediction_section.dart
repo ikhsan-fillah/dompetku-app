@@ -9,6 +9,7 @@ import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
 import '../models/ml_prediction.dart';
 import '../models/price_point.dart';
+import '../services/prediction_window.dart';
 import '../services/price_analysis.dart';
 import 'chart_painting.dart';
 import 'stock_format.dart';
@@ -42,6 +43,7 @@ class MlPredictionCard extends StatelessWidget {
     super.key,
     required this.prediction,
     this.matured,
+    this.pastPredictions = const [],
     this.history = const [],
   });
 
@@ -49,6 +51,10 @@ class MlPredictionCard extends StatelessWidget {
 
   /// Prediksi lama yang hasil nyatanya sudah dihitung, null bila belum ada.
   final MlPrediction? matured;
+
+  /// Prediksi sebelumnya dari model aktif, terbaru dulu. Tiap prediksi punya
+  /// jendela sendiri yang tetap sejak tanggal sinyalnya.
+  final List<MlPrediction> pastPredictions;
 
   /// Riwayat harga saham ini dari `price_history`, terlama dulu. Dipakai
   /// untuk chart dua batas dan perbandingan volatilitas; boleh kosong.
@@ -61,6 +67,7 @@ class MlPredictionCard extends StatelessWidget {
     final old = matured;
     final oldOutcome = old?.outcome;
     final drivers = p.topDrivers(4);
+    final window = PredictionWindow.of(p, history);
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -91,7 +98,7 @@ class MlPredictionCard extends StatelessWidget {
         const SizedBox(height: 14),
         _ScoreCard(prediction: p),
         const SizedBox(height: AppSpacing.gap),
-        _BarrierCard(prediction: p, history: history),
+        _BarrierCard(prediction: p, history: history, window: window),
         if (drivers.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.gap),
           _FactorsCard(drivers: drivers),
@@ -99,6 +106,14 @@ class MlPredictionCard extends StatelessWidget {
         const SizedBox(height: AppSpacing.gap),
         if (old != null && oldOutcome != null) ...[
           _OutcomePanel(prediction: old, outcome: oldOutcome),
+          const SizedBox(height: AppSpacing.gap),
+        ],
+        if (pastPredictions.any((x) => x.tradeDate != p.tradeDate)) ...[
+          _HistoryCard(
+            current: p,
+            predictions: pastPredictions,
+            history: history,
+          ),
           const SizedBox(height: AppSpacing.gap),
         ],
         if (p.backtest != null || p.aucMean != null) ...[
@@ -300,7 +315,9 @@ class _ScoreCard extends StatelessWidget {
               Flexible(
                 child: _BigNumber(
                   value: score,
-                  caption: '@ticker hari ini'.trParams({'ticker': p.ticker}),
+                  caption: '@ticker pada hari sinyal'.trParams({
+                    'ticker': p.ticker,
+                  }),
                   size: 56,
                   color: AppColors.ink,
                 ),
@@ -407,17 +424,27 @@ class _BigNumber extends StatelessWidget {
 /// Kartu 2: harga sebulan terakhir dan dua batas 10 hari, ubin persen, dan
 /// catatan bila batas jauh lebih lebar dari biasanya.
 class _BarrierCard extends StatelessWidget {
-  const _BarrierCard({required this.prediction, required this.history});
+  const _BarrierCard({
+    required this.prediction,
+    required this.history,
+    required this.window,
+  });
 
   final MlPrediction prediction;
   final List<PricePoint> history;
 
+  /// Jendela tetap prediksi ini, dihitung dari tanggal sinyalnya.
+  final PredictionWindow window;
+
   @override
   Widget build(BuildContext context) {
     final p = prediction;
-    final recent = history.length > 22
-        ? history.sublist(history.length - 22)
-        : history;
+    // Garis harga berhenti di hari sinyal, bukan di hari data terbaru, supaya
+    // jendela 10 hari tetap dan prediksi lama tidak ikut bergeser.
+    final upToSignal = historyUpTo(history, p.tradeDate);
+    final recent = upToSignal.length > 22
+        ? upToSignal.sublist(upToSignal.length - 22)
+        : upToSignal;
     final close = p.closePrice ?? recent.lastOrNull?.close;
     final sd20 = dailyVolatility(history, 20);
     final sdYear = dailyVolatility(history, 250);
@@ -432,9 +459,8 @@ class _BarrierCard extends StatelessWidget {
         if (close != null && recent.length >= 5) ...[
           const SizedBox(height: 10),
           Semantics(
-            label: 'Harga sebulan terakhir dan dua batas @days hari'.trParams({
-              'days': '${p.horizonDays}',
-            }),
+            label: 'Harga sebulan sampai hari sinyal dan dua batas @days hari'
+                .trParams({'days': '${p.horizonDays}'}),
             child: ExcludeSemantics(
               child: SizedBox(
                 height: 170,
@@ -444,6 +470,9 @@ class _BarrierCard extends StatelessWidget {
                     closes: [for (final x in recent) x.close],
                     first: recent.first.date,
                     last: recent.last.date,
+                    realized: [for (final x in window.realized) x.close],
+                    horizon: p.horizonDays,
+                    windowEnd: window.endDate,
                     close: close,
                     upper: close * (1 + p.upperPct),
                     lower: close * (1 + p.lowerPct),
@@ -477,6 +506,11 @@ class _BarrierCard extends StatelessWidget {
               ),
             ),
           ],
+        ),
+        const SizedBox(height: 8),
+        Text(
+          _windowCaption(p, window),
+          style: AppText.body(size: 12, color: AppColors.ink2, height: 1.45),
         ),
         const SizedBox(height: 8),
         Text(
@@ -528,6 +562,126 @@ class _BarrierCard extends StatelessWidget {
   }
 }
 
+/// Kalimat jendela tetap prediksi: tanggal mulai, sudah berjalan berapa hari,
+/// dan tanggal selesai bila sudah genap.
+String _windowCaption(MlPrediction p, PredictionWindow w) {
+  final params = {
+    'date': formatShortDate(p.tradeDate),
+    'days': '${p.horizonDays}',
+    'n': '${w.elapsed}',
+  };
+  final end = w.endDate;
+  if (end != null) {
+    return 'Jendela tetap sejak sinyal @date selesai pada @end. Hasil nyata dihitung dari jendela ini.'
+        .trParams({...params, 'end': formatShortDate(end)});
+  }
+  if (w.elapsed == 0) {
+    return 'Jendela tetap sejak sinyal @date: @days hari bursa ke depan. Belum ada harga baru sesudah sinyal.'
+        .trParams(params);
+  }
+  return 'Jendela tetap sejak sinyal @date: hari ke-@n dari @days hari bursa. Garis hitam di dalam area adalah harga nyata sejauh ini.'
+      .trParams(params);
+}
+
+/// Kartu riwayat: prediksi-prediksi sebelumnya, masing-masing dengan jendela
+/// tetap sejak tanggal sinyalnya. Prediksi baru tiap hari tidak menggantikan
+/// yang lama, jadi hasil tiap sinyal bisa dibandingkan dengan harga nyata.
+class _HistoryCard extends StatelessWidget {
+  const _HistoryCard({
+    required this.current,
+    required this.predictions,
+    required this.history,
+  });
+
+  /// Prediksi yang sedang dibaca di kartu atas, tidak diulang di daftar.
+  final MlPrediction current;
+  final List<MlPrediction> predictions;
+  final List<PricePoint> history;
+
+  @override
+  Widget build(BuildContext context) {
+    final rows = [
+      for (final x in predictions)
+        if (x.tradeDate != current.tradeDate) x,
+    ];
+    return _Panel(
+      children: [
+        _Eyebrow('Riwayat prediksi'.tr),
+        const SizedBox(height: 6),
+        Text(
+          'Tiap hari ada prediksi baru dengan jendela @days hari bursa sendiri. Jendela yang lama tidak bergeser.'
+              .trParams({'days': '${current.horizonDays}'}),
+          style: AppText.body(size: 12, color: AppColors.mut, height: 1.45),
+        ),
+        const SizedBox(height: 6),
+        for (final x in rows)
+          _HistoryRow(prediction: x, window: PredictionWindow.of(x, history)),
+      ],
+    );
+  }
+}
+
+class _HistoryRow extends StatelessWidget {
+  const _HistoryRow({required this.prediction, required this.window});
+
+  final MlPrediction prediction;
+  final PredictionWindow window;
+
+  @override
+  Widget build(BuildContext context) {
+    final p = prediction;
+    final outcome = p.outcome;
+    final String status;
+    final Color color;
+    if (outcome != null) {
+      status = _signed(outcome.retNet);
+      color = _signColor(outcome.retNet);
+    } else if (window.elapsed == 0) {
+      status = 'belum jalan'.tr;
+      color = AppColors.mut;
+    } else {
+      status = 'hari ke-@n/@days'.trParams({
+        'n': '${window.elapsed}',
+        'days': '${p.horizonDays}',
+      });
+      color = AppColors.ink2;
+    }
+    final score = _outOf100(p.probUp);
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  formatShortDate(p.tradeDate),
+                  style: AppText.mono(size: 12.5, weight: FontWeight.w700),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${_SignalStyle.of(p.signal).label} · $score',
+                  style: AppText.body(size: 11.5, color: AppColors.ink2),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            status,
+            style: AppText.mono(
+              size: 12.5,
+              weight: FontWeight.w700,
+              color: color,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _PctTile extends StatelessWidget {
   const _PctTile({
     required this.label,
@@ -568,6 +722,9 @@ class _BarrierChartPainter extends CustomPainter {
     required this.closes,
     required this.first,
     required this.last,
+    required this.realized,
+    required this.horizon,
+    required this.windowEnd,
     required this.close,
     required this.upper,
     required this.lower,
@@ -577,6 +734,16 @@ class _BarrierChartPainter extends CustomPainter {
   final List<double> closes;
   final DateTime first;
   final DateTime last;
+
+  /// Harga penutupan nyata sesudah hari sinyal di dalam jendela, terlama
+  /// dulu. Kosong selama belum ada hari yang berjalan.
+  final List<double> realized;
+
+  /// Panjang jendela dalam hari bursa.
+  final int horizon;
+
+  /// Hari terakhir jendela, null selama jendela belum genap.
+  final DateTime? windowEnd;
   final double close;
   final double upper;
   final double lower;
@@ -591,6 +758,10 @@ class _BarrierChartPainter extends CustomPainter {
     final lineRight = plotRight * 0.78;
     var lo = math.min(lower, closes.reduce(math.min));
     var hi = math.max(upper, closes.reduce(math.max));
+    for (final value in realized) {
+      lo = math.min(lo, value);
+      hi = math.max(hi, value);
+    }
     final pad = (hi - lo) * 0.06;
     lo -= pad;
     hi += pad;
@@ -624,6 +795,28 @@ class _BarrierChartPainter extends CustomPainter {
         ..strokeWidth = 1.8
         ..strokeJoin = StrokeJoin.round,
     );
+    if (realized.isNotEmpty && horizon > 0) {
+      // Hari ke-k jendela jatuh di k/horizon lebar area, jadi garis nyata
+      // mengisi area dari kiri dan jendela yang belum genap tetap terlihat.
+      final step = (plotRight - lastX) / horizon;
+      final realPath = Path()..moveTo(lastX, y(close));
+      for (var k = 0; k < realized.length; k++) {
+        realPath.lineTo(lastX + step * (k + 1), y(realized[k]));
+      }
+      canvas.drawPath(
+        realPath,
+        Paint()
+          ..color = AppColors.ink
+          ..style = PaintingStyle.stroke
+          ..strokeWidth = 1.8
+          ..strokeJoin = StrokeJoin.round,
+      );
+      canvas.drawCircle(
+        Offset(lastX + step * realized.length, y(realized.last)),
+        3,
+        Paint()..color = AppColors.ink,
+      );
+    }
     for (final (value, color) in [
       (upper, AppColors.earn),
       (lower, AppColors.spend),
@@ -688,6 +881,17 @@ class _BarrierChartPainter extends CustomPainter {
       textDirection: TextDirection.ltr,
     )..layout();
     lastText.paint(canvas, Offset(lastX - lastText.width / 2, h + 3));
+    final end = windowEnd;
+    if (end != null) {
+      final endText = TextPainter(
+        text: TextSpan(
+          text: formatDayMonth(end),
+          style: AppText.mono(size: 9.5, color: AppColors.mut),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      endText.paint(canvas, Offset(plotRight - endText.width, h + 3));
+    }
     final zone = TextPainter(
       text: TextSpan(
         text: horizonLabel,
@@ -697,16 +901,15 @@ class _BarrierChartPainter extends CustomPainter {
     )..layout();
     zone.paint(
       canvas,
-      Offset(
-        (lastX + plotRight) / 2 - zone.width / 2,
-        (y(upper) + y(lower)) / 2 - zone.height / 2,
-      ),
+      Offset((lastX + plotRight) / 2 - zone.width / 2, y(upper) + 4),
     );
   }
 
   @override
   bool shouldRepaint(_BarrierChartPainter old) =>
       !identical(old.closes, closes) ||
+      !identical(old.realized, realized) ||
+      old.windowEnd != windowEnd ||
       old.upper != upper ||
       old.lower != lower ||
       old.close != close;
@@ -1009,21 +1212,21 @@ class _SignalStyle {
     MlSignal.peluang => _SignalStyle(
       'Skor di atas rata-rata'.tr,
       'Skor @ticker di atas rata-rata saham lain.',
-      'Model memberi skor lebih tinggi dari biasanya untuk data hari ini.',
+      'Model memberi skor lebih tinggi dari biasanya untuk data pada hari sinyal.',
       AppColors.earn,
       AppColors.earnSoft,
     ),
     MlSignal.netral => _SignalStyle(
       'Skor sekitar rata-rata'.tr,
       'Skor @ticker hampir sama dengan rata-rata saham lain.',
-      'Model tidak melihat keunggulan teknikal khusus pada data hari ini.',
+      'Model tidak melihat keunggulan teknikal khusus pada data hari sinyal.',
       AppColors.ink2,
       AppColors.paper2,
     ),
     MlSignal.risiko => _SignalStyle(
       'Skor di bawah rata-rata'.tr,
       'Skor @ticker di bawah rata-rata saham lain.',
-      'Model memberi skor lebih rendah dari biasanya untuk data hari ini.',
+      'Model memberi skor lebih rendah dari biasanya untuk data pada hari sinyal.',
       AppColors.spend,
       AppColors.spendSoft,
     ),
