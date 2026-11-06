@@ -7,8 +7,8 @@
 //     (a) prediksi hari ke-0 yang tidak diubah, (b) base rate saja, dan (c) fungsi
 //     mekanis dari jalur harga 5 hari saja tanpa indikator? Selisih (c) vs gabungan
 //     menunjukkan apakah indikator hari ke-5 menambah informasi di luar jalur harga.
-import { auc, buildRows, fitLogistic, predict, projectX, round, TA_FEATURES, walkForward } from './lib.ts';
-import type { FoldResult, Row, Series } from './lib.ts';
+import { auc, buildRows, fitLogistic, predict, projectX, round, signalOf, TA_FEATURES, walkForward } from './lib.ts';
+import type { Bar, FoldResult, Model, Row, Series } from './lib.ts';
 
 export const LAMBDA = 5;
 export const FOLDS = 5;
@@ -17,6 +17,128 @@ export const REVISE_AT = 5;
 export const FULL = 10;
 
 export const PATH_FEATURES = ['z5', 'maxUp5', 'minDn5'] as const;
+
+/** Biaya pulang-pergi, sama dengan pipeline produksi dan lab. */
+export const COST = 0.004;
+
+/** Jalur harga dari hari ke-0 (indeks i) sampai hari ke-`days`, terhadap batas yang ditetapkan di hari ke-0. */
+export type PathState = {
+  /** 1 = batas atas tersentuh lebih dulu, -1 = batas bawah (diperiksa lebih dulu di hari yang sama), 0 = belum ada. */
+  touched: -1 | 0 | 1;
+  z5: number; // hasil kumulatif sampai hari ke-days, dalam satuan lebar batas
+  maxUp5: number; // ekskursi tertinggi (high) dalam satuan lebar batas
+  minDn5: number; // ekskursi terendah (low) dalam satuan lebar batas
+};
+
+/** Null bila belum ada `days` hari sesudah hari ke-0. */
+export function pathAfter(bars: Bar[], i: number, upperPct: number, lowerPct: number, days = REVISE_AT): PathState | null {
+  if (i + days >= bars.length) return null;
+  const close0 = bars[i].close;
+  const upper = close0 * (1 + upperPct);
+  const lower = close0 * (1 + lowerPct);
+  const width = Math.log(1 + upperPct);
+  let touched: -1 | 0 | 1 = 0;
+  let maxUp = -Infinity;
+  let minDn = Infinity;
+  for (let j = i + 1; j <= i + days; j++) {
+    // Aturan label produksi: batas bawah diperiksa lebih dulu pada hari yang sama.
+    if (bars[j].low <= lower) {
+      touched = -1;
+      break;
+    }
+    if (bars[j].high >= upper) {
+      touched = 1;
+      break;
+    }
+    maxUp = Math.max(maxUp, Math.log(bars[j].high / close0) / width);
+    minDn = Math.min(minDn, Math.log(bars[j].low / close0) / width);
+  }
+  return { touched, z5: Math.log(bars[i + days].close / close0) / width, maxUp5: maxUp, minDn5: minDn };
+}
+
+export type Outcome = { date: string; entry: number; exit: number; retNet: number; win: boolean; hitUpper: boolean };
+
+/**
+ * Hasil nyata satu prediksi, sama dengan uji maju produksi (fillOutcomes): beli harga buka hari setelah
+ * hari ke-0, jual penutupan hari ke-H, dikurangi biaya. `hitUpper` mengikuti label model.
+ * Null selama hari ke-H belum ada.
+ */
+export function outcomeFor(bars: Bar[], i: number, H: number, upperPct: number, lowerPct: number): Outcome | null {
+  if (i + H >= bars.length) return null;
+  const up = bars[i].close * (1 + upperPct);
+  const down = bars[i].close * (1 + lowerPct);
+  let hitUpper = false;
+  for (let k = i + 1; k <= i + H; k++) {
+    if (bars[k].low <= down) break;
+    if (bars[k].high >= up) {
+      hitUpper = true;
+      break;
+    }
+  }
+  const entry = bars[i + 1].open;
+  const exit = bars[i + H].close;
+  const retNet = exit / entry - 1 - COST;
+  return { date: bars[i + H].date, entry, exit, retNet, win: retNet > 0, hitUpper };
+}
+
+export type Revised = {
+  /** `diperbarui` = dihitung model dari jalur harga; sisanya hasil sudah ditentukan oleh batas yang tersentuh. */
+  state: 'diperbarui' | 'atas_tersentuh' | 'bawah_tersentuh';
+  prob: number;
+  z5: number;
+  maxUp5: number;
+  minDn5: number;
+};
+
+/**
+ * Revisi prediksi 10 hari di hari ke-5. Bila batas sudah tersentuh, hasil label 10 hari pasti (1 atau 0)
+ * dan model tidak dipakai. Null bila model tidak ada padahal batas belum tersentuh.
+ */
+export function revise(model: Model | null, ps: PathState): Revised | null {
+  const base = { z5: ps.z5, maxUp5: ps.maxUp5, minDn5: ps.minDn5 };
+  if (ps.touched === 1) return { state: 'atas_tersentuh', prob: 1, ...base };
+  if (ps.touched === -1) return { state: 'bawah_tersentuh', prob: 0, ...base };
+  if (!model) return null;
+  return { state: 'diperbarui', prob: predict(model, [ps.z5, ps.maxUp5, ps.minDn5]), ...base };
+}
+
+/** Baris terakhir tiap saham, hanya yang punya data di hari bursa terakhir. */
+export function latestRows(rows: Row[]): Row[] {
+  const last = new Map<string, Row>();
+  for (const r of rows) last.set(r.ticker, r); // rows urut tanggal
+  const maxDate = [...last.values()].reduce((a, r) => (r.date > a ? r.date : a), '');
+  return [...last.values()].filter((r) => r.date === maxDate);
+}
+
+/** Latih model TA 5 hari pada semua riwayat berlabel (fitur sama dengan model 10 hari). */
+export function fitFiveDay(series: Series[]) {
+  const rows = buildRows(series, { horizon: 5, k: 1 }).map((r) => ({ ...r, x: projectX(r.x, TA_FEATURES) }));
+  const lab = rows.filter((r) => r.y !== null);
+  const model = fitLogistic(lab.map((r) => r.x), lab.map((r) => r.y as number), LAMBDA, 4, 25, TA_FEATURES);
+  return {
+    model,
+    baseRate: lab.reduce((a, r) => a + (r.y as number), 0) / lab.length,
+    nTrain: lab.length,
+    firstDate: lab[0].date,
+    lastLabeledDate: lab[lab.length - 1].date,
+    tickers: [...new Set(rows.map((r) => r.ticker))].sort(),
+  };
+}
+
+/** Latih model revisi (jalur harga 5 hari saja) pada sampel yang batasnya belum tersentuh di 5 hari pertama. */
+export function fitRevision(series: Series[]) {
+  const { samples } = buildRevisionSamples(series);
+  const model = fitLogistic(samples.map((s) => s.path), samples.map((s) => s.y), LAMBDA, 4, 25, PATH_FEATURES);
+  return {
+    model,
+    baseRate: samples.reduce((a, s) => a + s.y, 0) / samples.length,
+    nTrain: samples.length,
+    firstDate: samples[0].date,
+    lastLabeledDate: samples[samples.length - 1].date,
+  };
+}
+
+export { signalOf };
 
 /** Gate yang sama dengan produksi: AUC rata-rata >= 0,53 dan logloss lebih baik dari base di >= 80% lipatan. */
 export function gate(folds: { auc: number; logloss: number; logloss_base: number }[]) {
@@ -59,27 +181,9 @@ export function buildRevisionSamples(series: Series[]) {
     day0.push({ ...r, x: projectX(r.x, TA_FEATURES) });
     const b = bars.get(r.ticker)!;
     const i = index.get(r.ticker)!.get(r.date)!;
-    const upper = r.close * (1 + r.upperPct);
-    const lower = r.close * (1 + r.lowerPct);
-    const width = Math.log(1 + r.upperPct);
-    let touched = 0;
-    let maxUp = -Infinity;
-    let minDn = Infinity;
-    for (let j = i + 1; j <= i + REVISE_AT; j++) {
-      // Aturan label produksi: batas bawah diperiksa lebih dulu pada hari yang sama.
-      if (b[j].low <= lower) {
-        touched = -1;
-        break;
-      }
-      if (b[j].high >= upper) {
-        touched = 1;
-        break;
-      }
-      maxUp = Math.max(maxUp, Math.log(b[j].high / r.close) / width);
-      minDn = Math.min(minDn, Math.log(b[j].low / r.close) / width);
-    }
-    if (touched !== 0) {
-      determined.push({ date: r.date, y: touched === 1 ? 1 : 0 });
+    const ps = pathAfter(b, i, r.upperPct, r.lowerPct)!;
+    if (ps.touched !== 0) {
+      determined.push({ date: r.date, y: ps.touched === 1 ? 1 : 0 });
       continue;
     }
     const r5 = byKey.get(`${r.ticker}|${b[i + REVISE_AT].date}`);
@@ -89,7 +193,7 @@ export function buildRevisionSamples(series: Series[]) {
       date: r.date,
       y: r.y,
       x0: projectX(r.x, TA_FEATURES),
-      path: [Math.log(b[i + REVISE_AT].close / r.close) / width, maxUp, minDn],
+      path: [ps.z5, ps.maxUp5, ps.minDn5],
       ta5: projectX(r5.x, TA_FEATURES),
     });
   }
@@ -177,4 +281,11 @@ export function summarizeRevision(folds: RevisionFold[]) {
     fullBeatsPath: wins('full', 'path'),
     pathBeatsBase: wins('path', 'base'),
   };
+}
+
+/** Gate model revisi: jalur harga saja harus mengalahkan base rate di >= 80% lipatan dengan AUC rata-rata >= 0,53. */
+export function gateRevision(folds: RevisionFold[]) {
+  const meanAuc = mean(folds.map((f) => f.path.auc));
+  const beat = folds.filter((f) => f.path.logloss < f.base.logloss).length;
+  return { ok: meanAuc >= 0.53 && beat >= Math.ceil(folds.length * 0.8), meanAuc: round(meanAuc), foldsBeatBase: beat, folds: folds.length };
 }
