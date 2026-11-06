@@ -322,6 +322,36 @@ const Map<String, String> enStock = {
       'Fixed window from the @date signal: the next @days trading days. No new prices yet since the signal.',
   'Jendela tetap sejak sinyal @date: hari ke-@n dari @days hari bursa. Garis hitam di dalam area adalah harga nyata sejauh ini.':
       'Fixed window from the @date signal: day @n of @days trading days. The black line inside the area is the actual price so far.',
+  'Siklus 10 hari bursa': '10-trading-day cycle',
+  'Sinyal @date · hari ke-@n dari @days': 'Signal @date · day @n of @days',
+  'Hari ke-@n dari @days': 'Day @n of @days',
+  'Minggu 1 · 5 hari': 'Week 1 · 5 days',
+  'Sampai minggu 2 · 10 hari': 'Through week 2 · 10 days',
+  'Model 5 hari belum aktif, jadi prediksi 5 hari tidak tampil.':
+      'The 5-day model is not active yet, so there is no 5-day prediction.',
+  'Revisi tersedia setelah hari ke-5.': 'The revision appears after day 5.',
+  'Revisi belum tersedia.': 'The revision is not available yet.',
+  'Dihitung ulang dari jalur harga 5 hari, bukan dari model yang belajar dari prediksi 5 hari. Prediksi awal tidak berubah.':
+      'Recomputed from the 5-day price path, not from a model learning from the 5-day prediction. The initial prediction does not change.',
+  'Batas atas sudah tersentuh di hari 1 sampai 5, jadi hasil 10 hari sudah ditentukan.':
+      'The upper barrier was already touched on days 1 to 5, so the 10-day result is already decided.',
+  'Batas bawah sudah tersentuh di hari 1 sampai 5, jadi hasil 10 hari sudah ditentukan.':
+      'The lower barrier was already touched on days 1 to 5, so the 10-day result is already decided.',
+  'Revisi hari ke-5 (@date)': 'Day-5 revision (@date)',
+  'skor @score dari 100': 'score @score of 100',
+  'naik': 'up',
+  'turun': 'down',
+  'Skor awal': 'Initial score',
+  'Rata-rata semua saham': 'Average of all stocks',
+  'Batas atas dan bawah': 'Upper and lower barrier',
+  'Hasil nyata': 'Actual result',
+  'Riwayat siklus': 'Cycle history',
+  'Siklus baru dimulai setelah siklus lama selesai dan model dilatih ulang tiap Sabtu. Prediksi awal dan revisi disimpan terpisah.':
+      'A new cycle starts after the old one ends and the model is retrained every Saturday. The initial prediction and the revision are stored separately.',
+  '→ revisi @n': '→ revised @n',
+  '5 hari': '5 days',
+  '10 hari': '10 days',
+  'skor @n': 'score @n',
   'Riwayat prediksi': 'Prediction history',
   'Tiap hari ada prediksi baru dengan jendela @days hari bursa sendiri. Jendela yang lama tidak bergeser.':
       'A new prediction is made every day with its own @days-trading-day window. Older windows do not move.',

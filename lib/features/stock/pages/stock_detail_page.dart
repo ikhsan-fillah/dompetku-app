@@ -411,6 +411,7 @@ class _MlTab extends StatelessWidget {
             prediction: prediction,
             matured: controller.mlMatured.value,
             pastPredictions: controller.mlHistory.toList(),
+            cycles: controller.mlCycles.toList(),
             history: controller.history.toList(),
           ),
         );

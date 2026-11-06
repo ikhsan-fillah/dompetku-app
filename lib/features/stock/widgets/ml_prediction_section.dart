@@ -7,6 +7,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../core/theme/app_colors.dart';
 import '../../../core/theme/app_spacing.dart';
 import '../../../core/theme/app_text.dart';
+import '../models/ml_cycle.dart';
 import '../models/ml_prediction.dart';
 import '../models/price_point.dart';
 import '../services/prediction_window.dart';
@@ -44,6 +45,7 @@ class MlPredictionCard extends StatelessWidget {
     required this.prediction,
     this.matured,
     this.pastPredictions = const [],
+    this.cycles = const [],
     this.history = const [],
   });
 
@@ -55,6 +57,12 @@ class MlPredictionCard extends StatelessWidget {
   /// Prediksi sebelumnya dari model aktif, terbaru dulu. Tiap prediksi punya
   /// jendela sendiri yang tetap sejak tanggal sinyalnya.
   final List<MlPrediction> pastPredictions;
+
+  /// Siklus 10 hari bursa saham ini, terbaru dulu. Bila tidak kosong, siklus
+  /// pertama adalah yang sedang dibaca dan [prediction] adalah prediksi 10
+  /// harinya; sisanya jadi riwayat siklus. Kosong berarti tampilan prediksi
+  /// harian seperti semula.
+  final List<MlCycle> cycles;
 
   /// Riwayat harga saham ini dari `price_history`, terlama dulu. Dipakai
   /// untuk chart dua batas dan perbandingan volatilitas; boleh kosong.
@@ -68,6 +76,7 @@ class MlPredictionCard extends StatelessWidget {
     final oldOutcome = old?.outcome;
     final drivers = p.topDrivers(4);
     final window = PredictionWindow.of(p, history);
+    final cycle = cycles.firstOrNull;
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -96,6 +105,10 @@ class MlPredictionCard extends StatelessWidget {
           style: AppText.display(size: 30, height: 1.05, letterSpacing: -0.8),
         ),
         const SizedBox(height: 14),
+        if (cycle != null) ...[
+          _CyclePanel(cycle: cycle, window: window),
+          const SizedBox(height: AppSpacing.gap),
+        ],
         _ScoreCard(prediction: p),
         const SizedBox(height: AppSpacing.gap),
         _BarrierCard(prediction: p, history: history, window: window),
@@ -104,11 +117,15 @@ class MlPredictionCard extends StatelessWidget {
           _FactorsCard(drivers: drivers),
         ],
         const SizedBox(height: AppSpacing.gap),
-        if (old != null && oldOutcome != null) ...[
+        if (cycle == null && old != null && oldOutcome != null) ...[
           _OutcomePanel(prediction: old, outcome: oldOutcome),
           const SizedBox(height: AppSpacing.gap),
         ],
-        if (pastPredictions.any((x) => x.tradeDate != p.tradeDate)) ...[
+        if (cycles.length > 1) ...[
+          _CycleHistoryCard(cycles: cycles.skip(1).toList()),
+          const SizedBox(height: AppSpacing.gap),
+        ] else if (cycle == null &&
+            pastPredictions.any((x) => x.tradeDate != p.tradeDate)) ...[
           _HistoryCard(
             current: p,
             predictions: pastPredictions,
@@ -137,7 +154,7 @@ class MlPredictionCard extends StatelessWidget {
             ),
           ),
         ),
-        if (old == null || oldOutcome == null) ...[
+        if (cycle == null && (old == null || oldOutcome == null)) ...[
           const SizedBox(height: 14),
           Text(
             '${'Hasil nyata muncul setelah prediksi genap'.tr} '
@@ -558,6 +575,289 @@ class _BarrierCard extends StatelessWidget {
           ),
         ],
       ],
+    );
+  }
+}
+
+/// Kartu siklus: sinyal, hari yang sudah berjalan, prediksi 5 hari (minggu 1),
+/// dan prediksi 10 hari (sampai minggu 2) dengan revisi di hari ke-5. Prediksi
+/// awal dan revisi ditampilkan terpisah; yang awal tidak pernah ditimpa.
+class _CyclePanel extends StatelessWidget {
+  const _CyclePanel({required this.cycle, required this.window});
+
+  final MlCycle cycle;
+  final PredictionWindow window;
+
+  @override
+  Widget build(BuildContext context) {
+    final elapsed = cycle.isComplete
+        ? MlCycle.horizonDays
+        : math.min(window.elapsed, MlCycle.horizonDays);
+    return _Panel(
+      children: [
+        _Eyebrow('Siklus 10 hari bursa'.tr),
+        const SizedBox(height: 8),
+        Text(
+          'Sinyal @date · hari ke-@n dari @days'.trParams({
+            'date': formatShortDate(cycle.cycleStart),
+            'n': '$elapsed',
+            'days': '${MlCycle.horizonDays}',
+          }),
+          style: AppText.body(size: 13, color: AppColors.ink2),
+        ),
+        const SizedBox(height: 10),
+        _DayBar(elapsed: elapsed),
+        const SizedBox(height: 14),
+        _LegBlock(
+          title: 'Minggu 1 · 5 hari'.tr,
+          leg: cycle.fiveDay,
+          emptyText:
+              'Model 5 hari belum aktif, jadi prediksi 5 hari tidak tampil.'.tr,
+        ),
+        const SizedBox(height: 10),
+        _LegBlock(
+          title: 'Sampai minggu 2 · 10 hari'.tr,
+          leg: cycle.tenDay,
+          emptyText: '',
+          extra: _revisionLines(elapsed),
+        ),
+      ],
+    );
+  }
+
+  List<Widget> _revisionLines(int elapsed) {
+    final rev = cycle.revision;
+    final hint = AppText.body(size: 12, color: AppColors.mut, height: 1.45);
+    if (rev == null) {
+      return [
+        const SizedBox(height: 6),
+        Text(
+          elapsed < MlCycle.reviseDay
+              ? 'Revisi tersedia setelah hari ke-5.'.tr
+              : 'Revisi belum tersedia.'.tr,
+          style: hint,
+        ),
+      ];
+    }
+    final text = switch (rev.state) {
+      MlRevisionState.diperbarui =>
+        'Dihitung ulang dari jalur harga 5 hari, bukan dari model yang belajar dari prediksi 5 hari. Prediksi awal tidak berubah.'
+            .tr,
+      MlRevisionState.atasTersentuh =>
+        'Batas atas sudah tersentuh di hari 1 sampai 5, jadi hasil 10 hari sudah ditentukan.'
+            .tr,
+      MlRevisionState.bawahTersentuh =>
+        'Batas bawah sudah tersentuh di hari 1 sampai 5, jadi hasil 10 hari sudah ditentukan.'
+            .tr,
+    };
+    return [
+      const SizedBox(height: 6),
+      _StatRow(
+        label: 'Revisi hari ke-5 (@date)'.trParams({
+          'date': formatShortDate(rev.date),
+        }),
+        value: rev.state == MlRevisionState.diperbarui
+            ? 'skor @score dari 100'.trParams({
+                'score': '${_outOf100(rev.probUp)}',
+              })
+            : (rev.state == MlRevisionState.atasTersentuh
+                  ? 'naik'.tr
+                  : 'turun'.tr),
+        bold: true,
+      ),
+      Text(text, style: hint),
+    ];
+  }
+}
+
+/// Sepuluh petak hari bursa; yang sudah berjalan terisi, dan garis bagi di
+/// hari ke-5 menandai tempat revisi.
+class _DayBar extends StatelessWidget {
+  const _DayBar({required this.elapsed});
+
+  final int elapsed;
+
+  @override
+  Widget build(BuildContext context) => Semantics(
+    label: 'Hari ke-@n dari @days'.trParams({
+      'n': '$elapsed',
+      'days': '${MlCycle.horizonDays}',
+    }),
+    child: ExcludeSemantics(
+      child: Row(
+        children: [
+          for (var i = 0; i < MlCycle.horizonDays; i++) ...[
+            Expanded(
+              child: Container(
+                height: 6,
+                decoration: BoxDecoration(
+                  color: i < elapsed ? AppColors.ink : AppColors.line2,
+                  borderRadius: BorderRadius.circular(3),
+                ),
+              ),
+            ),
+            if (i < MlCycle.horizonDays - 1)
+              SizedBox(width: i == MlCycle.reviseDay - 1 ? 10 : 3),
+          ],
+        ],
+      ),
+    ),
+  );
+}
+
+/// Satu sisi siklus: judul, label sinyal, skor awal, batas, dan hasil nyata.
+/// [leg] null menampilkan [emptyText].
+class _LegBlock extends StatelessWidget {
+  const _LegBlock({
+    required this.title,
+    required this.leg,
+    required this.emptyText,
+    this.extra = const [],
+  });
+
+  final String title;
+  final MlCycleLeg? leg;
+  final String emptyText;
+  final List<Widget> extra;
+
+  @override
+  Widget build(BuildContext context) {
+    final l = leg;
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(12),
+      decoration: BoxDecoration(
+        color: AppColors.paper2,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Expanded(child: _Eyebrow(title)),
+              if (l != null) _SignalChip(style: _SignalStyle.of(l.signal)),
+            ],
+          ),
+          const SizedBox(height: 8),
+          if (l == null)
+            Text(
+              emptyText,
+              style: AppText.body(size: 12, color: AppColors.mut, height: 1.45),
+            )
+          else ...[
+            _StatRow(
+              label: 'Skor awal'.tr,
+              value: 'skor @score dari 100'.trParams({
+                'score': '${_outOf100(l.probUp)}',
+              }),
+              bold: true,
+            ),
+            _StatRow(
+              label: 'Rata-rata semua saham'.tr,
+              value: '${_outOf100(l.baseRate)}',
+            ),
+            _StatRow(
+              label: 'Batas atas dan bawah'.tr,
+              value: '${_signed(l.upperPct)} / ${_signed(l.lowerPct)}',
+            ),
+            ...extra,
+            if (l.outcome case final o?) ...[
+              const SizedBox(height: 4),
+              _StatRow(
+                label: 'Hasil nyata'.tr,
+                value: _signed(o.retNet),
+                color: _signColor(o.retNet),
+                bold: true,
+              ),
+              if (o.hitUpper case final hit?)
+                _StatRow(
+                  label: 'Menyentuh batas atas'.tr,
+                  value: hit ? 'ya'.tr : 'tidak'.tr,
+                ),
+            ],
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+/// Riwayat siklus sebelumnya: prediksi awal, revisi, dan hasil nyata tiap
+/// siklus. Siklus baru dimulai setelah siklus lama selesai dan model dilatih
+/// ulang.
+class _CycleHistoryCard extends StatelessWidget {
+  const _CycleHistoryCard({required this.cycles});
+
+  final List<MlCycle> cycles;
+
+  @override
+  Widget build(BuildContext context) => _Panel(
+    children: [
+      _Eyebrow('Riwayat siklus'.tr),
+      const SizedBox(height: 6),
+      Text(
+        'Siklus baru dimulai setelah siklus lama selesai dan model dilatih ulang tiap Sabtu. Prediksi awal dan revisi disimpan terpisah.'
+            .tr,
+        style: AppText.body(size: 12, color: AppColors.mut, height: 1.45),
+      ),
+      const SizedBox(height: 6),
+      for (final c in cycles) _CycleRow(cycle: c),
+    ],
+  );
+}
+
+class _CycleRow extends StatelessWidget {
+  const _CycleRow({required this.cycle});
+
+  final MlCycle cycle;
+
+  String _result(MlOutcome? o) => o == null ? 'berjalan'.tr : _signed(o.retNet);
+
+  @override
+  Widget build(BuildContext context) {
+    final five = cycle.fiveDay;
+    final ten = cycle.tenDay;
+    final rev = cycle.revision;
+    final outcome = ten.outcome;
+    final revision = rev == null
+        ? ''
+        : ' ${'→ revisi @n'.trParams({'n': '${_outOf100(rev.probUp)}'})}';
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 6),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  formatShortDate(cycle.cycleStart),
+                  style: AppText.mono(size: 12.5, weight: FontWeight.w700),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${'5 hari'.tr}: ${five == null ? '-' : _result(five.outcome)}'
+                  ' · ${'10 hari'.tr}: ${'skor @n'.trParams({'n': '${_outOf100(ten.probUp)}'})}'
+                  '$revision',
+                  style: AppText.body(size: 11.5, color: AppColors.ink2),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            _result(outcome),
+            style: AppText.mono(
+              size: 12.5,
+              weight: FontWeight.w700,
+              color: outcome == null
+                  ? AppColors.ink2
+                  : _signColor(outcome.retNet),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

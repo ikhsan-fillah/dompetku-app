@@ -3,6 +3,7 @@ import 'package:supabase_flutter/supabase_flutter.dart';
 import '../models/broker_group.dart';
 import '../models/broker_range_row.dart';
 import '../models/daily_bar.dart';
+import '../models/ml_cycle.dart';
 import '../models/ml_prediction.dart';
 import '../models/news_score.dart';
 import '../models/price_point.dart';
@@ -62,6 +63,19 @@ abstract interface class StockRepository {
     String ticker, {
     int limit = 10,
   });
+
+  /// Siklus 10 hari bursa satu saham (tabel `ml_cycle`), terbaru dulu, paling
+  /// banyak [limit]. Kosong bila belum ada siklus.
+  Future<List<MlCycle>> getCycleHistory(String ticker, {int limit = 10});
+
+  /// Prediksi pada tanggal sinyal [date] dari model [modelVersion], tanpa
+  /// menyaring model aktif: siklus lama tetap memakai model saat itu. Null
+  /// bila saham itu tidak ikut pipeline harian pada tanggal tersebut.
+  Future<MlPrediction?> getPredictionOn(
+    String ticker,
+    DateTime date,
+    String modelVersion,
+  );
 }
 
 /// Tabel yang menyimpan data per kode saham, ikut dihapus bersama sahamnya.
@@ -295,5 +309,37 @@ class SupabaseStockRepository implements StockRepository {
         .order('trade_date', ascending: false)
         .limit(limit);
     return [for (final row in rows) ?MlPrediction.tryFromMap(row)];
+  }
+
+  @override
+  Future<List<MlCycle>> getCycleHistory(String ticker, {int limit = 10}) async {
+    final rows = await _client
+        .from('ml_cycle')
+        .select()
+        .eq('ticker', ticker)
+        .order('cycle_start', ascending: false)
+        .limit(limit);
+    return [for (final row in rows) ?MlCycle.tryFromMap(row)];
+  }
+
+  @override
+  Future<MlPrediction?> getPredictionOn(
+    String ticker,
+    DateTime date,
+    String modelVersion,
+  ) async {
+    final day =
+        '${date.year.toString().padLeft(4, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
+    final rows = await _client
+        .from('ml_prediction')
+        .select(_mlColumns)
+        .eq('ticker', ticker)
+        .eq('trade_date', day)
+        .eq('model_version', modelVersion)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return MlPrediction.tryFromMap(rows.first);
   }
 }
