@@ -138,11 +138,29 @@ class FakeRepository implements StockRepository {
   @override
   Future<NewsScore?> getNewsScore(DateTime day) async => null;
 
+  /// Prediksi terbaru yang dikembalikan untuk semua kode.
+  MlPrediction? latestPrediction;
+
   @override
-  Future<MlPrediction?> getLatestPrediction(String ticker) async => null;
+  Future<MlPrediction?> getLatestPrediction(String ticker) async =>
+      latestPrediction;
 
   @override
   Future<MlPrediction?> getLatestMaturedPrediction(String ticker) async => null;
+
+  /// Riwayat prediksi per kode, terbaru dulu.
+  Map<String, List<MlPrediction>> predictionHistory = {};
+  bool failPredictionHistory = false;
+
+  @override
+  Future<List<MlPrediction>> getPredictionHistory(
+    String ticker, {
+    int limit = 10,
+  }) async {
+    if (failPredictionHistory) throw Exception('boom');
+    final own = predictionHistory[ticker] ?? const <MlPrediction>[];
+    return own.length <= limit ? own : own.sublist(0, limit);
+  }
 
   @override
   Future<List<DailyBar>> getLatestBars(List<String> tickers) async => [

@@ -54,6 +54,14 @@ abstract interface class StockRepository {
   /// Prediksi terbaru dari model aktif yang hasil nyatanya sudah dihitung,
   /// null bila belum ada yang genap horizon hari bursa.
   Future<MlPrediction?> getLatestMaturedPrediction(String ticker);
+
+  /// Riwayat prediksi satu saham dari model aktif, satu baris per tanggal
+  /// sinyal, terbaru dulu, paling banyak [limit]. Tiap baris menyimpan
+  /// tanggal sinyalnya sendiri, jadi jendela 10 hari tiap prediksi tetap.
+  Future<List<MlPrediction>> getPredictionHistory(
+    String ticker, {
+    int limit = 10,
+  });
 }
 
 /// Tabel yang menyimpan data per kode saham, ikut dihapus bersama sahamnya.
@@ -77,6 +85,15 @@ const _mlColumns =
     'signal, upper_pct, lower_pct, close_price, drivers, outcome_date, '
     'outcome_entry, outcome_exit, outcome_ret_net, outcome_win, '
     'outcome_hit_upper, ml_model!inner(trained_at, metrics, is_active, universe)';
+
+/// Kolom ringkas untuk riwayat: tanpa metrik dan daftar saham model, yang
+/// besar dan sama di semua baris. `!inner` tetap dipakai untuk menyaring
+/// prediksi model lama.
+const _mlHistoryColumns =
+    'ticker, trade_date, model_version, horizon_days, prob_up, base_rate, '
+    'signal, upper_pct, lower_pct, close_price, drivers, outcome_date, '
+    'outcome_entry, outcome_exit, outcome_ret_net, outcome_win, '
+    'outcome_hit_upper, ml_model!inner(is_active)';
 
 class SupabaseStockRepository implements StockRepository {
   SupabaseStockRepository(this._auth);
@@ -263,5 +280,20 @@ class SupabaseStockRepository implements StockRepository {
         .limit(1);
     if (rows.isEmpty) return null;
     return MlPrediction.tryFromMap(rows.first);
+  }
+
+  @override
+  Future<List<MlPrediction>> getPredictionHistory(
+    String ticker, {
+    int limit = 10,
+  }) async {
+    final rows = await _client
+        .from('ml_prediction')
+        .select(_mlHistoryColumns)
+        .eq('ticker', ticker)
+        .eq('ml_model.is_active', true)
+        .order('trade_date', ascending: false)
+        .limit(limit);
+    return [for (final row in rows) ?MlPrediction.tryFromMap(row)];
   }
 }

@@ -34,6 +34,9 @@ const chartFetchLimit = 40;
 /// volatilitas setahun.
 const historyFetchLimit = 260;
 
+/// Jumlah prediksi terakhir yang ditampilkan di riwayat.
+const predictionHistoryLimit = 10;
+
 /// Kode IHSG di `price_history`, dipakai untuk sentimen pasar.
 const marketIndexTicker = '^JKSE';
 
@@ -67,6 +70,11 @@ class StockDetailController extends GetxController {
 
   /// Prediksi lama yang hasil nyatanya sudah dihitung, null bila belum ada.
   final mlMatured = Rxn<MlPrediction>();
+
+  /// Riwayat prediksi saham ini dari model aktif, terbaru dulu. Tiap prediksi
+  /// punya jendela 10 hari yang tetap sejak tanggal sinyalnya. Kosong bila
+  /// belum ada atau gagal dimuat.
+  final mlHistory = <MlPrediction>[].obs;
 
   /// Riwayat harga saham ini dan IHSG dari `price_history`, terlama dulu.
   /// Kosong bila gagal dimuat; bagian yang memakainya lalu disembunyikan.
@@ -202,8 +210,10 @@ class StockDetailController extends GetxController {
     ml.value = const ResourceState.loading();
     try {
       final matured = _latestMatured();
+      final past = _predictionHistory();
       final prediction = await _repository.getLatestPrediction(ticker);
       mlMatured.value = await matured;
+      mlHistory.assignAll(await past);
       ml.value = prediction == null
           ? const ResourceState.empty()
           : ResourceState.success(prediction);
@@ -244,6 +254,18 @@ class StockDetailController extends GetxController {
       return await _repository.getLatestMaturedPrediction(ticker);
     } catch (_) {
       return null;
+    }
+  }
+
+  /// Riwayat bersifat tambahan: bila gagal dimuat, kartu tetap tampil.
+  Future<List<MlPrediction>> _predictionHistory() async {
+    try {
+      return await _repository.getPredictionHistory(
+        ticker,
+        limit: predictionHistoryLimit,
+      );
+    } catch (_) {
+      return const [];
     }
   }
 

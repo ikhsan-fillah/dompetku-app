@@ -211,12 +211,12 @@ const Map<String, String> enStock = {
       '@ticker scores about the same as the average stock.',
   'Skor @ticker di bawah rata-rata saham lain.':
       '@ticker scores below the average stock.',
-  'Model memberi skor lebih tinggi dari biasanya untuk data hari ini.':
-      'The model gives a higher score than usual for today\'s data.',
-  'Model tidak melihat keunggulan teknikal khusus pada data hari ini.':
-      'The model sees no particular technical edge in today\'s data.',
-  'Model memberi skor lebih rendah dari biasanya untuk data hari ini.':
-      'The model gives a lower score than usual for today\'s data.',
+  'Model memberi skor lebih tinggi dari biasanya untuk data pada hari sinyal.':
+      'The model gives a higher score than usual for the data on the signal day.',
+  'Model tidak melihat keunggulan teknikal khusus pada data hari sinyal.':
+      'The model sees no particular technical edge in the data on the signal day.',
+  'Model memberi skor lebih rendah dari biasanya untuk data pada hari sinyal.':
+      'The model gives a lower score than usual for the data on the signal day.',
   'Yang dihitung model': 'What the model measures',
   'Dalam @days hari bursa, apakah harga menyentuh batas atas sebelum batas bawah?':
       'Within @days trading days, does the price touch the upper barrier before the lower one?',
@@ -224,7 +224,7 @@ const Map<String, String> enStock = {
   'Batas bawah': 'Lower barrier',
   'Batas atas': 'Upper barrier',
   'Jawabannya, dari 100 kali': 'The answer, out of 100 times',
-  '@ticker hari ini': '@ticker today',
+  '@ticker pada hari sinyal': '@ticker on the signal day',
   'perkiraan model': 'model estimate',
   'Rata-rata': 'Average',
   'semua saham, data latih': 'all stocks, training data',
@@ -314,8 +314,19 @@ const Map<String, String> enStock = {
   'Dalam @days hari bursa, mana yang tersentuh lebih dulu: @up atau @down? Model memperkirakan batas atas lebih dulu sekitar @score dari 100 kali.':
       'Within @days trading days, which is touched first: @up or @down? The model expects the upper barrier first about @score times out of 100.',
   'Dua batas yang diuji': 'The two barriers tested',
-  'Harga sebulan terakhir dan dua batas @days hari':
-      'Last month of prices and the two @days-day barriers',
+  'Harga sebulan sampai hari sinyal dan dua batas @days hari':
+      'Month of prices up to the signal day and the two @days-day barriers',
+  'Jendela tetap sejak sinyal @date selesai pada @end. Hasil nyata dihitung dari jendela ini.':
+      'The fixed window from the @date signal ended on @end. The actual result is measured over this window.',
+  'Jendela tetap sejak sinyal @date: @days hari bursa ke depan. Belum ada harga baru sesudah sinyal.':
+      'Fixed window from the @date signal: the next @days trading days. No new prices yet since the signal.',
+  'Jendela tetap sejak sinyal @date: hari ke-@n dari @days hari bursa. Garis hitam di dalam area adalah harga nyata sejauh ini.':
+      'Fixed window from the @date signal: day @n of @days trading days. The black line inside the area is the actual price so far.',
+  'Riwayat prediksi': 'Prediction history',
+  'Tiap hari ada prediksi baru dengan jendela @days hari bursa sendiri. Jendela yang lama tidak bergeser.':
+      'A new prediction is made every day with its own @days-trading-day window. Older windows do not move.',
+  'belum jalan': 'not started',
+  'hari ke-@n/@days': 'day @n/@days',
   'Jejak: Latest · 7D · 1M · 3M. Kosong = tidak tampil di daftar. 4/4 = searah di semua rentang.':
       'Trail: Latest · 7D · 1M · 3M. Empty = not on the list. 4/4 = same direction in every range.',
   'Jual di keempat rentang': 'Selling in all four ranges',
