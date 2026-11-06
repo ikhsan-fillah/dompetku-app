@@ -7,6 +7,7 @@ import '../data/stock_repository.dart';
 import '../models/broker_group.dart';
 import '../models/broker_range_row.dart';
 import '../models/daily_bar.dart';
+import '../models/ml_cycle.dart';
 import '../models/ml_prediction.dart';
 import '../models/news_score.dart';
 import '../models/price_point.dart';
@@ -75,6 +76,10 @@ class StockDetailController extends GetxController {
   /// punya jendela 10 hari yang tetap sejak tanggal sinyalnya. Kosong bila
   /// belum ada atau gagal dimuat.
   final mlHistory = <MlPrediction>[].obs;
+
+  /// Siklus 10 hari bursa saham ini, terbaru dulu. Kosong bila belum ada
+  /// siklus atau gagal dimuat; tab lalu memakai prediksi harian seperti biasa.
+  final mlCycles = <MlCycle>[].obs;
 
   /// Riwayat harga saham ini dan IHSG dari `price_history`, terlama dulu.
   /// Kosong bila gagal dimuat; bagian yang memakainya lalu disembunyikan.
@@ -211,12 +216,20 @@ class StockDetailController extends GetxController {
     try {
       final matured = _latestMatured();
       final past = _predictionHistory();
+      final cycles = _cycleHistory();
       final prediction = await _repository.getLatestPrediction(ticker);
       mlMatured.value = await matured;
       mlHistory.assignAll(await past);
-      ml.value = prediction == null
+      mlCycles.assignAll(await cycles);
+      // Siklus aktif menentukan prediksi yang dibaca: tanggal sinyalnya tetap,
+      // tidak ikut bergeser ke prediksi harian terbaru.
+      final current = mlCycles.firstOrNull;
+      final shown = current == null
+          ? prediction
+          : await _cyclePrediction(current) ?? current.toPrediction();
+      ml.value = shown == null
           ? const ResourceState.empty()
-          : ResourceState.success(prediction);
+          : ResourceState.success(shown);
     } catch (_) {
       ml.value = ResourceState.error('Gagal memuat prediksi ML.'.tr);
     }
@@ -266,6 +279,33 @@ class StockDetailController extends GetxController {
       );
     } catch (_) {
       return const [];
+    }
+  }
+
+  /// Siklus bersifat tambahan: bila gagal dimuat (misalnya tabel belum ada),
+  /// tab tetap tampil dengan prediksi harian.
+  Future<List<MlCycle>> _cycleHistory() async {
+    try {
+      return await _repository.getCycleHistory(
+        ticker,
+        limit: predictionHistoryLimit,
+      );
+    } catch (_) {
+      return const [];
+    }
+  }
+
+  /// Baris `ml_prediction` pada tanggal sinyal siklus (lengkap dengan faktor
+  /// dan uji balik model), null bila tidak ada atau gagal dimuat.
+  Future<MlPrediction?> _cyclePrediction(MlCycle cycle) async {
+    try {
+      return await _repository.getPredictionOn(
+        ticker,
+        cycle.cycleStart,
+        cycle.tenDay.model,
+      );
+    } catch (_) {
+      return null;
     }
   }
 

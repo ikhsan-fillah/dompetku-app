@@ -3,6 +3,7 @@ import 'package:dompetku_app/features/stock/data/stock_repository.dart';
 import 'package:dompetku_app/features/stock/models/broker_group.dart';
 import 'package:dompetku_app/features/stock/models/broker_range_row.dart';
 import 'package:dompetku_app/features/stock/models/daily_bar.dart';
+import 'package:dompetku_app/features/stock/models/ml_cycle.dart';
 import 'package:dompetku_app/features/stock/models/ml_prediction.dart';
 import 'package:dompetku_app/features/stock/models/news_score.dart';
 import 'package:dompetku_app/features/stock/models/price_point.dart';
@@ -147,6 +148,36 @@ class FakeRepository implements StockRepository {
 
   @override
   Future<MlPrediction?> getLatestMaturedPrediction(String ticker) async => null;
+
+  /// Siklus per kode, terbaru dulu.
+  Map<String, List<MlCycle>> cycles = {};
+  bool failCycles = false;
+
+  @override
+  Future<List<MlCycle>> getCycleHistory(String ticker, {int limit = 10}) async {
+    if (failCycles) throw Exception('boom');
+    final own = cycles[ticker] ?? const <MlCycle>[];
+    return own.length <= limit ? own : own.sublist(0, limit);
+  }
+
+  /// Prediksi menurut tanggal sinyal dan versi model.
+  List<MlPrediction> predictionsOn = [];
+
+  @override
+  Future<MlPrediction?> getPredictionOn(
+    String ticker,
+    DateTime date,
+    String modelVersion,
+  ) async {
+    for (final p in predictionsOn) {
+      if (p.ticker == ticker &&
+          p.tradeDate == date &&
+          p.modelVersion == modelVersion) {
+        return p;
+      }
+    }
+    return null;
+  }
 
   /// Riwayat prediksi per kode, terbaru dulu.
   Map<String, List<MlPrediction>> predictionHistory = {};
