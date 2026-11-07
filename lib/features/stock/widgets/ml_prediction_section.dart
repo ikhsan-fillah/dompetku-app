@@ -18,17 +18,21 @@ import 'stock_format.dart';
 /// Nama fitur model teknikal dalam bahasa yang mudah dibaca. Fitur yang tidak
 /// ada di daftar ini ditampilkan apa adanya.
 const _featureLabels = <String, String>{
-  'rsi': 'RSI',
+  'rsi': 'RSI 14',
   'stochK': 'Stoch RSI %K',
   'stochKminusD': 'Stoch %K-%D',
   'macdHistPct': 'Histogram MACD',
   'macdPct': 'MACD',
   'distSma20': 'Jarak ke MA20',
   'distSma50': 'Jarak ke MA50',
-  'sma20vs50': 'MA20 vs MA50',
-  'volumeRatio': 'Volume vs rata-rata 20 hari',
+  'sma20vs50': 'MA20 terhadap MA50',
+  'volumeRatio': 'Volume',
   'bbZ': 'Posisi Bollinger',
 };
+
+/// Berapa faktor terbesar yang diberi tanda + atau − per model; sisanya
+/// ditandai "kecil".
+const _topFactors = 4;
 
 /// Volatilitas 20 hari dianggap jauh di atas biasanya bila lebih dari
 /// sekian kali volatilitas setahun.
@@ -74,14 +78,19 @@ class MlPredictionCard extends StatelessWidget {
     final trained = p.modelTrainedAt;
     final old = matured;
     final oldOutcome = old?.outcome;
-    final drivers = p.topDrivers(4);
     final window = PredictionWindow.of(p, history);
     final cycle = cycles.firstOrNull;
+    final fiveDrivers = cycle?.fiveDay?.drivers ?? const <MlDriver>[];
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
-          '${'Data harga'.tr} ${formatShortDate(p.tradeDate)}'.toUpperCase(),
+          (cycle == null
+                  ? '${'Data harga'.tr} ${formatShortDate(p.tradeDate)}'
+                  : 'Sinyal @date · siklus 10 hari bursa'.trParams({
+                      'date': formatShortDate(p.tradeDate),
+                    }))
+              .toUpperCase(),
           style: AppText.mono(
             size: 11.5,
             color: AppColors.ink2,
@@ -105,16 +114,28 @@ class MlPredictionCard extends StatelessWidget {
           style: AppText.display(size: 30, height: 1.05, letterSpacing: -0.8),
         ),
         const SizedBox(height: 14),
-        if (cycle != null) ...[
-          _CyclePanel(cycle: cycle, window: window),
-          const SizedBox(height: AppSpacing.gap),
-        ],
-        _ScoreCard(prediction: p),
+        _ScoreCard(prediction: p, fiveDay: cycle?.fiveDay),
         const SizedBox(height: AppSpacing.gap),
-        _BarrierCard(prediction: p, history: history, window: window),
-        if (drivers.isNotEmpty) ...[
+        _BarrierCard(
+          prediction: p,
+          history: history,
+          window: window,
+          fiveDay: cycle?.fiveDay,
+        ),
+        if (p.drivers.isNotEmpty || fiveDrivers.isNotEmpty) ...[
           const SizedBox(height: AppSpacing.gap),
-          _FactorsCard(drivers: drivers),
+          _FactorsCard(
+            ten: p.topDrivers(_topFactors),
+            five: [...fiveDrivers]
+              ..sort(
+                (a, b) => b.contribution.abs().compareTo(a.contribution.abs()),
+              ),
+            hasFiveDay: cycle?.fiveDay != null,
+          ),
+        ],
+        if (cycle != null) ...[
+          const SizedBox(height: AppSpacing.gap),
+          _CycleStatusCard(cycle: cycle, window: window),
         ],
         const SizedBox(height: AppSpacing.gap),
         if (cycle == null && old != null && oldOutcome != null) ...[
@@ -131,10 +152,6 @@ class MlPredictionCard extends StatelessWidget {
             predictions: pastPredictions,
             history: history,
           ),
-          const SizedBox(height: AppSpacing.gap),
-        ],
-        if (p.backtest != null || p.aucMean != null) ...[
-          _TrustCard(prediction: p),
           const SizedBox(height: AppSpacing.gap),
         ],
         Container(
@@ -163,12 +180,22 @@ class MlPredictionCard extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 8),
-        Text(
-          '${'Model dilatih'.tr} '
-          '${trained == null ? '-' : formatShortDate(trained)} · '
-          '${p.modelVersion}',
-          style: AppText.mono(size: 10.5, color: AppColors.mut),
-        ),
+        if (cycle == null)
+          Text(
+            '${'Model dilatih'.tr} '
+            '${trained == null ? '-' : formatShortDate(trained)} · '
+            '${p.modelVersion}',
+            style: AppText.mono(size: 10.5, color: AppColors.mut),
+          )
+        else
+          Text(
+            [
+              '${'10 hari'.tr}: ${cycle.tenDay.model}',
+              if (cycle.fiveDay case final five?)
+                '${'5 hari'.tr}: ${five.model}',
+            ].join('\n'),
+            style: AppText.mono(size: 10.5, color: AppColors.mut, height: 1.5),
+          ),
         const SizedBox(height: 10),
         Row(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -208,9 +235,9 @@ Color _signColor(double v) => v > 0
 /// Arti angka fitur dalam kalimat pendek, null bila tidak ada terjemahan
 /// yang jelas. Jarak ke MA adalah harga dibagi MA dikurangi 1. RSI disimpan
 /// sebagai pecahan 0 sampai 1, jadi dikali 100 bila nilainya kecil.
-String? _driverMeaning(MlDriver d) {
-  final v = d.value;
-  if (v == null) return null;
+String? _driverMeaning(MlDriver? d) {
+  final v = d?.value;
+  if (d == null || v == null) return null;
   String pct(double x) => '${formatIndicator(x.abs() * 100, digits: 1)}%';
   switch (d.feature) {
     case 'distSma20':
@@ -218,9 +245,17 @@ String? _driverMeaning(MlDriver d) {
       final ma = d.feature == 'distSma20' ? 'MA20' : 'MA50';
       return (v < 0 ? 'harga @pct di bawah @ma' : 'harga @pct di atas @ma')
           .trParams({'pct': pct(v), 'ma': ma});
+    case 'sma20vs50':
+      return (v < 0 ? 'MA20 @pct di bawah MA50' : 'MA20 @pct di atas MA50')
+          .trParams({'pct': pct(v)});
+    case 'volumeRatio':
+      // Fitur ini logaritma rasio volume hari sinyal terhadap rata-rata 20 hari.
+      return 'sekitar @pct% dari rata-rata 20 hari'.trParams({
+        'pct': '${(math.exp(v) * 100).round()}',
+      });
     case 'rsi':
       final rsi = v <= 1.5 ? v * 100 : v;
-      return 'RSI ${formatIndicator(rsi, digits: 0)}';
+      return formatIndicator(rsi, digits: 1);
     case 'bbZ':
       if (v <= -1) return 'dekat pita bawah'.tr;
       if (v >= 1) return 'dekat pita atas'.tr;
@@ -302,13 +337,17 @@ class _SignalChip extends StatelessWidget {
 /// Kartu 1: skor saham ini dibanding rata-rata, dengan pertanyaan yang
 /// dijawab model dalam harga rupiah.
 class _ScoreCard extends StatelessWidget {
-  const _ScoreCard({required this.prediction});
+  const _ScoreCard({required this.prediction, this.fiveDay});
 
   final MlPrediction prediction;
+
+  /// Prediksi 5 hari dari siklus yang sama, null bila tidak ada.
+  final MlCycleLeg? fiveDay;
 
   @override
   Widget build(BuildContext context) {
     final p = prediction;
+    final five = fiveDay;
     final signal = _SignalStyle.of(p.signal);
     final close = p.closePrice;
     final score = _outOf100(p.probUp);
@@ -316,6 +355,17 @@ class _ScoreCard extends StatelessWidget {
     String barrier(double pct) => close == null
         ? _signed(pct)
         : 'Rp ${formatPrice((close * (1 + pct)).round())} (${_signed(pct)})';
+    final question =
+        'Dalam @days hari bursa, mana yang tersentuh lebih dulu: @up atau @down? Model memperkirakan batas atas lebih dulu sekitar @score dari 100 kali.'
+            .trParams({
+              'days': '${p.horizonDays}',
+              'up': barrier(p.upperPct),
+              'down': barrier(p.lowerPct),
+              'score': '$score',
+            });
+    final fiveQuestion = five == null
+        ? ''
+        : ' ${'Untuk 5 hari pertama, dengan batas yang lebih sempit di dalam jendela itu: @score dari 100.'.trParams({'score': '${_outOf100(five.probUp)}'})}';
     return _Panel(
       children: [
         Row(
@@ -332,20 +382,43 @@ class _ScoreCard extends StatelessWidget {
               Flexible(
                 child: _BigNumber(
                   value: score,
-                  caption: '@ticker pada hari sinyal'.trParams({
-                    'ticker': p.ticker,
-                  }),
+                  caption: five == null
+                      ? '@ticker pada hari sinyal'.trParams({
+                          'ticker': p.ticker,
+                        })
+                      : '@ticker, @days hari'.trParams({
+                          'ticker': p.ticker,
+                          'days': '${p.horizonDays}',
+                        }),
                   size: 56,
                   color: AppColors.ink,
                 ),
               ),
-              const SizedBox(width: 18),
+              const SizedBox(width: 14),
               const VerticalDivider(width: 1, color: AppColors.line2),
-              const SizedBox(width: 18),
+              const SizedBox(width: 14),
+              if (five != null) ...[
+                Flexible(
+                  child: _BigNumber(
+                    value: _outOf100(five.probUp),
+                    caption: '@ticker, @days hari'.trParams({
+                      'ticker': p.ticker,
+                      'days': '${MlCycle.reviseDay}',
+                    }),
+                    size: 30,
+                    color: AppColors.ink,
+                  ),
+                ),
+                const SizedBox(width: 14),
+                const VerticalDivider(width: 1, color: AppColors.line2),
+                const SizedBox(width: 14),
+              ],
               Flexible(
                 child: _BigNumber(
                   value: base,
-                  caption: 'rata-rata semua saham'.tr,
+                  caption: five == null
+                      ? 'rata-rata semua saham'.tr
+                      : 'rata-rata saham'.tr,
                   size: 30,
                   color: AppColors.mut,
                 ),
@@ -362,13 +435,7 @@ class _ScoreCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(8),
           ),
           child: Text(
-            'Dalam @days hari bursa, mana yang tersentuh lebih dulu: @up atau @down? Model memperkirakan batas atas lebih dulu sekitar @score dari 100 kali.'
-                .trParams({
-                  'days': '${p.horizonDays}',
-                  'up': barrier(p.upperPct),
-                  'down': barrier(p.lowerPct),
-                  'score': '$score',
-                }),
+            '$question$fiveQuestion',
             style: AppText.body(size: 13, color: AppColors.ink2, height: 1.5),
           ),
         ),
@@ -438,13 +505,16 @@ class _BigNumber extends StatelessWidget {
   }
 }
 
-/// Kartu 2: harga sebulan terakhir dan dua batas 10 hari, ubin persen, dan
-/// catatan bila batas jauh lebih lebar dari biasanya.
+/// Kartu 2: harga sebulan terakhir dan batas prediksi. Bila ada prediksi 5
+/// hari, batasnya digambar sebagai kotak lebih kecil di dalam batas 10 hari.
+/// Di bawahnya ubin persen tiap jendela dan catatan bila batas jauh lebih
+/// lebar dari biasanya.
 class _BarrierCard extends StatelessWidget {
   const _BarrierCard({
     required this.prediction,
     required this.history,
     required this.window,
+    this.fiveDay,
   });
 
   final MlPrediction prediction;
@@ -453,9 +523,13 @@ class _BarrierCard extends StatelessWidget {
   /// Jendela tetap prediksi ini, dihitung dari tanggal sinyalnya.
   final PredictionWindow window;
 
+  /// Prediksi 5 hari dari siklus yang sama, null bila tidak ada.
+  final MlCycleLeg? fiveDay;
+
   @override
   Widget build(BuildContext context) {
     final p = prediction;
+    final five = fiveDay;
     // Garis harga berhenti di hari sinyal, bukan di hari data terbaru, supaya
     // jendela 10 hari tetap dan prediksi lama tidak ikut bergeser.
     final upToSignal = historyUpTo(history, p.tradeDate);
@@ -472,12 +546,19 @@ class _BarrierCard extends StatelessWidget {
         : barrierFromVolatility(sdYear, p.horizonDays);
     return _Panel(
       children: [
-        _Eyebrow('Dua batas yang diuji'.tr),
+        _Eyebrow(
+          five == null
+              ? 'Dua batas yang diuji'.tr
+              : 'Batas 5 hari di dalam batas 10 hari'.tr,
+        ),
         if (close != null && recent.length >= 5) ...[
           const SizedBox(height: 10),
           Semantics(
-            label: 'Harga sebulan sampai hari sinyal dan dua batas @days hari'
-                .trParams({'days': '${p.horizonDays}'}),
+            label:
+                (five == null
+                        ? 'Harga sebulan sampai hari sinyal dan dua batas @days hari'
+                        : 'Harga sebulan sampai hari sinyal, batas 5 hari di dalam batas @days hari')
+                    .trParams({'days': '${p.horizonDays}'}),
             child: ExcludeSemantics(
               child: SizedBox(
                 height: 170,
@@ -496,6 +577,16 @@ class _BarrierCard extends StatelessWidget {
                     horizonLabel: '@days hari'.trParams({
                       'days': '${p.horizonDays}',
                     }),
+                    fiveDays: five == null ? null : MlCycle.reviseDay,
+                    fiveUpper: five == null
+                        ? null
+                        : close * (1 + five.upperPct),
+                    fiveLower: five == null
+                        ? null
+                        : close * (1 + five.lowerPct),
+                    fiveLabel: '@days hari'.trParams({
+                      'days': '${MlCycle.reviseDay}',
+                    }),
                   ),
                 ),
               ),
@@ -503,38 +594,42 @@ class _BarrierCard extends StatelessWidget {
           ),
         ],
         const SizedBox(height: 10),
-        Row(
-          children: [
-            Expanded(
-              child: _PctTile(
-                label: 'Batas atas'.tr,
-                value: _signed(p.upperPct),
-                color: AppColors.earn,
-                soft: AppColors.earnSoft,
-              ),
-            ),
-            const SizedBox(width: 8),
-            Expanded(
-              child: _PctTile(
-                label: 'Batas bawah'.tr,
-                value: _signed(p.lowerPct),
-                color: AppColors.spend,
-                soft: AppColors.spendSoft,
-              ),
-            ),
-          ],
-        ),
+        if (five != null) ...[
+          _Eyebrow(
+            '@n hari bursa · sampai @date'.trParams({
+              'n': '${MlCycle.reviseDay}',
+              'date': formatDayMonth(_tradingDay(window, MlCycle.reviseDay)),
+            }),
+          ),
+          const SizedBox(height: 6),
+          _BarrierTiles(
+            upper: five.upperPct,
+            lower: five.lowerPct,
+            close: close,
+          ),
+          const SizedBox(height: 10),
+          _Eyebrow(
+            '@n hari bursa · sampai @date'.trParams({
+              'n': '${p.horizonDays}',
+              'date': formatDayMonth(_tradingDay(window, p.horizonDays)),
+            }),
+          ),
+          const SizedBox(height: 6),
+        ],
+        _BarrierTiles(upper: p.upperPct, lower: p.lowerPct, close: close),
         const SizedBox(height: 8),
         Text(
-          _windowCaption(p, window),
+          five == null ? _windowCaption(p, window) : _nestedCaption(p, window),
           style: AppText.body(size: 12, color: AppColors.ink2, height: 1.45),
         ),
-        const SizedBox(height: 8),
-        Text(
-          'Lebar batas mengikuti volatilitas @ticker 20 hari terakhir. Tidak ada jalur harga ke depan.'
-              .trParams({'ticker': p.ticker}),
-          style: AppText.body(size: 12, color: AppColors.mut, height: 1.45),
-        ),
+        if (five == null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Lebar batas mengikuti volatilitas @ticker 20 hari terakhir. Tidak ada jalur harga ke depan.'
+                .trParams({'ticker': p.ticker}),
+            style: AppText.body(size: 12, color: AppColors.mut, height: 1.45),
+          ),
+        ],
         if (wide && yearBarrier != null) ...[
           const SizedBox(height: 8),
           Container(
@@ -579,11 +674,80 @@ class _BarrierCard extends StatelessWidget {
   }
 }
 
-/// Kartu siklus: sinyal, hari yang sudah berjalan, prediksi 5 hari (minggu 1),
-/// dan prediksi 10 hari (sampai minggu 2) dengan revisi di hari ke-5. Prediksi
+/// Dua ubin batas atas dan bawah; harga rupiahnya ikut tampil bila harga
+/// sinyal diketahui.
+class _BarrierTiles extends StatelessWidget {
+  const _BarrierTiles({
+    required this.upper,
+    required this.lower,
+    required this.close,
+  });
+
+  final double upper;
+  final double lower;
+  final double? close;
+
+  String _label(String text, double pct) {
+    final c = close;
+    return c == null
+        ? text.tr
+        : '${text.tr} · Rp ${formatPrice((c * (1 + pct)).round())}';
+  }
+
+  @override
+  Widget build(BuildContext context) => Row(
+    children: [
+      Expanded(
+        child: _PctTile(
+          label: _label('Batas atas', upper),
+          value: _signed(upper),
+          color: AppColors.earn,
+          soft: AppColors.earnSoft,
+        ),
+      ),
+      const SizedBox(width: 8),
+      Expanded(
+        child: _PctTile(
+          label: _label('Batas bawah', lower),
+          value: _signed(lower),
+          color: AppColors.spend,
+          soft: AppColors.spendSoft,
+        ),
+      ),
+    ],
+  );
+}
+
+/// Hari bursa ke-[n] setelah sinyal: tanggal nyata bila sudah berjalan,
+/// kalau belum diperkirakan dengan melompati Sabtu dan Minggu. Hari libur
+/// bursa tidak diperhitungkan.
+DateTime _tradingDay(PredictionWindow w, int n) {
+  if (w.realized.length >= n) return w.realized[n - 1].date;
+  var d = w.realized.isEmpty ? w.signalDate : w.realized.last.date;
+  var left = n - w.realized.length;
+  while (left > 0) {
+    d = DateTime(d.year, d.month, d.day + 1);
+    if (d.weekday != DateTime.saturday && d.weekday != DateTime.sunday) left--;
+  }
+  return d;
+}
+
+/// Keterangan di bawah ubin bila batas 5 hari digambar di dalam batas 10 hari.
+String _nestedCaption(MlPrediction p, PredictionWindow w) {
+  final base =
+      'Lebar batas mengikuti volatilitas @ticker 20 hari terakhir. Batas 5 hari sekitar 71% selebar batas 10 hari (akar dari 5/10), jadi selalu berada di dalamnya. Tidak ada jalur harga ke depan.'
+          .trParams({'ticker': p.ticker});
+  final tail = w.elapsed == 0
+      ? 'Belum ada harga baru sesudah sinyal.'.tr
+      : 'Garis hitam di dalam area adalah harga nyata sejauh ini.'.tr;
+  return '$base $tail';
+}
+
+/// Kartu status siklus: hari yang sudah berjalan, revisi hari ke-5, dan hasil
+/// nyata. Skor dan batas kedua jendela ada di kartu-kartu di atasnya. Prediksi
 /// awal dan revisi ditampilkan terpisah; yang awal tidak pernah ditimpa.
-class _CyclePanel extends StatelessWidget {
-  const _CyclePanel({required this.cycle, required this.window});
+class _CycleStatusCard extends StatelessWidget {
+  const _CycleStatusCard({required this.cycle, required this.window});
 
   final MlCycle cycle;
   final PredictionWindow window;
@@ -593,6 +757,9 @@ class _CyclePanel extends StatelessWidget {
     final elapsed = cycle.isComplete
         ? MlCycle.horizonDays
         : math.min(window.elapsed, MlCycle.horizonDays);
+    final five = cycle.fiveDay;
+    final ten = cycle.tenDay;
+    final hint = AppText.body(size: 12, color: AppColors.mut, height: 1.45);
     return _Panel(
       children: [
         _Eyebrow('Siklus 10 hari bursa'.tr),
@@ -607,27 +774,55 @@ class _CyclePanel extends StatelessWidget {
         ),
         const SizedBox(height: 10),
         _DayBar(elapsed: elapsed),
-        const SizedBox(height: 14),
-        _LegBlock(
-          title: 'Minggu 1 · 5 hari'.tr,
-          leg: cycle.fiveDay,
-          emptyText:
-              'Model 5 hari belum aktif, jadi prediksi 5 hari tidak tampil.'.tr,
-        ),
-        const SizedBox(height: 10),
-        _LegBlock(
-          title: 'Sampai minggu 2 · 10 hari'.tr,
-          leg: cycle.tenDay,
-          emptyText: '',
-          extra: _revisionLines(elapsed),
-        ),
+        if (five == null) ...[
+          const SizedBox(height: 8),
+          Text(
+            'Model 5 hari belum aktif, jadi prediksi 5 hari tidak tampil.'.tr,
+            style: hint,
+          ),
+        ],
+        ..._revisionLines(elapsed, hint),
+        if (five?.outcome != null || ten.outcome != null) ...[
+          const SizedBox(height: 8),
+          if (five?.outcome case final o?)
+            ..._outcomeRows(o, MlCycle.reviseDay),
+          if (ten.outcome case final o?)
+            ..._outcomeRows(o, MlCycle.horizonDays),
+        ] else ...[
+          const SizedBox(height: 10),
+          Text(
+            'Hasil nyata 5 hari muncul @d5 dan 10 hari muncul @d10. Di hari ke-5, prediksi 10 hari direvisi satu kali dari jalur harga nyata; prediksi 5 hari tidak diulang.'
+                .trParams({
+                  'd5': formatDayMonth(_tradingDay(window, MlCycle.reviseDay)),
+                  'd10': formatDayMonth(
+                    _tradingDay(window, MlCycle.horizonDays),
+                  ),
+                }),
+            style: hint,
+          ),
+        ],
       ],
     );
   }
 
-  List<Widget> _revisionLines(int elapsed) {
+  List<Widget> _outcomeRows(MlOutcome o, int days) => [
+    _StatRow(
+      label: 'Hasil nyata @days hari'.trParams({'days': '$days'}),
+      value: _signed(o.retNet),
+      color: _signColor(o.retNet),
+      bold: true,
+    ),
+    if (o.hitUpper case final hit?)
+      _StatRow(
+        label: 'Batas atas tersentuh dalam @days hari'.trParams({
+          'days': '$days',
+        }),
+        value: hit ? 'ya'.tr : 'tidak'.tr,
+      ),
+  ];
+
+  List<Widget> _revisionLines(int elapsed, TextStyle hint) {
     final rev = cycle.revision;
-    final hint = AppText.body(size: 12, color: AppColors.mut, height: 1.45);
     if (rev == null) {
       return [
         const SizedBox(height: 6),
@@ -703,84 +898,6 @@ class _DayBar extends StatelessWidget {
       ),
     ),
   );
-}
-
-/// Satu sisi siklus: judul, label sinyal, skor awal, batas, dan hasil nyata.
-/// [leg] null menampilkan [emptyText].
-class _LegBlock extends StatelessWidget {
-  const _LegBlock({
-    required this.title,
-    required this.leg,
-    required this.emptyText,
-    this.extra = const [],
-  });
-
-  final String title;
-  final MlCycleLeg? leg;
-  final String emptyText;
-  final List<Widget> extra;
-
-  @override
-  Widget build(BuildContext context) {
-    final l = leg;
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(12),
-      decoration: BoxDecoration(
-        color: AppColors.paper2,
-        borderRadius: BorderRadius.circular(8),
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Expanded(child: _Eyebrow(title)),
-              if (l != null) _SignalChip(style: _SignalStyle.of(l.signal)),
-            ],
-          ),
-          const SizedBox(height: 8),
-          if (l == null)
-            Text(
-              emptyText,
-              style: AppText.body(size: 12, color: AppColors.mut, height: 1.45),
-            )
-          else ...[
-            _StatRow(
-              label: 'Skor awal'.tr,
-              value: 'skor @score dari 100'.trParams({
-                'score': '${_outOf100(l.probUp)}',
-              }),
-              bold: true,
-            ),
-            _StatRow(
-              label: 'Rata-rata semua saham'.tr,
-              value: '${_outOf100(l.baseRate)}',
-            ),
-            _StatRow(
-              label: 'Batas atas dan bawah'.tr,
-              value: '${_signed(l.upperPct)} / ${_signed(l.lowerPct)}',
-            ),
-            ...extra,
-            if (l.outcome case final o?) ...[
-              const SizedBox(height: 4),
-              _StatRow(
-                label: 'Hasil nyata'.tr,
-                value: _signed(o.retNet),
-                color: _signColor(o.retNet),
-                bold: true,
-              ),
-              if (o.hitUpper case final hit?)
-                _StatRow(
-                  label: 'Menyentuh batas atas'.tr,
-                  value: hit ? 'ya'.tr : 'tidak'.tr,
-                ),
-            ],
-          ],
-        ],
-      ),
-    );
-  }
 }
 
 /// Riwayat siklus sebelumnya: prediksi awal, revisi, dan hasil nyata tiap
@@ -1029,6 +1146,10 @@ class _BarrierChartPainter extends CustomPainter {
     required this.upper,
     required this.lower,
     required this.horizonLabel,
+    this.fiveDays,
+    this.fiveUpper,
+    this.fiveLower,
+    this.fiveLabel = '',
   });
 
   final List<double> closes;
@@ -1048,6 +1169,13 @@ class _BarrierChartPainter extends CustomPainter {
   final double upper;
   final double lower;
   final String horizonLabel;
+
+  /// Hari ke-berapa batas 5 hari berakhir di dalam jendela, null bila tidak
+  /// ada prediksi 5 hari. Tiga isian berikutnya hanya berlaku bila ada.
+  final int? fiveDays;
+  final double? fiveUpper;
+  final double? fiveLower;
+  final String fiveLabel;
 
   static const _tagWidth = 56.0;
   static const _bottom = 18.0;
@@ -1071,6 +1199,13 @@ class _BarrierChartPainter extends CustomPainter {
         closes.length == 1 ? 0 : i / (closes.length - 1) * lineRight;
 
     final lastX = x(closes.length - 1);
+    final fiveEnd = fiveDays;
+    final fiveUp = fiveUpper;
+    final fiveLow = fiveLower;
+    final nested =
+        fiveEnd != null && fiveUp != null && fiveLow != null && horizon > 0;
+    // Hari ke-5 jatuh di 5/horizon lebar area, sama dengan garis nyata.
+    final midX = nested ? lastX + (plotRight - lastX) * fiveEnd / horizon : 0.0;
     canvas.drawRRect(
       RRect.fromRectAndRadius(
         Rect.fromLTRB(lastX, y(upper), plotRight, y(lower)),
@@ -1078,6 +1213,15 @@ class _BarrierChartPainter extends CustomPainter {
       ),
       Paint()..color = AppColors.paper2.withValues(alpha: 0.7),
     );
+    if (nested) {
+      canvas.drawRRect(
+        RRect.fromRectAndRadius(
+          Rect.fromLTRB(lastX, y(fiveUp), midX, y(fiveLow)),
+          const Radius.circular(2),
+        ),
+        Paint()..color = AppColors.line.withValues(alpha: 0.75),
+      );
+    }
     final path = Path();
     for (var i = 0; i < closes.length; i++) {
       final point = Offset(x(i), y(closes[i]));
@@ -1130,6 +1274,33 @@ class _BarrierChartPainter extends CustomPainter {
           ..strokeWidth = 2,
       );
     }
+    if (nested) {
+      for (final (value, color) in [
+        (fiveUp, AppColors.earn),
+        (fiveLow, AppColors.spend),
+      ]) {
+        paintDashedLine(
+          canvas,
+          Offset(lastX, y(value)),
+          Offset(midX, y(value)),
+          Paint()
+            ..color = color
+            ..strokeWidth = 2,
+          dash: 2,
+          gap: 2,
+        );
+      }
+      paintDashedLine(
+        canvas,
+        Offset(midX, y(upper)),
+        Offset(midX, y(lower)),
+        Paint()
+          ..color = AppColors.mut
+          ..strokeWidth = 1,
+        dash: 2,
+        gap: 3,
+      );
+    }
     canvas.drawCircle(
       Offset(lastX, y(close)),
       4.5,
@@ -1143,6 +1314,34 @@ class _BarrierChartPainter extends CustomPainter {
         ..style = PaintingStyle.stroke
         ..strokeWidth = 2,
     );
+    if (nested) {
+      for (final (value, color) in [
+        (fiveUp, AppColors.earn),
+        (fiveLow, AppColors.spend),
+      ]) {
+        final rect = RRect.fromRectAndRadius(
+          Rect.fromLTWH(midX + 1.5, y(value) - 7, 28, 14),
+          const Radius.circular(3),
+        );
+        canvas.drawRRect(rect, Paint()..color = color.withValues(alpha: 0.85));
+        final text = TextPainter(
+          text: TextSpan(
+            text: formatPrice(value.round()),
+            style: AppText.mono(
+              size: 8.5,
+              weight: FontWeight.w600,
+              color: AppColors.paper,
+              letterSpacing: 0,
+            ),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        text.paint(
+          canvas,
+          Offset(rect.left + (28 - text.width) / 2, y(value) - text.height / 2),
+        );
+      }
+    }
     for (final (value, color) in [
       (upper, AppColors.earn),
       (lower, AppColors.spend),
@@ -1182,7 +1381,18 @@ class _BarrierChartPainter extends CustomPainter {
     )..layout();
     lastText.paint(canvas, Offset(lastX - lastText.width / 2, h + 3));
     final end = windowEnd;
-    if (end != null) {
+    if (nested) {
+      for (final (label, dx) in [('H+5', midX), ('H+10', plotRight)]) {
+        final t = TextPainter(
+          text: TextSpan(
+            text: label,
+            style: AppText.mono(size: 9, color: AppColors.mut),
+          ),
+          textDirection: TextDirection.ltr,
+        )..layout();
+        t.paint(canvas, Offset(dx - t.width / 2, h + 3));
+      }
+    } else if (end != null) {
       final endText = TextPainter(
         text: TextSpan(
           text: formatDayMonth(end),
@@ -1199,10 +1409,29 @@ class _BarrierChartPainter extends CustomPainter {
       ),
       textDirection: TextDirection.ltr,
     )..layout();
-    zone.paint(
-      canvas,
-      Offset((lastX + plotRight) / 2 - zone.width / 2, y(upper) + 4),
-    );
+    // Dengan kotak 5 hari, label 10 hari pindah ke separuh kanan supaya tidak
+    // bertumpuk dengan label 5 hari di separuh kiri.
+    final zoneCenter = nested
+        ? (midX + plotRight) / 2
+        : (lastX + plotRight) / 2;
+    zone.paint(canvas, Offset(zoneCenter - zone.width / 2, y(upper) + 4));
+    if (nested) {
+      final five = TextPainter(
+        text: TextSpan(
+          text: fiveLabel,
+          style: AppText.body(
+            size: 9,
+            weight: FontWeight.w700,
+            color: AppColors.ink2,
+          ),
+        ),
+        textDirection: TextDirection.ltr,
+      )..layout();
+      five.paint(
+        canvas,
+        Offset((lastX + midX) / 2 - five.width / 2, y(fiveUp) + 4),
+      );
+    }
   }
 
   @override
@@ -1212,22 +1441,93 @@ class _BarrierChartPainter extends CustomPainter {
       old.windowEnd != windowEnd ||
       old.upper != upper ||
       old.lower != lower ||
+      old.fiveUpper != fiveUpper ||
+      old.fiveLower != fiveLower ||
       old.close != close;
 }
 
-/// Kartu 3: empat fitur dengan sumbangan terbesar dan arahnya ke skor.
+/// Kartu 3: faktor dengan sumbangan terbesar ke skor. Dengan faktor 5 hari,
+/// tiap baris punya dua tanda berdampingan, 10 hari dan 5 hari; fitur di luar
+/// empat terbesar suatu model diberi tanda "kecil" di kolom model itu.
 class _FactorsCard extends StatelessWidget {
-  const _FactorsCard({required this.drivers});
+  const _FactorsCard({
+    required this.ten,
+    required this.five,
+    required this.hasFiveDay,
+  });
 
-  final List<MlDriver> drivers;
+  /// Empat faktor terbesar model 10 hari.
+  final List<MlDriver> ten;
+
+  /// Semua faktor model 5 hari, terbesar dulu. Kosong bila belum tersimpan.
+  final List<MlDriver> five;
+
+  /// True bila siklus punya prediksi 5 hari, walau faktornya belum ada.
+  final bool hasFiveDay;
+
+  static const _chipWidth = 58.0;
 
   @override
   Widget build(BuildContext context) {
+    final fiveTop = five.take(_topFactors).toList();
+    final showFive = fiveTop.isNotEmpty;
+    final rows = <String>[
+      for (final d in ten) d.feature,
+      for (final d in fiveTop)
+        if (!ten.any((t) => t.feature == d.feature)) d.feature,
+    ];
+    MlDriver? find(List<MlDriver> list, String feature) {
+      for (final d in list) {
+        if (d.feature == feature) return d;
+      }
+      return null;
+    }
+
+    Widget cell(List<MlDriver> top, String feature) {
+      final d = find(top, feature);
+      return SizedBox(
+        width: _chipWidth,
+        child: d == null ? const _FactorChip.small() : _FactorChip(driver: d),
+      );
+    }
+
+    final headStyle = AppText.body(
+      size: 10.5,
+      weight: FontWeight.w700,
+      color: AppColors.mut,
+    );
     return _Panel(
       children: [
         _Eyebrow('Yang memengaruhi skor'.tr),
-        const SizedBox(height: 8),
-        for (final d in drivers)
+        if (showFive) ...[
+          const SizedBox(height: 10),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              if (ten.isNotEmpty)
+                SizedBox(
+                  width: _chipWidth,
+                  child: Text(
+                    '10 hari'.tr,
+                    textAlign: TextAlign.center,
+                    style: headStyle,
+                  ),
+                ),
+              if (ten.isNotEmpty) const SizedBox(width: 6),
+              SizedBox(
+                width: _chipWidth,
+                child: Text(
+                  '5 hari'.tr,
+                  textAlign: TextAlign.center,
+                  style: headStyle,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 4),
+        ] else
+          const SizedBox(height: 8),
+        for (final feature in rows)
           Container(
             padding: const EdgeInsets.symmetric(vertical: 9),
             decoration: const BoxDecoration(
@@ -1240,10 +1540,13 @@ class _FactorsCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        (_featureLabels[d.feature] ?? d.feature).tr,
+                        (_featureLabels[feature] ?? feature).tr,
                         style: AppText.body(size: 13, weight: FontWeight.w700),
                       ),
-                      if (_driverMeaning(d) case final String meaning)
+                      if (_driverMeaning(
+                            find(ten, feature) ?? find(five, feature),
+                          )
+                          case final String meaning)
                         Text(
                           meaning,
                           style: AppText.body(size: 11.5, color: AppColors.mut),
@@ -1251,120 +1554,27 @@ class _FactorsCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                Container(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 9,
-                    vertical: 3,
-                  ),
-                  decoration: BoxDecoration(
-                    color: d.pushesUp
-                        ? AppColors.earnSoft
-                        : AppColors.spendSoft,
-                    borderRadius: BorderRadius.circular(AppRadius.pill),
-                  ),
-                  child: Text(
-                    (d.pushesUp ? '+ skor' : '− skor').tr,
-                    style: AppText.body(
-                      size: 11,
-                      weight: FontWeight.w700,
-                      color: d.pushesUp ? AppColors.earn : AppColors.spend,
-                    ),
-                  ),
-                ),
+                const SizedBox(width: 6),
+                if (ten.isNotEmpty) cell(ten, feature),
+                if (ten.isNotEmpty && showFive) const SizedBox(width: 6),
+                if (showFive) cell(fiveTop, feature),
               ],
             ),
           ),
         const SizedBox(height: 4),
         Text(
-          'Menjelaskan skor model, bukan alasan harga bergerak.'.tr,
-          style: AppText.body(size: 11.5, color: AppColors.mut),
+          showFive && ten.isNotEmpty
+              ? '+ menaikkan skor, − menurunkannya. "Kecil" berarti pengaruhnya di luar empat terbesar milik model itu. Ini penjelasan skor, bukan alasan harga bergerak.'
+                    .tr
+              : 'Menjelaskan skor model, bukan alasan harga bergerak.'.tr,
+          style: AppText.body(size: 11.5, color: AppColors.mut, height: 1.45),
         ),
-      ],
-    );
-  }
-}
-
-/// Kartu 4: tiga angka uji balik dan AUC, lalu peringatan bahwa
-/// keunggulannya tipis.
-class _TrustCard extends StatelessWidget {
-  const _TrustCard({required this.prediction});
-
-  final MlPrediction prediction;
-
-  @override
-  Widget build(BuildContext context) {
-    final b = prediction.backtest;
-    final auc = prediction.aucMean;
-    final stats = <Widget>[
-      if (b != null) ...[
-        _Stat(
-          big: '${(b.top10.winRate * 100).round()}%',
-          small: 'transaksi untung saat skor 10% tertinggi (semua @all%)'
-              .trParams({'all': '${(b.all.winRate * 100).round()}'}),
-        ),
-        _Stat(
-          big: _signed(b.top10.netPerTrade),
-          small: 'hasil bersih per transaksi setelah biaya'.tr,
-          color: _signColor(b.top10.netPerTrade),
-        ),
-      ],
-      if (auc != null)
-        _Stat(
-          big: formatIndicator(auc),
-          small: 'AUC, di mana 0,5 berarti tebakan acak'.tr,
-        ),
-    ];
-    final start = b?.testStart;
-    final end = b?.testEnd;
-    return _Panel(
-      children: [
-        _Eyebrow('Seberapa bisa dipercaya'.tr),
-        const SizedBox(height: 12),
-        IntrinsicHeight(
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              for (final (index, stat) in stats.indexed) ...[
-                if (index > 0) ...[
-                  const SizedBox(width: 10),
-                  const VerticalDivider(width: 1, color: AppColors.line2),
-                  const SizedBox(width: 10),
-                ],
-                Expanded(child: stat),
-              ],
-            ],
-          ),
-        ),
-        const SizedBox(height: 14),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-          decoration: BoxDecoration(
-            color: AppColors.warnSoft,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Text(
-            'Keunggulannya tipis. Pakai sebagai penyaring, bukan janji untung.'
-                .tr,
-            style: AppText.body(
-              size: 12.5,
-              weight: FontWeight.w700,
-              color: AppColors.warn,
-              height: 1.45,
-            ),
-          ),
-        ),
-        if (b != null) ...[
-          const SizedBox(height: 8),
+        if (hasFiveDay && !showFive) ...[
+          const SizedBox(height: 4),
           Text(
-            [
-              if (start != null && end != null)
-                '${'Uji balik'.tr} ${start.year} ${'sampai'.tr} ${end.year}',
-              '${b.nStocks} ${'saham'.tr}',
-              '${'biaya'.tr} ${formatIndicator(b.costRoundTrip * 100, digits: 1)}%',
-              if (b.rule != null) b.rule!,
-            ].join(' · '),
-            style: AppText.body(size: 11, color: AppColors.mut, height: 1.4),
+            'Faktor 5 hari belum tersimpan, jadi hanya faktor 10 hari yang tampil.'
+                .tr,
+            style: AppText.body(size: 11.5, color: AppColors.mut, height: 1.45),
           ),
         ],
       ],
@@ -1372,29 +1582,47 @@ class _TrustCard extends StatelessWidget {
   }
 }
 
-class _Stat extends StatelessWidget {
-  const _Stat({
-    required this.big,
-    required this.small,
-    this.color = AppColors.ink,
-  });
+/// Tanda + skor, − skor, atau "kecil" untuk satu model pada satu faktor.
+class _FactorChip extends StatelessWidget {
+  const _FactorChip({required this.driver}) : small = false;
 
-  final String big;
-  final String small;
-  final Color color;
+  const _FactorChip.small() : driver = null, small = true;
+
+  final MlDriver? driver;
+  final bool small;
 
   @override
-  Widget build(BuildContext context) => Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      Text(big, style: AppText.display(size: 24, color: color, height: 1)),
-      const SizedBox(height: 6),
-      Text(
-        small,
-        style: AppText.body(size: 11, color: AppColors.ink2, height: 1.35),
+  Widget build(BuildContext context) {
+    final d = driver;
+    final up = d?.pushesUp ?? false;
+    final color = small
+        ? AppColors.mut
+        : up
+        ? AppColors.earn
+        : AppColors.spend;
+    final soft = small
+        ? AppColors.paper2
+        : up
+        ? AppColors.earnSoft
+        : AppColors.spendSoft;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: soft,
+        borderRadius: BorderRadius.circular(AppRadius.pill),
       ),
-    ],
-  );
+      child: Text(
+        (small
+                ? 'kecil'
+                : up
+                ? '+ skor'
+                : '− skor')
+            .tr,
+        style: AppText.body(size: 11, weight: FontWeight.w700, color: color),
+      ),
+    );
+  }
 }
 
 /// Hasil nyata prediksi lama: label waktu itu, harga awal dan akhir uji, dan

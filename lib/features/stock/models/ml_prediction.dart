@@ -284,6 +284,9 @@ double? _asDouble(Object? raw) => switch (raw) {
   _ => null,
 };
 
+/// Membaca daftar faktor model dari JSON; elemen yang rusak dilewati.
+List<MlDriver> parseMlDrivers(Object? raw) => _parseDrivers(raw);
+
 List<MlDriver> _parseDrivers(Object? raw) {
   if (raw is! List) return const [];
   final out = <MlDriver>[];

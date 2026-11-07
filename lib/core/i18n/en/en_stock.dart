@@ -481,6 +481,36 @@ const Map<String, String> enStock = {
   'sampai': 'to',
   '@group masuk @period.': '@group moved in @period.',
   '@group keluar @period.': '@group moved out @period.',
+  'Sinyal @date · siklus 10 hari bursa': 'Signal @date · 10-trading-day cycle',
+  '@ticker, @days hari': '@ticker, @days days',
+  'rata-rata saham': 'average stock',
+  'Untuk 5 hari pertama, dengan batas yang lebih sempit di dalam jendela itu: @score dari 100.':
+      'For the first 5 days, with a narrower barrier inside that window: @score out of 100.',
+  'Batas 5 hari di dalam batas 10 hari':
+      '5-day barrier inside the 10-day barrier',
+  'Harga sebulan sampai hari sinyal, batas 5 hari di dalam batas @days hari':
+      'Price for the month up to the signal day, 5-day barrier inside the @days-day barrier',
+  '@n hari bursa · sampai @date': '@n trading days · until @date',
+  'Lebar batas mengikuti volatilitas @ticker 20 hari terakhir. Batas 5 hari sekitar 71% selebar batas 10 hari (akar dari 5/10), jadi selalu berada di dalamnya. Tidak ada jalur harga ke depan.':
+      'The barrier width follows the last 20 days of @ticker volatility. The 5-day barrier is about 71% as wide as the 10-day one (square root of 5/10), so it always sits inside it. There is no forecast price path.',
+  'Belum ada harga baru sesudah sinyal.': 'No new prices since the signal yet.',
+  'Garis hitam di dalam area adalah harga nyata sejauh ini.':
+      'The black line inside the area is the actual price so far.',
+  'Hasil nyata 5 hari muncul @d5 dan 10 hari muncul @d10. Di hari ke-5, prediksi 10 hari direvisi satu kali dari jalur harga nyata; prediksi 5 hari tidak diulang.':
+      'The actual 5-day result appears on @d5 and the 10-day result on @d10. On day 5 the 10-day prediction is revised once from the real price path; the 5-day prediction is not repeated.',
+  'Hasil nyata @days hari': 'Actual @days-day result',
+  'Batas atas tersentuh dalam @days hari':
+      'Upper barrier touched within @days days',
+  'sekitar @pct% dari rata-rata 20 hari': 'about @pct% of the 20-day average',
+  'MA20 @pct di bawah MA50': 'MA20 @pct below MA50',
+  'MA20 @pct di atas MA50': 'MA20 @pct above MA50',
+  'RSI 14': 'RSI 14',
+  'MA20 terhadap MA50': 'MA20 versus MA50',
+  'kecil': 'small',
+  '+ menaikkan skor, − menurunkannya. "Kecil" berarti pengaruhnya di luar empat terbesar milik model itu. Ini penjelasan skor, bukan alasan harga bergerak.':
+      '+ raises the score, − lowers it. "Small" means the effect is outside that model\'s four largest. This explains the score, not why the price moves.',
+  'Faktor 5 hari belum tersimpan, jadi hanya faktor 10 hari yang tampil.':
+      'The 5-day factors are not stored yet, so only the 10-day factors are shown.',
   'Risiko': 'Risk',
   '@days HARI BURSA KE DEPAN · DATA SAMPAI @date':
       '@days TRADING DAYS AHEAD · DATA UP TO @date',
