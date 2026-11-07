@@ -481,4 +481,99 @@ const Map<String, String> enStock = {
   'sampai': 'to',
   '@group masuk @period.': '@group moved in @period.',
   '@group keluar @period.': '@group moved out @period.',
+  'Risiko': 'Risk',
+  '@days HARI BURSA KE DEPAN · DATA SAMPAI @date':
+      '@days TRADING DAYS AHEAD · DATA UP TO @date',
+  'Seberapa': 'How',
+  'liar': 'wild',
+  'harganya.': 'the price is.',
+  'Tenang': 'Calm',
+  'Biasa': 'Usual',
+  'Cukup liar': 'Fairly wild',
+  'Sangat liar': 'Very wild',
+  'Sekitar @x kali lebih tenang dari biasanya.':
+      'About @x times calmer than usual.',
+  'Sekitar sama dengan biasanya.': 'About the same as usual.',
+  'Sekitar @x kali lebih liar dari biasanya.':
+      'About @x times wilder than usual.',
+  'GERAK HARIAN TERUKUR': 'MEASURED DAILY MOVE',
+  'naik atau turun per hari bursa, rata-rata 20 hari terakhir':
+      'up or down per trading day, average of the last 20 days',
+  'Ini besarnya gerak, bukan arahnya. Tidak ada petunjuk harga akan naik atau turun.':
+      'This is the size of the move, not its direction. It gives no hint whether the price will rise or fall.',
+  'Gerak biasa @a persen, 20 hari terakhir @b persen':
+      'Usual move @a percent, last 20 days @b percent',
+  'biasanya': 'usually',
+  '20 hari terakhir': 'last 20 days',
+  'SEBERAPA SERING CL-MU KENA': 'HOW OFTEN YOUR CL GETS HIT',
+  'Setahun terakhir lebih sering kena daripada rata-rata sejak @year: pasar belakangan lebih keras.':
+      'The last year was hit more often than the average since @year: the market has been rougher lately.',
+  'Setahun terakhir lebih jarang kena daripada rata-rata sejak @year: pasar belakangan lebih tenang.':
+      'The last year was hit less often than the average since @year: the market has been calmer lately.',
+  '@ticker, dari @n jendela 10 hari bursa sejak @year: berapa kali harga sempat turun sampai batas ini.':
+      '@ticker, across @n ten-day windows since @year: how often the price dipped to this level.',
+  'sejak @year': 'since @year',
+  'setahun': '1 year',
+  'Dengan CL @cl%, @ticker tersentuh sekitar @n dari 10 jendela.':
+      'With a @cl% CL, @ticker is touched in about @n of 10 windows.',
+  'Frekuensi masa lalu dari harga terendah harian, bukan keluaran model. Tidak memperhitungkan lompat harga saat buka.':
+      'Past frequency from the daily low, not model output. Opening gaps are not accounted for.',
+  'CL @cl persen: @all sejak awal, @recent setahun terakhir':
+      'CL @cl percent: @all since the start, @recent in the last year',
+  'CL −@cl%': 'CL −@cl%',
+  'batasmu': 'your limit',
+  'HITUNG UKURAN POSISI': 'POSITION SIZE',
+  'contoh angka': 'example numbers',
+  'Modal': 'Capital',
+  'Rugi maksimal': 'Max loss',
+  'modal': 'capital',
+  'CL-mu': 'Your CL',
+  'Satu lot pun melebihi batas risiko atau modalmu pada CL ini. Perkecil CL, naikkan batas rugi, atau tambah modal.':
+      'Not even one lot fits your risk limit or capital at this CL. Tighten the CL, raise the loss limit, or add capital.',
+  'Rp @cost pada harga Rp @price. Kena CL di Rp @stop, rugi sekitar Rp @loss.':
+      'Rp @cost at a price of Rp @price. Hits the CL at Rp @stop, a loss of about Rp @loss.',
+  'Jumlah lot dibatasi modal, jadi rugi di CL lebih kecil dari batas risikomu.':
+      'The lot count is capped by capital, so the loss at the CL is below your risk limit.',
+  'kena': 'hit',
+  'CL lebih ketat memberi lot lebih banyak untuk risiko yang sama, tetapi lebih sering kena oleh gerak biasa. Rugi per kejadian sama, jumlah kejadiannya yang naik.':
+      'A tighter CL gives more lots for the same risk, but it gets hit more often by ordinary moves. The loss per event is the same; the number of events goes up.',
+  'Rumus: risiko yang kamu tetapkan dibagi selisih harga ke CL. Tidak memperhitungkan biaya dan fraksi harga.':
+      'Formula: the risk you set divided by the price gap to the CL. Fees and tick sizes are not included.',
+  'Ketuk untuk mengubah': 'Tap to change',
+  'SEBERAPA BISA DIPERCAYA': 'HOW MUCH TO TRUST IT',
+  'periode uji: model yang menimbang kondisi terkini sedikit lebih akurat dari frekuensi biasa':
+      'test periods: a model that weighs current conditions was slightly more accurate than the plain frequency',
+  'poin': 'pts',
+  'selisih terbesar angka persen model dari kenyataan di pasar terakhir':
+      'largest gap between the model\'s percentage and reality in the latest market',
+  'Karena angka persen model meleset, tab ini memakai frekuensi harga nyata dan membandingkannya dengan setahun terakhir. Angka model tidak ditampilkan.':
+      'Because the model\'s percentages miss, this tab uses real price frequency and compares it with the last year. The model\'s numbers are not shown.',
+  'Frekuensi masa lalu bukan jaminan. Pakai untuk menakar risiko, bukan untuk menebak arah.':
+      'Past frequency is no guarantee. Use it to gauge risk, not to guess direction.',
+  'Uji balik 2023 sampai 2026 · 44 saham · 5 periode berurutan':
+      'Backtest 2023 to 2026 · 44 stocks · 5 consecutive periods',
+  'Alat bantu menakar risiko, bukan rekomendasi beli atau jual. Bukan nasihat keuangan.':
+      'A tool for gauging risk, not a buy or sell recommendation. Not financial advice.',
+  'Ukuran posisi': 'Position size',
+  'Angka ini disimpan di perangkat ini dan berlaku untuk semua saham.':
+      'These numbers are saved on this device and apply to all stocks.',
+  'Simpan': 'Save',
+  'Modal (Rp)': 'Capital (Rp)',
+  'Rugi maksimal (% modal)': 'Max loss (% of capital)',
+  'CL (% turun dari harga beli)': 'CL (% below the buy price)',
+  'Modal minimal Rp 1.000.000.': 'Minimum capital is Rp 1,000,000.',
+  'Rugi maksimal antara 0,1% dan 10% dari modal.':
+      'Max loss is between 0.1% and 10% of capital.',
+  'CL antara 0,5% dan 20%.': 'CL is between 0.5% and 20%.',
+  'Gagal memuat riwayat harga.': 'Failed to load the price history.',
+  'Riwayat harga belum cukup': 'Not enough price history',
+  'Tab Risiko butuh minimal 80 hari bursa di riwayat harga saham ini.':
+      'The Risk tab needs at least 80 trading days of price history for this stock.',
+  'SAHAM LAIN, CL @cl% TERSENTUH': 'OTHER STOCKS, CL @cl% HIT',
+  'Di saham yang lebih liar, CL ini lebih sering kena. Pilihannya: perkecil lot, atau terima CL lebih lebar dengan lot lebih sedikit.':
+      'In wilder stocks this CL gets hit more often. The choice: shrink the lot size, or accept a wider CL with fewer lots.',
+  'Angka besar adalah rata-rata sejak awal riwayat; angka kecil adalah setahun terakhir.':
+      'The large number is the average since the start of the history; the small number is the last year.',
+  '@code: @all sejak awal, @recent setahun terakhir':
+      '@code: @all since the start, @recent in the last year',
 };
