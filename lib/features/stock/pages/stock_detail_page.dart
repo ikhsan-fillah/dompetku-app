@@ -22,15 +22,17 @@ import '../widgets/broker_top_list.dart';
 import '../widgets/chart_conditions.dart';
 import '../widgets/group_flow_card.dart';
 import '../widgets/ml_prediction_section.dart';
+import '../widgets/risk_section.dart';
 import '../widgets/stock_format.dart';
 import '../widgets/stock_hero.dart';
 import '../widgets/stock_segmented.dart';
 import '../widgets/technical_section.dart';
 
-/// Satu saham: harga terakhir, lalu tiga tab. Tab Broker berisi arah dana tiga
+/// Satu saham: harga terakhir, lalu empat tab. Tab Broker berisi arah dana tiga
 /// kelompok (dihitung di app) dan lima broker teratas di sisi net beli dan net
 /// jual. Tab Chart berisi harga, volume, Stoch RSI, dan MACD.
-/// Tab Prediksi berisi hasil model ML sebagai penyaring.
+/// Tab Prediksi berisi hasil model ML sebagai penyaring. Tab Risiko berisi
+/// gerak harga, seberapa sering CL tersentuh, dan ukuran posisi.
 class StockDetailPage extends StatelessWidget {
   const StockDetailPage({super.key});
 
@@ -76,6 +78,7 @@ class _Body extends StatelessWidget {
               (DetailTab.broker, 'Broker'.tr),
               (DetailTab.chart, 'Chart'.tr),
               (DetailTab.ml, 'Prediksi'.tr),
+              (DetailTab.risk, 'Risiko'.tr),
             ],
             onChanged: controller.selectTab,
           ),
@@ -84,6 +87,7 @@ class _Body extends StatelessWidget {
             DetailTab.broker => _BrokerTab(controller: controller),
             DetailTab.chart => _ChartTab(controller: controller),
             DetailTab.ml => _MlTab(controller: controller),
+            DetailTab.risk => _RiskTab(controller: controller),
           },
         ],
       );
@@ -413,6 +417,61 @@ class _MlTab extends StatelessWidget {
             pastPredictions: controller.mlHistory.toList(),
             cycles: controller.mlCycles.toList(),
             history: controller.history.toList(),
+          ),
+        );
+    }
+  });
+}
+
+/// Tab Risiko: dihitung di app dari seluruh riwayat harga, jadi tidak
+/// bergantung pada model ML. Dimuat saat tab pertama kali dibuka.
+class _RiskTab extends StatelessWidget {
+  const _RiskTab({required this.controller});
+
+  final StockDetailController controller;
+
+  Future<void> _edit(BuildContext context) async {
+    final next = await showRiskInputsDialog(
+      context,
+      controller.riskInputs.value,
+    );
+    if (next != null) await controller.saveRiskInputs(next);
+  }
+
+  @override
+  Widget build(BuildContext context) => Obx(() {
+    final state = controller.risk.value;
+    switch (state.status) {
+      case ResourceStatus.idle:
+      case ResourceStatus.loading:
+        return const _TabSkeleton();
+      case ResourceStatus.error:
+        return AppEmptyView(
+          icon: LucideIcons.wifiOff,
+          message: state.message ?? 'Gagal memuat riwayat harga.'.tr,
+          action: AppButton(
+            label: 'Coba lagi'.tr,
+            expand: false,
+            onPressed: controller.loadRisk,
+          ),
+        );
+      case ResourceStatus.empty:
+        return AppEmptyView(
+          icon: LucideIcons.chartCandlestick,
+          title: 'Riwayat harga belum cukup'.tr,
+          message:
+              'Tab Risiko butuh minimal 80 hari bursa di riwayat harga saham ini.'
+                  .tr,
+        );
+      case ResourceStatus.success:
+        final analysis = state.data;
+        if (analysis == null) return const _TabSkeleton();
+        return FadeSlideIn(
+          child: RiskSection(
+            ticker: controller.ticker,
+            analysis: analysis,
+            inputs: controller.riskInputs.value,
+            onEditInputs: () => _edit(context),
           ),
         );
     }
