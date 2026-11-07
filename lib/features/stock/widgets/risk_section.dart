@@ -23,6 +23,7 @@ class RiskSection extends StatelessWidget {
     required this.inputs,
     required this.onEditInputs,
     this.peers = const {},
+    this.forecastMove,
   });
 
   final String ticker;
@@ -31,6 +32,10 @@ class RiskSection extends StatelessWidget {
 
   /// Saham aktif lain di watchlist dan analisisnya, untuk perbandingan CL.
   final Map<String, RiskAnalysis> peers;
+
+  /// Perkiraan model untuk gerak harian 10 hari ke depan, dalam persen. Null
+  /// bila belum ada atau sudah usang; kartu gerak tampil tanpa penanda itu.
+  final double? forecastMove;
 
   /// Dipanggil saat pemakai mengetuk isian modal, risiko, atau CL.
   final VoidCallback onEditInputs;
@@ -73,7 +78,7 @@ class RiskSection extends StatelessWidget {
           ),
         ),
         const SizedBox(height: 14),
-        _MoveCard(analysis: analysis),
+        _MoveCard(analysis: analysis, forecast: forecastMove),
         _TouchCard(
           ticker: ticker,
           analysis: analysis,
@@ -82,7 +87,7 @@ class RiskSection extends StatelessWidget {
         if (peers.isNotEmpty)
           _PeersCard(peers: peers, cutLoss: inputs.cutLossPercent),
         _SizeCard(analysis: analysis, inputs: inputs, onEdit: onEditInputs),
-        const _TrustCard(),
+        _TrustCard(hasForecast: forecastMove != null),
         Padding(
           padding: const EdgeInsets.only(top: 2),
           child: Row(
@@ -123,9 +128,10 @@ String _whole(double fraction) => '${(fraction * 100).round()}%';
 // ------------------------------------------------------------ gerak harian
 
 class _MoveCard extends StatelessWidget {
-  const _MoveCard({required this.analysis});
+  const _MoveCard({required this.analysis, this.forecast});
 
   final RiskAnalysis analysis;
+  final double? forecast;
 
   @override
   Widget build(BuildContext context) {
@@ -225,7 +231,11 @@ class _MoveCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: 18),
-          _MoveRange(typical: analysis.moveTypical, now: analysis.moveNow),
+          _MoveRange(
+            typical: analysis.moveTypical,
+            now: analysis.moveNow,
+            forecast: forecast,
+          ),
           const SizedBox(height: 14),
           Container(
             width: double.infinity,
@@ -260,25 +270,34 @@ class _MoveCard extends StatelessWidget {
   }
 }
 
-/// Dua penanda di satu lintasan: gerak biasa (median setahun) dan gerak
-/// 20 hari terakhir.
+/// Penanda di satu lintasan: gerak biasa (median setahun), gerak 20 hari
+/// terakhir, dan perkiraan model bila ada (cincin kosong).
 class _MoveRange extends StatelessWidget {
-  const _MoveRange({required this.typical, required this.now});
+  const _MoveRange({required this.typical, required this.now, this.forecast});
 
   final double typical;
   final double now;
+  final double? forecast;
 
   @override
   Widget build(BuildContext context) {
-    final top = (typical > now ? typical : now) * 1.35;
+    final f = forecast;
+    final top = [typical, now, ?f].reduce((a, b) => a > b ? a : b) * 1.35;
     double at(double v) => (v / top).clamp(0.0, 1.0);
     final nowColor = now > typical * 1.25 ? AppColors.warn : AppColors.ink;
     return Semantics(
       container: true,
-      label: 'Gerak biasa @a persen, 20 hari terakhir @b persen'.trParams({
-        'a': _oneDecimal(typical),
-        'b': _oneDecimal(now),
-      }),
+      label: f == null
+          ? 'Gerak biasa @a persen, 20 hari terakhir @b persen'.trParams({
+              'a': _oneDecimal(typical),
+              'b': _oneDecimal(now),
+            })
+          : 'Gerak biasa @a persen, 20 hari terakhir @b persen, perkiraan model @c persen'
+                .trParams({
+                  'a': _oneDecimal(typical),
+                  'b': _oneDecimal(now),
+                  'c': _oneDecimal(f),
+                }),
       child: ExcludeSemantics(
         child: Column(
           children: [
@@ -338,6 +357,23 @@ class _MoveRange extends StatelessWidget {
                           ),
                         ),
                       ),
+                      if (f != null)
+                        Positioned(
+                          left: w * at(f) - 7,
+                          top: 7,
+                          child: Container(
+                            width: 14,
+                            height: 14,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.card,
+                              border: Border.all(
+                                color: AppColors.accent,
+                                width: 2.5,
+                              ),
+                            ),
+                          ),
+                        ),
                     ],
                   ),
                 );
@@ -362,6 +398,20 @@ class _MoveRange extends StatelessWidget {
                 ),
               ],
             ),
+            if (f != null) ...[
+              const SizedBox(height: 6),
+              Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  '○ ${'perkiraan model, 10 hari ke depan'.tr} ${_oneDecimal(f)}%',
+                  style: AppText.mono(
+                    size: 10.5,
+                    color: AppColors.accent,
+                    weight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            ],
           ],
         ),
       ),
@@ -968,7 +1018,10 @@ class _CompareTile extends StatelessWidget {
 // ----------------------------------------------------------- kepercayaan
 
 class _TrustCard extends StatelessWidget {
-  const _TrustCard();
+  const _TrustCard({required this.hasForecast});
+
+  /// Statistik uji perkiraan hanya relevan bila perkiraannya ikut tampil.
+  final bool hasForecast;
 
   @override
   Widget build(BuildContext context) {
@@ -979,39 +1032,51 @@ class _TrustCard extends StatelessWidget {
         children: [
           Text('SEBERAPA BISA DIPERCAYA'.tr, style: _cap()),
           const SizedBox(height: 12),
-          IntrinsicHeight(
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Expanded(
-                  child: _Stat(
-                    value: '5 / 5',
-                    color: AppColors.ink,
-                    text:
-                        'periode uji: model yang menimbang kondisi terkini sedikit lebih akurat dari frekuensi biasa'
-                            .tr,
+          if (hasForecast) ...[
+            IntrinsicHeight(
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  Expanded(
+                    child: _Stat(
+                      value: '4 / 4',
+                      color: AppColors.ink,
+                      text:
+                          'kuartal uji: perkiraan gerak lebih akurat dari anggapan "sama seperti 20 hari terakhir"'
+                              .tr,
+                    ),
                   ),
-                ),
-                Container(
-                  width: 1,
-                  margin: const EdgeInsets.symmetric(horizontal: 12),
-                  color: AppColors.line2,
-                ),
-                Expanded(
-                  child: _Stat(
-                    value: '11 ${'poin'.tr}',
-                    color: AppColors.warn,
-                    text:
-                        'selisih terbesar angka persen model dari kenyataan di pasar terakhir'
-                            .tr,
+                  Container(
+                    width: 1,
+                    margin: const EdgeInsets.symmetric(horizontal: 12),
+                    color: AppColors.line2,
                   ),
-                ),
-              ],
+                  Expanded(
+                    child: _Stat(
+                      value: '1,9×',
+                      color: AppColors.warn,
+                      text:
+                          'kuartal terburuk: satu perkiraan masih bisa meleset sebesar ini ke atas atau ke bawah'
+                              .tr,
+                    ),
+                  ),
+                ],
+              ),
             ),
-          ),
-          const SizedBox(height: 12),
+            const SizedBox(height: 12),
+            Text(
+              'Rata-rata perkiraan cenderung sedikit di bawah kenyataan (sampai 19% di satu kuartal uji). Jangan baca sebagai batas atas.'
+                  .tr,
+              style: AppText.body(
+                size: 12.5,
+                color: AppColors.ink2,
+                height: 1.45,
+              ),
+            ),
+            const SizedBox(height: 12),
+          ],
           Text(
-            'Karena angka persen model meleset, tab ini memakai frekuensi harga nyata dan membandingkannya dengan setahun terakhir. Angka model tidak ditampilkan.'
+            'Angka persen model untuk CL meleset sampai 11 poin dari kenyataan, jadi peluang CL di tab ini memakai frekuensi harga nyata dan membandingkannya dengan setahun terakhir.'
                 .tr,
             style: AppText.body(
               size: 12.5,
@@ -1040,7 +1105,8 @@ class _TrustCard extends StatelessWidget {
           ),
           const SizedBox(height: 8),
           Text(
-            'Uji balik 2023 sampai 2026 · 44 saham · 5 periode berurutan'.tr,
+            'Uji empat kuartal terakhir · 44 saham · dilatih hanya dengan data sebelum tiap kuartal'
+                .tr,
             style: AppText.body(size: 11, color: AppColors.mut),
           ),
         ],

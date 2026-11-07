@@ -7,6 +7,7 @@ import 'package:dompetku_app/features/stock/models/ml_cycle.dart';
 import 'package:dompetku_app/features/stock/models/ml_prediction.dart';
 import 'package:dompetku_app/features/stock/models/news_score.dart';
 import 'package:dompetku_app/features/stock/models/price_point.dart';
+import 'package:dompetku_app/features/stock/models/vol_forecast.dart';
 import 'package:dompetku_app/features/stock/models/watchlist_item.dart';
 
 class FakeAuth implements StockAuth {
@@ -158,6 +159,16 @@ class FakeRepository implements StockRepository {
     if (failCycles) throw Exception('boom');
     final own = cycles[ticker] ?? const <MlCycle>[];
     return own.length <= limit ? own : own.sublist(0, limit);
+  }
+
+  /// Perkiraan gerak harian per kode; kosong berarti belum ada.
+  Map<String, VolForecast> volForecasts = {};
+  bool failVol = false;
+
+  @override
+  Future<VolForecast?> getLatestVolForecast(String ticker) async {
+    if (failVol) throw Exception('boom');
+    return volForecasts[ticker];
   }
 
   /// Prediksi menurut tanggal sinyal dan versi model.

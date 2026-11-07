@@ -7,6 +7,7 @@ import '../models/ml_cycle.dart';
 import '../models/ml_prediction.dart';
 import '../models/news_score.dart';
 import '../models/price_point.dart';
+import '../models/vol_forecast.dart';
 import '../models/watchlist_item.dart';
 import 'stock_auth.dart';
 
@@ -76,6 +77,10 @@ abstract interface class StockRepository {
     DateTime date,
     String modelVersion,
   );
+
+  /// Perkiraan gerak harian terbaru satu saham (tabel `ml_vol`), null bila
+  /// belum pernah dihitung.
+  Future<VolForecast?> getLatestVolForecast(String ticker);
 }
 
 /// Tabel yang menyimpan data per kode saham, ikut dihapus bersama sahamnya.
@@ -328,6 +333,18 @@ class SupabaseStockRepository implements StockRepository {
         .order('cycle_start', ascending: false)
         .limit(limit);
     return [for (final row in rows) ?MlCycle.tryFromMap(row)];
+  }
+
+  @override
+  Future<VolForecast?> getLatestVolForecast(String ticker) async {
+    final rows = await _client
+        .from('ml_vol')
+        .select()
+        .eq('ticker', ticker)
+        .order('as_of', ascending: false)
+        .limit(1);
+    if (rows.isEmpty) return null;
+    return VolForecast.tryFromMap(rows.first);
   }
 
   @override

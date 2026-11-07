@@ -11,6 +11,7 @@ import '../models/ml_cycle.dart';
 import '../models/ml_prediction.dart';
 import '../models/news_score.dart';
 import '../models/price_point.dart';
+import '../models/vol_forecast.dart';
 import '../services/broker_flow_analysis.dart';
 import '../services/broker_group_calculator.dart';
 import '../services/risk_analysis.dart';
@@ -43,6 +44,10 @@ const riskFetchLimit = 1400;
 
 /// Berapa saham lain di watchlist yang dibandingkan di tab Risiko.
 const riskPeerCount = 4;
+
+/// Perkiraan yang lebih tua dari harga terakhir dengan selisih ini (hari
+/// kalender) tidak ditampilkan.
+const riskForecastMaxLagDays = 5;
 
 /// Jumlah prediksi terakhir yang ditampilkan di riwayat.
 const predictionHistoryLimit = 10;
@@ -109,6 +114,10 @@ class StockDetailController extends GetxController {
   /// Saham aktif lain di watchlist (kode ke analisisnya) untuk perbandingan
   /// frekuensi sentuh CL. Kosong bila belum termuat atau gagal.
   final riskPeers = <String, RiskAnalysis>{}.obs;
+
+  /// Perkiraan model untuk gerak harian 10 hari ke depan. Null bila belum ada,
+  /// gagal dimuat, atau sudah tertinggal dari data harga terakhir.
+  final riskForecast = Rxn<VolForecast>();
 
   /// Modal, batas rugi, dan CL untuk hitung ukuran posisi.
   final riskInputs = const RiskInputs().obs;
@@ -357,9 +366,26 @@ class StockDetailController extends GetxController {
       risk.value = analysis == null
           ? const ResourceState.empty()
           : ResourceState.success(analysis);
-      if (analysis != null) await _loadRiskPeers();
+      if (analysis != null) {
+        await Future.wait([_loadRiskForecast(analysis), _loadRiskPeers()]);
+      }
     } catch (_) {
       risk.value = ResourceState.error('Gagal memuat riwayat harga.'.tr);
+    }
+  }
+
+  /// Perkiraan hanya dipakai bila dihitung dari data harga yang sama atau
+  /// paling lama [riskForecastMaxLagDays] hari lebih tua dari harga terakhir.
+  /// Gagal memuat berarti kartu tampil tanpa perkiraan.
+  Future<void> _loadRiskForecast(RiskAnalysis analysis) async {
+    try {
+      final f = await _repository.getLatestVolForecast(ticker);
+      final fresh =
+          f != null &&
+          analysis.lastDate.difference(f.asOf).inDays <= riskForecastMaxLagDays;
+      riskForecast.value = fresh ? f : null;
+    } catch (_) {
+      riskForecast.value = null;
     }
   }
 

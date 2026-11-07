@@ -571,17 +571,21 @@ const Map<String, String> enStock = {
       'Formula: the risk you set divided by the price gap to the CL. Fees and tick sizes are not included.',
   'Ketuk untuk mengubah': 'Tap to change',
   'SEBERAPA BISA DIPERCAYA': 'HOW MUCH TO TRUST IT',
-  'periode uji: model yang menimbang kondisi terkini sedikit lebih akurat dari frekuensi biasa':
-      'test periods: a model that weighs current conditions was slightly more accurate than the plain frequency',
-  'poin': 'pts',
-  'selisih terbesar angka persen model dari kenyataan di pasar terakhir':
-      'largest gap between the model\'s percentage and reality in the latest market',
-  'Karena angka persen model meleset, tab ini memakai frekuensi harga nyata dan membandingkannya dengan setahun terakhir. Angka model tidak ditampilkan.':
-      'Because the model\'s percentages miss, this tab uses real price frequency and compares it with the last year. The model\'s numbers are not shown.',
+  'kuartal uji: perkiraan gerak lebih akurat dari anggapan "sama seperti 20 hari terakhir"':
+      'test quarters: the move forecast beat the assumption "same as the last 20 days"',
+  'kuartal terburuk: satu perkiraan masih bisa meleset sebesar ini ke atas atau ke bawah':
+      'worst quarter: a single forecast can still be off by this factor, up or down',
+  'Rata-rata perkiraan cenderung sedikit di bawah kenyataan (sampai 19% di satu kuartal uji). Jangan baca sebagai batas atas.':
+      'On average the forecast tends to sit a little below reality (by up to 19% in one test quarter). Do not read it as an upper bound.',
+  'Angka persen model untuk CL meleset sampai 11 poin dari kenyataan, jadi peluang CL di tab ini memakai frekuensi harga nyata dan membandingkannya dengan setahun terakhir.':
+      'The model\'s percentage for CL missed reality by up to 11 points, so the CL odds in this tab use real price frequency and compare it with the last year.',
+  'perkiraan model, 10 hari ke depan': 'model forecast, next 10 days',
+  'Gerak biasa @a persen, 20 hari terakhir @b persen, perkiraan model @c persen':
+      'Usual move @a percent, last 20 days @b percent, model forecast @c percent',
   'Frekuensi masa lalu bukan jaminan. Pakai untuk menakar risiko, bukan untuk menebak arah.':
       'Past frequency is no guarantee. Use it to gauge risk, not to guess direction.',
-  'Uji balik 2023 sampai 2026 · 44 saham · 5 periode berurutan':
-      'Backtest 2023 to 2026 · 44 stocks · 5 consecutive periods',
+  'Uji empat kuartal terakhir · 44 saham · dilatih hanya dengan data sebelum tiap kuartal':
+      'Last four quarters tested · 44 stocks · trained only on data before each quarter',
   'Alat bantu menakar risiko, bukan rekomendasi beli atau jual. Bukan nasihat keuangan.':
       'A tool for gauging risk, not a buy or sell recommendation. Not financial advice.',
   'Ukuran posisi': 'Position size',

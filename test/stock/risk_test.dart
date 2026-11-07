@@ -1,8 +1,10 @@
 import 'dart:math' as math;
 
+import 'package:dompetku_app/core/state/resource_state.dart';
 import 'package:dompetku_app/core/theme/app_theme.dart';
 import 'package:dompetku_app/features/stock/controllers/stock_detail_controller.dart';
 import 'package:dompetku_app/features/stock/models/price_point.dart';
+import 'package:dompetku_app/features/stock/models/vol_forecast.dart';
 import 'package:dompetku_app/features/stock/models/watchlist_item.dart';
 import 'package:dompetku_app/features/stock/pages/stock_detail_page.dart';
 import 'package:dompetku_app/features/stock/services/risk_analysis.dart';
@@ -283,6 +285,59 @@ void main() {
         expect(find.textContaining('SAHAM LAIN'), findsNothing);
       },
     );
+
+    VolForecast forecast(DateTime asOf, double move) =>
+        VolForecast(ticker: 'BBCA', asOf: asOf, move: move);
+
+    testWidgets('perkiraan model tampil di kartu gerak dan kartu kepercayaan', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      final last = series().last.date;
+      final repository = FakeRepository()
+        ..history = {'BBCA': series()}
+        ..volForecasts = {'BBCA': forecast(last, 2.1)};
+      final controller = StockDetailController(repository, 'BBCA');
+      await pump(tester, controller);
+      await tester.tap(find.text('Risiko'));
+      await tester.pumpAndSettle();
+
+      expect(controller.riskForecast.value?.move, 2.1);
+      expect(
+        find.textContaining('perkiraan model, 10 hari ke depan'),
+        findsOneWidget,
+      );
+      expect(find.text('4 / 4'), findsOneWidget);
+      expect(find.text('1,9×'), findsOneWidget);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets('perkiraan usang atau gagal dimuat: kartu tanpa perkiraan', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      final old = series().last.date.subtract(const Duration(days: 9));
+      final repository = FakeRepository()
+        ..history = {'BBCA': series()}
+        ..volForecasts = {'BBCA': forecast(old, 2.1)};
+      final controller = StockDetailController(repository, 'BBCA');
+      await pump(tester, controller);
+      await tester.tap(find.text('Risiko'));
+      await tester.pumpAndSettle();
+
+      expect(controller.riskForecast.value, isNull);
+      expect(find.textContaining('perkiraan model'), findsNothing);
+      expect(find.text('4 / 4'), findsNothing);
+      expect(find.text('SEBERAPA BISA DIPERCAYA'), findsOneWidget);
+
+      final failing = FakeRepository()
+        ..failVol = true
+        ..history = {'BBCA': series()};
+      final c2 = StockDetailController(failing, 'BBCA');
+      await c2.loadRisk();
+      expect(c2.riskForecast.value, isNull);
+      expect(c2.risk.value.status, ResourceStatus.success);
+    });
 
     testWidgets('riwayat terlalu pendek: penjelasan, bukan kartu kosong', (
       tester,
