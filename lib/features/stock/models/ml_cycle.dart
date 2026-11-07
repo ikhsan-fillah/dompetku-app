@@ -11,6 +11,7 @@ class MlCycleLeg {
     required this.upperPct,
     required this.lowerPct,
     this.outcome,
+    this.drivers = const [],
   });
 
   final String model;
@@ -26,6 +27,11 @@ class MlCycleLeg {
 
   /// Hasil nyata, null selama hari ke-H belum lewat.
   final MlOutcome? outcome;
+
+  /// Faktor yang menjelaskan skor model ini, kosong bila belum disimpan.
+  /// Faktor 5 hari ada di kolom `drivers5`; faktor 10 hari ada di
+  /// `ml_prediction`.
+  final List<MlDriver> drivers;
 }
 
 /// Cara revisi prediksi 10 hari di hari ke-5 dihitung.
@@ -105,7 +111,7 @@ class MlCycle {
     signal: tenDay.signal,
     upperPct: tenDay.upperPct,
     lowerPct: tenDay.lowerPct,
-    drivers: const [],
+    drivers: tenDay.drivers,
     closePrice: closePrice,
     outcome: tenDay.outcome,
   );
@@ -129,7 +135,13 @@ class MlCycle {
       cycleStart: start,
       closePrice: close,
       tenDay: ten,
-      fiveDay: _leg(map, model: 'model5', suffix: '5', outcomePrefix: 'out5'),
+      fiveDay: _leg(
+        map,
+        model: 'model5',
+        suffix: '5',
+        outcomePrefix: 'out5',
+        driversKey: 'drivers5',
+      ),
       revision: _revision(map),
     );
   }
@@ -140,6 +152,7 @@ MlCycleLeg? _leg(
   required String model,
   required String suffix,
   required String outcomePrefix,
+  String? driversKey,
 }) {
   final version = map[model];
   final prob = _asDouble(map['prob$suffix']);
@@ -168,6 +181,7 @@ MlCycleLeg? _leg(
     upperPct: upper,
     lowerPct: lower,
     outcome: _outcome(map, outcomePrefix),
+    drivers: driversKey == null ? const [] : parseMlDrivers(map[driversKey]),
   );
 }
 
