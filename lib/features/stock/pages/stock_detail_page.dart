@@ -472,6 +472,7 @@ class _RiskTab extends StatelessWidget {
             analysis: analysis,
             inputs: controller.riskInputs.value,
             onEditInputs: () => _edit(context),
+            peers: Map.of(controller.riskPeers),
           ),
         );
     }

@@ -22,11 +22,15 @@ class RiskSection extends StatelessWidget {
     required this.analysis,
     required this.inputs,
     required this.onEditInputs,
+    this.peers = const {},
   });
 
   final String ticker;
   final RiskAnalysis analysis;
   final RiskInputs inputs;
+
+  /// Saham aktif lain di watchlist dan analisisnya, untuk perbandingan CL.
+  final Map<String, RiskAnalysis> peers;
 
   /// Dipanggil saat pemakai mengetuk isian modal, risiko, atau CL.
   final VoidCallback onEditInputs;
@@ -75,6 +79,8 @@ class RiskSection extends StatelessWidget {
           analysis: analysis,
           cutLoss: inputs.cutLossPercent,
         ),
+        if (peers.isNotEmpty)
+          _PeersCard(peers: peers, cutLoss: inputs.cutLossPercent),
         _SizeCard(analysis: analysis, inputs: inputs, onEdit: onEditInputs),
         const _TrustCard(),
         Padding(
@@ -564,6 +570,102 @@ class _TouchRow extends StatelessWidget {
                   textAlign: TextAlign.right,
                   style: AppText.mono(size: 12, color: AppColors.ink2),
                 ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+// -------------------------------------------------------------- saham lain
+
+class _PeersCard extends StatelessWidget {
+  const _PeersCard({required this.peers, required this.cutLoss});
+
+  final Map<String, RiskAnalysis> peers;
+  final double cutLoss;
+
+  @override
+  Widget build(BuildContext context) {
+    final entries = peers.entries.toList();
+    final rates = [for (final e in entries) e.value.rateAt(cutLoss)];
+    final worst = rates.fold<double>(0, (m, r) => r.all > m ? r.all : m);
+    return AppCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'SAHAM LAIN, CL @cl% TERSENTUH'.trParams({'cl': _plain(cutLoss)}),
+            style: _cap(),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: [
+              for (var i = 0; i < entries.length; i++) ...[
+                if (i > 0) const SizedBox(width: 6),
+                Expanded(
+                  child: _PeerTile(code: entries[i].key, rate: rates[i]),
+                ),
+              ],
+            ],
+          ),
+          const SizedBox(height: 10),
+          Text(
+            [
+              'Angka besar adalah rata-rata sejak awal riwayat; angka kecil adalah setahun terakhir.'
+                  .tr,
+              if (worst >= 0.4)
+                'Di saham yang lebih liar, CL ini lebih sering kena. Pilihannya: perkecil lot, atau terima CL lebih lebar dengan lot lebih sedikit.'
+                    .tr,
+            ].join(' '),
+            style: AppText.body(size: 12, color: AppColors.ink2, height: 1.45),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _PeerTile extends StatelessWidget {
+  const _PeerTile({required this.code, required this.rate});
+
+  final String code;
+  final TouchRate rate;
+
+  @override
+  Widget build(BuildContext context) {
+    final recent = rate.recent;
+    return Semantics(
+      container: true,
+      label: '@code: @all sejak awal, @recent setahun terakhir'.trParams({
+        'code': code,
+        'all': _whole(rate.all),
+        'recent': recent == null ? '-' : _whole(recent),
+      }),
+      child: ExcludeSemantics(
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 7, horizontal: 4),
+          decoration: BoxDecoration(
+            color: AppColors.paper2,
+            borderRadius: BorderRadius.circular(AppRadius.field),
+          ),
+          child: Column(
+            children: [
+              Text(code, style: AppText.body(size: 10.5, color: AppColors.mut)),
+              Text(
+                _whole(rate.all),
+                style: AppText.mono(
+                  size: 13,
+                  weight: FontWeight.w700,
+                  color: AppColors.spend,
+                ),
+              ),
+              Text(
+                recent == null ? '-' : _whole(recent),
+                style: AppText.mono(size: 10.5, color: AppColors.ink2),
               ),
             ],
           ),

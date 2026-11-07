@@ -569,4 +569,11 @@ const Map<String, String> enStock = {
   'Riwayat harga belum cukup': 'Not enough price history',
   'Tab Risiko butuh minimal 80 hari bursa di riwayat harga saham ini.':
       'The Risk tab needs at least 80 trading days of price history for this stock.',
+  'SAHAM LAIN, CL @cl% TERSENTUH': 'OTHER STOCKS, CL @cl% HIT',
+  'Di saham yang lebih liar, CL ini lebih sering kena. Pilihannya: perkecil lot, atau terima CL lebih lebar dengan lot lebih sedikit.':
+      'In wilder stocks this CL gets hit more often. The choice: shrink the lot size, or accept a wider CL with fewer lots.',
+  'Angka besar adalah rata-rata sejak awal riwayat; angka kecil adalah setahun terakhir.':
+      'The large number is the average since the start of the history; the small number is the last year.',
+  '@code: @all sejak awal, @recent setahun terakhir':
+      '@code: @all since the start, @recent in the last year',
 };

@@ -3,6 +3,7 @@ import 'dart:math' as math;
 import 'package:dompetku_app/core/theme/app_theme.dart';
 import 'package:dompetku_app/features/stock/controllers/stock_detail_controller.dart';
 import 'package:dompetku_app/features/stock/models/price_point.dart';
+import 'package:dompetku_app/features/stock/models/watchlist_item.dart';
 import 'package:dompetku_app/features/stock/pages/stock_detail_page.dart';
 import 'package:dompetku_app/features/stock/services/risk_analysis.dart';
 import 'package:dompetku_app/features/stock/services/risk_inputs.dart';
@@ -241,6 +242,47 @@ void main() {
       expect(find.text('Modal minimal Rp 1.000.000.'), findsOneWidget);
       expect(find.text('Ukuran posisi'), findsOneWidget);
     });
+
+    testWidgets('saham lain: aktif di watchlist, bukan saham ini', (
+      tester,
+    ) async {
+      SharedPreferences.setMockInitialValues({});
+      final repository = FakeRepository()
+        ..items.addAll(const [
+          WatchlistItem(ticker: 'BBCA', isActive: true),
+          WatchlistItem(ticker: 'TLKM', isActive: true),
+          WatchlistItem(ticker: 'ANTM', isActive: false),
+        ])
+        ..history = {'BBCA': series(), 'TLKM': series(), 'ANTM': series()};
+      final controller = StockDetailController(repository, 'BBCA');
+      await pump(tester, controller);
+
+      await tester.tap(find.text('Risiko'));
+      await tester.pumpAndSettle();
+
+      expect(controller.riskPeers.keys, ['TLKM']);
+      expect(find.text('SAHAM LAIN, CL 5% TERSENTUH'), findsOneWidget);
+      expect(find.text('TLKM'), findsOneWidget);
+      expect(find.text('ANTM'), findsNothing);
+      expect(tester.takeException(), isNull);
+    });
+
+    testWidgets(
+      'watchlist gagal dimuat: tab tetap tampil tanpa kartu saham lain',
+      (tester) async {
+        SharedPreferences.setMockInitialValues({});
+        final repository = FakeRepository()
+          ..fail = true
+          ..history = {'BBCA': series()};
+        await pump(tester, StockDetailController(repository, 'BBCA'));
+
+        await tester.tap(find.text('Risiko'));
+        await tester.pumpAndSettle();
+
+        expect(find.text('GERAK HARIAN TERUKUR'), findsOneWidget);
+        expect(find.textContaining('SAHAM LAIN'), findsNothing);
+      },
+    );
 
     testWidgets('riwayat terlalu pendek: penjelasan, bukan kartu kosong', (
       tester,

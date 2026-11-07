@@ -41,6 +41,9 @@ const historyFetchLimit = 260;
 /// tahun), karena frekuensi sentuh CL butuh banyak jendela 10 hari.
 const riskFetchLimit = 1400;
 
+/// Berapa saham lain di watchlist yang dibandingkan di tab Risiko.
+const riskPeerCount = 4;
+
 /// Jumlah prediksi terakhir yang ditampilkan di riwayat.
 const predictionHistoryLimit = 10;
 
@@ -102,6 +105,10 @@ class StockDetailController extends GetxController {
   /// Ukuran gerak harga dan frekuensi sentuh CL untuk tab Risiko. Dimuat
   /// saat tab pertama kali dibuka. Kosong bila riwayat terlalu pendek.
   final risk = const ResourceState<RiskAnalysis>.idle().obs;
+
+  /// Saham aktif lain di watchlist (kode ke analisisnya) untuk perbandingan
+  /// frekuensi sentuh CL. Kosong bila belum termuat atau gagal.
+  final riskPeers = <String, RiskAnalysis>{}.obs;
 
   /// Modal, batas rugi, dan CL untuk hitung ukuran posisi.
   final riskInputs = const RiskInputs().obs;
@@ -350,8 +357,40 @@ class StockDetailController extends GetxController {
       risk.value = analysis == null
           ? const ResourceState.empty()
           : ResourceState.success(analysis);
+      if (analysis != null) await _loadRiskPeers();
     } catch (_) {
       risk.value = ResourceState.error('Gagal memuat riwayat harga.'.tr);
+    }
+  }
+
+  /// Perbandingan dengan saham aktif lain bersifat tambahan: saham yang gagal
+  /// dimuat atau riwayatnya terlalu pendek dilewati, kartu hanya tampil bila
+  /// ada yang berhasil.
+  Future<void> _loadRiskPeers() async {
+    try {
+      final items = await _repository.getWatchlist();
+      final others = [
+        for (final item in items)
+          if (item.isActive && item.ticker != ticker) item.ticker,
+      ].take(riskPeerCount).toList();
+      Future<(String, RiskAnalysis?)> one(String code) async {
+        try {
+          final points = await _repository.getPriceHistory(
+            code,
+            limit: riskFetchLimit,
+          );
+          return (code, RiskAnalysis.from(points));
+        } catch (_) {
+          return (code, null);
+        }
+      }
+
+      final results = await Future.wait([for (final code in others) one(code)]);
+      riskPeers.assignAll({
+        for (final (code, analysis) in results) code: ?analysis,
+      });
+    } catch (_) {
+      riskPeers.clear();
     }
   }
 
