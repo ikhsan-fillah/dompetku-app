@@ -13,6 +13,8 @@ import '../models/news_score.dart';
 import '../models/price_point.dart';
 import '../services/broker_flow_analysis.dart';
 import '../services/broker_group_calculator.dart';
+import '../services/risk_analysis.dart';
+import '../services/risk_inputs.dart';
 
 /// Data satu saham: baris per broker dan aturan kelompok.
 class StockDetailData {
@@ -22,9 +24,9 @@ class StockDetailData {
   final BrokerGroupRules rules;
 }
 
-/// Tiga tab halaman detail: arus dana broker, chart dengan indikator, dan
-/// prediksi model ML.
-enum DetailTab { broker, chart, ml }
+/// Empat tab halaman detail: arus dana broker, chart dengan indikator,
+/// prediksi model ML, dan risiko (gerak harga dan ukuran posisi).
+enum DetailTab { broker, chart, ml, risk }
 
 /// Berapa hari perdagangan yang diambil dari Supabase untuk tab Chart. Tab
 /// hanya menggambar satu bulan terakhir; sisanya cadangan bila ada hari
@@ -34,6 +36,13 @@ const chartFetchLimit = 40;
 /// Hari bursa yang diambil dari `price_history`: cukup untuk MA200 dan
 /// volatilitas setahun.
 const historyFetchLimit = 260;
+
+/// Hari bursa yang diambil untuk tab Risiko: seluruh riwayat (sekitar lima
+/// tahun), karena frekuensi sentuh CL butuh banyak jendela 10 hari.
+const riskFetchLimit = 1400;
+
+/// Berapa saham lain di watchlist yang dibandingkan di tab Risiko.
+const riskPeerCount = 4;
 
 /// Jumlah prediksi terakhir yang ditampilkan di riwayat.
 const predictionHistoryLimit = 10;
@@ -51,10 +60,13 @@ class StockDetailController extends GetxController {
     this._repository,
     this.ticker, {
     BrokerGroupCalculator calculator = const BrokerGroupCalculator(),
-  }) : _calculator = calculator;
+    RiskPrefs riskPrefs = const RiskPrefs(),
+  }) : _calculator = calculator,
+       _riskPrefs = riskPrefs;
 
   final StockRepository _repository;
   final BrokerGroupCalculator _calculator;
+  final RiskPrefs _riskPrefs;
   final String ticker;
 
   final state = const ResourceState<StockDetailData>.idle().obs;
@@ -89,6 +101,17 @@ class StockDetailController extends GetxController {
   /// Skor kata berita pasar pada hari bursa terakhir IHSG, null bila belum
   /// ada atau gagal dimuat.
   final newsScore = Rxn<NewsScore>();
+
+  /// Ukuran gerak harga dan frekuensi sentuh CL untuk tab Risiko. Dimuat
+  /// saat tab pertama kali dibuka. Kosong bila riwayat terlalu pendek.
+  final risk = const ResourceState<RiskAnalysis>.idle().obs;
+
+  /// Saham aktif lain di watchlist (kode ke analisisnya) untuk perbandingan
+  /// frekuensi sentuh CL. Kosong bila belum termuat atau gagal.
+  final riskPeers = <String, RiskAnalysis>{}.obs;
+
+  /// Modal, batas rugi, dan CL untuk hitung ukuran posisi.
+  final riskInputs = const RiskInputs().obs;
 
   BrokerFlowAnalysis? _analysis;
   StockDetailData? _analysisSource;
@@ -311,7 +334,71 @@ class StockDetailController extends GetxController {
 
   void selectRange(String label) => range.value = label;
 
-  void selectTab(DetailTab value) => tab.value = value;
+  void selectTab(DetailTab value) {
+    tab.value = value;
+    if (value == DetailTab.risk && risk.value.status == ResourceStatus.idle) {
+      loadRisk();
+    }
+  }
+
+  /// Memuat seluruh riwayat harga dan isian ukuran posisi. Isian yang gagal
+  /// dibaca diganti angka contoh, jadi hanya gagal memuat harga yang
+  /// ditampilkan sebagai galat.
+  Future<void> loadRisk() async {
+    risk.value = const ResourceState.loading();
+    final inputs = _riskPrefs.load();
+    try {
+      final points = await _repository.getPriceHistory(
+        ticker,
+        limit: riskFetchLimit,
+      );
+      riskInputs.value = await inputs;
+      final analysis = RiskAnalysis.from(points);
+      risk.value = analysis == null
+          ? const ResourceState.empty()
+          : ResourceState.success(analysis);
+      if (analysis != null) await _loadRiskPeers();
+    } catch (_) {
+      risk.value = ResourceState.error('Gagal memuat riwayat harga.'.tr);
+    }
+  }
+
+  /// Perbandingan dengan saham aktif lain bersifat tambahan: saham yang gagal
+  /// dimuat atau riwayatnya terlalu pendek dilewati, kartu hanya tampil bila
+  /// ada yang berhasil.
+  Future<void> _loadRiskPeers() async {
+    try {
+      final items = await _repository.getWatchlist();
+      final others = [
+        for (final item in items)
+          if (item.isActive && item.ticker != ticker) item.ticker,
+      ].take(riskPeerCount).toList();
+      Future<(String, RiskAnalysis?)> one(String code) async {
+        try {
+          final points = await _repository.getPriceHistory(
+            code,
+            limit: riskFetchLimit,
+          );
+          return (code, RiskAnalysis.from(points));
+        } catch (_) {
+          return (code, null);
+        }
+      }
+
+      final results = await Future.wait([for (final code in others) one(code)]);
+      riskPeers.assignAll({
+        for (final (code, analysis) in results) code: ?analysis,
+      });
+    } catch (_) {
+      riskPeers.clear();
+    }
+  }
+
+  /// Menyimpan isian ukuran posisi dan langsung memakainya.
+  Future<void> saveRiskInputs(RiskInputs value) async {
+    riskInputs.value = value;
+    await _riskPrefs.save(value);
+  }
 
   void selectChartDay(int? index) => chartIndex.value = index;
 }

@@ -232,16 +232,24 @@ class SupabaseStockRepository implements StockRepository {
     String ticker, {
     int limit = 260,
   }) async {
-    final rows = await _client
-        .from('price_history')
-        .select(
-          'ticker, trade_date, open_price, high_price, low_price, '
-          'close_price, volume',
-        )
-        .eq('ticker', ticker)
-        .order('trade_date', ascending: false)
-        .limit(limit);
-    final points = [for (final row in rows) ?PricePoint.tryFromMap(row)];
+    // Server membatasi satu permintaan sampai 1000 baris, jadi riwayat yang
+    // lebih panjang diambil per halaman, terbaru dulu.
+    const page = 1000;
+    final points = <PricePoint>[];
+    for (var from = 0; from < limit; from += page) {
+      final take = limit - from < page ? limit - from : page;
+      final rows = await _client
+          .from('price_history')
+          .select(
+            'ticker, trade_date, open_price, high_price, low_price, '
+            'close_price, volume',
+          )
+          .eq('ticker', ticker)
+          .order('trade_date', ascending: false)
+          .range(from, from + take - 1);
+      points.addAll([for (final row in rows) ?PricePoint.tryFromMap(row)]);
+      if (rows.length < take) break;
+    }
     return points.reversed.toList();
   }
 
