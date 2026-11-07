@@ -56,7 +56,14 @@ export function targetsAt(bars: Bar[], i: number): { yRv: number; yDd: number } 
   return { yRv: Math.log(Math.sqrt(ss / AHEAD) + 1e-4), yDd: Math.log(dd + 0.01) };
 }
 
-export function buildVolRows(series: Series[]): VolRow[] {
+export type BuildOpts = {
+  /** Sertakan baris terbaru yang hasil 10 harinya belum ada (target NaN), untuk peramalan. */
+  keepOpen?: boolean;
+  /** Volatilitas pasar hanya dirata-ratakan dari saham-saham ini (bukan semua seri yang dimuat). */
+  mktUniverse?: Set<string>;
+};
+
+export function buildVolRows(series: Series[], opts: BuildOpts = {}): VolRow[] {
   const base = buildRows(series, { horizon: AHEAD, k: 1 });
   const info = new Map(
     series.map((s) => {
@@ -73,7 +80,7 @@ export function buildVolRows(series: Series[]): VolRow[] {
     const i = t.idx.get(r.date)!;
     if (i < 61) continue;
     const y = targetsAt(t.s.bars, i);
-    if (!y) continue;
+    if (!y && !opts.keepOpen) continue;
     const v20 = r.x[iVol20];
     const v5 = r.x[iR5] * v20;
     const v60 = rollStd(t.lr, i, 60);
@@ -85,8 +92,8 @@ export function buildVolRows(series: Series[]): VolRow[] {
       ticker: r.ticker,
       date: r.date,
       lv20,
-      yRv: y.yRv,
-      yDd: y.yDd,
+      yRv: y ? y.yRv : NaN,
+      yDd: y ? y.yDd : NaN,
       x: [],
       raw: [
         lv5, lv20, lv60, Math.log(r.x[fx('atrPct')] + 1e-4), Math.log(range5 + 1e-4), Math.abs(r.x[fx('ret1')]),
@@ -97,7 +104,7 @@ export function buildVolRows(series: Series[]): VolRow[] {
   }
   // Volatilitas pasar = rata-rata lv20 seluruh saham pada tanggal yang sama (tanpa IHSG).
   const byDate = new Map<string, number[]>();
-  for (const r of rows) byDate.set(r.date, [...(byDate.get(r.date) ?? []), r.lv20]);
+  for (const r of rows) if (!opts.mktUniverse || opts.mktUniverse.has(r.ticker)) byDate.set(r.date, [...(byDate.get(r.date) ?? []), r.lv20]);
   const mkt = new Map([...byDate].map(([d, v]) => [d, v.reduce((a, b) => a + b, 0) / v.length]));
   return rows.map(({ raw, ...r }) => {
     const m = mkt.get(r.date)!;
