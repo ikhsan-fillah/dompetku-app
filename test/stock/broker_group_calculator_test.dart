@@ -103,6 +103,44 @@ void main() {
     );
   });
 
+  test('Asing hanya top 10 per sisi dan rentang, peringkat dari nilai', () {
+    final foreign = [
+      for (var i = 1; i <= 12; i++) row('F$i', BrokerSide.buy, i.toDouble()),
+      row('F1', BrokerSide.sell, 5),
+      for (var i = 1; i <= 11; i++)
+        row('G$i', BrokerSide.buy, i.toDouble(), label: '7D'),
+    ];
+    final latest = calculator
+        .summarize(
+          const [],
+          rules,
+          foreignRows: foreign.where((r) => r.rangeLabel == 'Latest'),
+        )
+        .of(BrokerGroup.asing);
+    // 12 baris beli: nilai 3..12 yang masuk (10 teratas), jumlah 75 miliar.
+    expect(latest.buyIdr, 75000000000);
+    expect(latest.sellIdr, 5000000000);
+    expect(latest.brokerCount, 11);
+
+    final both = calculator
+        .summarize(const [], rules, foreignRows: foreign)
+        .of(BrokerGroup.asing);
+    // 7D punya 11 baris beli: nilai 2..11 masuk, jumlah 65 miliar.
+    expect(both.buyIdr, 75000000000 + 65000000000);
+  });
+
+  test('Ritel hanya yang masuk top 10 di sisinya', () {
+    final rows = [
+      for (var i = 1; i <= 10; i++) row('Z$i', BrokerSide.buy, 100.0 + i),
+      row('XL', BrokerSide.buy, 1),
+      row('XC', BrokerSide.buy, 500),
+    ];
+    final ritel = calculator.summarize(rows, rules).of(BrokerGroup.ritel);
+    // XC masuk top 10 (500), XL (1) peringkat 12 sehingga tidak dihitung.
+    expect(ritel.buyIdr, 500000000000);
+    expect(ritel.brokerCount, 1);
+  });
+
   test('label asing di broker_group tidak dihitung sebagai Asing', () {
     final summary = calculator.summarize([
       row('ZP', BrokerSide.buy, 10),
