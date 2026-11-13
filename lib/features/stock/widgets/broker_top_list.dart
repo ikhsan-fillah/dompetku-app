@@ -7,6 +7,7 @@ import '../../../core/theme/app_text.dart';
 import '../../../core/widgets/app_card.dart';
 import '../models/broker_group.dart';
 import '../models/broker_range_row.dart';
+import '../services/broker_group_calculator.dart';
 import '../services/broker_flow_analysis.dart';
 import 'broker_insights.dart';
 import 'stock_format.dart';
@@ -149,6 +150,11 @@ class _TopRow extends StatelessWidget {
   final Color color;
   final bool isFirst;
 
+  /// Bandar di luar [bandarTopCount] teratas tidak ikut dihitung di bar
+  /// kelompok, jadi labelnya dibuat pudar supaya terlihat beda.
+  bool get _outsideBandarTop =>
+      group == BrokerGroup.bandar && rank > bandarTopCount;
+
   /// Warna label kelompok: biru asing, kuning bandar, ungu ritel.
   static (Color, Color) _groupColors(BrokerGroup? group) => switch (group) {
     BrokerGroup.asing => (const Color(0xFFE4ECF4), const Color(0xFF2F5D8A)),
@@ -167,12 +173,19 @@ class _TopRow extends StatelessWidget {
       row.signedValueIdr,
       approx: row.isApprox,
     );
-    final (groupBg, groupFg) = _groupColors(group);
+    final (solidBg, solidFg) = _groupColors(group);
+    final groupBg = _outsideBandarTop
+        ? solidBg.withValues(alpha: 0.4)
+        : solidBg;
+    final groupFg = _outsideBandarTop
+        ? solidFg.withValues(alpha: 0.55)
+        : solidFg;
     final same = trail?.sameAs(row.side == BrokerSide.buy ? 1 : -1);
     return Semantics(
       container: true,
       label: [
-        '$rank. ${row.brokerCode}, $groupText, $valueText',
+        '$rank. ${row.brokerCode}, $groupText'
+            '${_outsideBandarTop ? ', tidak dihitung di bar' : ''}, $valueText',
         if (same != null)
           '@count dari 4 rentang searah'.trParams({'count': '$same'}),
       ].join(', '),
