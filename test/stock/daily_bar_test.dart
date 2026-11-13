@@ -163,27 +163,39 @@ void main() {
       'AO': BrokerGroup.bandar,
       'ZP': BrokerGroup.asing,
     });
-    String headline(List<BrokerRangeRow> rows) =>
-        flowHeadline(const BrokerGroupCalculator().summarize(rows, rules));
+    String headline(
+      List<BrokerRangeRow> rows, {
+      List<BrokerRangeRow> foreign = const [],
+    }) => flowHeadline(
+      const BrokerGroupCalculator().summarize(
+        rows,
+        rules,
+        foreignRows: foreign,
+      ),
+    );
 
     test('menyebut kelompok net beli dan net jual', () {
       expect(
-        headline([
-          rangeRow('ZP', BrokerSide.buy, 600, 'Latest'),
-          rangeRow('XL', BrokerSide.sell, 300, 'Latest'),
-          rangeRow('AO', BrokerSide.sell, 40, 'Latest'),
-        ]),
+        headline(
+          [
+            rangeRow('XL', BrokerSide.sell, 300, 'Latest'),
+            rangeRow('AO', BrokerSide.sell, 40, 'Latest'),
+          ],
+          foreign: [rangeRow('ZP', BrokerSide.buy, 600, 'Latest')],
+        ),
         'Asing net beli, Ritel dan Bandar net jual.',
       );
     });
 
     test('hanya satu arah, atau tanpa arus bersih', () {
       expect(
-        headline([
-          rangeRow('XL', BrokerSide.buy, 1, 'Latest'),
-          rangeRow('AO', BrokerSide.buy, 1, 'Latest'),
-          rangeRow('ZP', BrokerSide.buy, 1, 'Latest'),
-        ]),
+        headline(
+          [
+            rangeRow('XL', BrokerSide.buy, 1, 'Latest'),
+            rangeRow('AO', BrokerSide.buy, 1, 'Latest'),
+          ],
+          foreign: [rangeRow('ZP', BrokerSide.buy, 1, 'Latest')],
+        ),
         'Ritel, Bandar dan Asing net beli.',
       );
       expect(headline(const []), 'Tidak ada arus bersih pada rentang ini.');

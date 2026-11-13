@@ -206,10 +206,8 @@ void main() {
           WatchlistItem(ticker: 'BBCA', isActive: true),
           WatchlistItem(ticker: 'BBRI', isActive: false),
         ])
-        ..rows = [
-          rangeRow('ZP', BrokerSide.buy, 621800000000, 'Latest'),
-          rangeRow('XL', BrokerSide.sell, 301900000000, 'Latest'),
-        ]
+        ..rows = [rangeRow('XL', BrokerSide.sell, 301900000000, 'Latest')]
+        ..foreignRows = [rangeRow('KZ', BrokerSide.buy, 621800000000, 'Latest')]
         ..bars = [
           dailyBar(1, close: 9000),
           dailyBar(2, close: 9100, prevClose: 9000),
@@ -359,7 +357,11 @@ void main() {
     testWidgets(
       'tab Broker: kalimat ringkas, kelompok, dan top net beli dan jual',
       (tester) async {
-        final repository = FakeRepository()..rows = rows;
+        final repository = FakeRepository()
+          ..rows = rows
+          ..foreignRows = [
+            rangeRow('KZ', BrokerSide.buy, 536000000000, 'Latest'),
+          ];
         Get.put(StockDetailController(repository, 'BBCA'));
 
         await pumpPage(tester, const StockDetailPage(), height: 2400);
@@ -378,11 +380,11 @@ void main() {
         // ZP dan XL muncul di daftar teratas dan di kartu; YP tidak punya kelompok.
         expect(find.text('ZP'), findsOneWidget);
         expect(find.text('YP'), findsOneWidget);
-        expect(find.text('lainnya'), findsOneWidget);
+        expect(find.text('lainnya'), findsNWidgets(2));
         expect(find.text('+536,0 M'), findsWidgets);
         expect(find.text('-301,9 M'), findsWidgets);
         expect(
-          find.textContaining('Belum diklasifikasi: 1 broker'),
+          find.textContaining('Belum diklasifikasi: 2 broker'),
           findsOneWidget,
         );
 

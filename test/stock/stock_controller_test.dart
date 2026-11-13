@@ -262,10 +262,9 @@ void main() {
             WatchlistItem(ticker: 'BBCA', isActive: true),
             WatchlistItem(ticker: 'BBRI', isActive: false),
           ])
-          ..rows = [
+          ..rows = [rangeRow('XL', BrokerSide.sell, 300000000000, 'Latest')]
+          ..foreignRows = [
             rangeRow('ZP', BrokerSide.buy, 536000000000, 'Latest'),
-            rangeRow('XL', BrokerSide.sell, 300000000000, 'Latest'),
-            rangeRow('ZP', BrokerSide.buy, 1, '7D'),
           ]
           ..bars = [dailyBar(1), dailyBar(2, close: 9100)];
         final controller = StockController(
@@ -373,9 +372,12 @@ void main() {
     test('total kelompok mengikuti rentang yang dipilih', () async {
       final repository = FakeRepository()
         ..rows = [
-          rangeRow('ZP', BrokerSide.buy, 536000000000, 'Latest'),
-          rangeRow('ZP', BrokerSide.buy, 80600000000, '7D'),
           rangeRow('YP', BrokerSide.sell, 149600000000, 'Latest'),
+          rangeRow('XL', BrokerSide.sell, 1000000000, '7D'),
+        ]
+        ..foreignRows = [
+          rangeRow('KZ', BrokerSide.buy, 536000000000, 'Latest'),
+          rangeRow('KZ', BrokerSide.buy, 80600000000, '7D'),
         ];
       final controller = StockDetailController(repository, 'BBCA');
       await controller.load();

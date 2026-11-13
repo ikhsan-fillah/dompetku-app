@@ -33,6 +33,13 @@ abstract interface class StockRepository {
   /// Baris rentang Latest untuk beberapa saham sekaligus (kartu watchlist).
   Future<List<BrokerRangeRow>> getLatestRangeForTickers(List<String> tickers);
 
+  /// Foreign broker summary terbaru per rentang untuk satu saham. Saat ini
+  /// hanya rentang Latest yang dibaca.
+  Future<List<BrokerRangeRow>> getLatestForeignRanges(String ticker);
+
+  /// Foreign broker summary terbaru tiap saham yang diminta (kartu watchlist).
+  Future<List<BrokerRangeRow>> getLatestForeignForTickers(List<String> tickers);
+
   /// Hari perdagangan terakhir satu saham, urut dari yang terlama, satu baris
   /// per tanggal. Baris bertanda `tidak_akurat` tidak ikut.
   Future<List<DailyBar>> getRecentBars(String ticker, {int limit = 90});
@@ -203,6 +210,29 @@ class SupabaseStockRepository implements StockRepository {
         .order('range_end', ascending: false)
         .limit(100 * tickers.length);
     return rows.map(BrokerRangeRow.fromMap).toList();
+  }
+
+  @override
+  Future<List<BrokerRangeRow>> getLatestForeignRanges(String ticker) async {
+    // Satu hari paling banyak sekitar 30 baris, jadi 100 baris cukup untuk
+    // beberapa hari terakhir; yang dipakai hanya tanggal terbaru per label.
+    final rows = await _client
+        .from('foreign_panel_daily')
+        .select('ticker, range_label, trade_date, broker_code, side, value_idr')
+        .eq('ticker', ticker)
+        .order('trade_date', ascending: false)
+        .limit(100);
+    return latestSnapshotPerRange(rows.map(foreignRowFromMap).toList());
+  }
+
+  @override
+  Future<List<BrokerRangeRow>> getLatestForeignForTickers(
+    List<String> tickers,
+  ) async {
+    final perTicker = await Future.wait([
+      for (final ticker in tickers) getLatestForeignRanges(ticker),
+    ]);
+    return [for (final rows in perTicker) ...rows];
   }
 
   @override

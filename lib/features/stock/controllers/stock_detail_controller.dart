@@ -19,10 +19,18 @@ import '../services/risk_inputs.dart';
 
 /// Data satu saham: baris per broker dan aturan kelompok.
 class StockDetailData {
-  const StockDetailData({required this.rows, required this.rules});
+  const StockDetailData({
+    required this.rows,
+    required this.rules,
+    this.foreignRows = const [],
+  });
 
   final List<BrokerRangeRow> rows;
   final BrokerGroupRules rules;
+
+  /// Foreign broker summary (seri Asing), sudah disaring ke tanggal yang sama
+  /// dengan data broker. Kosong bila belum ada atau gagal dimuat.
+  final List<BrokerRangeRow> foreignRows;
 }
 
 /// Empat tab halaman detail: arus dana broker, chart dengan indikator,
@@ -130,7 +138,11 @@ class StockDetailController extends GetxController {
     final source = data;
     if (source == null) return null;
     if (!identical(source, _analysisSource)) {
-      _analysis = BrokerFlowAnalysis(source.rows, source.rules);
+      _analysis = BrokerFlowAnalysis(
+        source.rows,
+        source.rules,
+        foreignRows: source.foreignRows,
+      );
       _analysisSource = source;
     }
     return _analysis;
@@ -190,6 +202,10 @@ class StockDetailController extends GetxController {
   GroupSummary get summary => _calculator.summarize(
     rowsInRange,
     data?.rules ?? const BrokerGroupRules.empty(),
+    foreignRows: [
+      for (final row in data?.foreignRows ?? const <BrokerRangeRow>[])
+        if (row.rangeLabel == range.value) row,
+    ],
   );
 
   /// Tanggal awal dan akhir rentang terpilih, null bila tidak ada data.
@@ -216,12 +232,23 @@ class StockDetailController extends GetxController {
       final results = await Future.wait([
         _repository.getLatestBrokerRanges(ticker),
         _repository.getBrokerGroupRules(),
+        // Foreign gagal sendiri: batang Asing saja yang kosong.
+        _repository
+            .getLatestForeignRanges(ticker)
+            .catchError((Object _) => const <BrokerRangeRow>[]),
       ]);
       final rows = results[0] as List<BrokerRangeRow>;
       final rules = results[1] as BrokerGroupRules;
+      final foreign = results[2] as List<BrokerRangeRow>;
       state.value = rows.isEmpty
           ? const ResourceState.empty()
-          : ResourceState.success(StockDetailData(rows: rows, rules: rules));
+          : ResourceState.success(
+              StockDetailData(
+                rows: rows,
+                rules: rules,
+                foreignRows: foreignMatchingBroker(rows, foreign),
+              ),
+            );
     } catch (_) {
       state.value = ResourceState.error('Gagal memuat data broker.'.tr);
     }
