@@ -37,9 +37,27 @@ class GroupSummary {
   GroupTotal of(BrokerGroup group) => groups[group] ?? const GroupTotal();
 }
 
+/// Berapa broker teratas di tiap sisi yang dihitung sebagai Bandar.
+const bandarTopCount = 5;
+
+/// Berapa broker teratas di tiap sisi yang dihitung sebagai Ritel dan Asing.
+/// Sementara: bisa dinaikkan bila analisis perlu broker di luar top 10.
+const ritelForeignTopCount = 10;
+
 /// Menjumlahkan net beli dan net jual per kelompok. Logika ini sengaja ada di
 /// app, bukan di database: aturan kelompok bisa berubah tanpa mengubah data
 /// per broker yang tersimpan.
+///
+/// Aturan:
+/// - Ritel: broker berlabel ritel yang masuk [ritelForeignTopCount] teratas
+///   di sisinya pada rentang itu.
+/// - Bandar (label `big_player`): hanya yang masuk [bandarTopCount] teratas di
+///   sisinya pada rentang itu, peringkat dari nilai kotor semua broker di
+///   sisi tersebut. Broker big player di peringkat bawah tidak dihitung dan
+///   tidak masuk "belum diklasifikasi".
+/// - Asing: bukan label broker. Dijumlahkan dari [foreignRows] (Foreign
+///   broker summary), hanya [ritelForeignTopCount] teratas per sisi dan
+///   rentang, dengan peringkat dari nilai kotor.
 ///
 /// Batasan: Broker Summary hanya menampilkan broker teratas di tiap sisi, jadi
 /// total kelompok adalah total dari broker yang tampil, bukan seluruh pasar.
@@ -48,19 +66,40 @@ class BrokerGroupCalculator {
 
   GroupSummary summarize(
     Iterable<BrokerRangeRow> rows,
-    BrokerGroupRules rules,
-  ) {
+    BrokerGroupRules rules, {
+    Iterable<BrokerRangeRow> foreignRows = const [],
+  }) {
+    final all = rows.toList();
     final buy = <BrokerGroup?, int>{};
     final sell = <BrokerGroup?, int>{};
     final count = <BrokerGroup?, int>{};
     final approx = <BrokerGroup?, int>{};
 
-    for (final row in rows) {
-      final group = rules.groupOf(row.brokerCode);
+    void add(BrokerGroup? group, BrokerRangeRow row) {
       final sideMap = row.side == BrokerSide.buy ? buy : sell;
       sideMap[group] = (sideMap[group] ?? 0) + row.valueIdr;
       count[group] = (count[group] ?? 0) + 1;
       if (row.isApprox) approx[group] = (approx[group] ?? 0) + 1;
+    }
+
+    final topBandar = _topRows(all, bandarTopCount);
+    final topRitel = _topRows(all, ritelForeignTopCount);
+    for (final row in all) {
+      final group = rules.groupOf(row.brokerCode);
+      if (group == BrokerGroup.asing) {
+        // Asing bukan label broker; baris ini dianggap belum diklasifikasi.
+        add(null, row);
+      } else if (group == BrokerGroup.bandar) {
+        if (topBandar.contains(row)) add(BrokerGroup.bandar, row);
+      } else if (group == BrokerGroup.ritel) {
+        if (topRitel.contains(row)) add(BrokerGroup.ritel, row);
+      } else {
+        add(group, row);
+      }
+    }
+    final foreign = foreignRows.toList();
+    for (final row in _topRows(foreign, ritelForeignTopCount)) {
+      add(BrokerGroup.asing, row);
     }
 
     GroupTotal totalFor(BrokerGroup? group) => GroupTotal(
@@ -74,5 +113,20 @@ class BrokerGroupCalculator {
       groups: {for (final group in BrokerGroup.values) group: totalFor(group)},
       unclassified: totalFor(null),
     );
+  }
+
+  /// Baris yang masuk [count] teratas di sisi dan rentangnya, peringkat dari
+  /// nilai kotor. Peringkat dihitung di antara semua baris pada sisi itu.
+  Set<BrokerRangeRow> _topRows(List<BrokerRangeRow> rows, int count) {
+    final bySlot = <(String, BrokerSide), List<BrokerRangeRow>>{};
+    for (final row in rows) {
+      bySlot.putIfAbsent((row.rangeLabel, row.side), () => []).add(row);
+    }
+    final top = <BrokerRangeRow>{};
+    for (final slot in bySlot.values) {
+      slot.sort((a, b) => b.valueIdr.compareTo(a.valueIdr));
+      top.addAll(slot.take(count));
+    }
+    return top;
   }
 }

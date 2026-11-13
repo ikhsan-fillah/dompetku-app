@@ -60,6 +60,46 @@ class BrokerRangeRow {
   };
 }
 
+/// Satu baris Foreign broker summary (tabel `foreign_panel_daily`). Bentuknya
+/// sama dengan [BrokerRangeRow], tetapi tanggalnya satu hari (`trade_date`),
+/// jadi awal dan akhir rentang sama.
+BrokerRangeRow foreignRowFromMap(Map<String, dynamic> map) => switch (map) {
+  {
+    'ticker': final String ticker,
+    'range_label': final String rangeLabel,
+    'trade_date': final String tradeDate,
+    'broker_code': final String brokerCode,
+    'side': final String side,
+    'value_idr': final num valueIdr,
+  } =>
+    BrokerRangeRow(
+      ticker: ticker,
+      rangeLabel: rangeLabel,
+      rangeStart: DateTime.parse(tradeDate),
+      rangeEnd: DateTime.parse(tradeDate),
+      brokerCode: brokerCode,
+      side: side == 'sell' ? BrokerSide.sell : BrokerSide.buy,
+      valueIdr: valueIdr.toInt(),
+    ),
+  _ => throw FormatException('Baris foreign tidak valid: $map'),
+};
+
+/// Baris Foreign broker summary yang tanggalnya sama dengan data broker pada
+/// label rentang yang sama. Foreign yang tanggalnya beda dibuang supaya satu
+/// bar tidak mencampur dua hari.
+List<BrokerRangeRow> foreignMatchingBroker(
+  List<BrokerRangeRow> broker,
+  List<BrokerRangeRow> foreign,
+) {
+  final ends = {
+    for (final row in broker) (row.ticker, row.rangeLabel, row.rangeEnd),
+  };
+  return [
+    for (final row in foreign)
+      if (ends.contains((row.ticker, row.rangeLabel, row.rangeEnd))) row,
+  ];
+}
+
 /// Dari semua baris satu saham, ambil hanya snapshot terbaru untuk tiap label
 /// rentang (rentang dengan `range_end` paling baru).
 List<BrokerRangeRow> latestSnapshotPerRange(List<BrokerRangeRow> rows) {

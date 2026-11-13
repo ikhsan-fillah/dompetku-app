@@ -47,6 +47,9 @@ class FakeRepository implements StockRepository {
   /// Baris broker semua rentang. Dipakai untuk detail dan ringkasan watchlist.
   List<BrokerRangeRow> rows = [];
 
+  /// Foreign broker summary contoh (seri Asing), terpisah dari [rows].
+  List<BrokerRangeRow> foreignRows = [];
+
   /// Hari perdagangan, terlama dulu.
   List<DailyBar> bars = [];
   bool failBars = false;
@@ -93,7 +96,6 @@ class FakeRepository implements StockRepository {
   @override
   Future<BrokerGroupRules> getBrokerGroupRules() async =>
       const BrokerGroupRules({
-        'ZP': BrokerGroup.asing,
         'XL': BrokerGroup.ritel,
         'AO': BrokerGroup.bandar,
       });
@@ -103,6 +105,23 @@ class FakeRepository implements StockRepository {
     if (fail) throw Exception('boom');
     return rows;
   }
+
+  @override
+  Future<List<BrokerRangeRow>> getLatestForeignRanges(String ticker) async {
+    if (fail) throw Exception('boom');
+    return [
+      for (final row in foreignRows)
+        if (row.ticker == ticker) row,
+    ];
+  }
+
+  @override
+  Future<List<BrokerRangeRow>> getLatestForeignForTickers(
+    List<String> tickers,
+  ) async => [
+    for (final row in foreignRows)
+      if (tickers.contains(row.ticker)) row,
+  ];
 
   @override
   Future<List<BrokerRangeRow>> getLatestRangeForTickers(

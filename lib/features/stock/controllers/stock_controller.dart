@@ -188,10 +188,15 @@ class StockController extends GetxController {
         _repository.getLatestRangeForTickers(tickers),
         _repository.getLatestBars(tickers),
         _repository.getBrokerGroupRules(),
+        // Foreign gagal sendiri: batang Asing saja yang kosong.
+        _repository
+            .getLatestForeignForTickers(tickers)
+            .catchError((Object _) => const <BrokerRangeRow>[]),
       ]);
       final rows = results[0] as List<BrokerRangeRow>;
       final bars = latestBarPerTicker(results[1] as List<DailyBar>);
       final rules = results[2] as BrokerGroupRules;
+      final foreignRows = results[3] as List<BrokerRangeRow>;
       final trends = await _loadTrends([
         for (final item in items)
           if (item.isActive) item.ticker,
@@ -201,6 +206,10 @@ class StockController extends GetxController {
           ticker: _overviewOf(
             [
               for (final row in rows)
+                if (row.ticker == ticker) row,
+            ],
+            [
+              for (final row in foreignRows)
                 if (row.ticker == ticker) row,
             ],
             bars[ticker],
@@ -231,13 +240,20 @@ class StockController extends GetxController {
 
   TickerOverview _overviewOf(
     List<BrokerRangeRow> rows,
+    List<BrokerRangeRow> foreignRows,
     DailyBar? bar,
     BrokerGroupRules rules,
     TrendKind? trend,
   ) {
     final latest = latestSnapshotPerRange(rows);
     return TickerOverview(
-      flow: latest.isEmpty ? null : _calculator.summarize(latest, rules),
+      flow: latest.isEmpty
+          ? null
+          : _calculator.summarize(
+              latest,
+              rules,
+              foreignRows: foreignMatchingBroker(latest, foreignRows),
+            ),
       flowDate: latest.isEmpty ? null : latest.first.rangeEnd,
       bar: bar,
       trend: trend,

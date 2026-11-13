@@ -1,4 +1,8 @@
-/// Kelompok broker menurut aturan pengguna (tabel `broker_group`).
+/// Kelompok untuk bar arah dana.
+///
+/// Ritel dan Bandar berasal dari label broker (tabel `broker_group`: `ritel`
+/// dan `big_player`). Asing bukan label: angkanya dari Foreign broker summary
+/// (tabel `foreign_panel_daily`), seri terpisah dari broker biasa.
 ///
 /// Ini aturan pengguna, bukan fakta pasar: anggota kelompok "bandar" tidak
 /// pasti bandar. Hanya dipakai untuk membaca arah net beli atau net jual.
@@ -7,11 +11,12 @@ enum BrokerGroup {
   bandar,
   asing;
 
-  /// Nilai kolom `grp`. Null untuk `belum_diklasifikasi` atau nilai asing.
+  /// Nilai kolom `grp`. `big_player` (dan `bandar` lama) menjadi Bandar.
+  /// Null untuk `belum_diklasifikasi`, `asing` (bukan label lagi), atau nilai
+  /// yang tidak dikenal.
   static BrokerGroup? fromDb(String value) => switch (value) {
     'ritel' => BrokerGroup.ritel,
-    'bandar' => BrokerGroup.bandar,
-    'asing' => BrokerGroup.asing,
+    'big_player' || 'bandar' => BrokerGroup.bandar,
     _ => null,
   };
 

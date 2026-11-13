@@ -68,6 +68,7 @@ class BrokerFlowAnalysis {
   BrokerFlowAnalysis(
     List<BrokerRangeRow> rows,
     this.rules, {
+    List<BrokerRangeRow> foreignRows = const [],
     BrokerGroupCalculator calculator = const BrokerGroupCalculator(),
   }) {
     for (final label in brokerRangeLabels) {
@@ -77,7 +78,14 @@ class BrokerFlowAnalysis {
       ];
       if (inRange.isEmpty) continue;
       _rows[label] = inRange;
-      summaries[label] = calculator.summarize(inRange, rules);
+      summaries[label] = calculator.summarize(
+        inRange,
+        rules,
+        foreignRows: [
+          for (final row in foreignRows)
+            if (row.rangeLabel == label) row,
+        ],
+      );
       final net = <String, int>{};
       final approx = <String, bool>{};
       for (final row in inRange) {
